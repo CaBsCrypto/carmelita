@@ -58,7 +58,7 @@ export const connections: Connection[] = [
   },
   {
     name: "ArcusX",
-    focus: "Top 3 · active pilot",
+    focus: "Candidate · no agreement yet",
     category: "Digital work",
     stage: "Partner outreach",
     priority: "P0",
@@ -69,7 +69,7 @@ export const connections: Connection[] = [
     updated: "Jul 13, 2026",
   },  {
     name: "Travala Travel MCP",
-    focus: "Top 4 · active pilot",
+    focus: "Top 3 · active pilot",
     category: "Travel",
     stage: "Read-only connected",
     priority: "P0",
