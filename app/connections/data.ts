@@ -152,13 +152,13 @@ export const connections: Connection[] = [
   {
     name: "Apify MCP",
     category: "Web automation",
-    stage: "Read-only connected",
+    stage: "Credentials needed",
     priority: "P0",
     route: "Remote MCP -> Actor discovery -> approved run",
-    proof: "Live MCP handshake and four public discovery tools respond without credentials.",
-    nextAction: "Connect OAuth, allowlist two Actors and build a merchant-readiness scan.",
+    proof: "No unauthenticated surface: initialize and tools/list on mcp.apify.com both return 401 with WWW-Authenticate Bearer, and /sse returns 404. An Apify API token is required before any handshake.",
+    nextAction: "Issue an Apify API token, allowlist two Actors and build a merchant-readiness scan.",
     href: "https://docs.apify.com/integrations/mcp",
-    updated: "Jul 13, 2026",
+    updated: "Jul 31, 2026",
   },
   {
     name: "Shopify Storefront MCP",
