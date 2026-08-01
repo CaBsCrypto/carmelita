@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { getDatabaseUrl } from "@/db";
 import type { PaymentRequirements, SettleResponse } from "@x402/core/types";
 import type { FrozenAvalancheX402Payment } from "./payment";
+import type { AvalancheSettlementEvidence } from "./evidence";
 
 export type AvalancheX402Status =
   | "prepared"
@@ -35,6 +36,7 @@ export type AvalancheX402Row = {
   status: AvalancheX402Status;
   settlement: SettleResponse | null;
   transaction_hash: string | null;
+  onchain_evidence: AvalancheSettlementEvidence | null;
   error: string | null;
   expires_at: string;
   settlement_claimed_at: string | null;
@@ -90,12 +92,14 @@ export async function ensureAvalancheX402Schema(sql: SqlClient = client()) {
       status text NOT NULL DEFAULT 'prepared',
       settlement jsonb,
       transaction_hash text UNIQUE,
+      onchain_evidence jsonb,
       error text,
       expires_at timestamptz NOT NULL,
       settlement_claimed_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     )`);
+    await sql.query("ALTER TABLE agent_avalanche_x402_payments ADD COLUMN IF NOT EXISTS onchain_evidence jsonb");
     await sql.query("CREATE INDEX IF NOT EXISTS agent_avalanche_x402_user_created_idx ON agent_avalanche_x402_payments(user_id, created_at)");
     await sql.query("CREATE INDEX IF NOT EXISTS agent_avalanche_x402_status_idx ON agent_avalanche_x402_payments(status)");
     await sql.query(`CREATE TABLE IF NOT EXISTS agent_avalanche_x402_deliveries (
@@ -256,15 +260,18 @@ export async function recordAvalancheX402Settlement(
     paymentId: string;
     settlement: SettleResponse;
     transactionHash: string;
+    onchainEvidence: AvalancheSettlementEvidence;
   },
   sql: SqlClient = client(),
 ) {
   await ensureAvalancheX402Schema(sql);
   const result = await sql.query<AvalancheX402Row>(`UPDATE agent_avalanche_x402_payments
-    SET status='settled', settlement=$1::jsonb, transaction_hash=$2, error=NULL, updated_at=now()
-    WHERE id=$3 AND user_id=$4 AND status='settling' RETURNING *`, [
+    SET status='settled', settlement=$1::jsonb, transaction_hash=$2,
+        onchain_evidence=$3::jsonb, error=NULL, updated_at=now()
+    WHERE id=$4 AND user_id=$5 AND status='settling' RETURNING *`, [
     JSON.stringify(input.settlement),
     input.transactionHash,
+    JSON.stringify(input.onchainEvidence),
     input.paymentId,
     input.userId,
   ]);
@@ -304,6 +311,9 @@ export async function deliverAvalancheX402Report(
     throw new Error(`avalanche_x402_delivery_not_allowed:${payment.status}`);
   }
   if (!payment.transaction_hash) throw new Error("avalanche_x402_transaction_missing");
+  if (payment.status === "settled" && !payment.onchain_evidence) {
+    throw new Error("avalanche_x402_onchain_evidence_missing");
+  }
   const deliveryId = `avax_delivery_${sha256(payment.id)}`;
   const body = {
     deliveryId,

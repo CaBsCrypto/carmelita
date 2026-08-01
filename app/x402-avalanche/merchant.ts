@@ -10,16 +10,9 @@ import type {
   AvalancheMerchantPaymentStore,
   MerchantPaymentRecord,
 } from "./merchant-store";
+import type { AvalancheSettlementEvidence } from "./evidence";
 
-export type AvalancheMerchantSettlementEvidence = {
-  transactionHash: string;
-  network: "eip155:43113";
-  payer: string;
-  payTo: string;
-  asset: string;
-  amountAtomic: string;
-  blockNumber?: string;
-};
+export type AvalancheMerchantSettlementEvidence = AvalancheSettlementEvidence;
 
 export interface AvalancheMerchantReceiptVerifier {
   verify(input: {

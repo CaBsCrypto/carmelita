@@ -19,7 +19,7 @@ class MemorySql {
 
   async query<T = Row>(query: string, params: unknown[] = []) {
     const compact = query.replace(/\s+/g, " ").trim();
-    if (compact.startsWith("CREATE ") || compact.startsWith("CREATE INDEX")) {
+    if (compact.startsWith("CREATE ") || compact.startsWith("CREATE INDEX") || compact.startsWith("ALTER TABLE")) {
       return { rows: [] as T[] };
     }
     if (compact.startsWith("INSERT INTO agent_avalanche_x402_payments")) {
@@ -33,7 +33,7 @@ class MemorySql {
         asset_contract: params[9], pay_to: params[10], amount_atomic: params[11],
         requirement: JSON.parse(String(params[12])), frozen_payment: JSON.parse(String(params[13])),
         signature_header: null, signature_hash: null, status: "prepared",
-        settlement: null, transaction_hash: null, error: null, expires_at: params[14],
+        settlement: null, transaction_hash: null, onchain_evidence: null, error: null, expires_at: params[14],
         settlement_claimed_at: null, created_at: now, updated_at: now,
       };
       this.payments.set(String(params[0]), row);
@@ -63,9 +63,14 @@ class MemorySql {
       return { rows: [row] as T[] };
     }
     if (compact.includes("SET status='settled'")) {
-      const row = this.payments.get(String(params[2]));
-      if (!row || row.user_id !== params[3] || row.status !== "settling") return { rows: [] as T[] };
-      Object.assign(row, { status: "settled", settlement: JSON.parse(String(params[0])), transaction_hash: params[1] });
+      const row = this.payments.get(String(params[3]));
+      if (!row || row.user_id !== params[4] || row.status !== "settling") return { rows: [] as T[] };
+      Object.assign(row, {
+        status: "settled",
+        settlement: JSON.parse(String(params[0])),
+        transaction_hash: params[1],
+        onchain_evidence: JSON.parse(String(params[2])),
+      });
       return { rows: [row] as T[] };
     }
     if (compact.startsWith("INSERT INTO agent_avalanche_x402_deliveries")) {
@@ -164,7 +169,17 @@ test("settlement can be claimed once and delivery is byte-stable", async () => {
     paymentId: payment.paymentId,
     settlement,
     transactionHash: settlement.transaction,
+    onchainEvidence: {
+      transactionHash: settlement.transaction,
+      network: "eip155:43113",
+      payer: payment.payer,
+      payTo: payment.payTo,
+      asset: payment.asset,
+      amountAtomic: payment.amount,
+      blockNumber: "1",
+    },
   }, sql);
+  assert.equal(sql.payments.get(payment.paymentId)?.onchain_evidence !== null, true);
   const first = await deliverAvalancheX402Report("user-1", payment.paymentId, sql);
   const replay = await deliverAvalancheX402Report("user-1", payment.paymentId, sql);
   assert.equal(sql.deliveries.size, 1);

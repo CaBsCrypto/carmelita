@@ -190,20 +190,20 @@ address, not the payer. The payer wallet held **zero AVAX** and the payment stil
 settled, which is exactly what EIP-3009 plus a sponsoring facilitator promises and
 what no unit test could demonstrate.
 
-**The application did not verify this payment.** `app/x402-avalanche/settlement.ts`
-makes no RPC call. `settlementBindingProblem` checks that the returned hash is
-well-formed `BYTES32` and compares `network` and `payer` only when the facilitator
-chooses to send them; delivery then requires nothing beyond status `settled` and a
-non-null hash. Every field in the table above was confirmed by hand. Until
-`getEvmTransactionEvidence` — already used by the transfer, distributor and
-merchant paths — is ported into `settlement.ts`, a `200` from this endpoint is the
-facilitator's claim and not proof of settlement.
+**Runtime verification was added after this first payment.** The historical run
+above was verified manually. The current `settlement.ts` now waits up to 30 seconds
+for one Fuji confirmation, requires exactly one matching USDC
+`Transfer(payer, payTo, 10000)` log, and persists the chain, transaction, payer,
+recipient, asset, amount and block as `onchain_evidence` before settlement can move
+to `settled` or content can be delivered. Missing, reverted or mismatched receipts
+are quarantined as `reconciliation_required`.
 
 ### Still not done
 
-- On-chain verification inside `settlement.ts` (above).
-- The merchant side has never run. Its receipt reader calls
-  `getTransactionReceipt` without waiting for the block, and any transient error
-  parks the record in `reconciliation_required`, a terminal state with no rescue
-  path. Do not enable the merchant demo before that is fixed.
-- No balance precheck: the prepare step will ask for a signature at zero balance.
+- A second Privy user and application-level replay acceptance are still pending.
+- The merchant endpoint now waits for a confirmed receipt, but its
+  `reconciliation_required` state still needs an explicit read-only recovery path
+  before the public merchant demo should be enabled.
+- No balance precheck: the prepare step can still ask for a signature at zero USDC
+  balance.
+- The CCTP Fuji-to-Stellar bridge remains ready to test, not live-proven.

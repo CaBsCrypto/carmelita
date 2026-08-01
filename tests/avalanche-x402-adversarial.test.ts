@@ -76,7 +76,8 @@ test("store makes first signature, settlement claim and delivery single-winner o
   assert.match(store, /avalanche_x402_signature_replacement_rejected/);
   assert.match(store, /status='signed' RETURNING \*/);
   assert.match(store, /avalanche_x402_settlement_in_progress/);
-  assert.match(store, /WHERE id=\$3 AND user_id=\$4 AND status='settling'/);
+  assert.match(store, /onchain_evidence=\$3::jsonb/);
+  assert.match(store, /WHERE id=\$4 AND user_id=\$5 AND status='settling'/);
   assert.match(store, /ON CONFLICT \(payment_id\) DO NOTHING/);
   assert.match(store, /WHERE id=\$1 AND user_id=\$2 AND status='settled'/);
 });
@@ -98,6 +99,8 @@ test("ambiguous settlement is quarantined for reconciliation and never silently 
   const store = source("app/x402-avalanche/store.ts");
 
   assert.match(route, /message\.includes\("ambiguous"\)/);
+  assert.match(route, /createAvalancheMerchantReceiptVerifier/);
+  assert.match(store, /avalanche_x402_onchain_evidence_missing/);
   assert.match(route, /status:\s*"reconciliation_required"/);
   assert.match(route, /message\.includes\("ambiguous"\) \? 503/);
   assert.match(store, /"reconciliation_required"/);

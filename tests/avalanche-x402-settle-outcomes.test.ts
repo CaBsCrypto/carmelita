@@ -7,6 +7,7 @@ import {
   createAvalancheX402Facilitator,
 } from "../app/x402-avalanche/facilitator";
 import type { FrozenAvalancheX402Payment } from "../app/x402-avalanche/payment";
+import type { AvalancheMerchantReceiptVerifier } from "../app/x402-avalanche/merchant";
 import { executeAvalancheX402Settlement } from "../app/x402-avalanche/settlement";
 import {
   bindAvalancheX402Signature,
@@ -22,7 +23,7 @@ class MemorySql {
 
   async query<T = Row>(query: string, params: unknown[] = []) {
     const compact = query.replace(/\s+/g, " ").trim();
-    if (compact.startsWith("CREATE ") || compact.startsWith("CREATE INDEX")) {
+    if (compact.startsWith("CREATE ") || compact.startsWith("CREATE INDEX") || compact.startsWith("ALTER TABLE")) {
       return { rows: [] as T[] };
     }
     if (compact.startsWith("INSERT INTO agent_avalanche_x402_payments")) {
@@ -36,7 +37,7 @@ class MemorySql {
         asset_contract: params[9], pay_to: params[10], amount_atomic: params[11],
         requirement: JSON.parse(String(params[12])), frozen_payment: JSON.parse(String(params[13])),
         signature_header: null, signature_hash: null, status: "prepared",
-        settlement: null, transaction_hash: null, error: null, expires_at: params[14],
+        settlement: null, transaction_hash: null, onchain_evidence: null, error: null, expires_at: params[14],
         settlement_claimed_at: null, created_at: now, updated_at: now,
       };
       this.payments.set(String(params[0]), row);
@@ -66,11 +67,16 @@ class MemorySql {
       return { rows: [row] as T[] };
     }
     if (compact.includes("SET status='settled'")) {
-      const row = this.payments.get(String(params[2]));
-      if (this.conflictOnRecord || !row || row.user_id !== params[3] || row.status !== "settling") {
+      const row = this.payments.get(String(params[3]));
+      if (this.conflictOnRecord || !row || row.user_id !== params[4] || row.status !== "settling") {
         return { rows: [] as T[] };
       }
-      Object.assign(row, { status: "settled", settlement: JSON.parse(String(params[0])), transaction_hash: params[1] });
+      Object.assign(row, {
+        status: "settled",
+        settlement: JSON.parse(String(params[0])),
+        transaction_hash: params[1],
+        onchain_evidence: JSON.parse(String(params[2])),
+      });
       return { rows: [row] as T[] };
     }
     if (compact.includes("SET status=$1, error=$2")) {
@@ -187,10 +193,30 @@ function httpFacilitator(respond: (endpoint: string) => Promise<Response>) {
   return { calls, facilitator: createAvalancheX402Facilitator(fetcher) };
 }
 
-function execute(sql: MemorySql, facilitator: AvalancheX402Facilitator) {
+function validReceiptVerifier(): AvalancheMerchantReceiptVerifier {
+  return {
+    async verify({ settlement, record }) {
+      return {
+        transactionHash: settlement.transaction,
+        network: "eip155:43113",
+        payer: record.authorization.from,
+        payTo: record.authorization.to,
+        asset: record.requirement.asset,
+        amountAtomic: record.authorization.value,
+        blockNumber: "57475367",
+      };
+    },
+  };
+}
+
+function execute(
+  sql: MemorySql,
+  facilitator: AvalancheX402Facilitator,
+  receiptVerifier: AvalancheMerchantReceiptVerifier = validReceiptVerifier(),
+) {
   return executeAvalancheX402Settlement(
     { userId: USER_ID, paymentId: payment.paymentId, payload, requirement },
-    { facilitator, sql },
+    { facilitator, receiptVerifier, sql },
   );
 }
 
@@ -206,9 +232,29 @@ test("a valid settle is recorded with evidence bound to the persisted payment", 
   assert.equal(outcome.payment.transaction_hash, TRANSACTION);
   assert.equal(outcome.payment.error, null);
   assert.equal((outcome.payment.settlement as SettleResponse).transaction, TRANSACTION);
+  assert.equal(outcome.payment.onchain_evidence?.blockNumber, "57475367");
   assert.deepEqual(calls, { verify: 1, settle: 1 });
 });
 
+test("an unverified on-chain receipt is quarantined before delivery", async () => {
+  const sql = new MemorySql();
+  await signedPayment(sql);
+  const { facilitator } = stubFacilitator();
+  const receiptVerifier: AvalancheMerchantReceiptVerifier = {
+    async verify() {
+      throw new Error("merchant_x402_receipt_transfer_not_unique");
+    },
+  };
+
+  await assert.rejects(
+    execute(sql, facilitator, receiptVerifier),
+    /settle_ambiguous:merchant_x402_receipt_transfer_not_unique/,
+  );
+  const row = sql.payments.get(payment.paymentId)!;
+  assert.equal(row.status, "reconciliation_required");
+  assert.equal(row.transaction_hash, null);
+  assert.equal(row.onchain_evidence, null);
+});
 test("an invalid verification fails terminally, maps to a fresh 402 challenge and never settles", async () => {
   const sql = new MemorySql();
   await signedPayment(sql);

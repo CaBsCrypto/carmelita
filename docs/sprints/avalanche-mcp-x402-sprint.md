@@ -147,30 +147,26 @@ Two facts about that settlement are worth separating from the happy path.
 payment still went through, which is what EIP-3009 plus a sponsoring facilitator
 is supposed to do and had never been observed here before.
 
-**The application did not verify this settlement — a human did.** `settlement.ts`
-makes no RPC call; it marks a payment settled on the facilitator's word and
-delivers on a well-formed hash. The verification recorded above was run by hand
-against the RPC. Until `getEvmTransactionEvidence` is ported into `settlement.ts`,
-a `200` from this endpoint is a facilitator claim, not on-chain proof.
-
+**The first settlement was verified manually; the runtime gap is now closed.**
+`settlement.ts` now waits for a confirmed Fuji receipt, verifies the exact USDC
+Transfer log and persists bounded on-chain evidence before delivery. The first
+transaction remains the historical acceptance proof; the new enforcement is
+covered by focused and adversarial tests and still needs one fresh browser run.
 The facilitator named in the discovery row above, `facilitator.ultravioletadao.xyz`,
 is **not** the one this settlement used. The code points at
 `https://x402.0xgasless.com` (`app/x402-avalanche/config.ts:6`), which is what the
 doctor validated and what settled the payment. The discovery row is left as the
 historical record of a different host.
 
-## Explicit blockers
+## Current blockers
 
-The payment flow must remain pre-settlement because:
+1. Run a fresh Privy browser acceptance with the new runtime receipt verifier.
+2. Prove the second-user and zero-debit replay path at the application level.
+3. Add an explicit read-only recovery path for merchant payments parked in
+   `reconciliation_required`.
+4. Complete one CCTP Fuji-to-Stellar Testnet bridge with its two scoped approvals.
 
-1. No protected Fuji resource and no real `PAYMENT-REQUIRED` challenge have been selected and validated.
-2. `@x402/evm@2.18.0` is not installed alongside the existing x402 packages.
-3. Prepared authorization and first signature do not have durable atomic persistence/uniqueness yet.
-4. No v2 `PAYMENT-SIGNATURE` construction, facilitator `/verify`, facilitator `/settle`, settlement receipt, or independent on-chain settlement evidence exists.
-5. Local worktree dependencies remain incomplete, so build, localhost Privy acceptance and browser acceptance are still pending.
-
-No payment, settlement, delivery, mainnet action or fund movement is claimed.
-
+Mainnet, automatic signing and custodial keys remain out of scope.
 ## Definition of done
 
 - MCP client lists tools and performs one official read-only call.

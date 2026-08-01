@@ -1,6 +1,8 @@
 import type { PaymentPayload, PaymentRequirements, SettleResponse } from "@x402/core/types";
 import { BYTES32 } from "./config";
 import type { AvalancheX402Facilitator } from "./facilitator";
+import type { AvalancheMerchantReceiptVerifier } from "./merchant";
+import type { MerchantPaymentRecord } from "./merchant-store";
 import {
   type AvalancheX402Row,
   type SqlClient,
@@ -70,6 +72,35 @@ function settlementBindingProblem(
   return null;
 }
 
+function merchantReceiptRecord(
+  payment: AvalancheX402Row,
+  payload: PaymentPayload,
+): MerchantPaymentRecord {
+  const frozen = payment.frozen_payment;
+  return {
+    merchantId: "carmelita-agent",
+    resourceId: payment.resource_url,
+    paymentIdentifier: payment.id,
+    fingerprint: payment.request_body_hash,
+    signatureHash: payment.signature_hash ?? "",
+    authorization: {
+      from: frozen.payer,
+      to: frozen.payTo,
+      value: frozen.amount,
+      validAfter: frozen.validAfter,
+      validBefore: frozen.validBefore,
+      nonce: frozen.nonce,
+    },
+    requirement: payment.requirement,
+    payload,
+    status: "settling",
+    settlement: null,
+    transactionHash: null,
+    delivery: null,
+    error: null,
+  };
+}
+
 export async function executeAvalancheX402Settlement(
   input: {
     userId: string;
@@ -77,7 +108,11 @@ export async function executeAvalancheX402Settlement(
     payload: PaymentPayload;
     requirement: PaymentRequirements;
   },
-  deps: { facilitator: AvalancheX402Facilitator; sql?: SqlClient },
+  deps: {
+    facilitator: AvalancheX402Facilitator;
+    receiptVerifier: AvalancheMerchantReceiptVerifier;
+    sql?: SqlClient;
+  },
 ): Promise<AvalancheX402SettlementOutcome> {
   const { userId, paymentId } = input;
   const verification = await deps.facilitator.verify(input.payload, input.requirement);
@@ -128,12 +163,32 @@ export async function executeAvalancheX402Settlement(
   const problem = settlementBindingProblem(settlement, payment);
   if (problem !== null) throw await quarantine({ userId, paymentId, cause: problem }, deps.sql);
 
+  let onchainEvidence;
+  try {
+    onchainEvidence = await deps.receiptVerifier.verify({
+      settlement,
+      record: merchantReceiptRecord(payment, input.payload),
+    });
+  } catch (error) {
+    throw await quarantine({
+      userId,
+      paymentId,
+      cause: errorMessage(error, "avalanche_x402_receipt_unverified"),
+    }, deps.sql);
+  }
+
+  const verifiedSettlement: SettleResponse = {
+    ...settlement,
+    network: onchainEvidence.network,
+    payer: onchainEvidence.payer,
+  };
   try {
     payment = await recordAvalancheX402Settlement({
       userId,
       paymentId,
-      settlement,
-      transactionHash: settlement.transaction,
+      settlement: verifiedSettlement,
+      transactionHash: onchainEvidence.transactionHash,
+      onchainEvidence,
     }, deps.sql);
   } catch (error) {
     throw await quarantine({

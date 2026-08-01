@@ -105,7 +105,12 @@ export function createFujiJsonRpcReceiptReader(
   return {
     getChainId: () => client.getChainId(),
     async getTransactionReceipt({ hash }) {
-      const receipt = await client.getTransactionReceipt({ hash });
+      const receipt = await client.waitForTransactionReceipt({
+        hash,
+        confirmations: 1,
+        timeout: 30_000,
+        pollingInterval: 1_000,
+      });
       return {
         transactionHash: receipt.transactionHash,
         status: receipt.status,

@@ -12,6 +12,10 @@ import {
 import { avalancheReportBodyHash, avalancheReportUrl } from "@/app/x402-avalanche/resource";
 import { executeAvalancheX402Settlement } from "@/app/x402-avalanche/settlement";
 import {
+  createAvalancheMerchantReceiptVerifier,
+  createFujiJsonRpcReceiptReader,
+} from "@/app/x402-avalanche/merchant-receipt";
+import {
   bindAvalancheX402Signature,
   deliverAvalancheX402Report,
   findAvalancheX402Payment,
@@ -85,7 +89,12 @@ export async function POST(request: Request) {
       const payload = decodePaymentSignatureHeader(signatureHeader);
       const outcome = await executeAvalancheX402Settlement(
         { userId, paymentId, payload, requirement },
-        { facilitator },
+        {
+          facilitator,
+          receiptVerifier: createAvalancheMerchantReceiptVerifier(
+            createFujiJsonRpcReceiptReader(),
+          ),
+        },
       );
       if (outcome.kind === "verification_failed") return challenge(resourceUrl, config.payTo);
       payment = outcome.payment;
