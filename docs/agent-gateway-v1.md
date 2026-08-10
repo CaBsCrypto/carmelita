@@ -1,8 +1,8 @@
 # Carmelita Agent Gateway v1
 
-Status: normative Testnet target plus an explicit implementation-status ledger.
+Status: implemented and validated Testnet discovery-and-planning gateway. Commit 50c8402 passed the protected Preview acceptance gate.
 
-Implemented now: public capability discovery, authenticated action planning, owned action/receipt reads, a non-custodial safety envelope, Neon-backed replay-safe planning and receipt storage, plus personal access tokens for Remote MCP and REST. Planned next: wallet endpoint, approval continuation URL and OAuth 2.1.
+Implemented now: public capability discovery, authenticated idempotent action planning, owned action/receipt reads, granular personal scopes, a non-custodial safety envelope, Neon-backed persistence and scoped PAT access for Remote MCP and REST. Not implemented through the Gateway: chat mutation, transaction preparation, approval, signing, submission or mainnet execution. Planned next: approval continuation, wallet metadata and OAuth 2.1.
 
 The Agent Gateway lets a user reuse Carmelita from Codex, another remote MCP
 client, or a custom backend without exposing a wallet secret. Version 1 is a
@@ -46,8 +46,7 @@ The MCP server remains the preferred integration for interactive AI agents. It
 SHOULD expose a small stable tool set and use a capability registry instead of
 adding one tool per protocol.
 
-Codex supports Streamable HTTP servers with either bearer-token or OAuth
-authentication. During the PAT phase a local environment variable can be used:
+Codex and other Streamable HTTP MCP clients can use a PAT during the Testnet phase. Keep the raw PAT in a local secret environment variable; never paste it into source control, a prompt, a shared configuration file or logs:
 
 ~~~toml
 [mcp_servers.carmelita]
@@ -56,8 +55,7 @@ bearer_token_env_var = "CARMELITA_MCP_TOKEN"
 default_tools_approval_mode = "writes"
 ~~~
 
-OAuth will replace `bearer_token_env_var` for self-service connections. Codex's
-current MCP configuration is described in the official
+The PAT must contain only the scopes the user selected. OAuth 2.1 with PKCE will replace manual bearer-token setup for public self-service connections. Codex's current MCP configuration is described in the official
 [Model Context Protocol guide](https://learn.chatgpt.com/docs/extend/mcp).
 
 ### REST API
@@ -169,15 +167,17 @@ Minimum personal scopes:
 
 | Scope | Allows | Does not allow |
 | --- | --- | --- |
-| `agent:read` | Personal context, capabilities and owned state | Sending messages or planning |
-| `agent:plan` | Creating immutable Testnet plans | Approving, signing or submitting |
+| `agent:read` | Capability discovery plus owned plan and receipt reads | Profile, wallets, connections, conversation, planning or execution |
+| `agent:plan` | Creating or replaying immutable Testnet plans | Personal context, conversation, approving, signing or submitting |
+| `agent:context` | Profile, public wallet metadata, connections and authority boundary | Conversation, planning, signing or submitting |
+| `agent:conversation` | Recent durable conversation history | Context, planning, signing or submitting |
 
 Scopes MUST be checked at the tool or route boundary. User identity MUST always
 come from the verified token; a caller-supplied `userId` is never authoritative.
 
 ## Testnet credential lifecycle
 
-The temporary self-service credential has the `carmelita_user_` prefix. Only its SHA-256 hash is stored; the raw value is returned once. The default scope is `agent:read`; `agent:plan` must be requested explicitly. External chat is intentionally not exposed because the internal chat can reach approval workflows. Tokens expire after 30 days by default (365 maximum), and a user may keep at most ten active tokens.
+The temporary self-service credential has the `carmelita_user_` prefix. Only its SHA-256 hash is stored; the raw value is returned once. The only default scope is `agent:read`. `agent:plan`, `agent:context` and `agent:conversation` are separate opt-ins and are disabled by default in the UI. External chat mutation is intentionally absent because the first-party chat can reach approval workflows. Tokens expire after 30 days by default (365 maximum), and a user may keep at most ten active tokens.
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
@@ -240,7 +240,7 @@ requirements are documented in the official
 
 ### Approval and receipts
 
-- [ ] Verify a valid plan returns only a same-origin, expiring approval URL.
+- [x] Verify current v1 plans return no approval continuation URL. Future continuation URLs must be same-origin, expiring and derived from server-side action IDs.
 - [ ] Verify a blocked plan never returns an approval URL.
 - [ ] Verify MCP/REST cannot approve, sign or submit the action.
 - [ ] Verify a simulated receipt says `simulated` and contains no transaction hash.
@@ -255,19 +255,20 @@ requirements are documented in the official
 
 ## Definition of done for v1 Testnet
 
-The slice is complete when a new user can create a scoped Testnet credential,
-connect Codex, list capabilities, create an Avalanche Fuji plan, open the
-first-party approval continuation, and read the resulting simulated or verified
-receipt. No call made exclusively through MCP or REST may sign or submit funds.
+The validated v1 slice lets a user create a scoped Testnet credential, connect a compatible MCP client, list capabilities, create or replay an Avalanche Fuji plan, and read owned plan/receipt state. Approval continuation remains future work. No call made exclusively through MCP or REST can prepare a transaction, approve, sign, submit or move funds.
 
 
 ## Preview acceptance evidence
 
-For a protected Vercel Preview, run `npm run gateway:preview:acceptance -- https://<preview-url>`. The harness creates short-lived users and PATs, runs the nine established REST checks plus eleven MCP protocol, discovery, tool-safety, scope, ownership, planning and revocation checks through `vercel curl`, redacts credentials from errors and removes its exact fixtures in `finally`. The expanded 20-check run must pass before promotion.
+Validated source commit: `50c8402`.
 
-The first Preview acceptance passed on 2026-08-03 against deployment `dpl_5csMhcFZ1wXEsJtEbRgz37hcvGVj`: health and Postgres persistence were ready, the public catalog returned 32 Testnet capabilities, and all nine authenticated REST checks passed. Production and `main` were not modified.
+Validated protected Preview deployment: `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`.
 
+The promotion evidence is:
 
-### Pending promotion gate
+- `npm run gateway:neon:smoke`: **6/6 PASS** for durable insert, identical replay, changed-input conflict, cross-user isolation, verified receipt persistence and immutable receipt protection.
+- `npm run gateway:preview:acceptance -- https://<preview-url>`: **20/20 PASS** across REST and MCP initialization, discovery, tool safety, scope denial, idempotency, ownership isolation and PAT revocation.
+- The Preview catalog exposed the Testnet capability registry and every Gateway plan remained non-executable.
+- Deployment Protection was traversed with authenticated `vercel curl`; it proves the deployed protocol and persistence contract, not public OAuth account linking.
 
-The expanded MCP acceptance has been implemented but is not yet recorded as passing. The local Windows sandbox blocked the Node test runner with `EPERM`, and the permission reviewer could not grant an unsandboxed run because its approval quota was exhausted. Until a clean build, full test suite and the 20-check protected Preview acceptance complete, this branch remains **NO-GO for merge**. Deployment Protection also means this proves the protocol through authenticated `vercel curl`, not yet connectivity from an arbitrary external MCP client.
+This evidence approves the discovery-and-planning Testnet Gateway represented by commit `50c8402`. It does not claim approval continuation, wallet signing, transaction submission, mainnet support or arbitrary external-client OAuth connectivity.

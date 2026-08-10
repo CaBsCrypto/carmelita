@@ -53,41 +53,41 @@ https://agente-asistente.vercel.app/api/mcp/agent
 
 Authentication: either the signed-in user's current Privy access token or a scoped personal token with the `carmelita_user_` prefix.
 
-Personal tokens are a Testnet bridge. They are hashed at rest, shown once, revocable and restricted to `agent:read` and optional `agent:plan`. Personal tokens expire after 30 days by default (365 maximum), and each user may keep at most ten active tokens. OAuth 2.1 with PKCE remains the public-launch target.
+Personal tokens are a Testnet bridge. They are hashed at rest, shown once, revocable and default to `agent:read` only. `agent:plan`, `agent:context` and `agent:conversation` require separate user opt-in. Tokens expire after 30 days by default (365 maximum), and each user may keep at most ten active tokens. OAuth 2.1 with PKCE remains the public self-service target.
 
 Current scopes:
 
-- agent:read
-- agent:plan
+- `agent:read` — capability discovery and owned plan/receipt reads
+- `agent:plan` — immutable Testnet planning
+- `agent:context` — profile, wallet metadata, connections and authority boundary
+- `agent:conversation` — recent durable conversation history
 
 Tools:
 
 | Tool | Scope | Behavior |
 | --- | --- | --- |
-| get_agent_context | agent:read | Read profile, wallet metadata, connections and authority limits |
-| get_agent_conversation | agent:read | Read durable conversation history |
+| get_agent_context | agent:context | Read profile, wallet metadata, connections and authority limits |
+| get_agent_conversation | agent:conversation | Read durable conversation history |
 | list_capabilities | agent:read | Discover the versioned Testnet catalog and approval boundaries |
 | get_capability | agent:read | Inspect one capability without executing it |
 | plan_action | agent:plan | Create or replay an idempotent, non-executable Testnet plan |
 
-Example development configuration:
+Safe Codex PAT configuration:
 
-~~~json
-{
-  "mcpServers": {
-    "my-agent-assistant": {
-      "url": "https://agente-asistente.vercel.app/api/mcp/agent",
-      "headers": {
-        "Authorization": "Bearer PRIVY_ACCESS_TOKEN"
-      }
-    }
-  }
-}
+~~~toml
+[mcp_servers.carmelita]
+url = "https://agente-asistente.vercel.app/api/mcp/agent"
+bearer_token_env_var = "CARMELITA_MCP_TOKEN"
+default_tools_approval_mode = "writes"
 ~~~
 
-A Privy browser token is a development bridge, not the final external-client authorization UX. Production requires an OAuth 2.1 authorization server, consent screen, refresh/revocation flow and resource metadata.
+Set `CARMELITA_MCP_TOKEN` in the local process environment. Do not paste a PAT into the TOML file, a prompt, screenshots, source control or logs. For another Streamable HTTP client, inject the same secret at runtime as `Authorization: Bearer <PAT>`.
 
-Payment signing is deliberately absent from this MCP.
+A first-party Privy bearer receives all four scopes for the signed-in Carmelita application. It is not the recommended credential to copy into external clients. PATs provide scoped Testnet access today; OAuth 2.1 with PKCE will provide public account linking, consent, refresh and revocation later.
+
+This MCP exposes discovery and planning only. Chat mutation, transaction preparation, approval, payment signing and submission are deliberately absent.
+
+Validated evidence: commit `50c8402`, protected Preview `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`, Neon persistence smoke **6/6**, and REST/MCP acceptance **20/20**. The evidence validates Testnet protocol behavior through Deployment Protection; OAuth client linking remains future work.
 
 ## Surface 3: service provider admin MCP
 

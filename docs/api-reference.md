@@ -36,7 +36,7 @@ Last reviewed: **July 21, 2026**.
 | `/api/telegram/webhook` | POST | Telegram bot webhook → routes messages into the agent | Shared secret header `x-telegram-bot-api-secret-token` |
 | `/api/telegram/mini/session` | POST | Verify a Mini App `initData` HMAC, report link status | Telegram `initData` HMAC (bot-token signed) |
 | `/api/mcp` | GET, POST, DELETE | Public sandbox MCP server (§2) | Public sandbox |
-| `/api/mcp/agent` | GET, POST, DELETE | Personal-agent MCP server (§2) | Privy bearer → MCP `AuthInfo` |
+| `/api/mcp/agent` | GET, POST, DELETE | Testnet discovery-and-planning MCP server (section 2) | Scoped PAT or first-party Privy bearer → MCP `AuthInfo` |
 | `/api/mcp/provider` | GET, POST, DELETE | Service-provider MCP server (§2) | Scoped provider bearer |
 | `/.well-known/mcp` | GET | Self-describes the three MCP surfaces | Public |
 | `/api/admin/*` | varies | Admin session, provider key issuance, Stellar lab, waitlist ops | Admin identity (cookie or SSO allowlist) |
@@ -59,15 +59,17 @@ Demo only: no wallet signatures, no funds moved, 100 USDC demo cap.
 | `get_receipt` | Fetch execution evidence | No |
 
 ### `/api/mcp/agent` — personal agent (`agent-assistant-personal`)
-Privy bearer or scoped PAT → `agent:read` and optional `agent:plan`; subject `user`. External chat, approval, signing and submission are not exposed.
+A scoped PAT defaults to `agent:read`; `agent:plan`, `agent:context` and `agent:conversation` are explicit opt-ins. A first-party Privy bearer receives all four scopes. Subject type is `user`. Chat mutation, transaction preparation, approval, signing and submission are not exposed.
 
 | Tool | Purpose | Scope |
 | --- | --- | --- |
-| `get_agent_context` | Read profile, wallet metadata, connections and authority boundary | `agent:read` |
-| `get_agent_conversation` | Read the durable conversation | `agent:read` |
+| `get_agent_context` | Read profile, wallet metadata, connections and authority boundary | `agent:context` |
+| `get_agent_conversation` | Read recent durable conversation history | `agent:conversation` |
 | `list_capabilities` / `get_capability` | Discover the versioned Testnet capability catalog | `agent:read` |
 | `list_avalanche_capabilities` / `plan_avalanche_capability` | Inspect Avalanche readiness without preparing a transaction | `agent:read` |
 | `plan_action` | Persist or replay an idempotent Testnet plan; never execute it | `agent:plan` |
+
+The deployed Gateway contract at commit `50c8402` passed Neon persistence smoke **6/6** and protected Preview REST/MCP acceptance **20/20** on deployment `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`. This evidence covers Testnet discovery, planning, isolation, replay and revocation; it does not cover signing, submission, mainnet or OAuth account linking.
 
 ### `/api/mcp/provider` — service provider (`agent-assistant-provider`)
 Scoped provider token (DB-verified); subject `provider`.
