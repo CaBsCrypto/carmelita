@@ -23,6 +23,12 @@ test("health distinguishes sandbox settlement from live Testnet x402", async () 
 test("MCP discovery publishes the same payment boundary", async () => {
   const response = mcpDiscovery(new Request("https://agente-asistente.vercel.app/.well-known/mcp"));
   const body = await response.json();
+  assert.deepEqual(body.surfaces.personalAgent.scopes, [
+    "agent:read",
+    "agent:plan",
+    "agent:context",
+    "agent:conversation",
+  ]);
   assert.equal(body.security.payments.commerceSandbox, "simulated");
   assert.equal(body.security.payments.x402StellarTestnet, "explicit-user-approval");
   assert.equal(body.security.payments.mainnet, "disabled");
