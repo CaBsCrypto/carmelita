@@ -81,6 +81,16 @@ Local test runs without a database use an injected in-memory store. Production a
 
 After migration, run `npm run gateway:neon:smoke`. It inserts one temporary plan and receipt, verifies replay, conflict and ownership behavior against Neon, and deletes the temporary record.
 
+### Distributed limits and minimal audit
+
+- Personal PAT usage is limited to 60 requests per fixed minute per token across REST v1 and personal MCP. PAT creation is limited to 5 attempts per fixed hour per Privy user.
+- Limits use one atomic Neon/Postgres upsert per request, never process memory. Rejected calls return `429` with a stable `Retry-After`; an unavailable limiter fails closed with `503`.
+- REST v1, personal MCP and PAT issuance write best-effort audit events containing only request ID, pseudonymized actor/token identifiers when known, static route, outcome, HTTP status, latency and timestamp.
+- MCP audit is endpoint-level because `mcp-handler` events contain parameters/results without the authenticated subject. The audit therefore leaves `tool` null instead of inspecting or persisting the MCP body.
+- Authorization headers, bearer tokens, request/response bodies, conversations, wallet data and raw errors are never audit fields. Audit failure never replaces the primary API response.
+- Expired rate buckets and old audit rows need a retention/cleanup job before public scale; this is intentionally outside the P0 request path.
+
+
 
 ## Capability contract
 
@@ -250,8 +260,8 @@ requirements are documented in the official
 
 - [ ] Revoke the PAT and prove the next request fails.
 - [ ] Confirm authorization headers and token bodies are absent from logs.
-- [ ] Rate-limit token creation and API calls.
-- [ ] Record auditable tool name, subject, outcome and latency without sensitive input.
+- [x] Rate-limit PAT creation and PAT-authenticated API calls with distributed fixed-window buckets.
+- [x] Record endpoint-level subject, outcome and latency without sensitive input; tool-level MCP audit remains intentionally unavailable.
 
 ## Definition of done for v1 Testnet
 

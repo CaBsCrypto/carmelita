@@ -174,9 +174,9 @@ test("public API has no execute route and requires bearer auth for user state", 
     new URL("../app/api/v1/receipts/[id]/route.ts", import.meta.url),
     "utf8",
   );
-  assert.match(planRoute, /gatewayActor\(request, "agent:(plan|read)"\)/);
-  assert.match(statusRoute, /gatewayActor\(request, "agent:(plan|read)"\)/);
-  assert.match(receiptRoute, /gatewayActor\(request, "agent:(plan|read)"\)/);
+  assert.match(planRoute, /gatewayActor\(request, "agent:(plan|read)", audit\)/);
+  assert.match(statusRoute, /gatewayActor\(request, "agent:(plan|read)", audit\)/);
+  assert.match(receiptRoute, /gatewayActor\(request, "agent:(plan|read)", audit\)/);
   assert.doesNotMatch(planRoute, /sign|submit|execute/i);
 });
 

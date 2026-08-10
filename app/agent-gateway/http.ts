@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { isGatewayRateLimitError } from "@/app/agent-gateway/operations";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 import {
   PERSONAL_MCP_TOKEN_PREFIX,
@@ -15,7 +16,11 @@ export function gatewayHeaders() {
   };
 }
 
-export async function gatewayActor(request: Request, requiredScope: PersonalMcpScope) {
+export async function gatewayActor(
+  request: Request,
+  requiredScope: PersonalMcpScope,
+  audit?: { identify(identity: { actorId?: string; tokenId?: string }): void },
+) {
   const authorization = request.headers.get("authorization") ?? "";
   const [scheme, token] = authorization.split(" ");
   if (scheme?.toLowerCase() !== "bearer" || !token?.trim()) {
@@ -24,10 +29,12 @@ export async function gatewayActor(request: Request, requiredScope: PersonalMcpS
   const rawToken = token.trim();
   if (rawToken.startsWith(PERSONAL_MCP_TOKEN_PREFIX)) {
     const principal = await verifyPersonalMcpToken(rawToken);
+    audit?.identify({ actorId: principal.userId, tokenId: principal.tokenId });
     if (!principal.scopes.includes(requiredScope)) throw new Error("gateway_scope_required");
     return principal.userId;
   }
   const claims = await verifyPrivyAccessToken(rawToken);
+  audit?.identify({ actorId: claims.user_id });
   return claims.user_id;
 }
 
@@ -37,7 +44,11 @@ export function gatewayError(error: unknown) {
     : error instanceof Error
       ? error.message.split(":")[0]
       : "gateway_request_failed";
-  const status = code === "gateway_auth_required" || code.startsWith("privy_") || code === "personal_mcp_token_invalid"
+  const status = isGatewayRateLimitError(error)
+    ? 429
+    : code === "gateway_rate_limit_unavailable" || code === "database_not_configured"
+      ? 503
+      : code === "gateway_auth_required" || code.startsWith("privy_") || code === "personal_mcp_token_invalid"
     ? 401
     : code === "gateway_scope_required"
       ? 403
@@ -54,7 +65,9 @@ export function gatewayError(error: unknown) {
       ...gatewayHeaders(),
       ...(status === 401
         ? { "WWW-Authenticate": 'Bearer realm="carmelita-agent-gateway"' }
-        : {}),
+        : status === 429 && isGatewayRateLimitError(error)
+          ? { "Retry-After": String(error.retryAfterSeconds) }
+          : {}),
     },
   });
 }

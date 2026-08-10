@@ -129,7 +129,7 @@ test("Gateway REST scopes follow least privilege", async () => {
     "utf8",
   );
 
-  assert.match(planRoute, /gatewayActor\(request, "agent:plan"\)/);
-  assert.match(actionRoute, /gatewayActor\(request, "agent:read"\)/);
-  assert.match(receiptRoute, /gatewayActor\(request, "agent:read"\)/);
+  assert.match(planRoute, /gatewayActor\(request, "agent:plan", audit\)/);
+  assert.match(actionRoute, /gatewayActor\(request, "agent:read", audit\)/);
+  assert.match(receiptRoute, /gatewayActor\(request, "agent:read", audit\)/);
 });

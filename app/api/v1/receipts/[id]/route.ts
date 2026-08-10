@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readGatewayReceipt } from "@/app/agent-gateway/service";
+import { createGatewayAudit } from "@/app/agent-gateway/operations";
 import {
   gatewayActor,
   gatewayError,
@@ -13,15 +14,16 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const audit = createGatewayAudit(request, "/api/v1/receipts/:id");
   try {
-    const actorId = await gatewayActor(request, "agent:read");
+    const actorId = await gatewayActor(request, "agent:read", audit);
     const { id } = await context.params;
     const result = await readGatewayReceipt(actorId, id);
-    return NextResponse.json(result, {
+    return audit.complete(NextResponse.json(result, {
       status: result.available ? 200 : 202,
       headers: gatewayHeaders(),
-    });
+    }));
   } catch (error) {
-    return gatewayError(error);
+    return audit.complete(gatewayError(error));
   }
 }

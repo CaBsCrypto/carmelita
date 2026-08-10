@@ -8,8 +8,14 @@ import {
   readGatewayReceipt,
 } from "../app/agent-gateway/service";
 import { NeonGatewayStore } from "../app/agent-gateway/store";
+import {
+  consumeGatewayRateLimit,
+  createGatewayAudit,
+  GatewayRateLimitError,
+  gatewayPseudonym,
+} from "../app/agent-gateway/operations";
 import { getDb } from "../db";
-import { agentGatewayPlans } from "../db/schema";
+import { agentGatewayAuditEvents, agentGatewayPlans, agentGatewayRateLimits } from "../db/schema";
 
 for (const line of readFileSync(".env.migrate", "utf8").split(/\r?\n/)) {
   const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
@@ -22,6 +28,8 @@ const suffix = randomUUID();
 const actorId = `gateway-smoke-${suffix}`;
 const idempotencyKey = `gateway-neon-${suffix}`;
 const store = new NeonGatewayStore();
+const rateSubjectPseudonym = gatewayPseudonym("token", `gateway-smoke-rate-${suffix}`);
+const auditRequestId = `gateway-smoke-audit-${suffix}`;
 
 const input = {
   capabilityId: "stellar.wallet.status",
@@ -80,6 +88,46 @@ try {
     /gateway_receipt_plan_mismatch/,
   );
 
+  const rateNow = new Date();
+  const rateResults = await Promise.all([
+    consumeGatewayRateLimit({ scope: "personal_pat_usage", subjectPseudonym: rateSubjectPseudonym, limit: 2, windowSeconds: 60, now: rateNow }),
+    consumeGatewayRateLimit({ scope: "personal_pat_usage", subjectPseudonym: rateSubjectPseudonym, limit: 2, windowSeconds: 60, now: rateNow }),
+  ]);
+  assert.deepEqual(rateResults.map((result) => result.remaining).sort(), [0, 1]);
+  let retryAfter = 0;
+  await assert.rejects(
+    consumeGatewayRateLimit({ scope: "personal_pat_usage", subjectPseudonym: rateSubjectPseudonym, limit: 2, windowSeconds: 60, now: rateNow }),
+    (error: unknown) => {
+      assert.ok(error instanceof GatewayRateLimitError);
+      retryAfter = error.retryAfterSeconds;
+      return true;
+    },
+  );
+  assert.ok(retryAfter >= 1 && retryAfter <= 60);
+  const [rateBucket] = await getDb().select().from(agentGatewayRateLimits)
+    .where(eq(agentGatewayRateLimits.subjectPseudonym, rateSubjectPseudonym)).limit(1);
+  assert.equal(rateBucket?.requestCount, 3);
+
+  const audit = createGatewayAudit(new Request("https://carmelita.invalid/gateway-neon-smoke", {
+    headers: { "x-request-id": auditRequestId },
+  }), "/gateway-neon-smoke");
+  audit.identify({ actorId, tokenId: `gateway-smoke-token-${suffix}` });
+  const auditedResponse = await audit.complete(new Response(null, { status: 202 }));
+  assert.equal(auditedResponse.headers.get("X-Request-ID"), auditRequestId);
+  const [auditEvent] = await getDb().select().from(agentGatewayAuditEvents)
+    .where(eq(agentGatewayAuditEvents.requestId, auditRequestId)).limit(1);
+  assert.ok(auditEvent);
+  assert.deepEqual(Object.keys(auditEvent).sort(), [
+    "actorPseudonym", "createdAt", "id", "latencyMs", "outcome", "requestId",
+    "route", "status", "tokenPseudonym", "tool",
+  ]);
+  assert.equal(auditEvent.actorPseudonym, gatewayPseudonym("actor", actorId));
+  assert.equal(auditEvent.tokenPseudonym, gatewayPseudonym("token", `gateway-smoke-token-${suffix}`));
+  assert.equal(auditEvent.route, "/gateway-neon-smoke");
+  assert.equal(auditEvent.tool, null);
+  assert.equal(auditEvent.status, 202);
+  assert.equal(auditEvent.outcome, "success");
+  assert.ok(auditEvent.latencyMs >= 0);
   console.log("Neon Gateway smoke: PASS");
   console.log("- durable insert: PASS");
   console.log("- same-input replay: PASS");
@@ -87,8 +135,13 @@ try {
   console.log("- cross-user isolation: PASS");
   console.log("- verified receipt persistence: PASS");
   console.log("- receipt replacement protection: PASS");
+  console.log("- atomic distributed rate bucket and Retry-After: PASS");
+  console.log("- pseudonymized minimal audit persistence: PASS");
 } finally {
-  if (planId) {
-    await getDb().delete(agentGatewayPlans).where(eq(agentGatewayPlans.id, planId));
-  }
+  const cleanup = [
+    getDb().delete(agentGatewayRateLimits).where(eq(agentGatewayRateLimits.subjectPseudonym, rateSubjectPseudonym)),
+    getDb().delete(agentGatewayAuditEvents).where(eq(agentGatewayAuditEvents.requestId, auditRequestId)),
+  ];
+  if (planId) cleanup.push(getDb().delete(agentGatewayPlans).where(eq(agentGatewayPlans.id, planId)));
+  await Promise.all(cleanup);
 }

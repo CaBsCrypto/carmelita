@@ -1,4 +1,5 @@
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { isGatewayRateLimitError } from "@/app/agent-gateway/operations";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 import { verifyServiceProviderToken } from "@/app/services/provider-store";
 import { PERSONAL_MCP_TOKEN_PREFIX, verifyPersonalMcpToken } from "@/app/services/personal-mcp-token-store";
@@ -29,6 +30,22 @@ function unauthorized() {
     },
   });
 }
+function authenticationFailure(error: unknown) {
+  if (isGatewayRateLimitError(error)) {
+    return new Response(JSON.stringify({ error: "gateway_rate_limited" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "Retry-After": String(error.retryAfterSeconds) },
+    });
+  }
+  if (error instanceof Error && (error.message === "gateway_rate_limit_unavailable" || error.message === "database_not_configured")) {
+    return new Response(JSON.stringify({ error: "gateway_rate_limit_unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+  return unauthorized();
+}
+
 
 export async function authenticateMcp(
   request: Request,
@@ -41,8 +58,8 @@ export async function authenticateMcp(
     const authInfo = await verify(token);
     (request as McpRequest).auth = authInfo;
     return handler(request);
-  } catch {
-    return unauthorized();
+  } catch (error) {
+    return authenticationFailure(error);
   }
 }
 

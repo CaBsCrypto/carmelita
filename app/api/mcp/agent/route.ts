@@ -2,6 +2,7 @@ import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { getGatewayCapability, listGatewayCapabilities } from "@/app/agent-gateway/catalog";
 import { createGatewayPlan } from "@/app/agent-gateway/service";
+import { createGatewayAudit } from "@/app/agent-gateway/operations";
 import { GATEWAY_API_VERSION, GATEWAY_ENVIRONMENT } from "@/app/agent-gateway/types";
 import { avalancheCapabilityIdSchema, listAvalancheCapabilities, planAvalancheCapability } from "@/app/avalanche/capability-registry";
 import { searchAvaxSkills } from "@/app/connectors/avaxskills";
@@ -210,7 +211,17 @@ function getHandler() {
 }
 
 async function handle(request: Request) {
-  return authenticateMcp(request, verifyAgentMcpToken, getHandler());
+  const audit = createGatewayAudit(request, "/api/mcp/agent");
+  const response = await authenticateMcp(request, async (token) => {
+    const authInfo = await verifyAgentMcpToken(token);
+    const actorId = typeof authInfo.extra?.userId === "string" ? authInfo.extra.userId : undefined;
+    const tokenId = typeof authInfo.extra?.tokenId === "string" ? authInfo.extra.tokenId : undefined;
+    audit.identify({ actorId, tokenId });
+    return authInfo;
+  }, getHandler());
+  // mcp-handler events include request parameters/results and do not carry the
+  // authenticated subject. Endpoint/outcome audit is the safe minimum here.
+  return audit.complete(response);
 }
 
 export const GET = handle;

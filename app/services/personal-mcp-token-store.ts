@@ -3,6 +3,7 @@ import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { mcpAccessTokens } from "@/db/schema";
 import { ensureMcpProviderSchema } from "@/app/services/provider-migration";
+import { limitPersonalPatUsage } from "@/app/agent-gateway/operations";
 
 export const PERSONAL_MCP_TOKEN_PREFIX = "carmelita_user_";
 export const PERSONAL_MCP_SCOPES = ["agent:read", "agent:plan", "agent:context", "agent:conversation"] as const;
@@ -64,6 +65,7 @@ export async function verifyPersonalMcpToken(rawToken: string) {
   const db = await personalMcpDb();
   const [record] = await db.select().from(mcpAccessTokens).where(eq(mcpAccessTokens.tokenHash, hashPersonalMcpToken(rawToken))).limit(1);
   if (!record || record.subjectType !== "user" || record.status !== "active" || (record.expiresAt && record.expiresAt.getTime() <= Date.now())) throw new Error("personal_mcp_token_invalid");
+  await limitPersonalPatUsage(record.id);
   const scopes = validatePersonalMcpScopes(record.scopes); const usedAt = new Date();
   await db.update(mcpAccessTokens).set({ lastUsedAt: usedAt, updatedAt: usedAt }).where(eq(mcpAccessTokens.id, record.id));
   return { userId: record.subjectId, scopes, expiresAt: record.expiresAt, tokenId: record.id };
