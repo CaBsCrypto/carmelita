@@ -138,10 +138,11 @@ try {
   console.log("- atomic distributed rate bucket and Retry-After: PASS");
   console.log("- pseudonymized minimal audit persistence: PASS");
 } finally {
-  const cleanup = [
+  await Promise.all([
     getDb().delete(agentGatewayRateLimits).where(eq(agentGatewayRateLimits.subjectPseudonym, rateSubjectPseudonym)),
     getDb().delete(agentGatewayAuditEvents).where(eq(agentGatewayAuditEvents.requestId, auditRequestId)),
-  ];
-  if (planId) cleanup.push(getDb().delete(agentGatewayPlans).where(eq(agentGatewayPlans.id, planId)));
-  await Promise.all(cleanup);
+  ]);
+  if (planId) {
+    await getDb().delete(agentGatewayPlans).where(eq(agentGatewayPlans.id, planId));
+  }
 }
