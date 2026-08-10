@@ -72,7 +72,7 @@ Status meanings are shared across all project documentation:
 | Travala hotel discovery | Live, read-only | Public Travala Travel MCP |
 | Intent, policy and replay protection | Sandbox | Durable intent and one receipt per execution |
 | Public inbound MCP | Sandbox | Seven tools at /api/mcp |
-| Personal agent MCP | Development foundation | Privy bearer identity at /api/mcp/agent |
+| Personal Agent Gateway | Validated Testnet discovery + planning | Scoped PATs, granular context/conversation opt-ins, Neon replay safety; no signing or submission |
 | Service provider MCP | Development foundation | Scoped catalog administration at /api/mcp/provider |
 | Chrome WebMCP | Experimental sandbox | Offer discovery and intent preparation |
 | Wallet-signed Stellar transaction | Live Testnet proof | A Privy-signed DeFindex Testnet deposit was confirmed on-chain (transaction hash), server-verified, with a durable receipt |
@@ -216,7 +216,7 @@ Payment and fulfillment are separate. A transaction hash proves network settleme
 
 ## Bidirectional MCP gateway
 
-The Model Context Protocol runs in **both directions**. Other agents and apps use us (inbound); we use other apps (outbound). Every inbound mutation and every outbound call flows through the same freeze → policy → execute-once → evidence path. Discovery is public at [`/.well-known/mcp`](https://agente-asistente.vercel.app/.well-known/mcp).
+The Model Context Protocol runs in **both directions**. Other agents and apps can use Carmelita's inbound Testnet discovery-and-planning Gateway, while Carmelita uses outbound MCP/API connectors. The personal Gateway does not expose chat mutation, approval, transaction preparation, signing or submission. Discovery is public at [`/.well-known/mcp`](https://agente-asistente.vercel.app/.well-known/mcp).
 
 ~~~mermaid
 flowchart LR
@@ -227,7 +227,7 @@ flowchart LR
     end
     subgraph CORE["Carmelita"]
         P1["/api/mcp<br/>public sandbox"]
-        P2["/api/mcp/agent<br/>Privy bearer"]
+        P2["/api/mcp/agent<br/>scoped PAT or Privy"]
         P3["/api/mcp/provider<br/>scoped key"]
         ENG["Router + policy + evidence"]
     end
@@ -253,10 +253,12 @@ flowchart LR
 | Surface | Auth | For | Highlights |
 | --- | --- | --- | --- |
 | `POST /api/mcp` | None (public sandbox) | Any external agent | Seven commerce tools (see below) |
-| `POST /api/mcp/agent` | Privy bearer (`agent:read`, `agent:chat`) | A user's own agent | `get_agent_context`, `get_agent_conversation`, `send_agent_message`; read-only tools only, payment signing never exposed |
+| `POST /api/mcp/agent` | Scoped PAT or first-party Privy bearer | A user's external agent | `agent:read` discovery/owned state; optional `agent:plan`, `agent:context` and `agent:conversation`; no chat mutation, approval, signing or submission |
 | `POST /api/mcp/provider` | Scoped provider key (`aap_provider_…`) | Merchants / providers | `get_service_provider`, `list_service_offers`, `upsert_service_offer`, `set_service_offer_status`; keys issued at `/admin/providers`, stored only as SHA-256 hashes |
 
 Chrome **WebMCP** registers `search_agent_offers` and `prepare_commerce_intent`; wallet authorization and execution are intentionally excluded from the page context.
+
+The personal Gateway at commit `50c8402` passed Neon durability smoke **6/6** and protected Preview REST/MCP acceptance **20/20** on deployment `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`. The result validates Testnet discovery, planning, isolation, replay and revocation—not transaction execution or public OAuth linking.
 
 ### Outbound — how we use other apps
 
@@ -373,7 +375,7 @@ npm run db:migrate
 | /admin/stellar | Founder Stellar test lab |
 | /admin/providers | Provision scoped service-provider MCP keys |
 | /api/mcp | Public sandbox MCP server |
-| /api/mcp/agent | Authenticated personal agent MCP |
+| /api/mcp/agent | Scoped Testnet discovery-and-planning MCP; no signing or submission |
 | /api/mcp/provider | Scoped provider catalog MCP |
 | /api/commerce | Commerce orchestration API |
 | /api/health | Runtime and persistence status |

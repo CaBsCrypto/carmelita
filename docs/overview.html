@@ -738,9 +738,9 @@ flowchart LR
           </tr>
           <tr>
             <td><span class="name">/api/mcp/agent</span><br><span class="pill validate">Personal</span></td>
-            <td>Privy bearer (<span class="mono">agent:read, agent:chat</span>)</td>
+            <td>Privy bearer or PAT (<span class="mono">agent:read, agent:plan</span>)</td>
             <td>A user's own agent</td>
-            <td><code>get_agent_context</code> · <code>get_agent_conversation</code> · <code>send_agent_message</code> — read-only tools only; payment signing is never exposed</td>
+            <td><code>get_agent_context</code> · <code>list_capabilities</code> · <code>plan_action</code> — external chat, approval and signing are never exposed</td>
           </tr>
           <tr>
             <td><span class="name">/api/mcp/provider</span><br><span class="pill validate">Provider</span></td>

@@ -1,12 +1,17 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { getGatewayCapability, listGatewayCapabilities } from "@/app/agent-gateway/catalog";
+import { createGatewayPlan } from "@/app/agent-gateway/service";
+import { createGatewayAudit } from "@/app/agent-gateway/operations";
+import { GATEWAY_API_VERSION, GATEWAY_ENVIRONMENT } from "@/app/agent-gateway/types";
 import { avalancheCapabilityIdSchema, listAvalancheCapabilities, planAvalancheCapability } from "@/app/avalanche/capability-registry";
 import { searchAvaxSkills } from "@/app/connectors/avaxskills";
-import { getAgentConversation, sendAgentMessage } from "@/app/agent-chat-store";
+import { getAgentConversation } from "@/app/agent-chat-store";
 import { getAgentMcpContext } from "@/app/mcp/agent-context";
 import {
   authenticateMcp,
   requireMcpSubject,
+  publicMcpErrorCode,
   verifyAgentMcpToken,
 } from "@/app/mcp/auth";
 
@@ -22,7 +27,7 @@ const fail = (error: unknown) => ({
     {
       type: "text" as const,
       text: JSON.stringify({
-        error: error instanceof Error ? error.message : "unknown_error",
+        error: publicMcpErrorCode(error),
       }),
     },
   ],
@@ -52,7 +57,7 @@ function getHandler() {
               extra.authInfo,
               "user",
               "userId",
-              "agent:read",
+              "agent:context",
             );
             return ok(await getAgentMcpContext(userId));
           } catch (error) {
@@ -80,7 +85,7 @@ function getHandler() {
               extra.authInfo,
               "user",
               "userId",
-              "agent:read",
+              "agent:conversation",
             );
             return ok(await getAgentConversation(userId));
           } catch (error) {
@@ -141,37 +146,63 @@ function getHandler() {
       );
 
       server.registerTool(
-        "send_agent_message",
+        "list_capabilities",
         {
-          title: "Send a message to the personal agent",
-          description:
-            "Use the authenticated user's agent and connected read-only tools. Payment signing is not exposed.",
-          inputSchema: { message: z.string().trim().min(1).max(2000) },
-          annotations: {
-            readOnlyHint: false,
-            destructiveHint: false,
-            idempotentHint: false,
-            openWorldHint: true,
-          },
+          title: "List Carmelita capabilities",
+          description: "Discover Testnet-only Stellar, Avalanche and offchain capabilities, including status and approval boundaries.",
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
         },
-        async ({ message }, extra) => {
+        async (extra) => {
           try {
-            const userId = requireMcpSubject(
-              extra.authInfo,
-              "user",
-              "userId",
-              "agent:chat",
-            );
-            return ok(await sendAgentMessage(userId, message));
-          } catch (error) {
-            return fail(error);
-          }
+            requireMcpSubject(extra.authInfo, "user", "userId", "agent:read");
+            return ok({ apiVersion: GATEWAY_API_VERSION, environment: GATEWAY_ENVIRONMENT, capabilities: listGatewayCapabilities() });
+          } catch (error) { return fail(error); }
         },
       );
+
+      server.registerTool(
+        "get_capability",
+        {
+          title: "Get one Carmelita capability",
+          description: "Inspect one capability's status, requirements, evidence and approval boundary without executing it.",
+          inputSchema: { capabilityId: z.string().trim().min(3).max(120) },
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+        },
+        async ({ capabilityId }, extra) => {
+          try {
+            requireMcpSubject(extra.authInfo, "user", "userId", "agent:read");
+            return ok(getGatewayCapability(capabilityId));
+          } catch (error) { return fail(error); }
+        },
+      );
+
+      server.registerTool(
+        "plan_action",
+        {
+          title: "Plan a Carmelita action",
+          description: "Create or replay an idempotent Testnet plan. It never prepares, signs or submits a transaction; sensitive actions continue inside Carmelita with Privy.",
+          inputSchema: {
+            capabilityId: z.string().trim().min(3).max(120),
+            idempotencyKey: z.string().trim().min(8).max(128),
+            parameters: z.record(z.string(), z.unknown()).default({}),
+            context: z.object({ requirementsSatisfied: z.array(z.string().trim().min(1).max(80)).max(30) }).strict().optional(),
+          },
+          annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+        },
+        async (input, extra) => {
+          try {
+            const userId = requireMcpSubject(extra.authInfo, "user", "userId", "agent:plan");
+            return ok(await createGatewayPlan(userId, input));
+          } catch (error) { return fail(error); }
+        },
+      );
+
     },
     { serverInfo: { name: "agent-assistant-personal", version: "0.1.0" } },
     {
-      basePath: "/api/mcp",
+      // This route is named /api/mcp/agent. The basePath option always
+      // appends /mcp, which made the handler listen on /api/mcp/mcp.
+      streamableHttpEndpoint: "/api/mcp/agent",
       maxDuration: 60,
       disableSse: true,
       verboseLogs: process.env.NODE_ENV !== "production",
@@ -180,7 +211,17 @@ function getHandler() {
 }
 
 async function handle(request: Request) {
-  return authenticateMcp(request, verifyAgentMcpToken, getHandler());
+  const audit = createGatewayAudit(request, "/api/mcp/agent");
+  const response = await authenticateMcp(request, async (token) => {
+    const authInfo = await verifyAgentMcpToken(token);
+    const actorId = typeof authInfo.extra?.userId === "string" ? authInfo.extra.userId : undefined;
+    const tokenId = typeof authInfo.extra?.tokenId === "string" ? authInfo.extra.tokenId : undefined;
+    audit.identify({ actorId, tokenId });
+    return authInfo;
+  }, getHandler());
+  // mcp-handler events include request parameters/results and do not carry the
+  // authenticated subject. Endpoint/outcome audit is the safe minimum here.
+  return audit.complete(response);
 }
 
 export const GET = handle;

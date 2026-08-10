@@ -1,8 +1,18 @@
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { isGatewayRateLimitError } from "@/app/agent-gateway/operations";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 import { verifyServiceProviderToken } from "@/app/services/provider-store";
+import { PERSONAL_MCP_TOKEN_PREFIX, verifyPersonalMcpToken } from "@/app/services/personal-mcp-token-store";
 
 type McpRequest = Request & { auth?: AuthInfo };
+
+export function publicMcpErrorCode(error: unknown) {
+  if (!(error instanceof Error)) return "mcp_request_failed";
+  const code = error.message.split(":", 1)[0]?.trim() ?? "";
+  return /^[a-z][a-z0-9_]{2,80}$/.test(code)
+    ? code
+    : "mcp_request_failed";
+}
 
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") ?? "";
@@ -20,6 +30,22 @@ function unauthorized() {
     },
   });
 }
+function authenticationFailure(error: unknown) {
+  if (isGatewayRateLimitError(error)) {
+    return new Response(JSON.stringify({ error: "gateway_rate_limited" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "Retry-After": String(error.retryAfterSeconds) },
+    });
+  }
+  if (error instanceof Error && (error.message === "gateway_rate_limit_unavailable" || error.message === "database_not_configured")) {
+    return new Response(JSON.stringify({ error: "gateway_rate_limit_unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+  return unauthorized();
+}
+
 
 export async function authenticateMcp(
   request: Request,
@@ -32,19 +58,36 @@ export async function authenticateMcp(
     const authInfo = await verify(token);
     (request as McpRequest).auth = authInfo;
     return handler(request);
-  } catch {
-    return unauthorized();
+  } catch (error) {
+    return authenticationFailure(error);
   }
 }
 
 export async function verifyAgentMcpToken(token: string): Promise<AuthInfo> {
+  if (token.startsWith(PERSONAL_MCP_TOKEN_PREFIX)) {
+    const principal = await verifyPersonalMcpToken(token);
+    return { token, clientId: principal.userId, scopes: principal.scopes,
+      expiresAt: principal.expiresAt ? Math.floor(principal.expiresAt.getTime() / 1000) : undefined,
+      extra: { subjectType: "user", userId: principal.userId, tokenId: principal.tokenId } };
+  }
   const claims = await verifyPrivyAccessToken(token);
   return {
     token,
     clientId: claims.user_id,
-    scopes: ["agent:read", "agent:chat"],
+    scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
     extra: { subjectType: "user", userId: claims.user_id },
   };
+}
+
+export async function verifyAgentUserToken(token: string, requiredScope?: string) {
+  const authInfo = await verifyAgentMcpToken(token);
+  const userId = requireMcpSubject(
+    authInfo,
+    "user",
+    "userId",
+    requiredScope,
+  );
+  return { userId, scopes: authInfo.scopes, expiresAt: authInfo.expiresAt };
 }
 
 export async function verifyProviderMcpToken(token: string): Promise<AuthInfo> {

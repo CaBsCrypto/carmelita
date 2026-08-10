@@ -39,7 +39,7 @@ test("personal MCP exposes discovery and planning without execution", async () =
   assert.match(source, /list_avalanche_capabilities/);
   assert.match(source, /plan_avalanche_capability/);
   assert.match(source, /readOnlyHint: true/);
-  const section = source.slice(source.indexOf("list_avalanche_capabilities"), source.indexOf("send_agent_message"));
+  const section = source.slice(source.indexOf("list_avalanche_capabilities"));
   assert.doesNotMatch(section, /sendTransaction|signTypedData|broadcast\s*\(|privateKey/i);
 });
 

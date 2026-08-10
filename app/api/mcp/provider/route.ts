@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   authenticateMcp,
   requireMcpSubject,
+  publicMcpErrorCode,
   verifyProviderMcpToken,
 } from "@/app/mcp/auth";
 import {
@@ -24,7 +25,7 @@ const fail = (error: unknown) => ({
     {
       type: "text" as const,
       text: JSON.stringify({
-        error: error instanceof Error ? error.message : "unknown_error",
+        error: publicMcpErrorCode(error),
       }),
     },
   ],
@@ -180,7 +181,9 @@ function getHandler() {
     },
     { serverInfo: { name: "agent-assistant-provider", version: "0.1.0" } },
     {
-      basePath: "/api/mcp",
+      // Keep the transport endpoint aligned with this concrete Next.js route.
+      // A basePath would append /mcp and make /api/mcp/provider return 404.
+      streamableHttpEndpoint: "/api/mcp/provider",
       maxDuration: 60,
       disableSse: true,
       verboseLogs: process.env.NODE_ENV !== "production",

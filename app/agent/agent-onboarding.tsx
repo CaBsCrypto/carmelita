@@ -6,6 +6,7 @@ import { usePrivy, useUser } from "@privy-io/react-auth";
 import AgentChat from "./agent-chat";
 import AgentMemoryVault from "./agent-memory-vault";
 import WalletCenter from "./wallet-center";
+import AgentExternalAccess from "./agent-external-access";
 import { useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 
@@ -339,6 +340,8 @@ function PrivyAgent({
           getAccessToken={getAccessToken}
         />
         <AgentMemoryVault getAccessToken={getAccessToken} />
+
+        <AgentExternalAccess locale={locale} getAccessToken={getAccessToken} />
 
         <WalletCenter
           locale={locale}

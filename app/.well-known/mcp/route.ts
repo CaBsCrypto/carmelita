@@ -16,10 +16,10 @@ export function GET(request: Request) {
       },
       personalAgent: {
         endpoint: origin + "/api/mcp/agent",
-        authentication: "Privy access token bearer bridge",
-        scopes: ["agent:read", "agent:chat"],
+        authentication: "Privy bearer bridge or scoped carmelita_user_ personal token",
+        scopes: ["agent:read", "agent:chat", "agent:plan"],
         purpose:
-          "Use the authenticated user's agent, context and connected read-only tools.",
+          "Use the authenticated user's context, connected tools and non-executing Testnet action planner.",
       },
       serviceProvider: {
         endpoint: origin + "/api/mcp/provider",
@@ -28,6 +28,13 @@ export function GET(request: Request) {
         purpose:
           "Create, update, publish, pause and archive provider-owned service offers.",
       },
+    },
+    agentApi: {
+      baseEndpoint: origin + "/api/v1",
+      discovery: origin + "/api/v1/capabilities",
+      authentication: "scoped personal bearer token for user state and planning",
+      environment: "testnet",
+      execution: "disabled; approvals and signing remain inside Carmelita with Privy",
     },
     outboundConnectors: {
       description:
@@ -42,7 +49,8 @@ export function GET(request: Request) {
         mainnet: "disabled",
       },
       providerTokens: "SHA-256 hashes at rest; raw token returned once",
-      oauth: "MCP OAuth 2.1 discovery remains a production milestone",
+      personalTokens: "SHA-256 hashes at rest; raw token returned once",
+      oauth: "OAuth 2.1 remains the public production milestone; scoped PAT is the Testnet bridge",
     },
   });
 }
