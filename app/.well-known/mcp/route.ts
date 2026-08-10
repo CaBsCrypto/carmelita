@@ -5,7 +5,7 @@ export function GET(request: Request) {
   return NextResponse.json({
     name: "agent-assistant MCP gateway",
     description:
-      "Bidirectional MCP gateway for personal agents, service providers and commerce orchestration.",
+      "MCP gateway for a public sandbox, personal Testnet discovery and planning, and service-provider catalogs.",
     transport: "streamable-http",
     surfaces: {
       sandbox: {
@@ -17,9 +17,9 @@ export function GET(request: Request) {
       personalAgent: {
         endpoint: origin + "/api/mcp/agent",
         authentication: "Privy bearer bridge or scoped carmelita_user_ personal token",
-        scopes: ["agent:read", "agent:chat", "agent:plan"],
+        scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
         purpose:
-          "Use the authenticated user's context, connected tools and non-executing Testnet action planner.",
+          "Read authenticated context and conversation, discover capabilities and create non-executable Testnet plans.",
       },
       serviceProvider: {
         endpoint: origin + "/api/mcp/provider",
@@ -34,7 +34,7 @@ export function GET(request: Request) {
       discovery: origin + "/api/v1/capabilities",
       authentication: "scoped personal bearer token for user state and planning",
       environment: "testnet",
-      execution: "disabled; approvals and signing remain inside Carmelita with Privy",
+      execution: "disabled through the Gateway; no approval, transaction preparation, signing or submission",
     },
     outboundConnectors: {
       description:
