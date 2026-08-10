@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { listGatewayCapabilities } from "../app/agent-gateway/catalog";
+import { gatewayError } from "../app/agent-gateway/http";
 import { InMemoryGatewayStore } from "../app/agent-gateway/store";
 import {
   createGatewayPlan,
@@ -177,4 +178,60 @@ test("public API has no execute route and requires bearer auth for user state", 
   assert.match(statusRoute, /gatewayActor\(request, "agent:(plan|read)"\)/);
   assert.match(receiptRoute, /gatewayActor\(request, "agent:(plan|read)"\)/);
   assert.doesNotMatch(planRoute, /sign|submit|execute/i);
+});
+
+test("planning rejects mainnet and incompatible network overrides", async () => {
+  const store = new InMemoryGatewayStore();
+  const base = {
+    capabilityId: "stellar.wallet.status",
+    idempotencyKey: "gateway-network-key-001",
+    context: { requirementsSatisfied: ["stellar_wallet"] },
+  };
+  await assert.rejects(
+    createGatewayPlan("network-user", { ...base, parameters: { network: "stellar:mainnet" } }, store),
+    /gateway_network_override_rejected/,
+  );
+  await assert.rejects(
+    createGatewayPlan("network-user", { ...base, idempotencyKey: "gateway-network-key-002", parameters: { chainId: 1 } }, store),
+    /gateway_network_override_rejected/,
+  );
+  await assert.rejects(
+    createGatewayPlan("network-user", { ...base, idempotencyKey: "gateway-network-key-006", parameters: { environment: "production" } }, store),
+    /gateway_network_override_rejected/,
+  );
+});
+
+test("planning accepts only the capability network and Fuji chain ID", async () => {
+  const store = new InMemoryGatewayStore();
+  const stellar = await createGatewayPlan("network-user", {
+    capabilityId: "stellar.wallet.status",
+    idempotencyKey: "gateway-network-key-003",
+    parameters: { network: "stellar:testnet", environment: "testnet" },
+    context: { requirementsSatisfied: ["stellar_wallet"] },
+  }, store);
+  assert.equal(stellar.plan.environment, "testnet");
+
+  const fuji = await createGatewayPlan("network-user", {
+    capabilityId: "x402.report.purchase",
+    idempotencyKey: "gateway-network-key-004",
+    parameters: { network: "avalanche:fuji", chainId: 43113 },
+    context: { requirementsSatisfied: ["evm_wallet", "fuji_usdc"] },
+  }, store);
+  assert.equal(fuji.capability.network, "avalanche:fuji");
+
+  await assert.rejects(
+    createGatewayPlan("network-user", {
+      capabilityId: "x402.report.purchase",
+      idempotencyKey: "gateway-network-key-005",
+      parameters: { network: "avalanche:fuji", chainId: 43114 },
+      context: { requirementsSatisfied: ["evm_wallet", "fuji_usdc"] },
+    }, store),
+    /gateway_network_override_rejected/,
+  );
+});
+
+test("network override rejection is a stable HTTP 400", async () => {
+  const response = gatewayError(new Error("gateway_network_override_rejected:private detail"));
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: "gateway_network_override_rejected" });
 });

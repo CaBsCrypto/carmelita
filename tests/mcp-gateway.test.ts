@@ -69,3 +69,20 @@ test("MCP errors expose stable codes without internal details", () => {
   assert.equal(publicMcpErrorCode(new Error('relation "secret_table" does not exist')), "mcp_request_failed");
   assert.equal(publicMcpErrorCode({ unexpected: true }), "mcp_request_failed");
 });
+
+test("agent:read cannot access opted-in personal data", () => {
+  const readOnly: AuthInfo = {
+    token: "hidden",
+    clientId: "did:privy:read-only",
+    scopes: ["agent:read"],
+    extra: { subjectType: "user", userId: "did:privy:read-only" },
+  };
+  assert.throws(
+    () => requireMcpSubject(readOnly, "user", "userId", "agent:context"),
+    /mcp_scope_required:agent:context/,
+  );
+  assert.throws(
+    () => requireMcpSubject(readOnly, "user", "userId", "agent:conversation"),
+    /mcp_scope_required:agent:conversation/,
+  );
+});

@@ -5,7 +5,7 @@ import { mcpAccessTokens } from "@/db/schema";
 import { ensureMcpProviderSchema } from "@/app/services/provider-migration";
 
 export const PERSONAL_MCP_TOKEN_PREFIX = "carmelita_user_";
-export const PERSONAL_MCP_SCOPES = ["agent:read", "agent:plan"] as const;
+export const PERSONAL_MCP_SCOPES = ["agent:read", "agent:plan", "agent:context", "agent:conversation"] as const;
 export type PersonalMcpScope = (typeof PERSONAL_MCP_SCOPES)[number];
 const DEFAULT_SCOPES: PersonalMcpScope[] = ["agent:read"];
 export const MAX_ACTIVE_PERSONAL_MCP_TOKENS = 10;

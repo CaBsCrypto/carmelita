@@ -45,7 +45,7 @@ export function gatewayError(error: unknown) {
         ? 404
         : code === "gateway_idempotency_conflict"
           ? 409
-          : code === "invalid_gateway_request" || code === "gateway_parameters_too_large"
+          : code === "invalid_gateway_request" || code === "gateway_parameters_too_large" || code === "gateway_network_override_rejected"
             ? 400
             : 500;
   return NextResponse.json({ error: code }, {

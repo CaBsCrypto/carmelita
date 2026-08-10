@@ -57,7 +57,7 @@ export async function verifyAgentMcpToken(token: string): Promise<AuthInfo> {
   return {
     token,
     clientId: claims.user_id,
-    scopes: ["agent:read", "agent:plan"],
+    scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
     extra: { subjectType: "user", userId: claims.user_id },
   };
 }

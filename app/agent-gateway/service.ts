@@ -15,6 +15,34 @@ import {
 const PLAN_TTL_MS = 15 * 60_000;
 const MAX_PARAMETERS_BYTES = 16 * 1024;
 
+function assertCompatibleNetworkParameters(
+  capabilityNetwork: string,
+  parameters: Record<string, unknown>,
+) {
+  if (Object.hasOwn(parameters, "network")) {
+    const requested = parameters.network;
+    if (typeof requested !== "string" || requested.trim().toLowerCase() !== capabilityNetwork) {
+      throw new Error("gateway_network_override_rejected");
+    }
+  }
+  if (Object.hasOwn(parameters, "environment")) {
+    const requested = parameters.environment;
+    if (typeof requested !== "string" || requested.trim().toLowerCase() !== "testnet") {
+      throw new Error("gateway_network_override_rejected");
+    }
+  }
+  if (Object.hasOwn(parameters, "chainId")) {
+    const requested = parameters.chainId;
+    const normalized = typeof requested === "number"
+      ? String(requested)
+      : typeof requested === "string"
+        ? requested.trim().toLowerCase()
+        : "";
+    if (!capabilityNetwork.includes("avalanche:fuji") || !["43113", "0xa869"].includes(normalized)) {
+      throw new Error("gateway_network_override_rejected");
+    }
+  }
+}
 function stable(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
   if (value && typeof value === "object") {
@@ -57,6 +85,7 @@ export async function createGatewayPlan(
     throw new Error("gateway_parameters_too_large");
   }
   const capability = getGatewayCapability(input.capabilityId);
+  assertCompatibleNetworkParameters(capability.network, input.parameters);
   const requestFingerprint = fingerprint(actorId, input);
 
   const declared = new Set(input.context?.requirementsSatisfied ?? []);

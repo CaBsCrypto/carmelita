@@ -56,7 +56,7 @@ function getHandler() {
               extra.authInfo,
               "user",
               "userId",
-              "agent:read",
+              "agent:context",
             );
             return ok(await getAgentMcpContext(userId));
           } catch (error) {
@@ -84,7 +84,7 @@ function getHandler() {
               extra.authInfo,
               "user",
               "userId",
-              "agent:read",
+              "agent:conversation",
             );
             return ok(await getAgentConversation(userId));
           } catch (error) {

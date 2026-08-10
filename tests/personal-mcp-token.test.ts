@@ -12,10 +12,10 @@ test("personal MCP credentials use a recognizable high-entropy prefix and SHA-25
 });
 test("personal MCP scopes are allowlisted and deduplicated", () => {
   assert.deepEqual(validatePersonalMcpScopes(), ["agent:read"]);
-  assert.deepEqual(validatePersonalMcpScopes(["agent:read", "agent:read", "agent:plan"]), ["agent:read", "agent:plan"]);
+  assert.deepEqual(validatePersonalMcpScopes(["agent:read", "agent:read", "agent:plan", "agent:context", "agent:conversation"]), ["agent:read", "agent:plan", "agent:context", "agent:conversation"]);
   assert.throws(() => validatePersonalMcpScopes(["agent:chat"]), /personal_mcp_scope_invalid/);
   assert.throws(() => validatePersonalMcpScopes(["wallet:secret:read"]), /personal_mcp_scope_invalid/);
-  assert.deepEqual(PERSONAL_MCP_SCOPES, ["agent:read", "agent:plan"]);
+  assert.deepEqual(PERSONAL_MCP_SCOPES, ["agent:read", "agent:plan", "agent:context", "agent:conversation"]);
 });
 test("personal MCP token API is Privy authenticated, same-origin and no-store", async () => {
   const collection = await readFile(new URL("../app/api/agent/mcp-tokens/route.ts", import.meta.url), "utf8");
@@ -71,4 +71,18 @@ test("personal PATs have bounded expiry and active-token count", async () => {
   assert.match(store, /MAX_EXPIRATION_MS/);
   assert.match(store, /personal_mcp_token_limit_reached/);
   assert.match(api, /expiresInDays: z\.number\(\)\.int\(\)\.min\(1\)\.max\(365\)\.default\(30\)/);
+});
+
+test("sensitive personal MCP tools require explicit scopes and UI opt-in", async () => {
+  const route = await readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8");
+  const auth = await readFile(new URL("../app/mcp/auth.ts", import.meta.url), "utf8");
+  const ui = await readFile(new URL("../app/agent/agent-external-access.tsx", import.meta.url), "utf8");
+  assert.match(route, /"get_agent_context"[\s\S]*?"agent:context"/);
+  assert.match(route, /"get_agent_conversation"[\s\S]*?"agent:conversation"/);
+  assert.match(auth, /scopes: \["agent:read", "agent:plan", "agent:context", "agent:conversation"\]/);
+  assert.match(ui, /plan,setPlan.*useState\(false\)/);
+  assert.match(ui, /context,setContext.*useState\(false\)/);
+  assert.match(ui, /conversation,setConversation.*useState\(false\)/);
+  assert.match(ui, /context\?\["agent:context"\]/);
+  assert.match(ui, /conversation\?\["agent:conversation"\]/);
 });
