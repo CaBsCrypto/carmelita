@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { requireMcpSubject } from "@/app/mcp/auth";
@@ -54,4 +55,10 @@ test("personal agent MCP requires a user principal", () => {
     requireMcpSubject(user, "user", "userId", "agent:plan"),
     "did:privy:user",
   );
+});
+
+test("provider MCP handler listens on its actual Next.js route", async () => {
+  const route = await readFile(new URL("../app/api/mcp/provider/route.ts", import.meta.url), "utf8");
+  assert.match(route, /streamableHttpEndpoint: "\/api\/mcp\/provider"/);
+  assert.doesNotMatch(route, /basePath: "\/api\/mcp"/);
 });

@@ -57,6 +57,12 @@ test("external MCP cannot reach the mutating chat runtime", async () => {
   assert.match(planTool, /destructiveHint: false/);
 });
 
+test("personal MCP handler listens on its actual Next.js route", async () => {
+  const route = await readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8");
+  assert.match(route, /streamableHttpEndpoint: "\/api\/mcp\/agent"/);
+  assert.doesNotMatch(route, /basePath: "\/api\/mcp"/);
+});
+
 test("personal PATs have bounded expiry and active-token count", async () => {
   const store = await readFile(new URL("../app/services/personal-mcp-token-store.ts", import.meta.url), "utf8");
   const api = await readFile(new URL("../app/api/agent/mcp-tokens/route.ts", import.meta.url), "utf8");

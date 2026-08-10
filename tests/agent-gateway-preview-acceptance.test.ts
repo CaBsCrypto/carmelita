@@ -72,3 +72,16 @@ test("Preview acceptance accepts positional and named deployment URLs", () => {
   assert.equal(deploymentArg(["node", "script", "https://preview.vercel.app"]), "https://preview.vercel.app");
   assert.equal(deploymentArg(["node", "script", "--deployment", "https://named.vercel.app"]), "https://named.vercel.app");
 });
+
+test("Preview acceptance preserves HTTP status for non-JSON bodies", () => {
+  assert.deepEqual(
+    parseVercelCurlOutput('<!doctype html><title>Not Found</title>\n__CARMELITA_HTTP_STATUS__:404'),
+    {
+      status: 404,
+      body: {
+        nonJson: true,
+        raw: "<!doctype html><title>Not Found</title>",
+      },
+    },
+  );
+});

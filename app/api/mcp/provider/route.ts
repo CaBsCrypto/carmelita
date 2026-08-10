@@ -180,7 +180,9 @@ function getHandler() {
     },
     { serverInfo: { name: "agent-assistant-provider", version: "0.1.0" } },
     {
-      basePath: "/api/mcp",
+      // Keep the transport endpoint aligned with this concrete Next.js route.
+      // A basePath would append /mcp and make /api/mcp/provider return 404.
+      streamableHttpEndpoint: "/api/mcp/provider",
       maxDuration: 60,
       disableSse: true,
       verboseLogs: process.env.NODE_ENV !== "production",

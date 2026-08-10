@@ -26,8 +26,12 @@ export function parseVercelCurlOutput(output: string) {
 export function parsePreviewBody(raw: string): unknown {
   if (!raw) return null;
   const data = raw.split(/\r?\n/).filter((line) => line.startsWith("data:")).map((line) => line.slice(5).trim()).filter(Boolean);
-  if (data.length) return JSON.parse(data.at(-1) as string) as unknown;
-  return JSON.parse(raw) as unknown;
+  const candidate = data.length ? data.at(-1) as string : raw;
+  try {
+    return JSON.parse(candidate) as unknown;
+  } catch {
+    return { nonJson: true, raw: candidate.slice(0, 4_096) };
+  }
 }
 export function buildVercelCurlArgs(input: { deployment: string; path: string; token: string; method?: string; body?: unknown; accept?: string; headers?: string[] }) {
   const tail = ["--silent", "--show-error", "--request", input.method ?? "GET", "--header", `Authorization: Bearer ${input.token}`, "--header", `Accept: ${input.accept ?? "application/json"}`, "--write-out", `\\n${MARKER}%{http_code}`];
@@ -64,7 +68,13 @@ export async function cleanupPreviewAcceptanceFixtures(input: { actorIds: string
   if (exactPlanIds.length) await db.delete(agentGatewayPlans).where(inArray(agentGatewayPlans.id, exactPlanIds));
   if (input.tokenIds.length) await db.delete(mcpAccessTokens).where(inArray(mcpAccessTokens.id, input.tokenIds));
 }
-function expectStatus(actual: number, expected: number, label: string) { assert.equal(actual, expected, `${label}: expected HTTP ${expected}, received ${actual}`); }
+function expectStatus(actual: number, expected: number, label: string, body?: unknown) {
+  assert.equal(
+    actual,
+    expected,
+    `${label}: expected HTTP ${expected}, received ${actual}; body=${JSON.stringify(body ?? null)}`,
+  );
+}
 function mcpRequest(id: string, method: string, params: Record<string, unknown> = {}) { return { jsonrpc: "2.0", id, method, params }; }
 function mcpText(result: unknown) { const response = result as { result?: { content?: Array<{ text?: string }> } }; const text = response.result?.content?.[0]?.text; return text ? JSON.parse(text) as Record<string, unknown> : null; }
 export async function runPreviewAcceptance(deployment: string) {
@@ -89,28 +99,28 @@ export async function runPreviewAcceptance(deployment: string) {
     const mcpHeaders = ["MCP-Protocol-Version: 2025-11-25"];
     const mcp = (token: string, body: unknown) => vercelCurl({ deployment, path: "/api/mcp/agent", token, method: "POST", body, accept: "application/json, text/event-stream", headers: mcpHeaders }, secrets);
     const initialized = await mcp(plan.token, mcpRequest("init-1", "initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "carmelita-preview-acceptance", version: "1.0.0" } }));
-    expectStatus(initialized.status, 200, "MCP initialize");
+    expectStatus(initialized.status, 200, "MCP initialize", initialized.body);
     assert.equal((initialized.body as { result?: { serverInfo?: { name?: string } } })?.result?.serverInfo?.name, "agent-assistant-personal");
     const notification = await mcp(plan.token, { jsonrpc: "2.0", method: "notifications/initialized" });
-    expectStatus(notification.status, 202, "MCP initialized notification");
+    expectStatus(notification.status, 202, "MCP initialized notification", notification.body);
     assert.equal(notification.body, null);
     const tools = await mcp(plan.token, mcpRequest("tools-1", "tools/list"));
-    expectStatus(tools.status, 200, "MCP tools/list");
+    expectStatus(tools.status, 200, "MCP tools/list", tools.body);
     const names = ((tools.body as { result?: { tools?: Array<{ name: string }> } })?.result?.tools ?? []).map((tool) => tool.name);
     for (const name of ["list_capabilities", "get_capability", "plan_action"]) assert.ok(names.includes(name), `MCP missing ${name}`);
     assert.equal(names.some((name) => /approve|sign|submit|execute/i.test(name)), false, "MCP exposed an execution tool");
     const listed = await mcp(read.token, mcpRequest("call-list", "tools/call", { name: "list_capabilities", arguments: {} }));
-    expectStatus(listed.status, 200, "MCP list_capabilities");
+    expectStatus(listed.status, 200, "MCP list_capabilities", listed.body);
     const catalog = mcpText(listed.body) as { environment?: string; capabilities?: unknown[] } | null;
     assert.equal(catalog?.environment, "testnet");
     assert.ok((catalog?.capabilities?.length ?? 0) >= 30, "MCP capability catalog is incomplete");
     const planCall = (token: string, id: string, detail: string) => mcp(token, mcpRequest(id, "tools/call", { name: "plan_action", arguments: { capabilityId: "stellar.wallet.status", idempotencyKey: mcpKey, parameters: { detail }, context: { requirementsSatisfied: ["stellar_wallet"] } } }));
     const denied = await planCall(read.token, "call-denied", "summary");
-    expectStatus(denied.status, 200, "MCP scope denial transport");
+    expectStatus(denied.status, 200, "MCP scope denial transport", denied.body);
     assert.equal((denied.body as { result?: { isError?: boolean } })?.result?.isError, true, "read PAT unexpectedly planned through MCP");
     assert.equal((mcpText(denied.body) as { error?: string } | null)?.error, "mcp_scope_required");
     const mcpFirst = await planCall(plan.token, "call-plan-1", "summary");
-    expectStatus(mcpFirst.status, 200, "MCP plan_action");
+    expectStatus(mcpFirst.status, 200, "MCP plan_action", mcpFirst.body);
     const mcpPlan = mcpText(mcpFirst.body) as { plan?: { id?: string; environment?: string; safety?: { executionEnabled?: boolean } } } | null;
     assert.ok(mcpPlan?.plan?.id, "MCP plan returned no ID");
     assert.equal(mcpPlan?.plan?.environment, "testnet");

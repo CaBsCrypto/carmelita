@@ -198,7 +198,9 @@ function getHandler() {
     },
     { serverInfo: { name: "agent-assistant-personal", version: "0.1.0" } },
     {
-      basePath: "/api/mcp",
+      // This route is named /api/mcp/agent. The basePath option always
+      // appends /mcp, which made the handler listen on /api/mcp/mcp.
+      streamableHttpEndpoint: "/api/mcp/agent",
       maxDuration: 60,
       disableSse: true,
       verboseLogs: process.env.NODE_ENV !== "production",
