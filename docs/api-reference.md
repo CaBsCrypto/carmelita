@@ -69,7 +69,7 @@ A scoped PAT defaults to `agent:read`; `agent:plan`, `agent:context` and `agent:
 | `list_avalanche_capabilities` / `plan_avalanche_capability` | Inspect Avalanche readiness without preparing a transaction | `agent:read` |
 | `plan_action` | Persist or replay an idempotent Testnet plan; never execute it | `agent:plan` |
 
-The deployed Gateway contract at commit `50c8402` passed Neon persistence smoke **6/6** and protected Preview REST/MCP acceptance **20/20** on deployment `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`. This evidence covers Testnet discovery, planning, isolation, replay and revocation; it does not cover signing, submission, mainnet or OAuth account linking.
+The production Gateway at main commit `9a18ec6` is Ready on deployment `dpl_GHEXmETdcuWwcGfDdqtuSy1vNKZA` with canonical URL `https://carmelita-agent.vercel.app`. Public health/catalog returned **HTTP 200** with Testnet non-custodial boundaries. A generic MCP SDK pilot discovered eight tools, called `list_capabilities`, persisted a non-executing `plan_action`, and proved the temporary PAT failed after revocation. OAuth 2.1 and ChatGPT web connection remain pending; this evidence does not cover signing, submission or mainnet.
 
 ### `/api/mcp/provider` — service provider (`agent-assistant-provider`)
 Scoped provider token (DB-verified); subject `provider`.

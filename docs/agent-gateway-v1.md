@@ -1,6 +1,6 @@
 # Carmelita Agent Gateway v1
 
-Status: implemented and validated Testnet discovery-and-planning gateway. Commit `bbc66b0` passed the protected Preview acceptance gate.
+Status: implemented and validated Testnet discovery-and-planning gateway. Main commit `9a18ec6` passed the production deployment and external MCP pilot gate.
 
 Implemented now: public capability discovery, authenticated idempotent action planning, owned action/receipt reads, granular personal scopes, a non-custodial safety envelope, Neon-backed persistence and scoped PAT access for Remote MCP and REST. Not implemented through the Gateway: chat mutation, transaction preparation, approval, signing, submission or mainnet execution. Planned next: approval continuation, wallet metadata and OAuth 2.1.
 
@@ -241,7 +241,7 @@ requirements are documented in the official
 
 ### Discovery and planning
 
-- [ ] Complete a real external Codex pilot against the Remote MCP endpoint with `CARMELITA_MCP_TOKEN`.
+- [x] Complete a real external generic MCP SDK pilot against the Remote MCP endpoint with `CARMELITA_MCP_TOKEN`; OAuth-based Codex/ChatGPT web linking remains pending.
 - [x] List capabilities and verify every item has network, status and approval metadata.
 - [x] Plan one Testnet action without signing or moving funds.
 - [x] Reuse its idempotency key and receive the same action ID.
@@ -268,20 +268,22 @@ requirements are documented in the official
 The validated v1 slice lets a user create a scoped Testnet credential, connect a compatible MCP client, list capabilities, create or replay an Avalanche Fuji plan, and read owned plan/receipt state. Approval continuation remains future work. No call made exclusively through MCP or REST can prepare a transaction, approve, sign, submit or move funds.
 
 
-## Preview acceptance evidence
+## Production and external-client evidence
 
-Validated source commit: `bbc66b0`.
+Validated main commit: `9a18ec6`.
 
-Validated protected Preview deployment: `dpl_SCypub4r7Rz7SYNTufYci1sJGWPq`.
+Validated production deployment: `dpl_GHEXmETdcuWwcGfDdqtuSy1vNKZA` (`Ready`).
 
-Validated Preview URL: `https://agente-asistente-r5qd1rqsl-cabscryptocontacto-6028s-projects.vercel.app`.
+Canonical production URL: `https://carmelita-agent.vercel.app`.
 
 The promotion evidence is:
 
 - `npm run gateway:neon:smoke`: **8/8 PASS** for durable insert, identical replay, changed-input conflict, cross-user isolation, verified receipt persistence, immutable receipt protection, distributed rate limiting and minimal pseudonymized audit persistence.
-- `npm run gateway:preview:acceptance -- https://<preview-url>`: **20/20 PASS** across REST and MCP initialization, discovery, tool safety, scope denial, idempotency, ownership isolation and PAT revocation.
+- Public `/api/health` and `/api/v1/capabilities`: **HTTP 200**, Testnet and non-custodial boundaries confirmed.
+- Generic MCP SDK production pilot: **PASS** with eight tools discovered, `list_capabilities`, a non-executing `plan_action`, and rejection after revoking the temporary PAT.
+- Earlier protected Preview REST/MCP acceptance: **20/20 PASS** across initialization, discovery, tool safety, scope denial, idempotency, ownership isolation and PAT revocation.
 - Full automated suite: **350 pass, 2 skip, 0 fail**.
-- The Preview catalog exposed the Testnet capability registry and every Gateway plan remained non-executable.
-- Deployment Protection was traversed with authenticated `vercel curl`; it proves the deployed protocol and persistence contract, not public OAuth account linking.
+- The production catalog exposed the Testnet capability registry and every Gateway plan remained non-executable.
 
-This evidence approves the discovery-and-planning Testnet Gateway represented by commit `bbc66b0`. It does not claim approval continuation, wallet signing, transaction submission or mainnet support. A real external Codex pilot and public OAuth 2.1 / ChatGPT web connection remain pending.
+
+This evidence approves the discovery-and-planning Testnet Gateway represented by main commit `9a18ec6`, including a real generic external MCP client. It does not claim approval continuation, wallet signing, transaction submission or mainnet support. OAuth 2.1 and ChatGPT web connection remain pending.
