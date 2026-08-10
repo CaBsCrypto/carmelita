@@ -10,6 +10,7 @@ import { getAgentMcpContext } from "@/app/mcp/agent-context";
 import {
   authenticateMcp,
   requireMcpSubject,
+  publicMcpErrorCode,
   verifyAgentMcpToken,
 } from "@/app/mcp/auth";
 
@@ -25,7 +26,7 @@ const fail = (error: unknown) => ({
     {
       type: "text" as const,
       text: JSON.stringify({
-        error: error instanceof Error ? error.message : "unknown_error",
+        error: publicMcpErrorCode(error),
       }),
     },
   ],

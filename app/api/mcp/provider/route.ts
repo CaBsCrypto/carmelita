@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   authenticateMcp,
   requireMcpSubject,
+  publicMcpErrorCode,
   verifyProviderMcpToken,
 } from "@/app/mcp/auth";
 import {
@@ -24,7 +25,7 @@ const fail = (error: unknown) => ({
     {
       type: "text" as const,
       text: JSON.stringify({
-        error: error instanceof Error ? error.message : "unknown_error",
+        error: publicMcpErrorCode(error),
       }),
     },
   ],

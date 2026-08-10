@@ -5,6 +5,14 @@ import { PERSONAL_MCP_TOKEN_PREFIX, verifyPersonalMcpToken } from "@/app/service
 
 type McpRequest = Request & { auth?: AuthInfo };
 
+export function publicMcpErrorCode(error: unknown) {
+  if (!(error instanceof Error)) return "mcp_request_failed";
+  const code = error.message.split(":", 1)[0]?.trim() ?? "";
+  return /^[a-z][a-z0-9_]{2,80}$/.test(code)
+    ? code
+    : "mcp_request_failed";
+}
+
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") ?? "";
   const [scheme, token] = authorization.split(" ");
