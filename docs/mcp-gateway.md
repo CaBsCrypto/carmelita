@@ -87,7 +87,7 @@ A first-party Privy bearer receives all four scopes for the signed-in Carmelita 
 
 This MCP exposes discovery and planning only. Chat mutation, transaction preparation, approval, payment signing and submission are deliberately absent.
 
-Validated evidence: commit `50c8402`, protected Preview `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`, Neon persistence smoke **6/6**, and REST/MCP acceptance **20/20**. The evidence validates Testnet protocol behavior through Deployment Protection; OAuth client linking remains future work.
+Validated evidence: commit `bbc66b0`, protected Preview `dpl_SCypub4r7Rz7SYNTufYci1sJGWPq` at `https://agente-asistente-r5qd1rqsl-cabscryptocontacto-6028s-projects.vercel.app`, Neon persistence/rate-limit/audit smoke **8/8**, REST/MCP acceptance **20/20**, and the full automated suite **350 pass, 2 skip, 0 fail**. The evidence validates Testnet protocol behavior through Deployment Protection. A real external Codex pilot and public OAuth 2.1 / ChatGPT web connection remain pending.
 
 ## Surface 3: service provider admin MCP
 

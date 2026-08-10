@@ -1,6 +1,6 @@
 # Carmelita Agent Gateway v1
 
-Status: implemented and validated Testnet discovery-and-planning gateway. Commit 50c8402 passed the protected Preview acceptance gate.
+Status: implemented and validated Testnet discovery-and-planning gateway. Commit `bbc66b0` passed the protected Preview acceptance gate.
 
 Implemented now: public capability discovery, authenticated idempotent action planning, owned action/receipt reads, granular personal scopes, a non-custodial safety envelope, Neon-backed persistence and scoped PAT access for Remote MCP and REST. Not implemented through the Gateway: chat mutation, transaction preparation, approval, signing, submission or mainnet execution. Planned next: approval continuation, wallet metadata and OAuth 2.1.
 
@@ -233,33 +233,33 @@ requirements are documented in the official
 
 ### Authentication and isolation
 
-- [ ] Create a PAT for test user A and display it only once.
-- [ ] Persist only its hash, prefix, scopes, owner, expiry and lifecycle data.
-- [ ] Reject missing, malformed, expired and revoked tokens with `401`.
-- [ ] Return `403` for a valid token missing the required scope.
-- [ ] Prove user A cannot read user B's wallets, actions or receipts.
+- [x] Create a PAT for test user A and display it only once.
+- [x] Persist only its hash, prefix, scopes, owner, expiry and lifecycle data.
+- [x] Reject missing, malformed, expired and revoked tokens with `401`.
+- [x] Return `403` for a valid token missing the required scope.
+- [x] Prove user A cannot read user B's actions or receipts. Wallet-data isolation remains covered by the authenticated context boundary rather than this planning acceptance script.
 
 ### Discovery and planning
 
-- [ ] Connect Codex to the Remote MCP endpoint with `CARMELITA_MCP_TOKEN`.
-- [ ] List capabilities and verify every item has network, status and approval metadata.
-- [ ] Plan one Avalanche Fuji action without signing or moving funds.
-- [ ] Reuse its idempotency key and receive the same action ID.
-- [ ] Reuse the key with different input and receive a conflict.
-- [ ] Verify Mainnet input is rejected.
+- [ ] Complete a real external Codex pilot against the Remote MCP endpoint with `CARMELITA_MCP_TOKEN`.
+- [x] List capabilities and verify every item has network, status and approval metadata.
+- [x] Plan one Testnet action without signing or moving funds.
+- [x] Reuse its idempotency key and receive the same action ID.
+- [x] Reuse the key with different input and receive a conflict.
+- [x] Verify Mainnet input is rejected.
 
 ### Approval and receipts
 
 - [x] Verify current v1 plans return no approval continuation URL. Future continuation URLs must be same-origin, expiring and derived from server-side action IDs.
-- [ ] Verify a blocked plan never returns an approval URL.
-- [ ] Verify MCP/REST cannot approve, sign or submit the action.
+- [x] Verify a blocked plan never returns an approval URL.
+- [x] Verify MCP/REST cannot approve, sign or submit the action.
 - [ ] Verify a simulated receipt says `simulated` and contains no transaction hash.
 - [ ] Verify any future `confirmed` receipt is backed by independent chain lookup.
 
 ### Operations
 
-- [ ] Revoke the PAT and prove the next request fails.
-- [ ] Confirm authorization headers and token bodies are absent from logs.
+- [x] Revoke the PAT and prove the next REST and MCP requests fail.
+- [x] Confirm the minimal audit schema excludes authorization headers, token bodies and request/response bodies.
 - [x] Rate-limit PAT creation and PAT-authenticated API calls with distributed fixed-window buckets.
 - [x] Record endpoint-level subject, outcome and latency without sensitive input; tool-level MCP audit remains intentionally unavailable.
 
@@ -270,15 +270,18 @@ The validated v1 slice lets a user create a scoped Testnet credential, connect a
 
 ## Preview acceptance evidence
 
-Validated source commit: `50c8402`.
+Validated source commit: `bbc66b0`.
 
-Validated protected Preview deployment: `dpl_AbqxiUd7w9m7uW1cXRka6zWCTYNU`.
+Validated protected Preview deployment: `dpl_SCypub4r7Rz7SYNTufYci1sJGWPq`.
+
+Validated Preview URL: `https://agente-asistente-r5qd1rqsl-cabscryptocontacto-6028s-projects.vercel.app`.
 
 The promotion evidence is:
 
-- `npm run gateway:neon:smoke`: **6/6 PASS** for durable insert, identical replay, changed-input conflict, cross-user isolation, verified receipt persistence and immutable receipt protection.
+- `npm run gateway:neon:smoke`: **8/8 PASS** for durable insert, identical replay, changed-input conflict, cross-user isolation, verified receipt persistence, immutable receipt protection, distributed rate limiting and minimal pseudonymized audit persistence.
 - `npm run gateway:preview:acceptance -- https://<preview-url>`: **20/20 PASS** across REST and MCP initialization, discovery, tool safety, scope denial, idempotency, ownership isolation and PAT revocation.
+- Full automated suite: **350 pass, 2 skip, 0 fail**.
 - The Preview catalog exposed the Testnet capability registry and every Gateway plan remained non-executable.
 - Deployment Protection was traversed with authenticated `vercel curl`; it proves the deployed protocol and persistence contract, not public OAuth account linking.
 
-This evidence approves the discovery-and-planning Testnet Gateway represented by commit `50c8402`. It does not claim approval continuation, wallet signing, transaction submission, mainnet support or arbitrary external-client OAuth connectivity.
+This evidence approves the discovery-and-planning Testnet Gateway represented by commit `bbc66b0`. It does not claim approval continuation, wallet signing, transaction submission or mainnet support. A real external Codex pilot and public OAuth 2.1 / ChatGPT web connection remain pending.
