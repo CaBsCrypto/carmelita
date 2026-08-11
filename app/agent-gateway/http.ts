@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { isGatewayRateLimitError } from "@/app/agent-gateway/operations";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
+import { agentOAuthBearerChallenge, looksLikeStytchOAuthToken, verifyStytchOAuthAccessToken } from "@/app/mcp/stytch-oauth";
 import {
   PERSONAL_MCP_TOKEN_PREFIX,
   verifyPersonalMcpToken,
@@ -33,6 +34,12 @@ export async function gatewayActor(
     if (!principal.scopes.includes(requiredScope)) throw new Error("gateway_scope_required");
     return principal.userId;
   }
+  if (looksLikeStytchOAuthToken(rawToken)) {
+    const principal = await verifyStytchOAuthAccessToken(rawToken);
+    audit?.identify({ actorId: principal.userId });
+    if (!principal.scopes.includes(requiredScope)) throw new Error("gateway_scope_required");
+    return principal.userId;
+  }
   const claims = await verifyPrivyAccessToken(rawToken);
   audit?.identify({ actorId: claims.user_id });
   return claims.user_id;
@@ -48,7 +55,7 @@ export function gatewayError(error: unknown) {
     ? 429
     : code === "gateway_rate_limit_unavailable" || code === "database_not_configured"
       ? 503
-      : code === "gateway_auth_required" || code.startsWith("privy_") || code === "personal_mcp_token_invalid"
+      : code === "gateway_auth_required" || code.startsWith("privy_") || code === "personal_mcp_token_invalid" || code === "stytch_oauth_token_invalid"
     ? 401
     : code === "gateway_scope_required"
       ? 403
@@ -64,7 +71,7 @@ export function gatewayError(error: unknown) {
     headers: {
       ...gatewayHeaders(),
       ...(status === 401
-        ? { "WWW-Authenticate": 'Bearer realm="carmelita-agent-gateway"' }
+        ? { "WWW-Authenticate": agentOAuthBearerChallenge({ error: "invalid_token" }) }
         : status === 429 && isGatewayRateLimitError(error)
           ? { "Retry-After": String(error.retryAfterSeconds) }
           : {}),
