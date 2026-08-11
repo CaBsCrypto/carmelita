@@ -24,26 +24,27 @@ test("uses the official Stytch preflight response and minimal request fields", a
   const fakeFetch: typeof fetch = async (_input, init) => {
     requestBody = JSON.parse(String(init?.body));
     return Response.json({
-      connected_app: { client_id: "chat", client_name: "Verified Chat", client_description: "A Stytch registered client" },
+      client: { client_id: "chat", client_name: "Verified Chat", client_description: "A Stytch registered client" },
       consent_required: true,
-      connected_app_scope_results: [{ scope: "agent:read", description: "Read capabilities", is_grantable: true }],
+      scope_results: [{ scope: "agent:read", description: "Read capabilities", is_grantable: true }],
     });
   };
-  const result = await new StytchConnectedAppsClient(config, fakeFetch).preflightAuthorization(oauthRequest);
+  const result = await new StytchConnectedAppsClient(config, fakeFetch).preflightAuthorization(oauthRequest, "user-test");
   assert.equal(result.client.clientName, "Verified Chat");
   assert.deepEqual(result.requestedScopes, ["agent:read"]);
-  assert.deepEqual(Object.keys(requestBody).sort(), ["client_id", "redirect_uri", "response_type", "scopes"].sort());
+  assert.deepEqual(Object.keys(requestBody).sort(), ["client_id", "redirect_uri", "response_type", "scopes", "user_id"].sort());
+  assert.equal(requestBody.user_id, "user-test");
   assert.ok(!("state" in requestBody));
   assert.ok(!("code_challenge" in requestBody));
 });
 
 test("refuses a scope Stytch says cannot be granted", async () => {
   const fakeFetch: typeof fetch = async () => Response.json({
-    connected_app: { client_id: "chat", client_name: "Verified Chat" },
-    connected_app_scope_results: [{ scope: "agent:write", description: "Write", is_grantable: false }],
+    client: { client_id: "chat", client_name: "Verified Chat" },
+    scope_results: [{ scope: "agent:write", description: "Write", is_grantable: false }],
   });
   const client = new StytchConnectedAppsClient(config, fakeFetch);
-  await assert.rejects(client.preflightAuthorization(oauthRequest), /stytch_oauth_scope_not_grantable/);
+  await assert.rejects(client.preflightAuthorization(oauthRequest, "user-test"), /stytch_oauth_scope_not_grantable/);
 });
 
 test("submit forwards PKCE challenge but not code_challenge_method", async () => {

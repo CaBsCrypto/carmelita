@@ -77,7 +77,7 @@ test("sanitizes upstream failure instead of leaking the Stytch body", async () =
     defaultScopes: ["agent:read"],
   }, fakeFetch);
   const request = parseOAuthAuthorizationRequest("client_id=a&redirect_uri=https%3A%2F%2Fchat.example%2Fcb&response_type=code&code_challenge=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent");
-  await assert.rejects(client.preflightAuthorization(request), (error: Error) => {
+  await assert.rejects(client.preflightAuthorization(request, "user-test"), (error: Error) => {
     assert.equal(error.message, "stytch_oauth_preflight_failed");
     assert.ok(!error.message.includes("raw-upstream-secret"));
     return true;

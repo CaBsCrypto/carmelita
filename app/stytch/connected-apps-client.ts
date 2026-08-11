@@ -121,13 +121,14 @@ export function stytchExternalIdForPrivy(privyDid: string) {
   return `privy|${createHash("sha256").update(privyDid).digest("hex")}`;
 }
 
-function preflightBody(request: OAuthAuthorizationRequest) {
+function preflightBody(request: OAuthAuthorizationRequest, userId: string) {
   return {
     client_id: request.clientId,
     redirect_uri: request.redirectUri,
     response_type: request.responseType,
     scopes: request.scopes,
     prompt: request.prompt,
+    user_id: pathIdentifier(userId, "stytch_user_id_invalid"),
   };
 }
 
@@ -165,16 +166,17 @@ export class StytchConnectedAppsClient {
     return { response, body };
   }
 
-  async preflightAuthorization(request: OAuthAuthorizationRequest): Promise<StytchPreflight> {
+  async preflightAuthorization(request: OAuthAuthorizationRequest, userId: string): Promise<StytchPreflight> {
     assertOAuthResource(request, this.config.resource);
     const { response, body } = await this.request("/v1/idp/oauth/authorize/start", {
       method: "POST",
-      body: JSON.stringify(preflightBody(request)),
+      body: JSON.stringify(preflightBody(request, userId)),
     });
     if (!response.ok || !body) throw new Error("stytch_oauth_preflight_failed");
     const client = (body.client ?? body.connected_app ?? {}) as Record<string, unknown>;
-    const scopeResults = Array.isArray(body.connected_app_scope_results)
-      ? body.connected_app_scope_results as Array<Record<string, unknown>>
+    const rawScopeResults = body.scope_results ?? body.connected_app_scope_results;
+    const scopeResults = Array.isArray(rawScopeResults)
+      ? rawScopeResults as Array<Record<string, unknown>>
       : [];
     if (scopeResults.some((result) => result.is_grantable !== true)) {
       throw new Error("stytch_oauth_scope_not_grantable");

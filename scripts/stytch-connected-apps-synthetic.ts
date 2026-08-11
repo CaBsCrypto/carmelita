@@ -10,7 +10,7 @@ const fakeFetch: typeof fetch = async (input, init) => {
   const url = String(input);
   calls.push({ url, init });
   if (url.endsWith("/authorize/start")) {
-    return Response.json({ client: { client_id: "chat-client", client_name: "Synthetic Chat" }, scopes: ["agent:read"] });
+    return Response.json({ client: { client_id: "chat-client", client_name: "Synthetic Chat" }, scope_results: [{ scope: "agent:read", is_grantable: true }] });
   }
   if (url.includes("/v1/users/")) return new Response(null, { status: 404 });
   if (url.endsWith("/v1/users")) return Response.json({ user_id: "user-test-123" });
@@ -31,8 +31,8 @@ const request = parseOAuthAuthorizationRequest(
   "client_id=chat-client&redirect_uri=https%3A%2F%2Fchat.example%2Fcallback&response_type=code&scope=agent%3Aread&code_challenge=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent",
 );
 const client = new StytchConnectedAppsClient(config, fakeFetch);
-const preflight = await client.preflightAuthorization(request);
 const userId = await client.ensureUserForPrivy("did:privy:synthetic-user", "synthetic@example.com");
+const preflight = await client.preflightAuthorization(request, userId);
 const authorized = await client.submitAuthorization(request, userId, true);
 
 assert.equal(preflight.client.clientName, "Synthetic Chat");
