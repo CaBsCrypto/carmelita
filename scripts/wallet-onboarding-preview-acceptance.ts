@@ -42,10 +42,11 @@ async function login(url: string) {
 async function main() {
   const url = baseUrl();
   const email = arg("--email")?.trim().toLowerCase();
-  const metadata = await fetch(`${url}/.well-known/oauth-authorization-server`);
-  assert.equal(metadata.status, 200, "OAuth metadata is unavailable");
-  const oauth = await metadata.json() as { authorization_endpoint?: string; scopes_supported?: string[] };
-  assert.ok(oauth.authorization_endpoint?.includes("/oauth/authorize"), "OAuth authorization endpoint missing");
+  const metadata = await fetch(`${url}/.well-known/oauth-protected-resource`);
+  assert.equal(metadata.status, 200, "OAuth protected-resource metadata is unavailable");
+  const oauth = await metadata.json() as { resource?: string; authorization_servers?: string[]; scopes_supported?: string[] };
+  assert.equal(oauth.resource, `${url}/api/mcp/agent`, "OAuth resource URL mismatch");
+  assert.ok(oauth.authorization_servers?.length, "OAuth authorization server missing");
   for (const scope of ["agent:read", "agent:context", "agent:conversation", "agent:plan"]) {
     assert.ok(oauth.scopes_supported?.includes(scope), `OAuth metadata missing ${scope}`);
   }
