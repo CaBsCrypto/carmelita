@@ -22,6 +22,20 @@ export function getPrivyUserWalletExternalId(userId: string, family: WalletFamil
   return `aa_${PRIVY_CHAIN_TYPE_BY_FAMILY[family]}_${digest.slice(0, 40)}`;
 }
 
+type PrivyWalletCandidate = {
+  id?: string;
+  address?: string;
+  chain_type?: string;
+  external_id?: string | null;
+};
+
+export function findExactPrivyWallet(
+  wallets: PrivyWalletCandidate[],
+  externalId: string,
+) {
+  return wallets.find((wallet) => wallet.external_id === externalId);
+}
+
 async function listUserWallets(userId: string, family: WalletFamily) {
   const chainType = PRIVY_CHAIN_TYPE_BY_FAMILY[family];
   const result = await getPrivyClient().wallets().list({
@@ -55,8 +69,8 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
   const chainType = PRIVY_CHAIN_TYPE_BY_FAMILY[family];
   const externalId = getPrivyUserWalletExternalId(userId, family);
   const current = await listUserWallets(userId, family);
-  const existing = current.find((wallet) => wallet.external_id === externalId) ?? current[0];
-  if (existing?.id && existing.address) return normalizeUserWallet(existing, family, false);
+  const existing = findExactPrivyWallet(current, externalId);
+  if (existing?.id && existing.address) return normalizeUserWallet(existing as { id: string; address: string; chain_type: string }, family, false);
 
   try {
     const wallet = await getPrivyClient().wallets().create({
@@ -69,8 +83,8 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
     return normalizeUserWallet(wallet, family, true);
   } catch (error) {
     const afterRace = await listUserWallets(userId, family).catch(() => []);
-    const recovered = afterRace.find((wallet) => wallet.external_id === externalId) ?? afterRace[0];
-    if (recovered?.id && recovered.address) return normalizeUserWallet(recovered, family, false);
+    const recovered = findExactPrivyWallet(afterRace, externalId);
+    if (recovered?.id && recovered.address) return normalizeUserWallet(recovered as { id: string; address: string; chain_type: string }, family, false);
     throw error;
   }
 }
