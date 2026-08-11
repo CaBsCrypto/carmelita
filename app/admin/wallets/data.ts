@@ -2,6 +2,7 @@ import { desc } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/db";
 import { agentUsers, agentWallets } from "@/db/schema";
 import { WALLET_NETWORKS } from "@/app/wallets/networks";
+import { isValidWalletAddress } from "@/app/wallets/privy";
 import type { WalletNetworkId } from "@/app/wallets/types";
 
 export const REQUIRED_ADMIN_WALLET_NETWORKS = [
@@ -15,6 +16,7 @@ export type AdminWalletRecord = {
   network: string;
   networkName: string;
   status: string;
+  validAddress: boolean;
   explorerUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +31,9 @@ export type AdminWalletUser = {
   wallets: AdminWalletRecord[];
   missingNetworks: string[];
   duplicateNetworks: string[];
+  inactiveNetworks: string[];
+  invalidAddressNetworks: string[];
+  registeredComplete: boolean;
   complete: boolean;
 };
 
@@ -76,6 +81,17 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[])
     const duplicateNetworks = [...counts.entries()]
       .filter(([, count]) => count > 1)
       .map(([network]) => network);
+    const inactiveNetworks = owned
+      .filter((wallet) => REQUIRED_ADMIN_WALLET_NETWORKS.includes(wallet.network as typeof REQUIRED_ADMIN_WALLET_NETWORKS[number]) && wallet.status !== "active")
+      .map((wallet) => wallet.network);
+    const invalidAddressNetworks = owned
+      .filter((wallet) => {
+        if (wallet.network === "stellar:testnet") return !isValidWalletAddress("stellar", wallet.address);
+        if (wallet.network === "avalanche:fuji") return !isValidWalletAddress("evm", wallet.address);
+        return false;
+      })
+      .map((wallet) => wallet.network);
+    const registeredComplete = missingNetworks.length === 0 && duplicateNetworks.length === 0;
 
     return {
       privyDid: user.id,
@@ -91,6 +107,12 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[])
           networkName:
             WALLET_NETWORKS[wallet.network as WalletNetworkId]?.name ?? wallet.network,
           status: wallet.status,
+          validAddress:
+            wallet.network === "stellar:testnet"
+              ? isValidWalletAddress("stellar", wallet.address)
+              : wallet.network === "avalanche:fuji"
+                ? isValidWalletAddress("evm", wallet.address)
+                : false,
           explorerUrl: walletExplorerUrl(wallet.network, wallet.address),
           createdAt: wallet.createdAt.toISOString(),
           updatedAt: wallet.updatedAt.toISOString(),
@@ -98,7 +120,10 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[])
         .sort((left, right) => left.network.localeCompare(right.network)),
       missingNetworks: [...missingNetworks],
       duplicateNetworks,
-      complete: missingNetworks.length === 0 && duplicateNetworks.length === 0,
+      inactiveNetworks: [...new Set(inactiveNetworks)],
+      invalidAddressNetworks: [...new Set(invalidAddressNetworks)],
+      registeredComplete,
+      complete: registeredComplete && inactiveNetworks.length === 0 && invalidAddressNetworks.length === 0,
     };
   });
 

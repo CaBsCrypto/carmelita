@@ -94,7 +94,7 @@ export default function WalletRegistry({
         <section className="wallet-registry-kpis" aria-label="Wallet integrity summary">
           <article><span>Privy users</span><strong>{initialRegistry.summary.users}</strong><small>Persisted identities</small></article>
           <article><span>Wallets</span><strong>{initialRegistry.summary.wallets}</strong><small>Public addresses indexed</small></article>
-          <article className="good"><span>Complete</span><strong>{initialRegistry.summary.completeUsers}</strong><small>Stellar + Avalanche</small></article>
+          <article className="good"><span>Ready</span><strong>{initialRegistry.summary.completeUsers}</strong><small>Valid and active on both networks</small></article>
           <article className={initialRegistry.summary.needsAttention ? "warning" : "good"}><span>Needs attention</span><strong>{initialRegistry.summary.needsAttention}</strong><small>{initialRegistry.summary.missingStellar} Stellar · {initialRegistry.summary.missingAvalanche} Avalanche</small></article>
         </section>
 
@@ -119,13 +119,13 @@ export default function WalletRegistry({
                   <div><span className="wallet-user-avatar">{(user.email || "P").charAt(0).toUpperCase()}</span><div><strong>{user.email || "Email unavailable"}</strong><code title={user.privyDid}>{shortDid(user.privyDid)}</code></div></div>
                   <div><span className={user.complete ? "wallet-health complete" : "wallet-health attention"}>{user.complete ? "Complete" : "Needs attention"}</span><small>Last seen {formatDate(user.lastSeenAt)}</small></div>
                 </header>
-                {!user.complete && <div className="wallet-integrity-alert">{user.missingNetworks.map((item) => <span key={`missing:${item}`}>Missing {item}</span>)}{user.duplicateNetworks.map((item) => <span key={`duplicate:${item}`}>Duplicate {item}</span>)}</div>}
+                {!user.complete && <div className="wallet-integrity-alert">{user.missingNetworks.map((item) => <span key={`missing:${item}`}>Missing {item}</span>)}{user.duplicateNetworks.map((item) => <span key={`duplicate:${item}`}>Duplicate {item}</span>)}{user.inactiveNetworks.map((item) => <span key={`inactive:${item}`}>Not active {item}</span>)}{user.invalidAddressNetworks.map((item) => <span key={`invalid:${item}`}>Invalid address {item}</span>)}</div>}
                 <div className="wallet-records">
                   <div className="wallet-record-head"><span>Network</span><span>Public address</span><span>Status</span><span>Created</span><span /></div>
                   {user.wallets.map((wallet) => (
                     <div className="wallet-record" key={`${wallet.network}:${wallet.address}`}>
                       <div><strong>{wallet.networkName}</strong><small>{wallet.chainType}</small></div>
-                      <code>{wallet.address}</code><span className="wallet-record-status">{wallet.status}</span><time dateTime={wallet.createdAt}>{formatDate(wallet.createdAt)}</time>
+                      <code>{wallet.address}</code><span className="wallet-record-status">{wallet.validAddress ? wallet.status : "invalid address"}</span><time dateTime={wallet.createdAt}>{formatDate(wallet.createdAt)}</time>
                       <div className="wallet-record-actions"><button type="button" onClick={() => copyAddress(wallet.address)}>{copied === wallet.address ? "Copied" : "Copy"}</button>{wallet.explorerUrl && <a href={wallet.explorerUrl} target="_blank" rel="noreferrer">Explorer ↗</a>}</div>
                     </div>
                   ))}

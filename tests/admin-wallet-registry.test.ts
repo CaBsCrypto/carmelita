@@ -12,7 +12,7 @@ test("wallet registry identifies complete and incomplete Privy users", () => {
       { id: "did:privy:missing", email: "missing@example.com", status: "active", lastSeenAt: now, createdAt: now },
     ],
     [
-      { userId: "did:privy:complete", address: "GCOMPLETE", chainType: "stellar", network: "stellar:testnet", status: "active", createdAt: now, updatedAt: now },
+      { userId: "did:privy:complete", address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", chainType: "stellar", network: "stellar:testnet", status: "active", createdAt: now, updatedAt: now },
       { userId: "did:privy:complete", address: "0x1111111111111111111111111111111111111111", chainType: "ethereum", network: "avalanche:fuji", status: "active", createdAt: now, updatedAt: now },
       { userId: "did:privy:missing", address: "GMISSING", chainType: "stellar", network: "stellar:testnet", status: "active", createdAt: now, updatedAt: now },
     ],
@@ -27,9 +27,25 @@ test("wallet registry identifies complete and incomplete Privy users", () => {
     missingAvalanche: 1,
   });
   assert.equal(registry.users[0]?.complete, true);
+  assert.equal(registry.users[0]?.registeredComplete, true);
   assert.deepEqual(registry.users[1]?.missingNetworks, ["avalanche:fuji"]);
   assert.match(registry.users[0]?.wallets[0]?.explorerUrl ?? "", /subnets-test\.avax\.network/);
   assert.match(registry.users[0]?.wallets[1]?.explorerUrl ?? "", /stellar\.expert/);
+});
+
+test("wallet registry never marks malformed or inactive wallet records as ready", () => {
+  const registry = buildAdminWalletRegistry(
+    [{ id: "did:privy:not-ready", email: null, status: "active", lastSeenAt: now, createdAt: now }],
+    [
+      { userId: "did:privy:not-ready", address: "NOT_A_STELLAR_ADDRESS", chainType: "stellar", network: "stellar:testnet", status: "pending", createdAt: now, updatedAt: now },
+      { userId: "did:privy:not-ready", address: "0x1111111111111111111111111111111111111111", chainType: "ethereum", network: "avalanche:fuji", status: "active", createdAt: now, updatedAt: now },
+    ],
+  );
+
+  assert.equal(registry.users[0]?.registeredComplete, true);
+  assert.equal(registry.users[0]?.complete, false);
+  assert.deepEqual(registry.users[0]?.inactiveNetworks, ["stellar:testnet"]);
+  assert.deepEqual(registry.users[0]?.invalidAddressNetworks, ["stellar:testnet"]);
 });
 
 test("wallet registry detects duplicate networks without exposing wallet IDs", () => {
