@@ -173,6 +173,9 @@ export default function AdminDashboard({
             <i /> Private workspace
           </span>
           <span className="admin-founder">{founderName}</span>
+          <Link className="admin-stellar-link" href="/admin/wallets">
+            Users & Wallets
+          </Link>
           <Link className="admin-stellar-link" href="/admin/providers">
             MCP Providers
           </Link>
@@ -197,6 +200,7 @@ export default function AdminDashboard({
             </p>
           </div>
           <div className="admin-heading-actions">
+            <Link href="/admin/wallets">Validate users & wallets</Link>
             <Link href="/admin/providers">Manage MCP providers</Link>
             <Link href="/admin/stellar">Open Privy + Stellar Lab</Link>
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
