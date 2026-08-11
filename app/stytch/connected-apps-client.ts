@@ -23,6 +23,47 @@ export type StytchPreflight = {
   consentRequired: boolean;
 };
 
+export type ConnectedAppSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  clientType: "first_party" | "first_party_public" | "third_party" | "third_party_public" | "unknown";
+  scopes: string[];
+};
+
+const connectedAppTypes = new Set(["first_party", "first_party_public", "third_party", "third_party_public"]);
+
+function pathIdentifier(value: unknown, errorCode: string) {
+  if (typeof value !== "string") throw new Error(errorCode);
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 256 || !/^[A-Za-z0-9_-]+$/.test(normalized)) throw new Error(errorCode);
+  return normalized;
+}
+
+export function validateConnectedAppId(value: unknown) {
+  return pathIdentifier(value, "stytch_connected_app_id_invalid");
+}
+
+function connectedAppSummary(value: unknown): ConnectedAppSummary {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("stytch_connected_apps_response_invalid");
+  const item = value as Record<string, unknown>;
+  const id = validateConnectedAppId(item.connected_app_id);
+  const rawName = typeof item.name === "string" ? item.name.trim() : "";
+  const rawDescription = typeof item.description === "string" ? item.description.trim() : "";
+  const clientType = typeof item.client_type === "string" && connectedAppTypes.has(item.client_type)
+    ? item.client_type as ConnectedAppSummary["clientType"]
+    : "unknown";
+  const scopes = typeof item.scopes_granted === "string"
+    ? [...new Set(item.scopes_granted.split(/\s+/).filter((scope) => /^[a-z][a-z0-9:_-]{0,99}$/i.test(scope)))].slice(0, 32)
+    : [];
+  return {
+    id,
+    name: (rawName || "Connected AI assistant").slice(0, 120),
+    description: rawDescription ? rawDescription.slice(0, 500) : undefined,
+    clientType,
+    scopes,
+  };
+}
 type FetchLike = typeof fetch;
 
 function optional(params: URLSearchParams, name: string) {
@@ -49,8 +90,11 @@ export function parseOAuthAuthorizationRequest(raw: string | URLSearchParams) {
     throw new Error("oauth_authorization_request_invalid");
   }
   if (params.get("response_type") !== "code") throw new Error("oauth_response_type_unsupported");
+  const codeChallenge = optional(params, "code_challenge");
   const codeChallengeMethod = optional(params, "code_challenge_method");
   if (codeChallengeMethod && codeChallengeMethod !== "S256") throw new Error("oauth_pkce_method_unsupported");
+  if (!codeChallenge || codeChallengeMethod !== "S256") throw new Error("oauth_pkce_required");
+  if (!/^[A-Za-z0-9._~-]{43,128}$/.test(codeChallenge)) throw new Error("oauth_pkce_challenge_invalid");
 
   return {
     clientId,
@@ -59,11 +103,18 @@ export function parseOAuthAuthorizationRequest(raw: string | URLSearchParams) {
     scopes: (optional(params, "scope") || "").split(/\s+/).filter(Boolean),
     state: optional(params, "state"),
     nonce: optional(params, "nonce"),
-    codeChallenge: optional(params, "code_challenge"),
+    codeChallenge,
     codeChallengeMethod: codeChallengeMethod as "S256" | undefined,
     prompt: optional(params, "prompt"),
     resources: params.getAll("resource").map((resource) => resource.trim()).filter(Boolean),
   } satisfies OAuthAuthorizationRequest;
+}
+
+export function assertOAuthResource(request: OAuthAuthorizationRequest, expectedResource: string) {
+  const resources = [...new Set(request.resources)];
+  if (resources.length !== 1 || resources[0] !== expectedResource) {
+    throw new Error("oauth_resource_invalid");
+  }
 }
 
 export function stytchExternalIdForPrivy(privyDid: string) {
@@ -115,6 +166,7 @@ export class StytchConnectedAppsClient {
   }
 
   async preflightAuthorization(request: OAuthAuthorizationRequest): Promise<StytchPreflight> {
+    assertOAuthResource(request, this.config.resource);
     const { response, body } = await this.request("/v1/idp/oauth/authorize/start", {
       method: "POST",
       body: JSON.stringify(preflightBody(request)),
@@ -141,6 +193,31 @@ export class StytchConnectedAppsClient {
     };
   }
 
+  async listConnectedApps(userId: string): Promise<ConnectedAppSummary[]> {
+    const subject = pathIdentifier(userId, "stytch_user_id_invalid");
+    const { response, body } = await this.request(`/v1/users/${encodeURIComponent(subject)}/connected_apps`, {
+      method: "GET",
+    });
+    if (!response.ok || !Array.isArray(body?.connected_apps)) {
+      throw new Error("stytch_connected_apps_list_failed");
+    }
+    return body.connected_apps.map(connectedAppSummary);
+  }
+
+  async revokeConnectedApp(userId: string, connectedAppId: string) {
+    const subject = pathIdentifier(userId, "stytch_user_id_invalid");
+    const appId = validateConnectedAppId(connectedAppId);
+    const connectedApps = await this.listConnectedApps(subject);
+    if (!connectedApps.some((app) => app.id === appId)) {
+      throw new Error("stytch_connected_app_not_found");
+    }
+    const { response } = await this.request(
+      `/v1/users/${encodeURIComponent(subject)}/connected_apps/${encodeURIComponent(appId)}/revoke`,
+      { method: "POST", body: "{}" },
+    );
+    if (!response.ok) throw new Error("stytch_connected_app_revoke_failed");
+    return { connectedAppId: appId, revoked: true as const };
+  }
   async ensureUserForPrivy(privyDid: string, email: string) {
     const externalId = stytchExternalIdForPrivy(privyDid);
     const existing = await this.request(`/v1/users/${encodeURIComponent(externalId)}`, { method: "GET" });
@@ -165,6 +242,7 @@ export class StytchConnectedAppsClient {
   }
 
   async submitAuthorization(request: OAuthAuthorizationRequest, userId: string, consentGranted: boolean) {
+    assertOAuthResource(request, this.config.resource);
     const { response, body } = await this.request("/v1/idp/oauth/authorize", {
       method: "POST",
       body: JSON.stringify({

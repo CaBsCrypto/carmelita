@@ -16,7 +16,7 @@ const config = {
 };
 
 const oauthRequest = parseOAuthAuthorizationRequest(
-  "client_id=chat&redirect_uri=https%3A%2F%2Fchat.example%2Fcallback&response_type=code&scope=agent%3Aread&state=opaque&nonce=n&code_challenge=challenge&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent",
+  "client_id=chat&redirect_uri=https%3A%2F%2Fchat.example%2Fcallback&response_type=code&scope=agent%3Aread&state=opaque&nonce=n&code_challenge=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent",
 );
 
 test("uses the official Stytch preflight response and minimal request fields", async () => {
@@ -53,7 +53,7 @@ test("submit forwards PKCE challenge but not code_challenge_method", async () =>
     return Response.json({ redirect_uri: "https://chat.example/callback?code=ok" });
   };
   await new StytchConnectedAppsClient(config, fakeFetch).submitAuthorization(oauthRequest, "user-test", true);
-  assert.equal(requestBody.code_challenge, "challenge");
+  assert.equal(requestBody.code_challenge, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
   assert.ok(!("code_challenge_method" in requestBody));
   assert.deepEqual(requestBody.resources, ["http://localhost:3000/api/mcp/agent"]);
 });

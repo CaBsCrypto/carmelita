@@ -29,6 +29,9 @@ function origin(value: string, label: string, allowLocalhost = false) {
 export function readStytchConnectedAppsConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): StytchConnectedAppsConfig {
+  if (env.CARMELITA_OAUTH_RESOURCE_SERVER_ENABLED?.trim().toLowerCase() !== "true") {
+    throw new Error("stytch_config_disabled");
+  }
   const publicOrigin = origin(
     required(env, "CARMELITA_PUBLIC_ORIGIN"),
     "public_origin",

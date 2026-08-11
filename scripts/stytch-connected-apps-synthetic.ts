@@ -28,7 +28,7 @@ const config = {
   defaultScopes: ["agent:read"],
 };
 const request = parseOAuthAuthorizationRequest(
-  "client_id=chat-client&redirect_uri=https%3A%2F%2Fchat.example%2Fcallback&response_type=code&scope=agent%3Aread&code_challenge=abc&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent",
+  "client_id=chat-client&redirect_uri=https%3A%2F%2Fchat.example%2Fcallback&response_type=code&scope=agent%3Aread&code_challenge=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&code_challenge_method=S256&resource=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fmcp%2Fagent",
 );
 const client = new StytchConnectedAppsClient(config, fakeFetch);
 const preflight = await client.preflightAuthorization(request);

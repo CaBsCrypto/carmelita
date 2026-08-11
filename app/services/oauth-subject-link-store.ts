@@ -79,3 +79,13 @@ export async function resolveOAuthSubject(input: { issuer: string; subject: stri
     .limit(1);
   return record?.privyDid ?? null;
 }
+export async function resolveOAuthSubjectForPrivy(input: { issuer: string; privyDid: string }) {
+  const issuer = normalizeOAuthIssuer(input.issuer);
+  const privyDid = input.privyDid.trim();
+  if (!privyDid.startsWith("did:privy:") || privyDid.length > 512 || /\s/.test(privyDid)) return null;
+  const [record] = await getDb().select({ subject: oauthSubjectLinks.subject })
+    .from(oauthSubjectLinks)
+    .where(and(eq(oauthSubjectLinks.issuer, issuer), eq(oauthSubjectLinks.privyDid, privyDid)))
+    .limit(1);
+  return record?.subject ?? null;
+}

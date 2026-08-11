@@ -75,6 +75,16 @@ npx tsx --test tests/stytch-connected-apps.test.ts
 
 For a live OAuth browser run, use a stable HTTPS preview or tunnel. The synthetic harness requires no public callback. Production and the protected-resource server reject HTTP origins.
 
+## Self-service revocation
+
+When the OAuth feature flag is enabled, an authenticated Carmelita user can view and revoke only the Connected Apps associated with their own Privy identity:
+
+1. `GET /api/agent/connected-apps` verifies the Privy bearer and resolves the exact `(issuer, Privy DID) -> Stytch user` mapping.
+2. The response exposes only the app ID, display name, description, client type, and granted scopes. It never returns access tokens, refresh tokens, client secrets, raw Privy DIDs, or Stytch user IDs.
+3. `DELETE /api/agent/connected-apps` requires same-origin, an explicit `connectedAppId`, and confirms that the app is currently authorized for the mapped Stytch user before revoking it.
+4. Stytch revokes all active access and refresh tokens for that user/app grant. Reconnection requires a new authorization and consent flow.
+
+The UI is mounted in the authenticated Carmelita workspace. When `CARMELITA_OAUTH_RESOURCE_SERVER_ENABLED` is not `true`, the API returns `404` and the control stays hidden.
 ## Secret rotation and incident response
 
 - Rotate `STYTCH_SECRET` and `PRIVY_APP_SECRET` independently; never expose either to the browser.
@@ -90,5 +100,6 @@ For a live OAuth browser run, use a stable HTTPS preview or tunnel. The syntheti
 - PKCE is `S256`; redirect URIs are registered and matched exactly by Stytch.
 - Consent shows the Stytch-validated client name and requested scopes, never values trusted directly from the query string.
 - Deny returns through the OAuth redirect with a protocol error; it does not strand the user.
-- Refresh/reconnect/revocation paths work from a clean second Privy account.
+- Self-service revocation removes the app from the user list and its old access and refresh tokens fail; reconnect requires fresh consent.
+- Refresh/reconnect paths work from a clean second Privy account.
 - No OAuth connection can silently sign or submit a wallet transaction.
