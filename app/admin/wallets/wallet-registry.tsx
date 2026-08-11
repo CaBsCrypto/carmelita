@@ -83,7 +83,7 @@ export default function WalletRegistry({
           <div>
             <p className="eyebrow">IDENTITY & WALLET INTEGRITY</p>
             <h1>Users and Testnet wallets.</h1>
-            <p>Validate that every Privy identity has one Stellar wallet and one EVM wallet assigned to Avalanche Fuji. Public addresses only.</p>
+            <p>Inspect whether every persisted Privy identity has one Stellar wallet and one EVM wallet assigned to Avalanche Fuji. Public addresses only; Explorer links provide the on-chain check.</p>
           </div>
           <div className="admin-heading-actions">
             <button type="button" onClick={() => router.refresh()}>Refresh registry</button>

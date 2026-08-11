@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import { persistAgentAccount } from "@/app/agent-account";
-import { ensureAvalancheFujiWallet } from "@/app/wallets/avalanche-onboarding";
-import { getOrCreateUserWallet } from "@/app/wallets/privy";
+import { provisionUserWallets } from "@/app/wallets/onboarding";
 import {
   PRIVY_WALLET_ARCHITECTURE,
   getPrivyStellarReadiness,
   getPrivyUserIdentity,
-  getStellarTestnetAccount,
   verifyPrivyAccessToken,
 } from "@/app/privy-stellar";
 
@@ -38,23 +35,11 @@ export async function POST(request: Request) {
 
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
-    const wallet = await getOrCreateUserWallet(claims.user_id, "stellar");
-    const account = await getStellarTestnetAccount(wallet.address);
-    const activation: "active" | "pending" = account.exists
-      ? "active"
-      : "pending";
-
     const identity = await getPrivyUserIdentity(claims.user_id).catch(() => ({
       id: claims.user_id,
       email: null,
     }));
-    const agentAccount = await persistAgentAccount({
-      userId: claims.user_id,
-      email: identity.email,
-      wallet,
-      activation,
-    });
-    const avalanche = await ensureAvalancheFujiWallet({
+    const onboarding = await provisionUserWallets({
       userId: claims.user_id,
       email: identity.email,
     });
@@ -62,15 +47,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         user: { id: claims.user_id, email: identity.email },
-        wallet,
+        wallet: onboarding.stellar,
         wallets: {
-          stellar: wallet,
-          avalanche: avalanche.wallet,
+          stellar: onboarding.stellar,
+          avalanche: onboarding.avalanche.wallet,
         },
-        avalanche,
-        account,
-        activation,
-        ...agentAccount,
+        avalanche: onboarding.avalanche,
+        account: onboarding.account,
+        activation: onboarding.activation,
+        ...onboarding.agentAccount,
         readiness: getPrivyStellarReadiness(),
         walletArchitecture: PRIVY_WALLET_ARCHITECTURE,
       },

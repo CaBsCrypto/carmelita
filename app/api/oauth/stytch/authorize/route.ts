@@ -7,6 +7,7 @@ import {
   StytchConnectedAppsClient,
 } from "@/app/stytch/connected-apps-client";
 import { hasSameRequestOrigin } from "@/app/stytch/request-security";
+import { provisionUserWallets } from "@/app/wallets/onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,17 @@ export async function POST(request: Request) {
     const config = readStytchConnectedAppsConfig();
     const client = new StytchConnectedAppsClient(config);
     const stytchUserId = await client.ensureUserForPrivy(identity.id, identity.email);
-    await linkOAuthSubject({
-      issuer: config.issuer,
-      subject: stytchUserId,
-      privyDid: claims.user_id,
-    });
+    if (body.consentGranted) {
+      await provisionUserWallets({
+        userId: identity.id,
+        email: identity.email,
+      });
+      await linkOAuthSubject({
+        issuer: config.issuer,
+        subject: stytchUserId,
+        privyDid: claims.user_id,
+      });
+    }
     const result = await client.submitAuthorization(oauthRequest, stytchUserId, body.consentGranted);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store", Vary: "Authorization" },

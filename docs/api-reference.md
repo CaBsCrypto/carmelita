@@ -3,7 +3,7 @@
 A single, accurate map of every surface Carmelita exposes and every external
 system it calls. Sourced directly from the code (`app/`), not from marketing copy.
 
-Last reviewed: **July 21, 2026**.
+Last reviewed: **August 11, 2026**.
 
 ## Principles that apply everywhere
 
@@ -19,7 +19,9 @@ Last reviewed: **July 21, 2026**.
 | `/api/health` | GET | Liveness / health probe | Public |
 | `/api/waitlist` | POST | Public waitlist signup (honeypot + size cap) | Public (soft same-origin) |
 | `/api/commerce` | GET, POST | Demo commerce backend: search / intent / policy / authorize / execute / receipt | Public (sandbox, no funds) |
-| `/api/agent/bootstrap` | POST | Create/fetch the user's Privy Stellar wallet and agent account | Same-origin + Privy bearer |
+| `/api/agent/bootstrap` | POST | Idempotently create/fetch the user's Privy Stellar and EVM wallets, register Stellar Testnet + Avalanche Fuji, and persist the agent account without moving funds | Same-origin + Privy bearer |
+| `/api/oauth/stytch/preflight` | POST | Validate a chat OAuth request and show the requested scopes | Same-origin + Privy bearer |
+| `/api/oauth/stytch/authorize` | POST | After explicit consent, provision the same dual-wallet portfolio, bind Stytch subject to the Privy DID and continue OAuth | Same-origin + Privy bearer |
 | `/api/agent/chat` | GET, POST | Read the durable conversation / send a message to the agent | Same-origin + Privy bearer |
 | `/api/agent/memory` | GET, POST, PATCH, DELETE | Personal Execution Vault memory CRUD | Same-origin + Privy bearer |
 | `/api/agent/autopilot` | GET, POST | Read / update Testnet Autopilot state | Same-origin + Privy bearer |

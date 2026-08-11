@@ -6,10 +6,9 @@ test("first-party bootstrap provisions Fuji additively and retains Stellar", asy
   const source = await readFile(new URL("../app/api/agent/bootstrap/route.ts", import.meta.url), "utf8");
   assert.match(source, /verifyPrivyAccessToken/);
   assert.match(source, /sameOrigin/);
-  assert.match(source, /getOrCreateUserWallet\(claims\.user_id, "stellar"\)/);
-  assert.match(source, /ensureAvalancheFujiWallet/);
-  assert.match(source, /wallets:\s*\{[\s\S]*stellar:\s*wallet,[\s\S]*avalanche:\s*avalanche\.wallet/);
-  assert.match(source, /wallet,[\s\S]*wallets:/);
+  assert.match(source, /provisionUserWallets/);
+  assert.match(source, /wallets:\s*\{[\s\S]*stellar:\s*onboarding\.stellar,[\s\S]*avalanche:\s*onboarding\.avalanche\.wallet/);
+  assert.match(source, /wallet:\s*onboarding\.stellar,[\s\S]*wallets:/);
   assert.doesNotMatch(source, /rawSign|signTypedData|sendTransaction|fundWallet|faucet/i);
 });
 

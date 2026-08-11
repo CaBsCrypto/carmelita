@@ -148,6 +148,7 @@ test("OAuth identity mapping is exact issuer plus subject and cannot be remapped
   const store = await readFile(new URL("../app/services/oauth-subject-link-store.ts", import.meta.url), "utf8");
   const authorize = await readFile(new URL("../app/api/oauth/stytch/authorize/route.ts", import.meta.url), "utf8");
   assert.doesNotMatch(store, /email/i);
+  assert.match(authorize, /if \(body\.consentGranted\) \{[\s\S]*linkOAuthSubject/);
   assert.ok(authorize.indexOf("linkOAuthSubject") < authorize.indexOf("submitAuthorization"));
 });
 
