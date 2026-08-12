@@ -6,7 +6,7 @@ discover it from the repository, official website or official documentation.
 
 ## Official Carmelita project
 
-- **GitHub repository:** https://github.com/CaBsCrypto/agente-asistente
+- **GitHub repository:** https://github.com/CaBsCrypto/carmelita
 - **Live application:** https://agente-asistente.vercel.app
 - **Remote MCP endpoint:** https://agente-asistente.vercel.app/api/mcp
 

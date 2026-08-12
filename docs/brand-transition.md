@@ -42,7 +42,7 @@ The rename is intentionally presentation-first. Existing technical identifiers r
 Keep these legacy values unchanged for now:
 
 - Production URL: `https://agente-asistente.vercel.app`
-- GitHub repository: `https://github.com/CaBsCrypto/agente-asistente`
+- GitHub repository: `https://github.com/CaBsCrypto/carmelita`
 - Local repository directory: `agente-asistente`
 - Existing MCP server identifiers such as `agent-assistant`, `agent-assistant-personal` and `agent-assistant-provider`
 - Existing API routes, webhook URLs, environment variables, database values, provider keys and protocol identifiers

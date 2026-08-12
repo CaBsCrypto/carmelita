@@ -64,14 +64,14 @@ const copy = {
     handoffCta: "Open integration agent brief",
     docsTitle: "Documentation that matches the product state",
     docs: [
-      ["Product narrative", "What Carmelita does, how the control model works and how to explain it.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/product-narrative.md"],
-      ["Mission and vision", "Why Carmelita exists, its north star and the principles that constrain growth.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mission-vision.md"],
-      ["Business onboarding", "Choose the smallest API, MCP, WebMCP or guided integration path.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/business-onboarding.md"],
-      ["Developer guide", "Quickstart, APIs, connectors, errors and definition of done.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/developer-guide.md"],
-      ["Architecture", "Identity, consent, tools, payment boundaries and deployment diagrams.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/architecture.md"],
-      ["MCP gateway", "Public sandbox, personal agent and provider-admin surfaces.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mcp-gateway.md"],
-      ["Agent Gateway v1", "Connect Codex or another agent with scoped Testnet credentials.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/agent-gateway-v1.md"],
-      ["DeFindex Testnet", "Trustline, transaction review, Privy signature and receipt flow.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/defindex-testnet.md"],
+      ["Product narrative", "What Carmelita does, how the control model works and how to explain it.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/product-narrative.md"],
+      ["Mission and vision", "Why Carmelita exists, its north star and the principles that constrain growth.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mission-vision.md"],
+      ["Business onboarding", "Choose the smallest API, MCP, WebMCP or guided integration path.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/business-onboarding.md"],
+      ["Developer guide", "Quickstart, APIs, connectors, errors and definition of done.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/developer-guide.md"],
+      ["Architecture", "Identity, consent, tools, payment boundaries and deployment diagrams.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/architecture.md"],
+      ["MCP gateway", "Public sandbox, personal agent and provider-admin surfaces.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mcp-gateway.md"],
+      ["Agent Gateway v1", "Connect Codex or another agent with scoped Testnet credentials.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/agent-gateway-v1.md"],
+      ["DeFindex Testnet", "Trustline, transaction review, Privy signature and receipt flow.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md"],
     ],
     statusTitle: "Know exactly what is real",
     statusRows: [["Public commerce MCP", "Sandbox live"], ["Provider MCP", "Pilot ready"], ["Personal agent MCP", "Testnet PAT ready"], ["DeFindex signing", "Live Testnet proof"], ["Mainnet settlement", "Disabled"]],
@@ -122,14 +122,14 @@ const copy = {
     handoffCta: "Abrir brief para integrar productos",
     docsTitle: "Documentación alineada con el estado real",
     docs: [
-      ["Narrativa del producto", "Qué hace Carmelita, cómo funciona el control y cómo explicarlo.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/product-narrative.md"],
-      ["Misión y visión", "Por qué existe Carmelita, su norte y los principios que limitan su crecimiento.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mission-vision.md"],
-      ["Onboarding para negocios", "Elige la ruta más pequeña mediante API, MCP, WebMCP o integración guiada.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/business-onboarding.md"],
-      ["Guía para developers", "Quickstart, APIs, conectores, errores y definición de terminado.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/developer-guide.md"],
-      ["Arquitectura", "Diagramas de identidad, consentimiento, herramientas, pagos y despliegue.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/architecture.md"],
-      ["Gateway MCP", "Sandbox público, agente personal y administración de providers.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mcp-gateway.md"],
-      ["Agent Gateway v1", "Conecta Codex u otro agente con credenciales Testnet limitadas.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/agent-gateway-v1.md"],
-      ["DeFindex Testnet", "Trustline, revisión, firma Privy y flujo de recibos.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/defindex-testnet.md"],
+      ["Narrativa del producto", "Qué hace Carmelita, cómo funciona el control y cómo explicarlo.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/product-narrative.md"],
+      ["Misión y visión", "Por qué existe Carmelita, su norte y los principios que limitan su crecimiento.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mission-vision.md"],
+      ["Onboarding para negocios", "Elige la ruta más pequeña mediante API, MCP, WebMCP o integración guiada.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/business-onboarding.md"],
+      ["Guía para developers", "Quickstart, APIs, conectores, errores y definición de terminado.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/developer-guide.md"],
+      ["Arquitectura", "Diagramas de identidad, consentimiento, herramientas, pagos y despliegue.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/architecture.md"],
+      ["Gateway MCP", "Sandbox público, agente personal y administración de providers.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mcp-gateway.md"],
+      ["Agent Gateway v1", "Conecta Codex u otro agente con credenciales Testnet limitadas.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/agent-gateway-v1.md"],
+      ["DeFindex Testnet", "Trustline, revisión, firma Privy y flujo de recibos.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md"],
     ],
     statusTitle: "Sabe exactamente qué es real",
     statusRows: [["MCP de comercio público", "Sandbox activo"], ["Provider MCP", "Piloto listo"], ["MCP del agente personal", "PAT Testnet listo"], ["Firma DeFindex", "Prueba Testnet activa"], ["Liquidación Mainnet", "Desactivada"]],
@@ -180,14 +180,14 @@ const copy = {
     handoffCta: "Abrir briefing de integração",
     docsTitle: "Documentação alinhada ao estado real",
     docs: [
-      ["Narrativa do produto", "O que Carmelita faz, como funciona o controle e como explicá-lo.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/product-narrative.md"],
-      ["Missão e visão", "Por que Carmelita existe, sua direção e os princípios que limitam seu crescimento.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mission-vision.md"],
-      ["Onboarding para negócios", "Escolha a menor rota via API, MCP, WebMCP ou integração guiada.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/business-onboarding.md"],
-      ["Guia para developers", "Quickstart, APIs, conectores, erros e definição de pronto.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/developer-guide.md"],
-      ["Arquitetura", "Diagramas de identidade, consentimento, ferramentas, pagamentos e deploy.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/architecture.md"],
-      ["Gateway MCP", "Sandbox público, agente pessoal e administração de providers.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/mcp-gateway.md"],
-      ["Agent Gateway v1", "Conecte Codex ou outro agente com credenciais Testnet limitadas.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/agent-gateway-v1.md"],
-      ["DeFindex Testnet", "Trustline, revisão, assinatura Privy e fluxo de recibos.", "https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/defindex-testnet.md"],
+      ["Narrativa do produto", "O que Carmelita faz, como funciona o controle e como explicá-lo.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/product-narrative.md"],
+      ["Missão e visão", "Por que Carmelita existe, sua direção e os princípios que limitam seu crescimento.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mission-vision.md"],
+      ["Onboarding para negócios", "Escolha a menor rota via API, MCP, WebMCP ou integração guiada.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/business-onboarding.md"],
+      ["Guia para developers", "Quickstart, APIs, conectores, erros e definição de pronto.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/developer-guide.md"],
+      ["Arquitetura", "Diagramas de identidade, consentimento, ferramentas, pagamentos e deploy.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/architecture.md"],
+      ["Gateway MCP", "Sandbox público, agente pessoal e administração de providers.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/mcp-gateway.md"],
+      ["Agent Gateway v1", "Conecte Codex ou outro agente com credenciais Testnet limitadas.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/agent-gateway-v1.md"],
+      ["DeFindex Testnet", "Trustline, revisão, assinatura Privy e fluxo de recibos.", "https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md"],
     ],
     statusTitle: "Saiba exatamente o que é real",
     statusRows: [["MCP de comércio público", "Sandbox ativo"], ["Provider MCP", "Piloto pronto"], ["MCP do agente pessoal", "PAT Testnet pronto"], ["Assinatura DeFindex", "Prova Testnet ativa"], ["Liquidação Mainnet", "Desativada"]],
@@ -215,7 +215,7 @@ export default function Developers() {
     <main className="developer-portal">
       <nav className="developer-nav shell">
         <Link className="brand" href="/"><BrandLockup /></Link>
-        <div><Link href="/">{t.nav[0]}</Link><Link href="/connections">{t.nav[1]}</Link><a href="https://github.com/CaBsCrypto/agente-asistente">{t.nav[2]}</a><LanguageToggle locale={locale} onChange={setLocale} compact /></div>
+        <div><Link href="/">{t.nav[0]}</Link><Link href="/connections">{t.nav[1]}</Link><a href="https://github.com/CaBsCrypto/carmelita">{t.nav[2]}</a><LanguageToggle locale={locale} onChange={setLocale} compact /></div>
       </nav>
 
       <header className="developer-hero shell">
@@ -233,7 +233,7 @@ export default function Developers() {
 
       <section className="provider-band" id="provider"><div className="shell"><header className="section-heading"><p className="eyebrow">05 · PROVIDER MCP</p><h2>{t.providerTitle}</h2><p>{t.providerText}</p></header><div className="provider-steps">{t.providerSteps.map((step) => <article key={step[0]}><b>{step[0]}</b><h3>{step[1]}</h3><p>{step[2]}</p></article>)}</div></div></section>
 
-      <section className="developer-section shell" id="connect-product"><div className="connect-grid"><div><p className="eyebrow">06 · OUTBOUND CONNECTOR</p><h2>{t.connectTitle}</h2><p>{t.connectText}</p><div className="handoff-card"><strong>{t.handoff}</strong><a href="https://github.com/CaBsCrypto/agente-asistente/blob/main/docs/NEW_PRODUCT_INTEGRATION_AGENT_PROMPT.md">{t.handoffCta} ↗</a></div></div><ol>{t.checklist.map((item, index) => <li key={item}><b>{String(index + 1).padStart(2, "0")}</b><span>{item}</span></li>)}</ol></div></section>
+      <section className="developer-section shell" id="connect-product"><div className="connect-grid"><div><p className="eyebrow">06 · OUTBOUND CONNECTOR</p><h2>{t.connectTitle}</h2><p>{t.connectText}</p><div className="handoff-card"><strong>{t.handoff}</strong><a href="https://github.com/CaBsCrypto/carmelita/blob/main/docs/NEW_PRODUCT_INTEGRATION_AGENT_PROMPT.md">{t.handoffCta} ↗</a></div></div><ol>{t.checklist.map((item, index) => <li key={item}><b>{String(index + 1).padStart(2, "0")}</b><span>{item}</span></li>)}</ol></div></section>
 
       <section className="developer-section shell"><header className="section-heading"><p className="eyebrow">07 · DOCS</p><h2>{t.docsTitle}</h2></header><div className="docs-grid">{t.docs.map((doc) => <a key={doc[0]} href={doc[2]}><span>DOC</span><h3>{doc[0]}</h3><p>{doc[1]}</p><b>Open ↗</b></a>)}</div></section>
 

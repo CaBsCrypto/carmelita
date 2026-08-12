@@ -319,7 +319,7 @@ See [docs/mcp-integration.md](docs/mcp-integration.md) for the complete contract
 ### Install
 
 ~~~bash
-git clone https://github.com/CaBsCrypto/agente-asistente.git
+git clone https://github.com/CaBsCrypto/carmelita.git
 cd agente-asistente
 npm install
 copy .env.example .env.local
