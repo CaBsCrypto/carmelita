@@ -44,7 +44,7 @@
         "graph:rebuild": "graphify extract . --code-only --force",
         "graph:mcp:smoke": "tsx scripts/graphify-mcp-smoke.ts",
         "langchain:smoke": "tsx --env-file=.env.local scripts/langchain-planner-smoke.ts",
-        "runtime:doctor": "node scripts/runtime-doctor.mjs",
+    "runtime:doctor": "node --env-file-if-exists=.env.local scripts/runtime-doctor.mjs",
         "acceptance:avalanche:doctor": "tsx scripts/avalanche-acceptance.ts doctor",
         "acceptance:avalanche:authenticated": "tsx scripts/avalanche-acceptance.ts authenticated",
         "acceptance:avalanche:prepare": "tsx scripts/avalanche-acceptance.ts prepare"

@@ -320,14 +320,37 @@ See [docs/mcp-integration.md](docs/mcp-integration.md) for the complete contract
 
 ~~~bash
 git clone https://github.com/CaBsCrypto/carmelita.git
-cd agente-asistente
-npm install
-copy .env.example .env.local
+cd carmelita
+npm ci
+cp .env.example .env.local # macOS/Linux
+# PowerShell: Copy-Item .env.example .env.local
 npm run db:migrate
+npm run runtime:doctor
 npm run dev
 ~~~
 
 Open http://localhost:3000. Commerce orchestration can use process memory without DATABASE_URL, but waitlist, user history and connections require Neon.
+
+### New device checklist
+
+The repository contains the application, migrations, tests and safe configuration
+templates. It deliberately does not contain production secrets, user data or wallet
+keys. On every new device or deployment:
+
+1. Install the Node.js and npm versions listed above, then clone the repository and run
+   `npm ci`.
+2. Create `.env.local` from `.env.example`. If the device is authorized for the Vercel
+   project, `vercel env pull .env.local` can restore the configured development values;
+   otherwise enter them through the provider dashboards. Never send secrets through Git.
+3. Point `DATABASE_URL` to the intended Neon branch and run `npm run db:migrate`.
+4. Add the new localhost or deployment origin to Privy's allowed origins. For external
+   AI chats, also configure the matching public origin and authorization URL in Stytch.
+5. Run `npm run runtime:doctor`, `npm test`, `npm run lint` and `npm run build` before
+   treating that device as ready.
+
+Cloning alone is enough to inspect and build Carmelita. Authentication, persistent
+history, automatic wallets and external chat OAuth become operational only after their
+server-side credentials and provider origins are configured.
 
 ### Environment variables
 
