@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { persistAgentAccount } from "@/app/agent-account";
+import { provisionUserWallets } from "@/app/wallets/onboarding";
 import {
   PRIVY_WALLET_ARCHITECTURE,
-  getOrCreateUserStellarWallet,
   getPrivyStellarReadiness,
   getPrivyUserIdentity,
-  getStellarTestnetAccount,
   verifyPrivyAccessToken,
 } from "@/app/privy-stellar";
 
@@ -15,7 +13,12 @@ export const dynamic = "force-dynamic";
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
-  return !origin || !host || new URL(origin).host === host;
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }
 
 function bearerToken(request: Request) {
@@ -32,30 +35,27 @@ export async function POST(request: Request) {
 
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
-    const wallet = await getOrCreateUserStellarWallet(claims.user_id);
-    const account = await getStellarTestnetAccount(wallet.address);
-    const activation: "active" | "pending" = account.exists
-      ? "active"
-      : "pending";
-
     const identity = await getPrivyUserIdentity(claims.user_id).catch(() => ({
       id: claims.user_id,
       email: null,
     }));
-    const agentAccount = await persistAgentAccount({
+    const onboarding = await provisionUserWallets({
       userId: claims.user_id,
       email: identity.email,
-      wallet,
-      activation,
     });
 
     return NextResponse.json(
       {
         user: { id: claims.user_id, email: identity.email },
-        wallet,
-        account,
-        activation,
-        ...agentAccount,
+        wallet: onboarding.stellar,
+        wallets: {
+          stellar: onboarding.stellar,
+          avalanche: onboarding.avalanche.wallet,
+        },
+        avalanche: onboarding.avalanche,
+        account: onboarding.account,
+        activation: onboarding.activation,
+        ...onboarding.agentAccount,
         readiness: getPrivyStellarReadiness(),
         walletArchitecture: PRIVY_WALLET_ARCHITECTURE,
       },
@@ -64,7 +64,13 @@ export async function POST(request: Request) {
   } catch (error) {
     const code =
       error instanceof Error ? error.message.split(":")[0] : "bootstrap_failed";
-    const status = code === "privy_not_configured" ? 503 : 401;
+    const status = code === "privy_not_configured" || code === "database_not_configured"
+      ? 503
+      : code === "wallet_ownership_conflict" || code === "wallet_identity_conflict"
+        ? 409
+        : code === "privy_access_token_missing" || code === "invalid_privy_user_id"
+          ? 401
+          : 500;
     return NextResponse.json({ error: code }, { status });
   }
 }

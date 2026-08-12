@@ -82,16 +82,17 @@ sequenceDiagram
     App->>API: POST /api/agent/bootstrap
     API->>Privy: Verify token
     API->>Privy: Get or create Stellar wallet
+    API->>Privy: Get or create user-owned EVM wallet
     API->>Horizon: Read Testnet account
-    alt New address
-        API->>Horizon: Request Friendbot activation
-        API->>Horizon: Read account again
-    end
-    API->>Neon: Upsert user and wallet metadata
-    API-->>App: User, wallet, activation and balance
+    API->>Neon: Upsert user plus Stellar Testnet and Avalanche Fuji metadata
+    API-->>App: User, both wallets, activation and balances
 ~~~
 
-This flow is **Live**. Friendbot tokens have no monetary value.
+Wallet creation is idempotent and metadata-only: it never funds, signs or moves
+assets. The same service runs after an external AI chat receives explicit OAuth
+consent, before the Stytch subject is linked to the Privy DID. Denied consent
+creates neither wallets nor an identity link. Testnet faucet tokens have no
+monetary value.
 
 ## 4. External OAuth connection
 

@@ -62,7 +62,7 @@ Status meanings are shared across all project documentation:
 | --- | --- | --- |
 | Google/email login | Live | Privy authentication on /agent |
 | EN/ES/PT experience | Live | Persistent locale and multilingual core agent commands |
-| Automatic Stellar wallet | Live | One user-owned wallet created at login |
+| Automatic Stellar + Avalanche wallets | Preview validated | Privy creates one user-owned Stellar Testnet wallet and one user-owned EVM wallet registered for Avalanche Fuji after web login or approved chat OAuth; no funds move |
 | Chat-requested Testnet XLM | Ready to validate | Friendbot only runs after a text request for an absent account |
 | Wallet balance and explorer link | Live | Horizon account lookup |
 | Persistent chat and user state | Live | Neon Postgres |
@@ -97,8 +97,9 @@ The dated source of truth is [docs/product-status.md](docs/product-status.md).
 
 1. Open [the agent](https://agente-asistente.vercel.app/agent).
 2. Sign in with Google or email through Privy.
-3. The server verifies the Privy access token and creates one user-owned Stellar wallet when needed.
-4. The chat reads the wallet's current on-chain state and guides each Testnet step.
+3. The server verifies the Privy access token and idempotently creates one user-owned Stellar wallet plus one user-owned EVM wallet registered for Avalanche Fuji when needed.
+4. Both public addresses are persisted in Neon under the same Privy DID. Creation never signs, funds or submits a transaction.
+5. The chat reads the wallets' current state and guides each Testnet step.
 
 Try the onboarding entirely through text:
 

@@ -7,6 +7,7 @@ import AgentChat from "./agent-chat";
 import AgentMemoryVault from "./agent-memory-vault";
 import WalletCenter from "./wallet-center";
 import AgentExternalAccess from "./agent-external-access";
+import AgentConnectedApps from "./agent-connected-apps";
 import { useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 
@@ -342,6 +343,7 @@ function PrivyAgent({
         <AgentMemoryVault getAccessToken={getAccessToken} />
 
         <AgentExternalAccess locale={locale} getAccessToken={getAccessToken} />
+        <AgentConnectedApps locale={locale} getAccessToken={getAccessToken} />
 
         <WalletCenter
           locale={locale}

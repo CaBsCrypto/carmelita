@@ -3,6 +3,7 @@ import { isGatewayRateLimitError } from "@/app/agent-gateway/operations";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 import { verifyServiceProviderToken } from "@/app/services/provider-store";
 import { PERSONAL_MCP_TOKEN_PREFIX, verifyPersonalMcpToken } from "@/app/services/personal-mcp-token-store";
+import { agentOAuthBearerChallenge, looksLikeStytchOAuthToken, stytchPrincipalAuthInfo, verifyStytchOAuthAccessToken } from "@/app/mcp/stytch-oauth";
 
 type McpRequest = Request & { auth?: AuthInfo };
 
@@ -26,7 +27,7 @@ function unauthorized() {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      "WWW-Authenticate": 'Bearer realm="agent-assistant-mcp"',
+      "WWW-Authenticate": agentOAuthBearerChallenge({ error: "invalid_token" }),
     },
   });
 }
@@ -69,6 +70,9 @@ export async function verifyAgentMcpToken(token: string): Promise<AuthInfo> {
     return { token, clientId: principal.userId, scopes: principal.scopes,
       expiresAt: principal.expiresAt ? Math.floor(principal.expiresAt.getTime() / 1000) : undefined,
       extra: { subjectType: "user", userId: principal.userId, tokenId: principal.tokenId } };
+  }
+  if (looksLikeStytchOAuthToken(token)) {
+    return stytchPrincipalAuthInfo(token, await verifyStytchOAuthAccessToken(token));
   }
   const claims = await verifyPrivyAccessToken(token);
   return {
