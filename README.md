@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="https://agente-asistente.vercel.app"><img alt="Live" src="https://img.shields.io/badge/product-live-3fb950?style=for-the-badge&labelColor=0d1117"></a>
+  <img alt="Avalanche Fuji" src="https://img.shields.io/badge/Avalanche-Fuji-E84142?style=for-the-badge&labelColor=0d1117&logo=avalanche&logoColor=white">
   <img alt="Stellar Testnet" src="https://img.shields.io/badge/Stellar-Testnet-7D00FF?style=for-the-badge&labelColor=0d1117&logo=stellar&logoColor=white">
   <img alt="Tests" src="https://img.shields.io/badge/tests-126%2F126-2f81f7?style=for-the-badge&labelColor=0d1117">
 </p>
@@ -271,6 +272,54 @@ The personal Gateway at commit `50c8402` passed Neon durability smoke **6/6** an
 | UNBLCK | Agent Hub Check-in API | Partner key + channel identity | Read state, book &amp; cancel — approval-gated |
 
 ## MCP tools and clients
+
+### ChatGPT, Privy and multichain wallet visibility
+
+Carmelita's personal MCP lets an authorized ChatGPT client discover the user's
+public wallet state and plan Testnet actions. ChatGPT authenticates through the
+configured OAuth flow; Privy remains the identity and wallet provider. Connecting
+the MCP or signing in does **not** authorize a transaction.
+
+Carmelita exposes two first-class Testnet choices for each Privy user. Choose the
+network that matches the capability and flow:
+
+- **Avalanche Fuji:** a Privy-owned EVM address registered for Fuji, available to
+  verified Avalanche discovery and planning flows.
+- **Stellar Testnet:** a Privy-owned Stellar address, available to verified Stellar
+  wallet visibility and Testnet flows.
+
+Neither network is a fallback for the other. Both addresses belong to the same Privy
+identity and appear together when the user has completed multichain onboarding.
+
+An **active** wallet has a complete public address and is the wallet Carmelita will
+show for that network. A **pending** entry records an incomplete provisioning attempt.
+On reconnect, Carmelita reuses an existing valid wallet of the same Privy user and
+network instead of creating another one. When an active wallet and an older pending
+entry coexist for one network, the MCP response shows the active wallet. Admin keeps
+the underlying evidence unchanged for operator audit; no wallet record is deleted or
+rewritten.
+
+To verify a connection, an authorized operator can open `/admin`, locate the user by
+their Privy identity, and compare the complete public Stellar and Avalanche addresses
+with the addresses returned by the personal MCP. Treat addresses as exact strings:
+never compare shortened UI labels. A healthy dual-wallet connection has one active
+address for `stellar:testnet` and one for `avalanche:fuji`. Admin access is protected;
+never paste credentials, tokens, cookies or wallet material into an issue or chat.
+
+This connection and reconnect flow never:
+
+- pays, transfers or swaps assets;
+- requests Testnet funding or calls Friendbot;
+- prepares, signs or submits a transaction;
+- exports a private key or seed phrase; or
+- deletes, merges or modifies real wallet records.
+
+The regression suite covers reconnect reuse, zero wallet-creation calls when an
+existing wallet is available, active-over-pending MCP visibility, and dual-network
+readiness. Run `npm test`, `npm run lint` and `npm run build` before deployment.
+
+Operational troubleshooting, acceptance-session requirements and unresolved provider
+conditions belong in internal runbooks rather than this user-facing capability guide.
 
 Public sandbox endpoint:
 
