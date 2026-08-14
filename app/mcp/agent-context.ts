@@ -19,6 +19,12 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   const ordered = [...wallets].sort((left, right) =>
     left.network.localeCompare(right.network) || left.address.localeCompare(right.address),
   );
+  const activeNetworks = new Set(
+    ordered.filter((wallet) => wallet.status === "active").map((wallet) => wallet.network),
+  );
+  const visible = ordered.filter(
+    (wallet) => wallet.status === "active" || !activeNetworks.has(wallet.network),
+  );
   const active = (network: typeof MCP_WALLET_NETWORKS[number]) =>
     ordered.find((wallet) => wallet.network === network && wallet.status === "active") ?? null;
   const walletsByNetwork = {
@@ -27,11 +33,12 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   };
   const missingNetworks = MCP_WALLET_NETWORKS.filter((network) => !active(network));
   return {
-    wallets: ordered,
+    wallets: visible,
     walletsByNetwork,
     walletReadiness: {
       complete: missingNetworks.length === 0,
       missingNetworks,
+      suppressedStaleWallets: ordered.length - visible.length,
     },
   };
 }

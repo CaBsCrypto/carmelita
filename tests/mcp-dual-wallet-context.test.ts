@@ -20,3 +20,16 @@ test("MCP wallet context reports missing Fuji instead of inventing it", () => {
   assert.equal(context.walletsByNetwork.avalancheFuji, null);
   assert.deepEqual(context.walletReadiness.missingNetworks, ["avalanche:fuji"]);
 });
+
+test("MCP reconnect view preserves active Stellar and suppresses its stale pending duplicate", () => {
+  const context = buildMcpWalletContext([
+    { address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", chainType: "stellar", network: "stellar:testnet", status: "active" },
+    { address: "GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBEZQ", chainType: "stellar", network: "stellar:testnet", status: "pending" },
+    { address: "0x1111111111111111111111111111111111111111", chainType: "ethereum", network: "avalanche:fuji", status: "active" },
+  ]);
+
+  assert.equal(context.walletsByNetwork.stellarTestnet?.status, "active");
+  assert.equal(context.wallets.some((wallet) => wallet.status === "pending"), false);
+  assert.equal(context.walletReadiness.complete, true);
+  assert.equal(context.walletReadiness.suppressedStaleWallets, 1);
+});

@@ -92,3 +92,40 @@ test("provisions one idempotent Privy wallet for each new family", async () => {
     else process.env.PRIVY_APP_SECRET = originalSecret;
   }
 });
+
+test("reconnect reuses a legacy Stellar wallet instead of creating a pending duplicate", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalAppId = process.env.PRIVY_APP_ID;
+  const originalSecret = process.env.PRIVY_APP_SECRET;
+  const legacyAddress = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+  let postCount = 0;
+
+  process.env.PRIVY_APP_ID = "test-app";
+  process.env.PRIVY_APP_SECRET = "test-secret";
+  globalThis.fetch = async (_input, init) => {
+    if (init?.method === "GET") {
+      return Response.json({ data: [{
+        id: "legacy-stellar-wallet",
+        address: legacyAddress,
+        chain_type: "stellar",
+        external_id: "legacy_external_id",
+      }] });
+    }
+    postCount += 1;
+    throw new Error("reconnect_must_not_create_wallet");
+  };
+
+  try {
+    const wallet = await getOrCreateUserWallet("did:privy:reconnected-user", "stellar");
+    assert.equal(wallet.id, "legacy-stellar-wallet");
+    assert.equal(wallet.address, legacyAddress);
+    assert.equal(wallet.created, false);
+    assert.equal(postCount, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalAppId === undefined) delete process.env.PRIVY_APP_ID;
+    else process.env.PRIVY_APP_ID = originalAppId;
+    if (originalSecret === undefined) delete process.env.PRIVY_APP_SECRET;
+    else process.env.PRIVY_APP_SECRET = originalSecret;
+  }
+});

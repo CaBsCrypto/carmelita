@@ -69,7 +69,10 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
   const chainType = PRIVY_CHAIN_TYPE_BY_FAMILY[family];
   const externalId = getPrivyUserWalletExternalId(userId, family);
   const current = await listUserWallets(userId, family);
-  const existing = findExactPrivyWallet(current, externalId);
+  // Older Carmelita versions used a different external_id for Stellar.
+  // Reuse a valid wallet already owned by this Privy user instead of creating
+  // a second wallet merely because the deterministic identifier changed.
+  const existing = findExactPrivyWallet(current, externalId) ?? current[0];
   if (existing?.id && existing.address) return normalizeUserWallet(existing as { id: string; address: string; chain_type: string }, family, false);
 
   try {
@@ -83,7 +86,7 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
     return normalizeUserWallet(wallet, family, true);
   } catch (error) {
     const afterRace = await listUserWallets(userId, family).catch(() => []);
-    const recovered = findExactPrivyWallet(afterRace, externalId);
+    const recovered = findExactPrivyWallet(afterRace, externalId) ?? afterRace[0];
     if (recovered?.id && recovered.address) return normalizeUserWallet(recovered as { id: string; address: string; chain_type: string }, family, false);
     throw error;
   }
