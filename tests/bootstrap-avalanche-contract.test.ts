@@ -26,3 +26,13 @@ test("onboarding is metadata-only and MCP context exposes persisted networks", a
   assert.match(context, /paymentSigning:\s*"not_enabled"/);
   assert.doesNotMatch(context, /privateKey|secret|balance/);
 });
+
+test("onboarding UI renders the named Fuji wallet while retaining the Stellar wallet", async () => {
+  const source = await readFile(new URL("../app/agent/agent-onboarding.tsx", import.meta.url), "utf8");
+  assert.match(source, /wallets:\s*\{/);
+  assert.match(source, /result\.wallets\.avalanche\.address/);
+  assert.match(source, /AVALANCHE WALLET/);
+  assert.match(source, /Avalanche Fuji/);
+  assert.match(source, /result\.wallet\.address/);
+  assert.doesNotMatch(source, /fundWallet|rawSign|sendTransaction/);
+});

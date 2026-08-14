@@ -15,15 +15,15 @@ const onboardingUi = {
   en: {
     loading: "Preparing secure sign-in...",
     entryEyebrow: "WORK WITH CARMELITA",
-    entryTitle: "Sign in once. Your Stellar wallet arrives with you.",
-    entryText: "Continue with email, Google or a passkey. Privy creates the identity; Carmelita immediately provisions one user-owned Stellar wallet.",
+    entryTitle: "Sign in once. Your Stellar and Avalanche wallets arrive with you.",
+    entryText: "Continue with email, Google or a passkey. Privy creates the identity; Carmelita provisions user-owned wallets on Stellar Testnet and Avalanche Fuji.",
     create: "Work with Carmelita",
     boundary: "No seed phrase or wallet password required during onboarding.",
     onboarding: "CHAT-GUIDED ONBOARDING",
     steps: ["Authenticate with Privy", "Create a user-owned Stellar wallet", "Ask the agent for Testnet XLM", "Review every on-chain action"],
     workspace: "CARMELITA WORKSPACE",
     ready: "Carmelita is ready.",
-    creating: "Creating your Stellar wallet...",
+    creating: "Creating your Stellar and Avalanche wallets...",
     authenticated: "Authenticated with Privy",
     signout: "Sign out",
     provisioning: "Provisioning automatically",
@@ -70,17 +70,28 @@ const onboardingUi = {
     retry: "Tentar novamente com segurança",
   },
 };
+type BootstrapWallet = {
+  id: string;
+  address: string;
+  chainType: string;
+  created: boolean;
+  owner: "user";
+};
+
 type BootstrapResult = {
   user: { id: string; email: string | null };
   profile: { id: string; email: string | null; status: string };
   persistence: { configured: boolean; provider: string };
   history: { id: string; type: string; summary: string; createdAt: string }[];
-  wallet: {
-    id: string;
-    address: string;
-    chainType: string;
-    created: boolean;
-    owner: "user";
+  wallet: BootstrapWallet;
+  wallets: {
+    stellar: BootstrapWallet;
+    avalanche: BootstrapWallet;
+  };
+  avalanche: {
+    network: { id: "avalanche:fuji"; name: string; explorerUrl: string };
+    fundsMoved: false;
+    signingRequired: false;
   };
   walletArchitecture: {
     active: readonly ["stellar"];
@@ -366,6 +377,19 @@ function PrivyAgent({
               <div><dt>Network</dt><dd>Stellar Testnet</dd></div><div><dt>Provider</dt><dd>Privy native SDK</dd></div>
               <div><dt>Created</dt><dd>{result.wallet.created ? "Just now" : "Existing wallet"}</dd></div>
             </dl>
+          </article>
+          <article className="agent-wallet-card">
+            <header><span>AVALANCHE WALLET</span><b>ACTIVE</b></header>
+            <div className="agent-wallet-mark">A</div>
+            <h2>{shortAddress(result.wallets.avalanche.address)}</h2>
+            <code>{result.wallets.avalanche.address}</code>
+            <dl>
+              <div><dt>Ownership</dt><dd>User-owned</dd></div>
+              <div><dt>Network</dt><dd>Avalanche Fuji</dd></div>
+              <div><dt>Provider</dt><dd>Privy native SDK</dd></div>
+              <div><dt>Created</dt><dd>{result.wallets.avalanche.created ? "Just now" : "Existing wallet"}</dd></div>
+            </dl>
+            <a href={`${result.avalanche.network.explorerUrl}/address/${result.wallets.avalanche.address}`} target="_blank" rel="noreferrer">View on explorer</a>
           </article>
           <div className="agent-ready-panel">
             <p className="eyebrow">AUTOMATIC BOOTSTRAP COMPLETE</p>

@@ -6,6 +6,36 @@ import {
   agentWallets,
 } from "@/db/schema";
 
+type PublicWallet = {
+  address: string;
+  chainType: string;
+  network: string;
+  status: string;
+};
+
+const MCP_WALLET_NETWORKS = ["stellar:testnet", "avalanche:fuji"] as const;
+
+export function buildMcpWalletContext(wallets: PublicWallet[]) {
+  const ordered = [...wallets].sort((left, right) =>
+    left.network.localeCompare(right.network) || left.address.localeCompare(right.address),
+  );
+  const active = (network: typeof MCP_WALLET_NETWORKS[number]) =>
+    ordered.find((wallet) => wallet.network === network && wallet.status === "active") ?? null;
+  const walletsByNetwork = {
+    stellarTestnet: active("stellar:testnet"),
+    avalancheFuji: active("avalanche:fuji"),
+  };
+  const missingNetworks = MCP_WALLET_NETWORKS.filter((network) => !active(network));
+  return {
+    wallets: ordered,
+    walletsByNetwork,
+    walletReadiness: {
+      complete: missingNetworks.length === 0,
+      missingNetworks,
+    },
+  };
+}
+
 export async function getAgentMcpContext(userId: string) {
   const db = getDb();
   const [users, wallets, connections] = await Promise.all([
@@ -41,7 +71,7 @@ export async function getAgentMcpContext(userId: string) {
   if (!users[0]) throw new Error("agent_user_not_found");
   return {
     user: users[0],
-    wallets,
+    ...buildMcpWalletContext(wallets),
     connections,
     authority: {
       paymentSigning: "not_enabled",
