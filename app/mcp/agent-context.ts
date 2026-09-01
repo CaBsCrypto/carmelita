@@ -13,7 +13,7 @@ type PublicWallet = {
   status: string;
 };
 
-const MCP_WALLET_NETWORKS = ["stellar:testnet", "avalanche:fuji"] as const;
+const MCP_WALLET_NETWORKS = ["stellar:testnet", "avalanche:fuji", "solana:devnet"] as const;
 
 export function buildMcpWalletContext(wallets: PublicWallet[]) {
   const ordered = [...wallets].sort((left, right) =>
@@ -30,6 +30,7 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   const walletsByNetwork = {
     stellarTestnet: active("stellar:testnet"),
     avalancheFuji: active("avalanche:fuji"),
+    solanaDevnet: active("solana:devnet"),
   };
   const missingNetworks = MCP_WALLET_NETWORKS.filter((network) => !active(network));
   return {
