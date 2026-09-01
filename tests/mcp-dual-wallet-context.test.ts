@@ -9,7 +9,7 @@ test("MCP wallet context names both persisted testnet wallets deterministically"
   ]);
   assert.equal(context.walletsByNetwork.stellarTestnet?.network, "stellar:testnet");
   assert.equal(context.walletsByNetwork.avalancheFuji?.network, "avalanche:fuji");
-  assert.deepEqual(context.walletReadiness, { complete: true, missingNetworks: [] });
+  assert.deepEqual(context.walletReadiness, { complete: true, missingNetworks: [], suppressedStaleWallets: 0 });
   assert.doesNotMatch(JSON.stringify(context), /privateKey|secret|walletId/i);
 });
 
