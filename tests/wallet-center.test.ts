@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("Wallet Center exposes Fuji activation and diagnostics without enabling Solana", async () => {
+test("Wallet Center exposes Fuji and Solana Devnet active cards and diagnostics", async () => {
   const source = await readFile(
     new URL("../app/agent/wallet-center.tsx", import.meta.url),
     "utf8",
@@ -11,8 +11,8 @@ test("Wallet Center exposes Fuji activation and diagnostics without enabling Sol
   assert.match(source, /\/api\/agent\/wallets\/avalanche/);
   assert.match(source, /explicitUserConfirmation: true/);
   assert.match(source, /Solana Devnet/);
-  assert.match(source, /activation intentionally disabled/);
-  assert.doesNotMatch(source, /network: "solana:devnet"/);
+  assert.match(source, /\/api\/agent\/wallets\/solana/);
+  assert.match(source, /\/api\/agent\/wallets\/solana\/fund/);
 });
 
 test("Wallet Center is mounted after authenticated onboarding", async () => {
