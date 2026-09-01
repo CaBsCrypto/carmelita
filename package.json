@@ -44,7 +44,7 @@
         "graph:rebuild": "graphify extract . --code-only --force",
         "graph:mcp:smoke": "tsx scripts/graphify-mcp-smoke.ts",
         "langchain:smoke": "tsx --env-file=.env.local scripts/langchain-planner-smoke.ts",
-    "runtime:doctor": "node --env-file-if-exists=.env.local scripts/runtime-doctor.mjs",
+        "runtime:doctor": "node --env-file-if-exists=.env.local scripts/runtime-doctor.mjs",
         "acceptance:avalanche:doctor": "tsx scripts/avalanche-acceptance.ts doctor",
         "acceptance:avalanche:authenticated": "tsx scripts/avalanche-acceptance.ts authenticated",
         "acceptance:avalanche:prepare": "tsx scripts/avalanche-acceptance.ts prepare"
@@ -58,6 +58,7 @@
         "@openzeppelin/relayer-plugin-channels": "^0.20.0",
         "@privy-io/node": "0.26.0",
         "@privy-io/react-auth": "3.35.0",
+        "@solana/web3.js": "^1.98.4",
         "@stellar/stellar-sdk": "^16.0.1",
         "@x402/core": "^2.18.0",
         "@x402/fetch": "^2.18.0",

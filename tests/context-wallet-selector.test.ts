@@ -12,7 +12,8 @@ test("Live Context mounts the compact multichain wallet selector", async () => {
   assert.match(selector, /aria-label=\{t\.open\}/);
   assert.match(selector, /Stellar Testnet/);
   assert.match(selector, /Fuji · 43113/);
-  assert.match(selector, /evmWallet \? 2 : 1/);
+  assert.match(selector, /Solana Devnet/);
+  assert.match(selector, /filter\(Boolean\)\.length/);
   assert.match(selector, /balances\?\.usdc\.balance/);
 });
 
