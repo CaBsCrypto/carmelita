@@ -51,8 +51,10 @@ export async function POST(request: Request) {
         wallets: {
           stellar: onboarding.stellar,
           avalanche: onboarding.avalanche.wallet,
+          solana: onboarding.solana.wallet,
         },
         avalanche: onboarding.avalanche,
+        solana: onboarding.solana,
         account: onboarding.account,
         activation: onboarding.activation,
         ...onboarding.agentAccount,

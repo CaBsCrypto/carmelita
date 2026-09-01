@@ -28,6 +28,16 @@ const avalancheWallet: UserWallet = {
   owner: "user",
 };
 
+const solanaAddress = "4nd126txEsFDzA5E6zpGFg7Jz4E7h9zE94iY1h4p8YmK";
+const solanaWallet: UserWallet = {
+  id: "fixture-solana-wallet",
+  address: solanaAddress,
+  family: "solana",
+  chainType: "solana",
+  created: true,
+  owner: "user",
+};
+
 test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surfaces", async () => {
   const persistedWallets: Array<{
     userId: string;
@@ -85,6 +95,30 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
           signingRequired: false,
         };
       },
+      ensureSolanaWallet: async () => {
+        persistedWallets.push({
+          userId,
+          address: solanaWallet.address,
+          chainType: solanaWallet.chainType,
+          network: "solana:devnet",
+          status: "active",
+          createdAt,
+          updatedAt: createdAt,
+        });
+        return {
+          wallet: solanaWallet,
+          network: {
+            id: "solana:devnet",
+            family: "solana",
+            name: "Solana Devnet",
+            nativeAsset: "SOL",
+            explorerUrl: "https://explorer.solana.com/?cluster=devnet",
+            rollout: "experimental",
+          },
+          fundsMoved: false,
+          signingRequired: false,
+        };
+      },
     },
   );
 
@@ -101,7 +135,7 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
   }));
   assert.deepEqual(
     new Set(mcpVisibleWallets.map((wallet) => wallet.network)),
-    new Set(["stellar:testnet", "avalanche:fuji"]),
+    new Set(["stellar:testnet", "avalanche:fuji", "solana:devnet"]),
   );
   assert.ok(mcpVisibleWallets.some((wallet) => wallet.address === stellarAddress));
   assert.ok(mcpVisibleWallets.some((wallet) => wallet.address === avalancheAddress));
@@ -115,6 +149,7 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
     registry.users[0]?.wallets.map((wallet) => [wallet.networkName, wallet.address]),
     [
       ["Avalanche Fuji", avalancheAddress],
+      ["Solana Devnet", solanaAddress],
       ["Stellar Testnet", stellarAddress],
     ],
   );

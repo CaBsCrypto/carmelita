@@ -1,12 +1,14 @@
 import { persistAgentAccount } from "@/app/agent-account";
 import { getStellarTestnetAccount } from "@/app/privy-stellar";
 import { ensureAvalancheFujiWallet } from "@/app/wallets/avalanche-onboarding";
+import { ensureSolanaDevnetWallet } from "@/app/wallets/solana-onboarding";
 import { getOrCreateUserWallet } from "@/app/wallets/privy";
 import type { UserWallet } from "@/app/wallets/types";
 
 type StellarAccount = Awaited<ReturnType<typeof getStellarTestnetAccount>>;
 type AgentAccount = Awaited<ReturnType<typeof persistAgentAccount>>;
 type AvalancheAccount = Awaited<ReturnType<typeof ensureAvalancheFujiWallet>>;
+type SolanaAccount = Awaited<ReturnType<typeof ensureSolanaDevnetWallet>>;
 
 export type WalletOnboardingDependencies = {
   getOrCreateStellarWallet: (userId: string) => Promise<UserWallet>;
@@ -21,6 +23,10 @@ export type WalletOnboardingDependencies = {
     userId: string;
     email: string | null;
   }) => Promise<AvalancheAccount>;
+  ensureSolanaWallet: (input: {
+    userId: string;
+    email: string | null;
+  }) => Promise<SolanaAccount>;
 };
 
 const defaultDependencies: WalletOnboardingDependencies = {
@@ -28,6 +34,7 @@ const defaultDependencies: WalletOnboardingDependencies = {
   getStellarAccount: getStellarTestnetAccount,
   persistStellarAccount: persistAgentAccount,
   ensureAvalancheWallet: ensureAvalancheFujiWallet,
+  ensureSolanaWallet: ensureSolanaDevnetWallet,
 };
 
 export async function provisionUserWallets(
@@ -58,10 +65,12 @@ export async function provisionUserWallets(
     activation,
   });
   const avalanche = await dependencies.ensureAvalancheWallet(input);
+  const solana = await dependencies.ensureSolanaWallet(input);
 
   return {
     stellar,
     avalanche,
+    solana,
     account,
     activation,
     agentAccount,

@@ -22,6 +22,15 @@ const evm: UserWallet = {
   owner: "user",
 };
 
+const solanaWallet: UserWallet = {
+  id: "solana-wallet",
+  address: "4nd126txEsFDzA5E6zpGFg7Jz4E7h9zE94iY1h4p8YmK",
+  family: "solana",
+  chainType: "solana",
+  created: true,
+  owner: "user",
+};
+
 test("wallet onboarding provisions and persists Stellar plus Avalanche without moving funds", async () => {
   const calls: string[] = [];
   const result = await provisionUserWallets(
@@ -57,12 +66,29 @@ test("wallet onboarding provisions and persists Stellar plus Avalanche without m
           signingRequired: false,
         };
       },
+      ensureSolanaWallet: async () => {
+        calls.push("solana.create");
+        return {
+          wallet: solanaWallet,
+          network: {
+            id: "solana:devnet",
+            family: "solana",
+            name: "Solana Devnet",
+            nativeAsset: "SOL",
+            explorerUrl: "https://explorer.solana.com/?cluster=devnet",
+            rollout: "experimental",
+          },
+          fundsMoved: false,
+          signingRequired: false,
+        };
+      },
     },
   );
 
-  assert.deepEqual(calls, ["stellar.create", "stellar.persist", "avalanche.create"]);
+  assert.deepEqual(calls, ["stellar.create", "stellar.persist", "avalanche.create", "solana.create"]);
   assert.equal(result.stellar.address, stellar.address);
   assert.equal(result.avalanche.wallet.address, evm.address);
+  assert.equal(result.solana.wallet.address, solanaWallet.address);
   assert.equal(result.activation, "pending");
   assert.equal(result.fundsMoved, false);
   assert.equal(result.signingRequired, false);
