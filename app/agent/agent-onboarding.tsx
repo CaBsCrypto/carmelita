@@ -6,6 +6,7 @@ import { usePrivy, useUser } from "@privy-io/react-auth";
 import AgentChat from "./agent-chat";
 import AgentMemoryVault from "./agent-memory-vault";
 import WalletCenter from "./wallet-center";
+import WebMcpInspector from "./webmcp-inspector";
 import AgentExternalAccess from "./agent-external-access";
 import AgentConnectedApps from "./agent-connected-apps";
 import { useEffect, useRef, useState } from "react";
@@ -364,6 +365,7 @@ function PrivyAgent({
           }
           getAccessToken={getAccessToken}
         />
+        <WebMcpInspector locale={locale} getAccessToken={getAccessToken} />
 
 
         <div className="agent-wallet-grid">
