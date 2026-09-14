@@ -49,7 +49,8 @@
         "acceptance:avalanche:doctor": "tsx scripts/avalanche-acceptance.ts doctor",
         "acceptance:avalanche:authenticated": "tsx scripts/avalanche-acceptance.ts authenticated",
         "acceptance:avalanche:prepare": "tsx scripts/avalanche-acceptance.ts prepare",
-        "db:migrate:preview": "tsx scripts/preview-migrate.ts"
+        "db:migrate:preview": "tsx scripts/preview-migrate.ts",
+        "db:migrate:production": "tsx scripts/production-migrate.ts"
     },
     "dependencies": {
         "@langchain/langgraph": "^1.4.8",

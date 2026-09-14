@@ -1,6 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildAgentReply, parseStellarBazaarSearchIntent } from "../app/agent-chat-logic";
+import { listGatewayCapabilities } from "../app/agent-gateway/catalog";
+
+test.beforeEach(() => {
+  process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "true";
+  process.env.STELLAR_BAZAAR_BASE_URL = "https://stellar-bazaar-x402.vercel.app";
+});
+test.afterEach(() => {
+  delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  delete process.env.STELLAR_BAZAAR_BASE_URL;
+});
+
+test("disabled discovery exposes no chat action or Gateway capability", () => {
+  delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  assert.equal(buildAgentReply("Busca en stellar bazaar informes").actions.length, 0);
+  assert.equal(listGatewayCapabilities().some(item => item.id === "stellar.bazaar.discovery"), false);
+  process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "true";
+  assert.equal(listGatewayCapabilities().some(item => item.id === "stellar.bazaar.discovery"), true);
+});
 
 test("the Bazaar parser needs a Stellar Bazaar mention plus a search verb", () => {
   assert.equal(parseStellarBazaarSearchIntent("what is the XLM price"), null);

@@ -1,5 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { getStellarBazaarConfig } from "../app/stellar-bazaar/config";
+
+test.beforeEach(() => {
+  process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "true";
+  process.env.STELLAR_BAZAAR_BASE_URL = "https://stellar-bazaar-x402.vercel.app";
+});
+test.afterEach(() => {
+  delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  delete process.env.STELLAR_BAZAAR_BASE_URL;
+});
+
+test("discovery fails closed before network access unless explicitly enabled at the approved origin", async () => {
+  assert.equal(getStellarBazaarConfig({}).enabled, false);
+  assert.equal(getStellarBazaarConfig({ STELLAR_BAZAAR_DISCOVERY_ENABLED: "true" }).enabled, false);
+  for (const origin of ["https://other.invalid", "http://stellar-bazaar-x402.vercel.app", "https://stellar-bazaar-x402.vercel.app/path"]) {
+    assert.equal(getStellarBazaarConfig({ STELLAR_BAZAAR_DISCOVERY_ENABLED: "true", STELLAR_BAZAAR_BASE_URL: origin }).enabled, false);
+  }
+  delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  let calls = 0;
+  await assert.rejects(searchStellarBazaar("website", { fetcher: async () => { calls++; throw new Error("unexpected"); } }), /stellar_bazaar_unavailable/);
+  assert.equal(calls, 0);
+});
 import {
   decimalAmountToAtomic,
   normalizeBazaarOffer,

@@ -26,13 +26,13 @@ export function getStellarBazaarConfig(
   env: Record<string, string | undefined> = process.env,
 ) {
   const override = env.STELLAR_BAZAAR_BASE_URL ?? "";
-  const baseUrl = override
-    ? parsedHttpsOrigin(override)
-    : STELLAR_BAZAAR_DEFAULT_BASE_URL;
+  const candidate = parsedHttpsOrigin(override);
+  const baseUrl = candidate === STELLAR_BAZAAR_DEFAULT_BASE_URL ? candidate : null;
+  const enabled = env.STELLAR_BAZAAR_DISCOVERY_ENABLED === "true" && baseUrl !== null;
   return {
-    enabled: baseUrl !== null,
+    enabled,
     baseUrl: baseUrl ?? null,
-    reason: baseUrl === null ? "stellar_bazaar_config_required" : null,
+    reason: !enabled ? "stellar_bazaar_config_required" : null,
   } as const;
 }
 

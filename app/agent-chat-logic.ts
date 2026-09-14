@@ -1,4 +1,5 @@
 import { connections, type Connection } from "@/app/connections/data";
+import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
 import { parseAvalancheChatIntent } from "@/app/wallets/avalanche-intents";
 import { parseAvalancheEcosystemReadIntent } from "@/app/connectors/avalanche-read-intents";
 
@@ -519,6 +520,14 @@ export function buildAgentReply(message: string, context: AgentChatContext = {})
   }
   const bazaarQuery = parseStellarBazaarSearchIntent(message);
   if (bazaarQuery !== null) {
+    if (!getStellarBazaarConfig().enabled) return {
+      content: {
+        es: "La búsqueda en Stellar Bazaar todavía no está habilitada en este entorno.",
+        en: "Stellar Bazaar search is not enabled in this environment yet.",
+        pt: "A pesquisa na Stellar Bazaar ainda não está habilitada neste ambiente.",
+      }[language],
+      actions: [],
+    };
     if (bazaarQuery.length < 2) {
       return {
         content: {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { backend } from "@/app/commerce-backend";
 import { assertPreviewIsolation } from "@/app/preview-isolation";
+import { maintenanceEnabled } from "@/app/maintenance";
 
 // Acceptance checks must observe the deployed runtime, never a build-time response.
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export function GET() {
   return NextResponse.json({
     service: "agente-asistente",
     status: "ok",
+    maintenance: maintenanceEnabled(),
     environment: "stellar-testnet",
     persistence: backend.mode(),
     ...(previewIsolation ? { previewIsolation } : {}),

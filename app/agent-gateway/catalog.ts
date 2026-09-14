@@ -6,6 +6,7 @@ import {
   GATEWAY_API_VERSION,
   type GatewayCapability,
 } from "@/app/agent-gateway/types";
+import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
 
 type StaticCapability = Omit<GatewayCapability, "version" | "execution" | "requiresApproval">;
 
@@ -223,7 +224,7 @@ function fromAvalanche(capability: AvalancheCapability & { category: string }): 
 
 export function listGatewayCapabilities(): GatewayCapability[] {
   return [
-    ...staticCapabilities.map((capability) => ({
+    ...staticCapabilities.filter((capability) => capability.id !== "stellar.bazaar.discovery" || getStellarBazaarConfig().enabled).map((capability) => ({
       ...capability,
       requiresApproval: capability.approval !== "none",
       version: GATEWAY_API_VERSION,

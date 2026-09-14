@@ -68,8 +68,13 @@ export function isEvmExpansionNetwork(input: string) {
 }
 
 export function isEvmExpansionEnabled(env: Record<string, string | undefined> = process.env) {
-  return env.VERCEL_ENV === "preview" && env.CARMELITA_PREVIEW_ISOLATED === "true"
-    && env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED === "true";
+  if (env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED !== "true") return false;
+  if (env.VERCEL_ENV === "production") {
+    return env.CARMELITA_PREVIEW_ISOLATED !== "true"
+      && env.CARMELITA_PREVIEW_DATABASE_URL === undefined
+      && env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED === undefined;
+  }
+  return env.VERCEL_ENV === "preview" && env.CARMELITA_PREVIEW_ISOLATED === "true";
 }
 
 export function isWalletNetworkEnabled(input: string) {

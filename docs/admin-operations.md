@@ -14,7 +14,7 @@ be linked from the public navigation.
 
 ## Access model
 
-### Isolated Preview: Privy administrators
+### Privy administrators: explicit environment configuration
 
 The isolated Preview uses `CARMELITA_ADMIN_EMAILS`, a server-only comma-separated
 allowlist stored as a sensitive Vercel variable scoped to its Git branch.
@@ -34,14 +34,17 @@ their actual addresses are intentionally kept out of the repository.
 Use `/admin/wallets` to inspect registered users and wallet provisioning status.
 Users appear after they complete the application login/bootstrap flow, not merely
 because their email was listed in configuration. This panel does not impersonate
-users or authorize transactions. Real login acceptance remains pending until
-the account owners complete the visible authentication flow.
+users or authorize transactions. Both Preview administrators completed the visible
+login and logout acceptance on September 9. Production acceptance remains pending.
 
 Configuration applied on 2026-09-08 only to Preview branch
 `fix/webmcp-type-contract` in the existing Vercel project. Production remains
 unchanged. Graphify update remains blocked by its missing Python 3.12 interpreter.
 
-Production uses a password hash and a signed, HTTP-only 12-hour session cookie.
+The existing production deployment uses a password hash and a signed, HTTP-only 12-hour session cookie.
+The prepared release switches to Privy only after `CARMELITA_ADMIN_EMAILS` is
+explicitly configured there. Preview settings are not inherited. See the
+[production activation record](PRODUCTION-ACTIVATION-2026-09-14.md).
 The password itself is never stored. Required variables:
 
 - `ADMIN_USERNAME`

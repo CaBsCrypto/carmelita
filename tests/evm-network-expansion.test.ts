@@ -23,12 +23,16 @@ async function expanded(operation: () => Promise<void>) {
   }
 }
 
-test("expansion requires explicit isolated Preview and never enables Production", () => {
+test("expansion requires explicit activation and isolates Preview from Production", () => {
   const env = { VERCEL_ENV: "preview", CARMELITA_PREVIEW_ISOLATED: "true", CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: "true" };
   assert.equal(isEvmExpansionEnabled(env), true);
   for (const override of [{ VERCEL_ENV: "production" }, { CARMELITA_PREVIEW_ISOLATED: "false" }, { CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: undefined }]) {
     assert.equal(isEvmExpansionEnabled({ ...env, ...override }), false);
   }
+  assert.equal(isEvmExpansionEnabled({ VERCEL_ENV: "production", CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: "true" }), true);
+  assert.equal(isEvmExpansionEnabled({ VERCEL_ENV: "production" }), false);
+  assert.equal(isEvmExpansionEnabled({ VERCEL_ENV: "development", CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: "true" }), false);
+  assert.equal(isEvmExpansionEnabled({ VERCEL_ENV: "production", CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: "true", CARMELITA_PREVIEW_DATABASE_URL: "" }), false);
 });
 
 test("automatic onboarding resolves one EVM wallet and persists all three networks atomically", async () => expanded(async () => {
