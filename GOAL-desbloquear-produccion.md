@@ -67,3 +67,7 @@ Sin pagos, financiación, trustlines, destrucción de claves Privy, cambios en B
 ## Goal posterior
 
 Retomar la publicación controlada de la PR #28: revisar las migraciones restantes, activar las cinco redes de prueba y aceptar descubrimiento de Bazaar sin compras. WebMCP permanecerá experimental si falta aceptación nativa. Graphify sigue pendiente por el bloqueo de instalación; no se considera actualizado.
+
+## Estado posterior: reparación aplicada
+
+Las dos transacciones ya se aplicaron y Carmelita reabrió con la candidata corregida. Evidencia vigente: [reparación aplicada y reapertura](docs/PRODUCTION-REPAIR-APPLIED-2026-09-14.md). Quedan siete billeteras, veinte migraciones y cero duplicados; evento y pagos preservados. Falta la aceptación visible de reingreso de la cuenta afectada y la comprobación de recuperación posterior. Las secciones anteriores describen la secuencia y sus criterios, no trabajo íntegramente pendiente.
