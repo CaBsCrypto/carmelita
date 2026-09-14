@@ -1,12 +1,16 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
+import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { useEffect, useRef, useState } from "react";
 import { summarizeX402Resource } from "../x402/resource-preview";
+import { stellarPaymentCopy } from "./stellar-payment-copy";
 import { useLocale } from "../language-toggle";
 import AvalancheChatAction, { type AvalancheWalletAction } from "./avalanche-chat-action";
 import AvalancheX402Action, { type AvalancheX402Action as AvalancheX402WalletAction } from "./avalanche-x402-action";
 import CctpBridgeAction, { type CctpBridgeWalletAction } from "./cctp-bridge-action";
+import StellarBazaarActionCard, { type StellarBazaarAction } from "./stellar-bazaar-action";
 import ContextWalletSelector from "./context-wallet-selector";
 import {
   browserBridgePing,
@@ -35,67 +39,16 @@ const defindexUi = {
 };
 
 const x402Ui = {
-  en: { label: "X402 · STELLAR TESTNET", heading: "Official demo payment, signed by your Privy wallet.", close: "Close", preparing: "Reading the live HTTP 402 challenge...", exact: "EXACT PAYMENT FOR APPROVAL", asset: "Asset", amount: "Amount", destination: "Recipient", network: "Network", confirm: "Confirm 0.01 USDC with Privy", paying: "Signing auth entry and paying...", receipt: "Open settlement receipt", faucet: "Get Testnet USDC", trustline: "The official x402 USDC trustline or balance is missing. Prepare the wallet, then use the Circle faucet.", confirmed: "The x402 resource was paid and delivered.", replayed: "This payment was already completed; the original receipt was returned." },
-  es: { label: "X402 · STELLAR TESTNET", heading: "Pago del demo oficial firmado por tu wallet Privy.", close: "Cerrar", preparing: "Leyendo el desafío HTTP 402 en vivo...", exact: "PAGO EXACTO PARA APROBACIÓN", asset: "Activo", amount: "Monto", destination: "Destinatario", network: "Red", confirm: "Confirmar 0.01 USDC con Privy", paying: "Firmando autorización y pagando...", receipt: "Abrir recibo de liquidación", faucet: "Obtener USDC Testnet", trustline: "Falta la trustline o el saldo del USDC oficial de x402. Prepara la wallet y luego utiliza el faucet de Circle.", confirmed: "El recurso x402 fue pagado y entregado.", replayed: "Este pago ya estaba completado; se devolvió el recibo original." },
-  pt: { label: "X402 · STELLAR TESTNET", heading: "Pagamento do demo oficial assinado pela sua wallet Privy.", close: "Fechar", preparing: "Lendo o desafio HTTP 402 ao vivo...", exact: "PAGAMENTO EXATO PARA APROVAÇÃO", asset: "Ativo", amount: "Valor", destination: "Destinatário", network: "Rede", confirm: "Confirmar 0.01 USDC com Privy", paying: "Assinando autorização e pagando...", receipt: "Abrir recibo da liquidação", faucet: "Obter USDC Testnet", trustline: "Falta a trustline ou o saldo do USDC oficial da x402. Prepare a wallet e depois use o faucet da Circle.", confirmed: "O recurso x402 foi pago e entregue.", replayed: "Este pagamento já foi concluído; o recibo original foi retornado." },
+  en: { label: "X402 · STELLAR TESTNET", heading: "Official demo payment, signed by your Privy wallet.", close: "Close", preparing: "Reading the live HTTP 402 challenge...", exact: "EXACT PAYMENT FOR APPROVAL", asset: "Asset", amount: "Amount", destination: "Recipient", network: "Network", confirm: "Confirm and sign with Privy", paying: "Signing auth entry and paying...", receipt: "Open settlement receipt", faucet: "Get Testnet USDC", trustline: "The official x402 USDC trustline or balance is missing. Prepare the wallet, then use the Circle faucet.", confirmed: "The x402 resource was paid and delivered.", replayed: "This payment was already completed; the original receipt was returned." },
+  es: { label: "X402 · STELLAR TESTNET", heading: "Pago del demo oficial firmado por tu wallet Privy.", close: "Cerrar", preparing: "Leyendo el desafío HTTP 402 en vivo...", exact: "PAGO EXACTO PARA APROBACIÓN", asset: "Activo", amount: "Monto", destination: "Destinatario", network: "Red", confirm: "Confirmar y firmar con Privy", paying: "Firmando autorización y pagando...", receipt: "Abrir recibo de liquidación", faucet: "Obtener USDC Testnet", trustline: "Falta la trustline o el saldo del USDC oficial de x402. Prepara la wallet y luego utiliza el faucet de Circle.", confirmed: "El recurso x402 fue pagado y entregado.", replayed: "Este pago ya estaba completado; se devolvió el recibo original." },
+  pt: { label: "X402 · STELLAR TESTNET", heading: "Pagamento do demo oficial assinado pela sua wallet Privy.", close: "Fechar", preparing: "Lendo o desafio HTTP 402 ao vivo...", exact: "PAGAMENTO EXATO PARA APROVAÇÃO", asset: "Ativo", amount: "Valor", destination: "Destinatário", network: "Rede", confirm: "Confirmar e assinar com Privy", paying: "Assinando autorização e pagando...", receipt: "Abrir recibo da liquidação", faucet: "Obter USDC Testnet", trustline: "Falta a trustline ou o saldo do USDC oficial da x402. Prepare a wallet e depois use o faucet da Circle.", confirmed: "O recurso x402 foi pago e entregue.", replayed: "Este pagamento já foi concluído; o recibo original foi retornado." },
 };
 const x402ResultUi = {
   en: { balance: "x402 balance", updating: "Updating on-chain...", resourceDelivered: "Protected resource delivered", source: "Source", verifyReplay: "Verify duplicate protection", checkingReplay: "Checking original payment..." },
   es: { balance: "Saldo x402", updating: "Actualizando on-chain...", resourceDelivered: "Recurso protegido entregado", source: "Origen", verifyReplay: "Verificar protecci\u00f3n contra duplicados", checkingReplay: "Comprobando el pago original..." },
   pt: { balance: "Saldo x402", updating: "Atualizando on-chain...", resourceDelivered: "Recurso protegido entregue", source: "Origem", verifyReplay: "Verificar prote\u00e7\u00e3o contra duplicados", checkingReplay: "Verificando o pagamento original..." },
 };
-const x402ReplayUi = {
-  en: { verified: "Duplicate protection verified", sameReceipt: "Same receipt", zeroDebit: "Second debit", before: "Before", after: "After" },
-  es: { verified: "Protecci\u00f3n contra duplicados verificada", sameReceipt: "Mismo recibo", zeroDebit: "Segundo d\u00e9bito", before: "Antes", after: "Despu\u00e9s" },
-  pt: { verified: "Prote\u00e7\u00e3o contra duplicados verificada", sameReceipt: "Mesmo recibo", zeroDebit: "Segundo d\u00e9bito", before: "Antes", after: "Depois" },
-};
-
-
-
 type X402ChatIntent = { operation: "demo_payment"; requestId: string };
-type X402Payment = {
-  id: string;
-  signingAddress: string;
-  signingHash: `0x${string}` | null;
-  resourceUrl: string;
-  network: string;
-  asset: "USDC";
-  assetContract: string;
-  payTo: string;
-  amount: string;
-  status: string;
-  transactionHash: string | null;
-  explorerUrl: string | null;
-  resourcePreview: string | null;
-  expiresAt: string;
-};
-type X402TrustlineApproval = {
-  id: string;
-  signingAddress: string;
-  signingHash: `0x${string}` | null;
-  status: string;
-  transactionHash: string | null;
-  explorerUrl: string | null;
-  expiresAt: string;
-  preview: { title: string; description: string; network: string; asset: string; amount: string; destination: string };
-};
-type X402Status = {
-  x402Usdc: {
-    trustlineActive: boolean;
-    balance: string;
-    faucetUrl: string;
-    internalFaucet?: { configured: boolean };
-  };
-  resource: string;
-  recent: X402Payment[];
-};
-type X402ReplayEvidence = {
-  transactionHash: string;
-  balanceBefore: string;
-  balanceAfter: string;
-  replayDebit: "0.0000000 USDC";
-};
-
 // In-app transaction receipt shown in a modal, so "open receipt" never ejects the user.
 type ReceiptData = {
   title: string;
@@ -117,6 +70,7 @@ type ChatAction = {
     completionMessage: string;
     permissions: string[];
   };
+  bazaarAction?: StellarBazaarAction;
 };
 
 type ExternalConnection = {
@@ -270,8 +224,10 @@ export default function AgentChat({
   const ui = chatUi[locale];
   const dui = defindexUi[locale];
   const xui = x402Ui[locale];
+  const xrecovery = stellarPaymentCopy[locale];
   const xrui = x402ResultUi[locale];
-  const xreui = x402ReplayUi[locale];
+  const { user } = usePrivy();
+  const x402UserId = user?.id;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [liveWalletBalance, setLiveWalletBalance] = useState(walletBalance);
   const [status, setStatus] = useState<"loading" | "ready" | "sending" | "error">(
@@ -329,9 +285,12 @@ export default function AgentChat({
   const [x402Status, setX402Status] = useState<X402Status | null>(null);
   const [liveX402UsdcBalance, setLiveX402UsdcBalance] = useState<string | null>(null);
   const [x402Payment, setX402Payment] = useState<X402Payment | null>(null);
-  const [x402Trustline, setX402Trustline] = useState<X402TrustlineApproval | null>(null);
+  const [x402Now, setX402Now] = useState(Date.now);
+  const x402Operation = useRef(false);
+  const x402Revision = useRef(0);
+  const x402Session = useRef(new AbortController());
   const [x402Busy, setX402Busy] = useState(false);
-  const [x402ReplayEvidence, setX402ReplayEvidence] = useState<X402ReplayEvidence | null>(null);
+
   const [x402Notice, setX402Notice] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -395,30 +354,46 @@ export default function AgentChat({
     };
   }, [getAccessToken]);
   useEffect(() => {
-    let active = true;
-    async function loadX402Balance() {
+    const controller = new AbortController();
+    x402Session.current = controller;
+    const revision = ++x402Revision.current;
+    x402Operation.current = false;
+    async function restore() {
+      await Promise.resolve();
+      if (controller.signal.aborted) return;
+      setX402Payment(null); setX402Status(null); setLiveX402UsdcBalance(null);
+      setX402Busy(false); setX402Notice(null); setX402Open(false);
+      if (!x402UserId) return;
       try {
         const token = await getAccessToken();
+        controller.signal.throwIfAborted();
         if (!token) return;
-        const response = await fetch("/api/agent/x402", {
-          headers: { Authorization: "Bearer " + token },
-          cache: "no-store",
-        });
-        const result = await response.json() as X402Status;
-        if (active && response.ok) {
-          setX402Status(result);
-          setLiveX402UsdcBalance(result.x402Usdc.balance);
+        const read = async (id?: string) => {
+          const response = await fetch(`/api/agent/x402${id ? `?paymentId=${encodeURIComponent(id)}` : ""}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: controller.signal });
+          const body = await response.json();
+          if (!response.ok) throw new Error("x402_restore_unavailable");
+          return body;
+        };
+        const current = await read() as X402Status;
+        const payment = await restoreStellarPayment({ userId: x402UserId, storage: window.localStorage, status: current, assertCurrentSession: () => controller.signal.throwIfAborted(), readPayment: async (id) => (await read(id)).payment });
+        if (!controller.signal.aborted && x402Revision.current === revision) {
+          setX402Status(current);
+          setLiveX402UsdcBalance(current.x402Usdc.balance);
+          setX402Payment(payment);
         }
       } catch {
-        // The chat remains usable while an optional on-chain balance refresh recovers.
+        if (!controller.signal.aborted && x402Revision.current === revision) setX402Notice("x402_restore_unavailable");
       }
     }
-    void loadX402Balance();
-    return () => {
-      active = false;
-    };
-  }, [getAccessToken]);
+    void restore();
+    return () => controller.abort();
+  }, [getAccessToken, x402UserId]);
 
+  useEffect(() => {
+    if (x402Payment?.status !== "prepared") return;
+    const timer = window.setInterval(() => setX402Now(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [x402Payment?.status]);
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -896,20 +871,26 @@ export default function AgentChat({
   }
 
 
-  async function x402Fetch(body?: Record<string, unknown>) {
+  function keepX402Payment(payment: X402Payment, signal: AbortSignal) {
+    if (signal.aborted || x402Session.current.signal !== signal) return;
+    setX402Payment(payment);
+    if (x402UserId) try { rememberStellarPayment(x402UserId, payment, window.localStorage); } catch { /* Recovery can use the server pending record. */ }
+  }
+
+  async function x402Fetch(body?: Record<string, unknown>, paymentId?: string, signal = x402Session.current.signal) {
+    signal.throwIfAborted();
     const token = await getAccessToken();
-    if (!token) throw new Error("Authentication token unavailable");
-    const response = await fetch("/api/agent/x402", {
-      method: body ? "POST" : "GET",
-      headers: {
-        Authorization: "Bearer " + token,
-        ...(body ? { "Content-Type": "application/json" } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      cache: "no-store",
+    signal.throwIfAborted();
+    if (!token) throw new Error("authentication_required");
+    const response = await fetch(`/api/agent/x402${paymentId ? `?paymentId=${encodeURIComponent(paymentId)}` : ""}`, {
+      method: body ? "POST" : "GET", signal,
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined, cache: "no-store",
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error ?? "x402 request failed");
+    signal.throwIfAborted();
+    if (!response.ok) throw new Error("x402_request_unavailable");
+    if (paymentId && result.payment?.id !== paymentId) throw new Error("x402_payment_identity_mismatch");
     return result;
   }
   function applyX402Status(nextStatus: X402Status) {
@@ -917,200 +898,108 @@ export default function AgentChat({
     setLiveX402UsdcBalance(nextStatus.x402Usdc.balance);
     return nextStatus;
   }
-
-  async function refreshX402Status(expectedMaximum?: number) {
-    let latest: X402Status | null = null;
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      latest = await x402Fetch() as X402Status;
-      const balance = Number(latest.x402Usdc.balance);
-      if (
-        expectedMaximum === undefined ||
-        (Number.isFinite(balance) && balance <= expectedMaximum + 0.0000001)
-      ) {
-        break;
-      }
-      if (attempt < 3) {
-        await new Promise((resolve) => window.setTimeout(resolve, 250));
-      }
-    }
-    if (!latest) throw new Error("x402_status_unavailable");
-    return applyX402Status(latest);
+  async function refreshX402Status(signal: AbortSignal) {
+    const status = await x402Fetch(undefined, undefined, signal) as X402Status;
+    signal.throwIfAborted();
+    return applyX402Status(status);
   }
-
 
   async function prepareX402(requestId = crypto.randomUUID()) {
-    setDefindexOpen(false);
-    setSoroswapOpen(false);
-    setX402Open(true);
-    setX402Busy(true);
-    setX402Notice(null);
-    setX402ReplayEvidence(null);
-    setX402Payment(null);
+    if (x402Operation.current || !x402UserId) return;
+    const signal = x402Session.current.signal;
+    x402Operation.current = true;
+    x402Revision.current += 1;
+    setDefindexOpen(false); setSoroswapOpen(false); setX402Open(true);
+    setX402Busy(true); setX402Notice(null);
     try {
-      const statusResult = await x402Fetch();
-      applyX402Status(statusResult);
-      if (!statusResult.x402Usdc.trustlineActive) {
-        const trustlineResult = await x402Fetch({ action: "prepare_trustline", requestId: `${requestId}-trustline` });
-        if (!trustlineResult.alreadyComplete) setX402Trustline(trustlineResult.approval);
-        return;
-      }
-      if (Number(statusResult.x402Usdc.balance) < 0.01) {
-        if (statusResult.x402Usdc.internalFaucet?.configured) {
-          await x402Fetch({ action: "claim_testnet_usdc" });
-          const fundedStatus = await x402Fetch();
-          applyX402Status(fundedStatus);
-          if (Number(fundedStatus.x402Usdc.balance) < 0.01) throw new Error("testnet_usdc_funding_not_visible");
-          setX402Notice(
-            locale === "es" ? "El faucet interno agreg\u00f3 autom\u00e1ticamente 0,50 USDC Testnet."
-              : locale === "pt" ? "O faucet interno adicionou automaticamente 0,50 USDC Testnet."
-                : "The internal faucet automatically added 0.50 USDC Testnet.",
-          );
-        } else {
-          setX402Notice(xui.trustline);
-          return;
-        }
-      }
-      const result = await x402Fetch({ action: "prepare", requestId });
-      setX402Payment(result.payment);
-    } catch (caught) {
-      setX402Notice(caught instanceof Error ? caught.message : "x402 preparation failed");
-    } finally {
-      setX402Busy(false);
-    }
+      const current = await refreshX402Status(signal);
+      const existing = await restoreStellarPayment({ userId: x402UserId, storage: window.localStorage, status: current, assertCurrentSession: () => signal.throwIfAborted(), readPayment: async (id) => (await x402Fetch(undefined, id, signal)).payment });
+      const prepared = await prepareStellarPayment({ status: current, existing, prepare: async () => (await x402Fetch({ action: "prepare", requestId }, undefined, signal)).payment });
+      signal.throwIfAborted();
+      if (prepared.payment) keepX402Payment(prepared.payment, signal);
+      setX402Notice(prepared.reason === "requirements" ? "requirements" : prepared.reason === "existing" ? "existing" : null);
+    } catch { if (!signal.aborted) setX402Notice("unavailable"); }
+    finally { if (!signal.aborted) { x402Operation.current = false; setX402Busy(false); } }
   }
 
-  async function confirmX402Trustline() {
-    if (!x402Trustline) return;
-    setX402Busy(true);
-    setX402Notice(null);
-    try {
-      if (!x402Trustline.signingHash) {
-        throw new Error("This approval must be prepared again.");
-      }
-      const signed = await signRawHash({
-        address: x402Trustline.signingAddress,
-        chainType: "stellar",
-        hash: x402Trustline.signingHash,
-      });
-      const result = await x402Fetch({
-        action: "execute_trustline",
-        approvalId: x402Trustline.id,
-        explicitConfirmation: true,
-        signature: signed.signature,
-      });
-      setX402Trustline(result.approval);
-      await prepareX402(crypto.randomUUID());
-    } catch (caught) {
-      setX402Notice(caught instanceof Error ? caught.message : "x402 trustline failed");
-    } finally {
-      setX402Busy(false);
-    }
-  }
   async function confirmX402() {
-    if (!x402Payment) return;
-    setX402Busy(true);
-    setX402Notice(null);
-    setX402ReplayEvidence(null);
+    if (!x402Payment || x402Operation.current || !stellarPaymentView(x402Payment).canSign) return;
+    const signal = x402Session.current.signal;
+    x402Operation.current = true;
+    x402Revision.current += 1;
+    setX402Busy(true); setX402Notice(null);
+    let submitted = false;
     try {
-      if (!x402Payment.signingHash) {
-        throw new Error("This payment must be prepared again.");
+      const latest = (await x402Fetch(undefined, x402Payment.id, signal)).payment as X402Payment;
+      if (!stellarPaymentView(latest).canSign || latest.signingAddress !== x402Payment.signingAddress || latest.signingHash !== x402Payment.signingHash || JSON.stringify(latest.request) !== JSON.stringify(x402Payment.request)) {
+        keepX402Payment(latest, signal); setX402Notice("changed"); return;
       }
-      const signed = await signRawHash({
-        address: x402Payment.signingAddress,
-        chainType: "stellar",
-        hash: x402Payment.signingHash,
-      });
-      const previousBalance = Number(x402Status?.x402Usdc.balance ?? liveX402UsdcBalance);
-      const result = await x402Fetch({
-        action: "execute",
-        paymentId: x402Payment.id,
-        explicitConfirmation: true,
-        signature: signed.signature,
-      });
-      setX402Payment(result.payment);
-      setX402Notice(result.replayed ? xui.replayed : xui.confirmed);
-      setLiveX402UsdcBalance(null);
-      const paymentAmount = Number(result.payment.amount);
-      const expectedMaximum = !result.replayed && Number.isFinite(previousBalance) && Number.isFinite(paymentAmount)
-        ? Math.max(0, previousBalance - paymentAmount)
-        : undefined;
-      await refreshX402Status(expectedMaximum);
-    } catch (caught) {
-      setX402Notice(caught instanceof Error ? caught.message : "x402 payment failed");
-    } finally {
-      setX402Busy(false);
-    }
+      const signed = await signRawHash({ address: latest.signingAddress, chainType: "stellar", hash: latest.signingHash! });
+      signal.throwIfAborted();
+      if (!stellarPaymentView(latest).canSign) { setX402Notice("expired"); return; }
+      submitted = true;
+      const result = await x402Fetch({ action: "execute", paymentId: latest.id, explicitConfirmation: true, signature: signed.signature }, undefined, signal);
+      if (result.payment?.id !== latest.id) throw new Error("x402_payment_identity_mismatch");
+      keepX402Payment(result.payment, signal);
+      setX402Notice(stellarPaymentView(result.payment).fullyVerified ? (result.replayed ? "replayed" : "verified") : "existing");
+      await refreshX402Status(signal).catch(() => { if (!signal.aborted) setLiveX402UsdcBalance(null); });
+    } catch {
+      if (signal.aborted) return;
+      if (submitted) {
+        keepX402Payment({ ...x402Payment, status: "reconciliation_required", paymentState: "uncertain", signingHash: null }, signal);
+        setX402Notice("uncertain");
+      } else setX402Notice("signingCancelled");
+    } finally { if (!signal.aborted) { x402Operation.current = false; setX402Busy(false); } }
   }
-  async function verifyX402Replay() {
-    if (!x402Payment || x402Payment.status !== "confirmed") return;
-    setX402Busy(true);
-    setX402Notice(null);
-    setX402ReplayEvidence(null);
+
+  async function reconcileX402() {
+    if (!x402Payment || x402Operation.current) return;
+    const signal = x402Session.current.signal;
+    x402Operation.current = true;
+    x402Revision.current += 1;
+    setX402Busy(true); setX402Notice(null);
     try {
-      const before = await refreshX402Status();
-      const originalHash = x402Payment.transactionHash;
-      if (!originalHash) throw new Error("x402_original_receipt_missing");
-      const result = await x402Fetch({
-        action: "execute",
-        paymentId: x402Payment.id,
-        explicitConfirmation: true,
-      });
-      if (!result.replayed || result.payment.transactionHash !== originalHash) {
-        throw new Error("x402_duplicate_protection_not_verified");
-      }
-      const after = await refreshX402Status();
-      if (before.x402Usdc.balance !== after.x402Usdc.balance) {
-        throw new Error("x402_duplicate_replay_changed_balance");
-      }
-      setX402Payment(result.payment);
-      setX402Notice(xui.replayed);
-      setX402ReplayEvidence({
-        transactionHash: originalHash,
-        balanceBefore: before.x402Usdc.balance,
-        balanceAfter: after.x402Usdc.balance,
-        replayDebit: "0.0000000 USDC",
-      });
-    } catch (caught) {
-      setX402Notice(caught instanceof Error ? caught.message : "x402 replay check failed");
-    } finally {
-      setX402Busy(false);
-    }
+      const result = await x402Fetch({ action: "reconcile", paymentId: x402Payment.id }, undefined, signal);
+      if (result.payment?.id !== x402Payment.id) throw new Error("x402_payment_identity_mismatch");
+      keepX402Payment(result.payment, signal);
+      setX402Notice(stellarPaymentView(result.payment).fullyVerified ? "verified" : "existing");
+      await refreshX402Status(signal).catch(() => { if (!signal.aborted) setLiveX402UsdcBalance(null); });
+    } catch { if (!signal.aborted) setX402Notice("lookupFailed"); }
+    finally { if (!signal.aborted) { x402Operation.current = false; setX402Busy(false); } }
+  }
+
+  async function verifyX402Replay() {
+    if (!x402Payment || x402Operation.current || !stellarPaymentView(x402Payment).fullyVerified) return;
+    const signal = x402Session.current.signal;
+    x402Operation.current = true;
+    x402Revision.current += 1;
+    setX402Busy(true); setX402Notice(null);
+    try {
+      const result = await x402Fetch({ action: "execute", paymentId: x402Payment.id, explicitConfirmation: true }, undefined, signal);
+      if (!result.replayed || !result.payment || !sameStellarPaymentDelivery(x402Payment, result.payment)) throw new Error("x402_replay_not_verified");
+      keepX402Payment(result.payment, signal); setX402Notice("replayed");
+      await refreshX402Status(signal).catch(() => { if (!signal.aborted) setLiveX402UsdcBalance(null); });
+    } catch { if (!signal.aborted) setX402Notice("lookupFailed"); }
+    finally { if (!signal.aborted) { x402Operation.current = false; setX402Busy(false); } }
   }
 
   async function openLatestX402Receipt() {
-    setDefindexOpen(false);
-    setSoroswapOpen(false);
-    setX402Open(true);
-    setX402Busy(true);
-    setX402Notice(null);
-    setX402ReplayEvidence(null);
+    if (x402Operation.current || !x402UserId) return;
+    const signal = x402Session.current.signal;
+    x402Operation.current = true;
+    x402Revision.current += 1;
+    setDefindexOpen(false); setSoroswapOpen(false); setX402Open(true);
+    setX402Busy(true); setX402Notice(null);
     try {
-      const current = await x402Fetch() as X402Status;
-      applyX402Status(current);
-      const latest = current.recent.find(
-        (payment) => payment.status === "confirmed" && Boolean(payment.transactionHash),
-      );
-      if (!latest) {
-        setX402Notice(
-          locale === "es" ? "Todav\u00eda no existe un pago x402 confirmado."
-            : locale === "pt" ? "Ainda n\u00e3o existe um pagamento x402 confirmado."
-              : "No confirmed x402 payment exists yet.",
-        );
-        return;
-      }
-      setX402Payment(latest);
-      setX402Notice(
-        locale === "es" ? "\u00daltimo recibo x402 recuperado desde Neon."
-          : locale === "pt" ? "\u00daltimo recibo x402 recuperado da Neon."
-            : "Latest x402 receipt restored from Neon.",
-      );
-    } catch (caught) {
-      setX402Notice(caught instanceof Error ? caught.message : "x402 receipt lookup failed");
-    } finally {
-      setX402Busy(false);
-    }
+      const current = await refreshX402Status(signal);
+      const restored = await restoreStellarPayment({ userId: x402UserId, storage: window.localStorage, status: current, assertCurrentSession: () => signal.throwIfAborted(), readPayment: async (id) => (await x402Fetch(undefined, id, signal)).payment });
+      signal.throwIfAborted();
+      const payment = restored ?? current.recent[0] ?? null;
+      if (payment) { keepX402Payment(payment, signal); setX402Notice("restored"); }
+      else setX402Notice("none");
+    } catch { if (!signal.aborted) setX402Notice("lookupFailed"); }
+    finally { if (!signal.aborted) { x402Operation.current = false; setX402Busy(false); } }
   }
-
   async function soroswapFetch(body?: Record<string, unknown>) {
     const token = await getAccessToken();
     if (!token) throw new Error("Authentication token unavailable");
@@ -1325,8 +1214,10 @@ export default function AgentChat({
     void sendMessage(draft);
   }
 
-  const x402ResourceSummary = x402Payment?.resourcePreview
-    ? summarizeX402Resource(x402Payment.resourcePreview, x402Payment.resourceUrl)
+  const x402View = x402Payment ? stellarPaymentView(x402Payment, x402Now) : null;
+  const x402ResourceContent = x402Payment ? stellarPaymentContent(x402Payment) : null;
+  const x402ResourceSummary = x402ResourceContent && x402Payment
+    ? summarizeX402Resource(x402ResourceContent, x402Payment.resourceUrl)
     : null;
   return (
     <section className="agent-chat-layout">
@@ -1341,6 +1232,7 @@ export default function AgentChat({
           </div>
           <span className="agent-chat-memory">{ui.memory}</span>
         </header>
+        {x402Payment && !x402Open && !x402View?.fullyVerified && <div className="agent-connection-notice" role="status"><span>{xrecovery.payment}: {xrecovery.states[x402Payment.paymentState ?? "uncertain"]} · {xrecovery.delivery}: {xrecovery.states[x402Payment.deliveryState ?? "pending"]}</span><button type="button" onClick={() => { setDefindexOpen(false); setSoroswapOpen(false); setX402Open(true); }}>{xrecovery.query}</button></div>}
 
         {connectionNotice && (
           <div className="agent-connection-notice">
@@ -1456,6 +1348,13 @@ export default function AgentChat({
                           locale={locale}
                           getAccessToken={getAccessToken}
                           onReceipt={openReceipt}
+                        />
+                      ) : action.bazaarAction ? (
+                        <StellarBazaarActionCard
+                          key={action.label}
+                          action={action.bazaarAction}
+                          locale={locale}
+                          getAccessToken={getAccessToken}
                         />
                       ) : action.popup ? (
                         <button
@@ -1920,42 +1819,16 @@ export default function AgentChat({
             </header>
             <div className="x402-live-balance" aria-live="polite">
               <span>{xrui.balance}</span>
-              <strong>{liveX402UsdcBalance === null ? xrui.updating : `${liveX402UsdcBalance} USDC`}</strong>
+              <strong>{liveX402UsdcBalance === null ? xrecovery.unavailableBalance : `${liveX402UsdcBalance} USDC`}</strong>
             </div>
             {x402Busy && !x402Payment && <p className="defindex-agent-loading">{xui.preparing}</p>}
-            {x402Status && (!x402Status.x402Usdc.trustlineActive || Number(x402Status.x402Usdc.balance) < 0.01) && (
+            {x402Status && (!x402Status.x402Usdc.trustlineActive || Number(x402Status.x402Usdc.balance) <= 0) && (
               <div className="defindex-agent-notice">
-                {xui.trustline} <a href={x402Status.x402Usdc.faucetUrl} target="_blank" rel="noreferrer">{xui.faucet}</a>
-              </div>
-            )}
-            {x402Trustline && (
-              <div className={"defindex-approval " + x402Trustline.status}>
-                <span>{xui.exact}</span>
-                <h4>{x402Trustline.preview.title}</h4>
-                <p>{x402Trustline.preview.description}</p>
-                <dl>
-                  <div><dt>{xui.network}</dt><dd>{x402Trustline.preview.network}</dd></div>
-                  <div><dt>{xui.asset}</dt><dd>{x402Trustline.preview.asset}</dd></div>
-                  <div><dt>{xui.destination}</dt><dd>{x402Trustline.preview.destination}</dd></div>
-                </dl>
-                {x402Trustline.status === "prepared" ? (
-                  <button type="button" disabled={x402Busy} onClick={() => void confirmX402Trustline()}>{x402Busy ? xui.paying : "Confirm USDC trustline with Privy"}</button>
-                ) : x402Trustline.explorerUrl || x402Trustline.transactionHash ? (
-                  <button type="button" onClick={() => openReceipt({
-                    title: x402Trustline.preview.title,
-                    network: x402Trustline.preview.network,
-                    rows: [
-                      { label: xui.asset, value: x402Trustline.preview.asset },
-                      { label: xui.destination, value: x402Trustline.preview.destination },
-                    ],
-                    transactionHash: x402Trustline.transactionHash,
-                    explorerUrl: x402Trustline.explorerUrl,
-                  })}>{xui.receipt}</button>
-                ) : null}
+                {xrecovery.notices.requirements}
               </div>
             )}
             {x402Payment && (
-              <div className={"defindex-approval " + x402Payment.status}>
+              <div className={"defindex-approval " + (x402View?.fullyVerified ? "confirmed" : "pending")}>
                 <span>{xui.exact}</span>
                 <h4>Stellar x402 protected resource</h4>
                 <p>{x402Payment.resourceUrl}</p>
@@ -1964,12 +1837,20 @@ export default function AgentChat({
                   <div><dt>{xui.asset}</dt><dd>{x402Payment.asset} · {x402Payment.assetContract}</dd></div>
                   <div><dt>{xui.amount}</dt><dd>{x402Payment.amount} USDC</dd></div>
                   <div><dt>{xui.destination}</dt><dd>{x402Payment.payTo}</dd></div>
+                  <div><dt>{xrecovery.payment}</dt><dd>{xrecovery.states[x402Payment.paymentState ?? "uncertain"]}</dd></div>
+                  <div><dt>{xrecovery.delivery}</dt><dd>{xrecovery.states[x402Payment.deliveryState ?? "pending"]}</dd></div>
+                  <div><dt>{xrecovery.expires}</dt><dd>{Number.isFinite(Date.parse(x402Payment.expiresAt)) ? new Date(x402Payment.expiresAt).toLocaleString(locale) : "—"}</dd></div>
+                  {x402Payment.request && <><div><dt>{xrecovery.method}</dt><dd>{x402Payment.request.method}</dd></div><div><dt>{xrecovery.fees}</dt><dd>{x402Payment.request.sponsored ? xrecovery.sponsored : "—"}</dd></div></>}
                 </dl>
-                {x402Payment.status === "prepared" ? (
+                {x402View?.uncertain && <p role="status">{xrecovery.notices.uncertain}</p>}
+                {x402View?.expired && x402Payment.status === "prepared" && <p role="status">{xrecovery.expired}</p>}
+                <button type="button" disabled={x402Busy} onClick={() => void reconcileX402()}>{xrecovery.query}</button>
+                {x402View?.expired && x402View.canStartAnother && x402Payment.status === "prepared" && <button type="button" disabled={x402Busy} onClick={() => void prepareX402()}>{xrecovery.prepareAgain}</button>}
+                {x402View?.canSign ? (
                   <button type="button" disabled={x402Busy || !x402Status?.x402Usdc.trustlineActive || Number(x402Status?.x402Usdc.balance ?? 0) < Number(x402Payment.amount)} onClick={() => void confirmX402()}>
                     {x402Busy ? xui.paying : xui.confirm}
                   </button>
-                ) : x402Payment.explorerUrl ? (
+                ) : x402Payment.paymentState === "confirmed" && x402Payment.verification && x402Payment.explorerUrl ? (
                   <div className="x402-confirmed-actions">
                     <button type="button" onClick={() => openReceipt({
                       title: "Stellar x402 protected resource",
@@ -1982,23 +1863,11 @@ export default function AgentChat({
                       transactionHash: x402Payment.transactionHash,
                       explorerUrl: x402Payment.explorerUrl,
                     })}>{xui.receipt}</button>
-                    <button type="button" disabled={x402Busy} onClick={() => void verifyX402Replay()}>
+                    <button type="button" disabled={x402Busy || !x402View?.fullyVerified} onClick={() => void verifyX402Replay()}>
                       {x402Busy ? xrui.checkingReplay : xrui.verifyReplay}
                     </button>
                   </div>
                 ) : null}
-                {x402ReplayEvidence && (
-                  <div className="x402-replay-proof" role="status">
-                    <strong>{xreui.verified}</strong>
-                    <code>{x402ReplayEvidence.transactionHash}</code>
-                    <dl>
-                      <div><dt>{xreui.before}</dt><dd>{x402ReplayEvidence.balanceBefore} USDC</dd></div>
-                      <div><dt>{xreui.after}</dt><dd>{x402ReplayEvidence.balanceAfter} USDC</dd></div>
-                      <div><dt>{xreui.zeroDebit}</dt><dd>{x402ReplayEvidence.replayDebit}</dd></div>
-                    </dl>
-                    <span>{xreui.sameReceipt} {"\u00b7"} {"\u2713"}</span>
-                  </div>
-                )}
                 {x402ResourceSummary && (
                   <div className="x402-resource-card">
                     <span aria-hidden="true">{"\u2713"}</span>
@@ -2009,9 +1878,14 @@ export default function AgentChat({
                     </div>
                   </div>
                 )}
+                {x402View?.fullyVerified && x402Payment.evidence && <dl><div><dt>SHA-256</dt><dd><code>{x402Payment.evidence.sha256}</code></dd></div><div><dt>{xrecovery.delivery}</dt><dd>{new Date(x402Payment.evidence.deliveredAt).toLocaleString(locale)}</dd></div></dl>}
+                {x402ResourceContent !== null && <details>
+                  <summary>{x402Payment.resourceBody != null ? xrecovery.fullContent : xrecovery.historicalPreview}</summary>
+                  <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "24rem", overflow: "auto" }}>{x402ResourceContent}</pre>
+                </details>}
               </div>
             )}
-            {x402Notice && <p className="defindex-agent-notice">{x402Notice}</p>}
+            {x402Notice && <p className="defindex-agent-notice">{xrecovery.notices[x402Notice as keyof typeof xrecovery.notices] ?? xrecovery.notices.unavailable}</p>}
           </section>
         )}
         {error && <p className="agent-chat-error">{error}. Your draft was preserved.</p>}

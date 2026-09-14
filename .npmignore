@@ -1,0 +1,9 @@
+stellar-bazaar-x402/
+work/
+outputs/
+.env*
+!.env.example
+.vercel/
+.codex/
+.agents/
+graphify-out/

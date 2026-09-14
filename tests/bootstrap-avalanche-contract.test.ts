@@ -19,20 +19,19 @@ test("onboarding is metadata-only and MCP context exposes persisted networks", a
   assert.match(onboarding, /fundsMoved:\s*false/);
   assert.match(onboarding, /signingRequired:\s*false/);
   assert.doesNotMatch(onboarding, /rawSign|signTypedData|sendTransaction|faucet/i);
-  assert.match(context, /address:\s*agentWallets\.address/);
-  assert.match(context, /chainType:\s*agentWallets\.chainType/);
-  assert.match(context, /network:\s*agentWallets\.network/);
-  assert.match(context, /where\(eq\(agentWallets\.userId, userId\)\)/);
+  assert.match(context, /listPersistedUserWallets\(userId\)/);
+  assert.match(context, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status \}\)\)/);
+  assert.doesNotMatch(context, /\.from\(agentWallets\)/);
   assert.match(context, /paymentSigning:\s*"not_enabled"/);
   assert.doesNotMatch(context, /privateKey|secret|balance/);
 });
 
-test("onboarding UI renders the named Fuji wallet while retaining the Stellar wallet", async () => {
+test("onboarding UI renders one EVM wallet with enabled networks while retaining Stellar", async () => {
   const source = await readFile(new URL("../app/agent/agent-onboarding.tsx", import.meta.url), "utf8");
   assert.match(source, /wallets:\s*\{/);
-  assert.match(source, /result\.wallets\.avalanche\.address/);
-  assert.match(source, /AVALANCHE WALLET/);
-  assert.match(source, /Avalanche Fuji/);
+  assert.match(source, /result\.wallets\.evm\.address/);
+  assert.match(source, /EVM WALLET/);
+  assert.match(source, /result\.evm\.networks\.map/);
   assert.match(source, /result\.wallet\.address/);
   assert.doesNotMatch(source, /fundWallet|rawSign|sendTransaction/);
 });

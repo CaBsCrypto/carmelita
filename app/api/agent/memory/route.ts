@@ -65,9 +65,11 @@ function errorResponse(error: unknown) {
       ? 400
       : code === "invalid_origin"
         ? 403
-        : code === "database_not_configured"
-          ? 503
-          : 401;
+        : code === "memory_record_not_found"
+          ? 404
+          : code === "database_not_configured"
+            ? 503
+            : 401;
   return NextResponse.json({ error: code }, { status });
 }
 

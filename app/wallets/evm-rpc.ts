@@ -53,6 +53,7 @@ async function rpc<T>(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`evm_rpc_http_${response.status}`);
   const payload = await response.json() as JsonRpcResponse<T>;
@@ -74,8 +75,14 @@ export async function diagnoseEvmWallet(
     rpc<string>(network, "eth_gasPrice", [], fetcher),
     rpc<string>(network, "eth_getTransactionCount", [address, "latest"], fetcher),
   ]);
+  // JSON-RPC quantities must be non-negative hex strings, never coerced numbers/null.
+  if ([chainIdHex, balanceHex, gasPriceHex, nonceHex].some((value) =>
+    typeof value !== "string" || !/^0x(?:0|[1-9a-fA-F][0-9a-fA-F]*)$/.test(value))) {
+    throw new Error("evm_rpc_invalid_quantity");
+  }
   const observedChainId = Number(BigInt(chainIdHex));
   if (observedChainId !== network.chainId) throw new Error("evm_chain_id_mismatch");
+  if (!Number.isSafeInteger(Number(BigInt(nonceHex)))) throw new Error("evm_rpc_invalid_quantity");
 
   const balanceWei = BigInt(balanceHex);
   return {

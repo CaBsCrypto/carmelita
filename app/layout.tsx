@@ -3,6 +3,7 @@ import "./globals.css";
 import "./home-experience.css";
 import WebMcpRegistry from "./webmcp-registry";
 import Providers from "./providers";
+import { isEvmExpansionEnabled } from "./wallets/networks";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://agente-asistente.vercel.app"),
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Providers appId={appId} clientId={clientId}>
+        <Providers appId={appId} clientId={clientId} evmExpansionEnabled={isEvmExpansionEnabled()}>
           <WebMcpRegistry />
           {children}
         </Providers>

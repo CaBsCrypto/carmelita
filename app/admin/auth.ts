@@ -6,6 +6,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { getPrivyAdminIdentity, isPrivyAdminConfigured } from "./privy-auth";
 
 export const ADMIN_COOKIE = "aa_founder_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
@@ -13,7 +14,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 12;
 export type AdminIdentity = {
   username: string;
   displayName: string;
-  method: "password" | "chatgpt";
+  method: "password" | "chatgpt" | "privy";
 };
 
 function configuredUsername() {
@@ -40,7 +41,7 @@ function sessionSignature(payload: string) {
 }
 
 export function isPasswordAdminConfigured() {
-  return Boolean(
+  return !isPrivyAdminConfigured() && Boolean(
     process.env.ADMIN_PASSWORD_HASH && process.env.ADMIN_SESSION_SECRET,
   );
 }
@@ -105,6 +106,10 @@ function verifyAdminSessionToken(token: string): AdminIdentity | null {
 }
 
 export async function getAdminIdentity(): Promise<AdminIdentity | null> {
+  if (isPrivyAdminConfigured()) {
+    const token = (await cookies()).get("aa_admin_privy")?.value;
+    return token ? getPrivyAdminIdentity(token) : null;
+  }
   const chatGPTUser = await getChatGPTUser();
   const allowlist = allowedAdminEmails();
 

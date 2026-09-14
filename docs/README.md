@@ -5,6 +5,11 @@ operating and extending Carmelita.
 
 ## Start here
 
+For the current engineering restart point, read the
+[September 2026 engineering handoff](HANDOFF-2026-09-06.md).
+The [PR #28 Preview delivery](preview-pr28-2026-09-08.md) records the consolidated
+baseline, isolated database and current acceptance evidence.
+
 Read the [product narrative](product-narrative.md) first. It explains what
 Carmelita is, the problem it solves, how the user experience works and how to
 describe it consistently.

@@ -1,16 +1,18 @@
 "use client";
 
 import { PrivyProvider } from "@privy-io/react-auth";
-import { avalancheFuji, baseSepolia } from "viem/chains";
+import { avalancheFuji, baseSepolia, bscTestnet } from "viem/chains";
 
 export default function Providers({
   children,
   appId,
   clientId,
+  evmExpansionEnabled = false,
 }: {
   children: React.ReactNode;
   appId?: string;
   clientId?: string;
+  evmExpansionEnabled?: boolean;
 }) {
   if (!appId) return children;
 
@@ -21,7 +23,7 @@ export default function Providers({
       config={{
         loginMethods: ["email", "google", "passkey"],
         defaultChain: avalancheFuji,
-        supportedChains: [avalancheFuji, baseSepolia],
+        supportedChains: evmExpansionEnabled ? [avalancheFuji, bscTestnet, baseSepolia] : [avalancheFuji],
         appearance: {
           theme: "light",
           accentColor: "#ff5b3a",

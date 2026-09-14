@@ -1,297 +1,189 @@
-import { randomUUID } from "node:crypto";
-import {
-  getStellarTestnetAccount,
-  isValidStellarAddress,
-} from "../app/privy-stellar";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { getStellarTestnetAccount, isValidStellarAddress } from "../app/privy-stellar";
 import { futureTravalaDates, searchTravalaHotels } from "../app/travala";
-import {
-  X402_DEMO_LIMIT_DISPLAY,
-  X402_TESTNET_RESOURCE,
-  X402_TESTNET_USDC,
-} from "../app/x402/assets";
+import { X402_DEMO_LIMIT_DISPLAY, X402_TESTNET_RESOURCE, X402_TESTNET_USDC } from "../app/x402/assets";
 import { inspectX402Resource } from "../app/x402/protocol";
-import {
-  INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS,
-  INTERNAL_TESTNET_USDC_DRIP,
-} from "../app/x402/testnet-faucet";
+import { INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS, INTERNAL_TESTNET_USDC_DRIP } from "../app/x402/testnet-faucet";
+import { acceptanceArg, acceptanceReport, assertRemotePreview, previewAcceptanceTarget, redactAcceptanceSecrets, vercelCurl, type AcceptanceCheck } from "./agent-gateway-preview-acceptance";
 
-type Mode = "doctor" | "authenticated" | "execute" | "travala";
-type CheckResult = {
-  name: string;
-  layer: "local" | "production" | "stellar" | "authenticated" | "travala";
-  ok: boolean;
-  durationMs: number;
-  detail: string;
-};
+type Mode = "doctor" | "authenticated" | "travala";
 type JsonObject = Record<string, unknown>;
-
-const mode = (process.argv[2] ?? "doctor") as Mode;
-if (!(["doctor", "authenticated", "execute", "travala"] as string[]).includes(mode)) {
-  throw new Error("usage: acceptance.ts <doctor|authenticated|execute|travala>");
-}
-
-const baseUrl = (process.env.AGENT_ACCEPTANCE_BASE_URL ?? "https://agente-asistente.vercel.app").replace(/\/$/, "");
-const token = process.env.AGENT_ACCEPTANCE_PRIVY_TOKEN?.trim() ?? "";
-const jsonOutput = process.argv.includes("--json");
-const checks: CheckResult[] = [];
-
-function invariant(condition: unknown, message: string): asserts condition {
-  if (!condition) throw new Error(message);
-}
-
+type Env = Record<string, string | undefined>;
+function invariant(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 function object(value: unknown, label: string): JsonObject {
   invariant(Boolean(value) && typeof value === "object" && !Array.isArray(value), `${label}_invalid`);
   return value as JsonObject;
 }
-
 function string(value: unknown, label: string) {
   invariant(typeof value === "string" && value.length > 0, `${label}_missing`);
   return value;
 }
-
-async function check(
-  name: string,
-  layer: CheckResult["layer"],
-  operation: () => Promise<string> | string,
-) {
-  const started = performance.now();
-  try {
-    const detail = await operation();
-    checks.push({ name, layer, ok: true, durationMs: Math.round(performance.now() - started), detail });
-  } catch (error) {
-    checks.push({
-      name,
-      layer,
-      ok: false,
-      durationMs: Math.round(performance.now() - started),
-      detail: error instanceof Error ? error.message : "unknown_error",
+export function acceptanceConfig(args: string[] = process.argv, env: Env = process.env) {
+  const mode = args[2] ?? "doctor";
+  invariant(mode !== "execute", "automatic_payment_execution_disabled_use_visible_application_approval");
+  invariant(["doctor", "authenticated", "travala"].includes(mode), "usage: acceptance.ts <doctor|authenticated|travala> --url <url>");
+  const requestedUrl = acceptanceArg("--url", args) ?? env.AGENT_ACCEPTANCE_BASE_URL;
+  invariant(requestedUrl, "AGENT_ACCEPTANCE_BASE_URL_or_url_required");
+  const url = new URL(requestedUrl);
+  invariant(!url.username && !url.password && !url.search && !url.hash && url.pathname === "/", "acceptance_origin_required");
+  invariant(url.protocol === "https:" || (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname)), "acceptance_https_required");
+  const deployment = acceptanceArg("--deployment", args) ?? (mode === "authenticated" ? env.CARMELITA_PREVIEW_DEPLOYMENT : undefined);
+  const commit = acceptanceArg("--commit", args) ?? (mode === "authenticated" ? env.CARMELITA_PREVIEW_COMMIT : undefined);
+  const preview = mode === "authenticated" ? previewAcceptanceTarget({ url: url.origin, deployment, commit }, env) : undefined;
+  const token = env.AGENT_ACCEPTANCE_PRIVY_TOKEN?.trim() ?? "";
+  invariant(mode !== "authenticated" || token, "AGENT_ACCEPTANCE_PRIVY_TOKEN_required");
+  const allowBootstrap = args.includes("--allow-bootstrap");
+  invariant(!allowBootstrap || mode === "authenticated", "bootstrap_requires_authenticated_preview");
+  return { mode: mode as Mode, url: url.origin, deployment, commit, token, allowBootstrap, preview, jsonOutput: args.includes("--json") };
+}
+export function authenticatedAcceptanceRequest(path: string, config: ReturnType<typeof acceptanceConfig>, body?: JsonObject) {
+  invariant(config.mode === "authenticated" && config.token && config.deployment, "authenticated_preview_required");
+  // This runner can provision accounts explicitly; it cannot prepare or execute a payment.
+  invariant(body === undefined || (path === "/api/agent/bootstrap" && config.allowBootstrap && Object.keys(body).length === 0), "acceptance_write_not_allowed");
+  invariant(path === "/api/agent/bootstrap" || (path === "/api/agent/x402" && body === undefined), "acceptance_endpoint_not_allowed");
+  return { deployment: config.deployment, path, token: config.token, origin: config.url, method: body === undefined ? "GET" : "POST", body };
+}
+export function bootstrapWalletIdentity(bootstrap: JsonObject) {
+  const wallets = object(bootstrap.wallets, "bootstrap_wallets");
+  const result = Object.fromEntries(["stellar", "avalanche", "solana"].map((network) => [network, string(object(wallets[network], `bootstrap_${network}`).address, `${network}_address`)]));
+  invariant(isValidStellarAddress(result.stellar), "wallet_address_invalid");
+  invariant(object(bootstrap.wallet, "bootstrap_wallet").address === result.stellar, "bootstrap_stellar_wallet_mismatch");
+  return result;
+}
+export async function runAcceptance(config: ReturnType<typeof acceptanceConfig>) {
+  const checks: AcceptanceCheck[] = [];
+  const secrets = new Set([config.token].filter(Boolean));
+  async function check(name: string, operation: () => Promise<string> | string) {
+    const started = performance.now();
+    try {
+      const detail = await operation();
+      checks.push({ name, status: "PASS", durationMs: Math.round(performance.now() - started), detail });
+    } catch (error) {
+      checks.push({ name, status: "FAIL", durationMs: Math.round(performance.now() - started), detail: redactAcceptanceSecrets(error instanceof Error ? error.message : "unknown_error", secrets) });
+    }
+  }
+  const pending = (name: string, detail: string) => checks.push({ name, status: "PENDING", durationMs: 0, detail });
+  async function request(path: string) {
+    if (config.deployment) return vercelCurl({ deployment: config.deployment, path, origin: config.url }, secrets);
+    const response = await fetch(config.url + path, { headers: { Accept: "application/json" }, redirect: "manual", signal: AbortSignal.timeout(20_000) });
+    const text = await response.text();
+    let body: unknown;
+    try { body = JSON.parse(text); } catch { body = text; }
+    return { status: response.status, body };
+  }
+  async function json(path: string) {
+    const result = await request(path);
+    invariant(result.status === 200, `http_${result.status}`);
+    return object(result.body, path);
+  }
+  async function authenticated(path: string, body?: JsonObject) {
+    const result = await vercelCurl(authenticatedAcceptanceRequest(path, config, body), secrets);
+    invariant(result.status >= 200 && result.status < 300, `http_${result.status}`);
+    return object(result.body, path);
+  }
+  await check("Safety constants are Testnet-only", () => {
+    invariant(X402_TESTNET_USDC.network === "stellar:testnet", "x402_network_not_testnet");
+    invariant(X402_DEMO_LIMIT_DISPLAY === "0.0100000", "x402_limit_changed");
+    invariant(INTERNAL_TESTNET_USDC_DRIP === "0.5000000", "faucet_drip_changed");
+    invariant(isValidStellarAddress(INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS), "distributor_address_invalid");
+    return "Stellar Testnet, 0.01 USDC payment cap, 0.50 USDC drip";
+  });
+  let remoteVerified = false;
+  await check("Target health contract", async () => {
+    const health = await json("/api/health");
+    if (config.preview) { assertRemotePreview(health, config.preview); remoteVerified = true; }
+    invariant(health.status === "ok" && health.environment === "stellar-testnet", "health_contract_mismatch");
+    const payments = object(health.payments, "health_payments");
+    invariant(payments.x402StellarTestnet === "enabled" && payments.mainnet === "disabled", "payment_boundary_mismatch");
+    return `persistence=${String(health.persistence)}, mainnet=disabled`;
+  });
+  await check("Target agent page", async () => {
+    const response = await request("/agent");
+    invariant(response.status === 200, `agent_http_${response.status}`);
+    const html = typeof response.body === "string" ? response.body : String((response.body as { raw?: string })?.raw ?? "");
+    invariant(/<!doctype html|<html/i.test(html), "agent_not_html");
+    return "HTTP 200 HTML";
+  });
+  await check("MCP discovery contract", async () => {
+    const discovery = await json("/.well-known/mcp");
+    const payments = object(object(discovery.security, "mcp_security").payments, "mcp_payments");
+    invariant(payments.mainnet === "disabled", "mcp_mainnet_not_disabled");
+    invariant(payments.x402StellarTestnet === "explicit-user-approval", "mcp_x402_boundary_missing");
+    return "Sandbox, personal-agent and provider surfaces advertised";
+  });
+  // External probes remain separate from authenticated onboarding acceptance.
+  if (config.mode !== "authenticated") {
+    await check("Official x402 live challenge (read-only)", async () => {
+      const inspected = await inspectX402Resource(X402_TESTNET_RESOURCE);
+      invariant(inspected.requirement.network === X402_TESTNET_USDC.network, "challenge_network_changed");
+      invariant(inspected.requirement.asset === X402_TESTNET_USDC.contract, "challenge_asset_changed");
+      invariant(inspected.amountDisplay === X402_DEMO_LIMIT_DISPLAY, "challenge_amount_changed");
+      invariant(isValidStellarAddress(inspected.requirement.payTo), "challenge_recipient_invalid");
+      return `${inspected.amountDisplay} USDC challenge; no payment`;
+    });
+    await check("Internal distributor readiness (read-only)", async () => {
+      const account = await getStellarTestnetAccount(INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS);
+      invariant(account.exists, "distributor_account_missing");
+      const usdc = account.balances.find((balance) => balance.asset === "USDC" && balance.issuer === X402_TESTNET_USDC.issuer);
+      const xlm = account.balances.find((balance) => balance.asset === "XLM");
+      invariant(Number(usdc?.balance ?? 0) >= Number(INTERNAL_TESTNET_USDC_DRIP), "distributor_usdc_low");
+      invariant(Number(xlm?.balance ?? 0) > 1, "distributor_xlm_low");
+      return `${usdc?.balance} USDC, ${xlm?.balance} XLM; no funding`;
     });
   }
-}
-
-async function fetchJson(path: string, init: RequestInit = {}) {
-  const response = await fetch(baseUrl + path, {
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init.headers ?? {}),
-    },
-    signal: AbortSignal.timeout(20_000),
-  });
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const body = payload && typeof payload === "object" ? JSON.stringify(payload) : "invalid_json";
-    throw new Error(`http_${response.status}:${body.slice(0, 240)}`);
+  if (config.mode === "travala") {
+    await check("Live Travala read-only search", async () => {
+      const location = process.env.TRAVALA_ACCEPTANCE_LOCATION?.trim() || "Santiago, Chile";
+      const dates = futureTravalaDates(new Date(), 45, 2);
+      const result = await searchTravalaHotels({ location, ...dates, guests: 2 });
+      invariant(result.sessionId.length > 0 && result.hotels.length > 0, "travala_inventory_missing");
+      invariant(result.hotels.every((hotel) => hotel.totalPriceUSD >= 0), "travala_price_invalid");
+      return `${result.hotels.length} options; no reservation`;
+    });
   }
-  return object(payload, path.replace(/\W+/g, "_") || "root");
-}
-
-async function authenticatedRequest(path: string, body?: JsonObject) {
-  invariant(token.length > 0, "AGENT_ACCEPTANCE_PRIVY_TOKEN_required");
-  return fetchJson(path, {
-    method: body ? "POST" : "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}
-
-await check("Safety constants are Testnet-only", "local", () => {
-  invariant(X402_TESTNET_USDC.network === "stellar:testnet", "x402_network_not_testnet");
-  invariant(X402_DEMO_LIMIT_DISPLAY === "0.0100000", "x402_limit_changed");
-  invariant(INTERNAL_TESTNET_USDC_DRIP === "0.5000000", "faucet_drip_changed");
-  invariant(isValidStellarAddress(INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS), "distributor_address_invalid");
-  return "Stellar Testnet, 0.01 USDC payment cap, 0.50 USDC drip";
-});
-
-await check("Production health contract", "production", async () => {
-  const health = await fetchJson("/api/health");
-  invariant(health.status === "ok", "health_not_ok");
-  invariant(health.environment === "stellar-testnet", "health_environment_mismatch");
-  const payments = object(health.payments, "health_payments");
-  invariant(payments.x402StellarTestnet === "enabled", "x402_not_enabled");
-  invariant(payments.mainnet === "disabled", "mainnet_not_disabled");
-  return `persistence=${String(health.persistence)}, mainnet=disabled`;
-});
-
-await check("Production agent page", "production", async () => {
-  const response = await fetch(baseUrl + "/agent", {
-    redirect: "manual",
-    signal: AbortSignal.timeout(20_000),
-  });
-  invariant(response.status === 200, `agent_http_${response.status}`);
-  invariant((response.headers.get("content-type") ?? "").includes("text/html"), "agent_not_html");
-  return "HTTP 200";
-});
-
-await check("MCP discovery contract", "production", async () => {
-  const discovery = await fetchJson("/.well-known/mcp");
-  const security = object(discovery.security, "mcp_security");
-  const payments = object(security.payments, "mcp_payments");
-  invariant(payments.mainnet === "disabled", "mcp_mainnet_not_disabled");
-  invariant(payments.x402StellarTestnet === "explicit-user-approval", "mcp_x402_boundary_missing");
-  return "sandbox, personal-agent and provider surfaces advertised";
-});
-
-await check("Official x402 live challenge", "stellar", async () => {
-  const inspected = await inspectX402Resource(X402_TESTNET_RESOURCE);
-  invariant(inspected.requirement.network === X402_TESTNET_USDC.network, "challenge_network_changed");
-  invariant(inspected.requirement.asset === X402_TESTNET_USDC.contract, "challenge_asset_changed");
-  invariant(inspected.amountDisplay === X402_DEMO_LIMIT_DISPLAY, "challenge_amount_changed");
-  invariant(isValidStellarAddress(inspected.requirement.payTo), "challenge_recipient_invalid");
-  return `${inspected.amountDisplay} USDC -> ${inspected.requirement.payTo.slice(0, 8)}...`;
-});
-
-await check("Internal distributor readiness", "stellar", async () => {
-  const account = await getStellarTestnetAccount(INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS);
-  invariant(account.exists, "distributor_account_missing");
-  const usdc = account.balances.find(
-    (balance) => balance.asset === "USDC" && balance.issuer === X402_TESTNET_USDC.issuer,
-  );
-  const xlm = account.balances.find((balance) => balance.asset === "XLM");
-  invariant(Boolean(usdc), "distributor_trustline_missing");
-  invariant(Number(usdc?.balance ?? 0) >= Number(INTERNAL_TESTNET_USDC_DRIP), "distributor_usdc_low");
-  invariant(Number(xlm?.balance ?? 0) > 1, "distributor_xlm_low");
-  return `${usdc?.balance} USDC, ${xlm?.balance} XLM`;
-});
-
-
-if (mode === "travala") {
-  await check("Live Travala read-only search", "travala", async () => {
-    const location = process.env.TRAVALA_ACCEPTANCE_LOCATION?.trim() || "Santiago, Chile";
-    const dates = futureTravalaDates(new Date(), 45, 2);
-    const result = await searchTravalaHotels({
-      location,
-      ...dates,
-      guests: 2,
-    });
-    invariant(result.sessionId.length > 0, "travala_session_missing");
-    invariant(result.hotels.length > 0, "travala_inventory_empty");
-    invariant(result.hotels.every((hotel) => hotel.totalPriceUSD >= 0), "travala_price_invalid");
-    const first = result.hotels[0];
-    return `${location}, ${dates.checkIn} to ${dates.checkOut}: ${result.hotels.length} options; first=${first.name}`;
-  });
-}
-if (mode === "authenticated" || mode === "execute") {
-  let walletAddress = "";
-  let paymentId = "";
-  let firstHash = "";
-
-  await check("Privy bootstrap", "authenticated", async () => {
-    const bootstrap = await authenticatedRequest("/api/agent/bootstrap", {});
-    const wallet = object(bootstrap.wallet, "bootstrap_wallet");
-    walletAddress = string(wallet.address, "wallet_address");
-    invariant(isValidStellarAddress(walletAddress), "wallet_address_invalid");
-    return `${walletAddress.slice(0, 8)}... on Stellar Testnet`;
-  });
-
-  await check("Authenticated x402 status", "authenticated", async () => {
-    const status = await authenticatedRequest("/api/agent/x402");
-    const wallet = object(status.wallet, "x402_wallet");
-    invariant(string(wallet.address, "x402_wallet_address") === walletAddress, "wallet_identity_mismatch");
-    return "Privy identity and persisted wallet agree";
-  });
-
-  if (mode === "execute") {
-    invariant(
-      process.env.ACCEPT_TESTNET_MUTATIONS === "I_UNDERSTAND_TESTNET_ONLY",
-      "Set ACCEPT_TESTNET_MUTATIONS=I_UNDERSTAND_TESTNET_ONLY to execute",
-    );
-    const origin = new URL(baseUrl);
-    invariant(
-      origin.hostname === "agente-asistente.vercel.app" || origin.hostname === "localhost",
-      "execute_base_url_not_allowlisted",
-    );
-
-    await check("Trustline and automatic funding", "authenticated", async () => {
-      let status = await authenticatedRequest("/api/agent/x402");
-      let usdc = object(status.x402Usdc, "x402_usdc");
-      if (usdc.trustlineActive !== true) {
-        const prepared = await authenticatedRequest("/api/agent/x402", {
-          action: "prepare_trustline",
-          requestId: `acceptance-${randomUUID()}`,
-        });
-        if (prepared.alreadyComplete !== true) {
-          const approval = object(prepared.approval, "trustline_approval");
-          await authenticatedRequest("/api/agent/x402", {
-            action: "execute_trustline",
-            approvalId: string(approval.id, "trustline_approval_id"),
-            explicitConfirmation: true,
-          });
-        }
-      }
-      status = await authenticatedRequest("/api/agent/x402");
-      usdc = object(status.x402Usdc, "x402_usdc_after_trustline");
-      invariant(usdc.trustlineActive === true, "trustline_not_active");
-      if (Number(usdc.balance ?? 0) < 0.01) {
-        await authenticatedRequest("/api/agent/x402", { action: "claim_testnet_usdc" });
-      }
-      status = await authenticatedRequest("/api/agent/x402");
-      usdc = object(status.x402Usdc, "x402_usdc_after_funding");
-      invariant(Number(usdc.balance ?? 0) >= 0.01, "automatic_funding_failed");
-      return `${String(usdc.balance)} USDC available`;
-    });
-
-    await check("Live x402 payment", "authenticated", async () => {
-      const prepared = await authenticatedRequest("/api/agent/x402", {
-        action: "prepare",
-        requestId: `acceptance-${randomUUID()}`,
+  if (config.mode === "authenticated") {
+    if (!remoteVerified) {
+      pending("Authenticated checks", "Not invoked because remote Preview isolation or commit verification failed.");
+      return { mode: config.mode, ...acceptanceReport({ url: config.url, deployment: config.deployment ?? null, commit: config.commit ?? null, checks }) };
+    }
+    let walletAddress: string | undefined;
+    let walletIdentity: Record<string, string> | undefined;
+    if (config.allowBootstrap) {
+      await check("Privy bootstrap (explicit record and wallet creation)", async () => {
+        const bootstrap = await authenticated("/api/agent/bootstrap", {});
+        walletIdentity = bootstrapWalletIdentity(bootstrap);
+        walletAddress = walletIdentity.stellar;
+        return "Wallet provisioning completed; funding and signing were not requested";
       });
-      const payment = object(prepared.payment, "prepared_payment");
-      paymentId = string(payment.id, "payment_id");
-      invariant(payment.network === "stellar:testnet", "prepared_network_not_testnet");
-      invariant(payment.amount === X402_DEMO_LIMIT_DISPLAY, "prepared_amount_changed");
-      const executed = await authenticatedRequest("/api/agent/x402", {
-        action: "execute",
-        paymentId,
-        explicitConfirmation: true,
+      await check("Privy bootstrap idempotency", async () => {
+        invariant(walletAddress, "first_bootstrap_missing");
+        const replay = await authenticated("/api/agent/bootstrap", {});
+        invariant(JSON.stringify(bootstrapWalletIdentity(replay)) === JSON.stringify(walletIdentity), "bootstrap_wallet_changed");
+        return "Repeated bootstrap kept the same Stellar, Avalanche and Solana addresses";
       });
-      const receipt = object(executed.payment, "executed_payment");
-      firstHash = string(receipt.transactionHash, "payment_transaction_hash");
-      invariant(receipt.status === "confirmed", "payment_not_confirmed");
-      invariant(typeof receipt.resourcePreview === "string", "resource_not_delivered");
-      return `confirmed ${firstHash.slice(0, 12)}...`;
+    } else pending("Privy bootstrap", "Not invoked. Use --allow-bootstrap only with an exclusive test identity to create records and wallets.");
+    await check("Authenticated x402 status (read-only)", async () => {
+      const status = await authenticated("/api/agent/x402");
+      const address = string(object(status.wallet, "x402_wallet").address, "x402_wallet_address");
+      invariant(isValidStellarAddress(address), "wallet_address_invalid");
+      if (walletAddress) invariant(address === walletAddress, "wallet_identity_mismatch");
+      return "Authenticated persisted wallet status returned; no trustline or payment preparation";
     });
-
-    await check("Duplicate-resistant replay", "authenticated", async () => {
-      invariant(paymentId.length > 0 && firstHash.length > 0, "first_payment_missing");
-      const replay = await authenticatedRequest("/api/agent/x402", {
-        action: "execute",
-        paymentId,
-        explicitConfirmation: true,
-      });
-      invariant(replay.replayed === true, "replay_flag_missing");
-      const receipt = object(replay.payment, "replayed_payment");
-      invariant(receipt.transactionHash === firstHash, "replay_hash_changed");
-      return `same receipt ${firstHash.slice(0, 12)}...`;
-    });
+    pending("Browser login, recovery, chat and memory persistence", "Validate through the visible application using two exclusive test identities; this runner does not prove human acceptance.");
+    pending("Cross-user data, plans and receipts isolation", "Requires separate two-user acceptance evidence; a single temporary token cannot establish isolation.");
   }
+  return { mode: config.mode, ...acceptanceReport({ url: config.url, deployment: config.deployment ?? null, commit: config.commit ?? null, checks }) };
 }
-
-const failed = checks.filter((result) => !result.ok);
-const report = {
-  mode,
-  baseUrl,
-  generatedAt: new Date().toISOString(),
-  passed: checks.length - failed.length,
-  failed: failed.length,
-  checks,
-};
-
-if (jsonOutput) {
-  console.log(JSON.stringify(report, null, 2));
-} else {
-  console.log(`\nagent-assistant acceptance - ${mode}\n`);
-  for (const result of checks) {
-    console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name} (${result.durationMs}ms)`);
-    console.log(`      ${result.detail}`);
+const isDirectRun = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isDirectRun) {
+  const config = acceptanceConfig();
+  const report = await runAcceptance(config);
+  if (config.jsonOutput) console.log(JSON.stringify(report, null, 2));
+  else {
+    console.log(`${report.generatedAt} | ${report.url} | commit=${report.commit ?? "not supplied"} | deployment=${report.deployment ?? "public URL only"}`);
+    for (const result of report.checks) console.log(`${result.status} ${result.name}: ${result.detail}`);
+    console.log(`${report.passed} passed, ${report.failed} failed, ${report.pending} pending; ${report.status}`);
   }
-  console.log(`\n${report.passed} passed - ${report.failed} failed\n`);
-  if (mode === "doctor") {
-    console.log("Next: use authenticated mode with a temporary Privy token; execute mode additionally requires the explicit Testnet mutation flag.\n");
-  }
+  if (report.failed) process.exitCode = 1;
 }
-
-if (failed.length > 0) process.exitCode = 1;

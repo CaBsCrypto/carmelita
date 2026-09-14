@@ -266,6 +266,11 @@
 .agent-telegram-actions{display:flex;flex-wrap:wrap;gap:7px}
 .agent-telegram-actions a{border:1px solid #42685c;border-radius:10px;padding:9px 11px;background:#214d40;color:var(--amber);font-size:10px;font-weight:800;text-decoration:none}
 .agent-telegram-actions a:hover{border-color:var(--amber)}
+.agent-bazaar-offers{list-style:none;margin:10px 0;padding:0;display:grid;gap:10px}
+.agent-bazaar-offers li{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);font-size:10px}
+.agent-bazaar-offers dl{display:grid;gap:3px;margin:7px 0}
+.agent-bazaar-offers dd{margin:0;color:var(--muted);overflow-wrap:anywhere}
+.agent-bazaar-offers strong{font-size:11px}
 .agent-telegram-status{margin:0;font-size:10px;font-weight:800;color:#9fb9af}
 .agent-chat-context>.agent-verify-wallet{margin:20px 0;padding:11px;border:1px solid #597b70;border-radius:11px;background:transparent;color:var(--amber);font-size:10px;font-weight:800;text-align:center;cursor:pointer;width:100%}
 .agent-chat-context>.agent-verify-wallet:hover{border-color:var(--amber)}

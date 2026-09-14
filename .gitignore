@@ -47,3 +47,5 @@ next-env.d.ts
 .env*.local
 *.tsbuildinfo
 /graphify-out/
+
+/stellar-bazaar-x402/

@@ -1,0 +1,54 @@
+{
+  "url": "https://agente-asistente-git-f-22838e-cabscryptocontacto-6028s-projects.vercel.app",
+  "deployment": "https://agente-asistente-git-f-22838e-cabscryptocontacto-6028s-projects.vercel.app",
+  "commit": "4c9d642e10194319e06c1bc27535938e44cb2848",
+  "checks": [
+    {
+      "name": "/api/health",
+      "status": "PASS",
+      "durationMs": 4034,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/",
+      "status": "PASS",
+      "durationMs": 3885,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/guide",
+      "status": "PASS",
+      "durationMs": 4423,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/developers",
+      "status": "PASS",
+      "durationMs": 3593,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/connections",
+      "status": "PASS",
+      "durationMs": 3748,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/login",
+      "status": "PASS",
+      "durationMs": 4193,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    },
+    {
+      "name": "/api/v1/capabilities",
+      "status": "PASS",
+      "durationMs": 3762,
+      "detail": "HTTP 200; health binds deployment commit and QA fingerprint"
+    }
+  ],
+  "generatedAt": "2026-09-08T04:14:33.396Z",
+  "status": "PASS",
+  "passed": 7,
+  "failed": 0,
+  "pending": 0
+}

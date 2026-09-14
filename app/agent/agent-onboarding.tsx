@@ -9,66 +9,70 @@ import WalletCenter from "./wallet-center";
 import WebMcpInspector from "./webmcp-inspector";
 import AgentExternalAccess from "./agent-external-access";
 import AgentConnectedApps from "./agent-connected-apps";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
+import { sessionCloseCopy, useSessionClose } from "../use-session-close";
 
 const onboardingUi = {
   en: {
     loading: "Preparing secure sign-in...",
     entryEyebrow: "WORK WITH CARMELITA",
-    entryTitle: "Sign in once. Your Stellar and Avalanche wallets arrive with you.",
-    entryText: "Continue with email, Google or a passkey. Privy creates the identity; Carmelita provisions user-owned wallets on Stellar Testnet and Avalanche Fuji.",
+    entryTitle: "Sign in once. Your test wallets arrive with you.",
+    entryText: "Continue with email, Google or a passkey. Your Stellar, EVM and Solana wallets belong to you. Enabled EVM test networks share one address.",
     create: "Work with Carmelita",
     boundary: "No seed phrase or wallet password required during onboarding.",
     onboarding: "CHAT-GUIDED ONBOARDING",
-    steps: ["Authenticate with Privy", "Create a user-owned Stellar wallet", "Ask the agent for Testnet XLM", "Review every on-chain action"],
+    steps: ["Authenticate with Privy", "Recover your three wallet families", "Review each test network and balance", "Approve each financial action separately"],
     workspace: "CARMELITA WORKSPACE",
     ready: "Carmelita is ready.",
-    creating: "Creating your Stellar and Avalanche wallets...",
+    creating: "Preparing your Stellar, EVM and Solana wallets...",
     authenticated: "Authenticated with Privy",
     signout: "Sign out",
     provisioning: "Provisioning automatically",
     pipeline: "Identity · wallet ownership · chat-controlled setup",
     error: "We could not finish wallet provisioning.",
     retry: "Retry safely",
+    stellarWallet: "STELLAR WALLET", evmWallet: "EVM WALLET", solanaWallet: "SOLANA WALLET", ownership: "Ownership", owned: "User-owned", network: "Network", created: "Created", existing: "Existing wallet", justNow: "Just now", active: "ACTIVE", pending: "PENDING", explorer: "View on explorer", shared: "One address for all enabled EVM test networks. Each network keeps its own balance and fees.",
   },
   es: {
     loading: "Preparando ingreso seguro...",
     entryEyebrow: "TRABAJA CON CARMELITA",
-    entryTitle: "Ingresa una vez. Tu wallet Stellar llega contigo.",
-    entryText: "Continúa con email, Google o passkey. Privy crea la identidad y Carmelita provisiona inmediatamente una wallet Stellar propiedad del usuario.",
+    entryTitle: "Ingresa una vez. Tus wallets de prueba llegan contigo.",
+    entryText: "Continúa con email, Google o passkey. Tus wallets Stellar, EVM y Solana te pertenecen. Las redes EVM de prueba habilitadas comparten una dirección.",
     create: "Carmelita trabaja contigo",
     boundary: "No necesitas seed phrase ni contraseña de wallet durante el onboarding.",
     onboarding: "ONBOARDING DESDE EL CHAT",
-    steps: ["Autenticar con Privy", "Crear una wallet Stellar del usuario", "Pedir XLM Testnet al agente", "Revisar cada acción on-chain"],
+    steps: ["Autenticar con Privy", "Recuperar tus tres familias de wallet", "Revisar cada red de prueba y su saldo", "Aprobar cada acción financiera por separado"],
     workspace: "ESPACIO DE CARMELITA",
     ready: "Carmelita está lista.",
-    creating: "Creando tu wallet Stellar...",
+    creating: "Preparando tus wallets Stellar, EVM y Solana...",
     authenticated: "Autenticado con Privy",
     signout: "Cerrar sesión",
     provisioning: "Provisionando automáticamente",
     pipeline: "Identidad · propiedad de wallet · configuración por chat",
     error: "No pudimos terminar la creación de la wallet.",
     retry: "Reintentar de forma segura",
+    stellarWallet: "WALLET STELLAR", evmWallet: "WALLET EVM", solanaWallet: "WALLET SOLANA", ownership: "Propiedad", owned: "Del usuario", network: "Red", created: "Creación", existing: "Wallet existente", justNow: "Ahora", active: "ACTIVA", pending: "PENDIENTE", explorer: "Ver en explorador", shared: "Una dirección para todas las redes EVM de prueba habilitadas. Cada red mantiene su saldo y sus comisiones.",
   },
   pt: {
     loading: "Preparando login seguro...",
     entryEyebrow: "CONHEÇA CARMELITA",
-    entryTitle: "Entre uma vez. Sua wallet Stellar acompanha você.",
-    entryText: "Continue com email, Google ou passkey. A Privy cria a identidade e Carmelita provisiona imediatamente uma wallet Stellar do usuário.",
+    entryTitle: "Entre uma vez. Suas wallets de teste acompanham você.",
+    entryText: "Continue com email, Google ou passkey. Suas wallets Stellar, EVM e Solana pertencem a você. As redes EVM de teste habilitadas compartilham um endereço.",
     create: "Carmelita trabalha com voc\u00ea",
     boundary: "Nenhuma seed phrase ou senha de wallet é necessária durante o onboarding.",
     onboarding: "ONBOARDING PELO CHAT",
-    steps: ["Autenticar com Privy", "Criar uma wallet Stellar do usuário", "Pedir XLM da Testnet ao agente", "Revisar cada ação on-chain"],
+    steps: ["Autenticar com Privy", "Recuperar suas três famílias de wallet", "Revisar cada rede de teste e seu saldo", "Aprovar cada ação financeira separadamente"],
     workspace: "ESPAÇO DA CARMELITA",
     ready: "Carmelita está pronta.",
-    creating: "Criando sua wallet Stellar...",
+    creating: "Preparando suas wallets Stellar, EVM e Solana...",
     authenticated: "Autenticado com Privy",
     signout: "Sair",
     provisioning: "Provisionando automaticamente",
     pipeline: "Identidade · propriedade da wallet · configuração pelo chat",
     error: "Não foi possível concluir a criação da wallet.",
     retry: "Tentar novamente com segurança",
+    stellarWallet: "WALLET STELLAR", evmWallet: "WALLET EVM", solanaWallet: "WALLET SOLANA", ownership: "Propriedade", owned: "Do usuário", network: "Rede", created: "Criação", existing: "Wallet existente", justNow: "Agora", active: "ATIVA", pending: "PENDENTE", explorer: "Ver no explorador", shared: "Um endereço para todas as redes EVM de teste habilitadas. Cada rede mantém seu saldo e suas taxas.",
   },
 };
 type BootstrapWallet = {
@@ -88,7 +92,11 @@ type BootstrapResult = {
   wallets: {
     stellar: BootstrapWallet;
     avalanche: BootstrapWallet;
+    evm: BootstrapWallet;
+    solana: BootstrapWallet;
   };
+  evm: { wallet: BootstrapWallet; networks: { id: string; name: string; explorerUrl: string }[]; fundsMoved: false; signingRequired: false };
+  solana: { network: { id: string; name: string; explorerUrl: string } };
   avalanche: {
     network: { id: "avalanche:fuji"; name: string; explorerUrl: string };
     fundsMoved: false;
@@ -175,7 +183,9 @@ function PrivyAgent({
   autoLogin: boolean;
 }) {
   const t = onboardingUi[locale];
-  const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy();
+  const { ready, authenticated, user, login, getAccessToken } = usePrivy();
+  const session = useSessionClose();
+  const userId = user?.id;
   const { refreshUser } = useUser();
   const [result, setResult] = useState<BootstrapResult | null>(null);
   const [status, setStatus] = useState<"idle" | "creating" | "ready" | "error">("idle");
@@ -186,18 +196,24 @@ function PrivyAgent({
   const [selectedHotel, setSelectedHotel] = useState<TravelHotel | null>(null);
   const bootstrappedFor = useRef<string | null>(null);
   const loginStarted = useRef(false);
+  const bootstrapRequest = useRef<AbortController | null>(null);
 
-  async function bootstrap(force = false) {
-    if (!user?.id || (!force && bootstrappedFor.current === user.id)) return;
-    bootstrappedFor.current = user.id;
+  const bootstrap = useCallback(async (force = false) => {
+    if (!userId || (!force && bootstrappedFor.current === userId)) return;
+    bootstrapRequest.current?.abort();
+    const controller = new AbortController();
+    bootstrapRequest.current = controller;
+    bootstrappedFor.current = userId;
     setStatus("creating");
     setError(null);
 
     try {
       const token = await getAccessToken();
+      controller.signal.throwIfAborted();
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/bootstrap", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -209,14 +225,20 @@ function PrivyAgent({
       // the browser identity so extended-chain signing can discover it without
       // forcing the user through a sign-out/sign-in cycle.
       await refreshUser();
+      controller.signal.throwIfAborted();
+      if (body.user?.id !== userId) throw new Error("wallet_response_mismatch");
       setResult(body);
       setStatus("ready");
     } catch (caught) {
+      if (controller.signal.aborted) {
+        if (bootstrapRequest.current === controller) bootstrappedFor.current = null;
+        return;
+      }
       bootstrappedFor.current = null;
       setError(caught instanceof Error ? caught.message : "Wallet bootstrap failed");
       setStatus("error");
     }
-  }
+  }, [getAccessToken, refreshUser, userId]);
 
   useEffect(() => {
     if (!autoLogin || !ready || authenticated || loginStarted.current) return;
@@ -231,18 +253,23 @@ function PrivyAgent({
     void openPrivy();
   }, [authenticated, autoLogin, login, ready]);
 
+  useEffect(() => () => {
+    bootstrapRequest.current?.abort();
+    bootstrappedFor.current = null;
+  }, [authenticated, userId]);
+
   useEffect(() => {
     if (!ready || !authenticated || !user?.id) return;
     const task = window.setTimeout(() => void bootstrap(), 0);
-    return () => window.clearTimeout(task);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, authenticated, user?.id]);
+    return () => { window.clearTimeout(task); bootstrapRequest.current?.abort(); };
+  }, [ready, authenticated, user?.id, bootstrap]);
 
   async function signOut() {
     bootstrappedFor.current = null;
+    bootstrapRequest.current?.abort();
     setResult(null);
     setStatus("idle");
-    await logout();
+    await session.close();
   }
 
 
@@ -297,10 +324,11 @@ function PrivyAgent({
           <p>
             {t.entryText}
           </p>
-          <button className="agent-primary" onClick={() => login()}>
+          <button className="agent-primary" disabled={session.closing || session.state === "failed"} onClick={() => login()}>
             {t.create}
           </button>
           <small>{t.boundary}</small>
+          {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
         </div>
         <aside className="agent-onboarding-preview">
           <header><span>{t.onboarding}</span><b>TESTNET</b></header>
@@ -323,8 +351,9 @@ function PrivyAgent({
           <h1>{status === "ready" ? t.ready : t.creating}</h1>
           <p>{result?.profile.email ?? user?.email?.address ?? t.authenticated}</p>
         </div>
-        <button className="agent-signout" onClick={() => void signOut()}>{t.signout}</button>
+        <button className="agent-signout" disabled={session.closing} onClick={() => void signOut()}>{session.closing ? sessionCloseCopy[locale].closing : t.signout}</button>
       </header>
+      {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed}</p>}
 
       {status === "creating" && (
         <div className="agent-provisioning">
@@ -341,9 +370,10 @@ function PrivyAgent({
         </div>
       )}
 
-      {result && (
+      {result && result.user.id === user?.id && (
         <>
         <AgentChat
+          key={result.user.id}
           email={result.profile.email ?? user?.email?.address ?? "Privy account"}
           walletAddress={result.wallet.address}
           walletBalance={
@@ -358,6 +388,7 @@ function PrivyAgent({
         <AgentConnectedApps locale={locale} getAccessToken={getAccessToken} />
 
         <WalletCenter
+          key={result.user.id}
           locale={locale}
           stellarAddress={result.wallet.address}
           stellarBalance={
@@ -370,30 +401,29 @@ function PrivyAgent({
 
         <div className="agent-wallet-grid">
           <article className="agent-wallet-card">
-            <header><span>STELLAR WALLET</span><b>{result.activation === "pending" ? "PENDING" : "ACTIVE"}</b></header>
+            <header><span>{t.stellarWallet}</span><b>{result.activation === "pending" ? t.pending : t.active}</b></header>
             <div className="agent-wallet-mark">S</div>
-            <h2>{shortAddress(result.wallet.address)}</h2>
-            <code>{result.wallet.address}</code>
-            <dl>
-              <div><dt>Ownership</dt><dd>User-owned</dd></div>
-              <div><dt>Network</dt><dd>Stellar Testnet</dd></div><div><dt>Provider</dt><dd>Privy native SDK</dd></div>
-              <div><dt>Created</dt><dd>{result.wallet.created ? "Just now" : "Existing wallet"}</dd></div>
-            </dl>
+            <h2>{shortAddress(result.wallet.address)}</h2><code>{result.wallet.address}</code>
+            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Stellar Testnet</dd></div>
+              <div><dt>{t.created}</dt><dd>{result.wallet.created ? t.justNow : t.existing}</dd></div></dl>
           </article>
           <article className="agent-wallet-card">
-            <header><span>AVALANCHE WALLET</span><b>ACTIVE</b></header>
-            <div className="agent-wallet-mark">A</div>
-            <h2>{shortAddress(result.wallets.avalanche.address)}</h2>
-            <code>{result.wallets.avalanche.address}</code>
-            <dl>
-              <div><dt>Ownership</dt><dd>User-owned</dd></div>
-              <div><dt>Network</dt><dd>Avalanche Fuji</dd></div>
-              <div><dt>Provider</dt><dd>Privy native SDK</dd></div>
-              <div><dt>Created</dt><dd>{result.wallets.avalanche.created ? "Just now" : "Existing wallet"}</dd></div>
-            </dl>
-            <a href={`${result.avalanche.network.explorerUrl}/address/${result.wallets.avalanche.address}`} target="_blank" rel="noreferrer">View on explorer</a>
+            <header><span>{t.evmWallet}</span><b>{t.active}</b></header>
+            <div className="agent-wallet-mark">0x</div>
+            <h2>{shortAddress(result.wallets.evm.address)}</h2><code>{result.wallets.evm.address}</code>
+            <p>{t.shared}</p>
+            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div>
+              <div><dt>{t.created}</dt><dd>{result.wallets.evm.created ? t.justNow : t.existing}</dd></div></dl>
+            {result.evm.networks.map((network) => <a key={network.id} href={`${network.explorerUrl}/address/${result.wallets.evm.address}`} target="_blank" rel="noreferrer">{network.name} · {t.explorer}</a>)}
           </article>
-          <div className="agent-ready-panel">
+          <article className="agent-wallet-card">
+            <header><span>{t.solanaWallet}</span><b>{t.active}</b></header>
+            <div className="agent-wallet-mark">◎</div>
+            <h2>{shortAddress(result.wallets.solana.address)}</h2><code>{result.wallets.solana.address}</code>
+            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Solana Devnet</dd></div>
+              <div><dt>{t.created}</dt><dd>{result.wallets.solana.created ? t.justNow : t.existing}</dd></div></dl>
+            <a href={`https://explorer.solana.com/address/${result.wallets.solana.address}?cluster=devnet`} target="_blank" rel="noreferrer">{t.explorer}</a>
+          </article>          <div className="agent-ready-panel">
             <p className="eyebrow">AUTOMATIC BOOTSTRAP COMPLETE</p>
             <h2>Your agent now has a wallet identity.</h2>
             <p>

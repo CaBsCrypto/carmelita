@@ -1,0 +1,23 @@
+
+> agente-asistente@0.1.0 acceptance:doctor
+> tsx scripts/acceptance.ts doctor
+
+
+agent-assistant acceptance - doctor
+
+PASS  Safety constants are Testnet-only (1ms)
+      Stellar Testnet, 0.01 USDC payment cap, 0.50 USDC drip
+PASS  Production health contract (520ms)
+      persistence=postgres, mainnet=disabled
+PASS  Production agent page (288ms)
+      HTTP 200
+PASS  MCP discovery contract (317ms)
+      sandbox, personal-agent and provider surfaces advertised
+PASS  Official x402 live challenge (420ms)
+      0.0100000 USDC -> GCHEI4PQ...
+PASS  Internal distributor readiness (576ms)
+      18.0000000 USDC, 9999.9999500 XLM
+
+6 passed - 0 failed
+
+Next: use authenticated mode with a temporary Privy token; execute mode additionally requires the explicit Testnet mutation flag.

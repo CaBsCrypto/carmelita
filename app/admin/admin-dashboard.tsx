@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import BrandLockup from "../brand-lockup";
+import AdminLogoutButton from "./logout-button";
 import { useMemo, useState } from "react";
 import type {
   AdminWaitlistSignup,
@@ -52,9 +53,11 @@ function metricWindow(leads: AdminWaitlistSignup[], days: number) {
 export default function AdminDashboard({
   initialSignups,
   founderName,
+  privyEnabled,
 }: {
   initialSignups: AdminWaitlistSignup[];
   founderName: string;
+  privyEnabled: boolean;
 }) {
   const [signups, setSignups] = useState(initialSignups);
   const [search, setSearch] = useState("");
@@ -149,11 +152,6 @@ export default function AdminDashboard({
     }
   }
 
-  async function signOut() {
-    await fetch("/api/admin/session", { method: "DELETE" });
-    window.location.assign("/admin/login");
-  }
-
   function clearFilters() {
     setSearch("");
     setStatus("all");
@@ -185,7 +183,7 @@ export default function AdminDashboard({
           <Link className="admin-stellar-link" href="/admin/integrations">
             Integration requests
           </Link>
-          <button onClick={signOut}>Sign out</button>
+          <AdminLogoutButton privyEnabled={privyEnabled} />
         </div>
       </header>
 

@@ -7,8 +7,8 @@ import {
   agentConversations,
   agentExternalConnections,
   agentMessages,
-  agentWallets,
 } from "@/db/schema";
+import { listPersistedUserWallets, setPersistedWalletNetworkStatus } from "@/app/multichain-account";
 import {
   buildAgentReply,
   detectAgentLanguage,
@@ -112,6 +112,7 @@ export type StoredAgentMessage = {
       completionMessage: string;
       permissions: string[];
     };
+    bazaarAction?: { query: string };
   }[];
   connection?: { name: string; stage: string; priority: string };
   defindexIntent?: AgentDefindexIntent & { requestId: string };
@@ -135,20 +136,13 @@ function conversationId(userId: string) {
   return "conv_" + createHash("sha256").update(userId).digest("hex").slice(0, 32);
 }
 
-async function walletContext(userId: string) {
-  const db = getDb();
-  const rows = await db
-    .select({
-      address: agentWallets.address,
-      network: agentWallets.network,
-    })
-    .from(agentWallets)
-    .where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, "stellar")))
-    .limit(1);
-
-  const wallet = rows[0];
+export async function walletContext(userId: string, listWallets = listPersistedUserWallets, getAccount = getStellarTestnetAccount) {
+  const wallet = (await listWallets(userId)).find((candidate) =>
+    candidate.userId === userId && candidate.network === "stellar:testnet" && candidate.chainType === "stellar"
+    && (candidate.status === "active" || candidate.status === "pending"),
+  );
   if (!wallet) return null;
-  const account = await getStellarTestnetAccount(wallet.address).catch(() => null);
+  const account = await getAccount(wallet.address).catch(() => null);
   const xlm = account?.balances.find((balance) => balance.asset === "XLM");
   const usdc = account?.balances.find(
     (balance) =>
@@ -338,16 +332,11 @@ async function buildTestnetSetupReply(
       const refreshed = await getStellarTestnetAccount(wallet.address);
       const refreshedXlm = refreshed.balances.find((balance) => balance.asset === "XLM")?.balance ?? "0";
       if (refreshed.exists) {
-        const now = new Date();
-        await getDb()
-          .update(agentWallets)
-          .set({ status: "active", updatedAt: now })
-          .where(
-            and(
-              eq(agentWallets.userId, userId),
-              eq(agentWallets.address, wallet.address),
-            ),
-          );
+        const persisted = (await listPersistedUserWallets(userId)).find((candidate) =>
+          candidate.userId === userId && candidate.network === "stellar:testnet" && candidate.chainType === "stellar" && candidate.address === wallet.address,
+        );
+        if (!persisted) throw new Error("stellar_wallet_not_ready");
+        await setPersistedWalletNetworkStatus({ userId, walletId: persisted.id, network: "stellar:testnet", status: "active" });
         await getDb().insert(agentActivities).values({
           id: randomUUID(),
           userId,

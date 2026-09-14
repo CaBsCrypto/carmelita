@@ -1,6 +1,4 @@
-import { and, eq } from "drizzle-orm";
-import { getDb } from "@/db";
-import { agentWallets } from "@/db/schema";
+import { listPersistedUserWallets } from "@/app/multichain-account";
 import { getStellarTestnetAccount } from "@/app/privy-stellar";
 import { diagnoseEvmWallet, getErc20Balance } from "@/app/wallets/evm-rpc";
 import { getWalletNetwork } from "@/app/wallets/networks";
@@ -11,14 +9,9 @@ import {
 
 export async function getCctpFujiToStellarContext(
   userId: string,
+  dependencies = { listWallets: listPersistedUserWallets, diagnoseEvmWallet, getErc20Balance, getStellarTestnetAccount },
 ): Promise<CctpBridgeReadiness> {
-  const wallets = await getDb().select({
-    address: agentWallets.address,
-    network: agentWallets.network,
-    chainType: agentWallets.chainType,
-  }).from(agentWallets).where(
-    and(eq(agentWallets.userId, userId), eq(agentWallets.status, "active")),
-  );
+  const wallets = (await dependencies.listWallets(userId)).filter((wallet) => wallet.userId === userId && wallet.status === "active");
   const source = wallets.find(
     (wallet) =>
       wallet.network === "avalanche:fuji" &&
@@ -32,11 +25,11 @@ export async function getCctpFujiToStellarContext(
 
   const [fuji, fujiUsdc, stellar] = await Promise.all([
     source
-      ? diagnoseEvmWallet(getWalletNetwork("avalanche:fuji"), source.address)
+      ? dependencies.diagnoseEvmWallet(getWalletNetwork("avalanche:fuji"), source.address)
         .catch(() => null)
       : null,
     source
-      ? getErc20Balance(
+      ? dependencies.getErc20Balance(
         getWalletNetwork("avalanche:fuji"),
         CCTP_TESTNET.avalanche.usdc,
         source.address,
@@ -44,7 +37,7 @@ export async function getCctpFujiToStellarContext(
       ).catch(() => null)
       : null,
     destination
-      ? getStellarTestnetAccount(destination.address).catch(() => null)
+      ? dependencies.getStellarTestnetAccount(destination.address).catch(() => null)
       : null,
   ]);
   const circleUsdc = stellar?.balances.find(
