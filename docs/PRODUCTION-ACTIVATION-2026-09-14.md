@@ -19,7 +19,7 @@ La inspección revisa el historial de migraciones y conflictos de billeteras. Un
 
 ## Publicación pendiente
 
-1. Obtener acceso autorizado a la conexión de producción y verificar inventario, respaldo/restauración y compatibilidad del código anterior con las restricciones de 0020.
+1. Resolver los bloqueos de identidad e historial descritos abajo, verificar las conexiones de ejecución/migración y demostrar compatibilidad del código anterior con las restricciones de 0020. El inventario y una restauración separada ya fueron comprobados; renovar la referencia durante el mantenimiento antes de migrar.
 2. Completar aceptación autenticada de Bazaar y WebMCP en Preview; conservarlos pendientes si no hay sesión o navegador compatible. Una búsqueda pública HTTP 200 no acredita una sesión ni fichas utilizables.
 3. Desactivar la asignación automática del dominio antes del merge y verificar el candidato inmutable. Revisar también acceso por URLs de despliegues anteriores: bloquear sólo el alias no impide escrituras por esos destinos. No iniciar migraciones hasta demostrar que todos los escritores están detenidos.
 4. Preparar una versión de mantenimiento compatible con el esquema anterior o una barrera de tráfico independiente del esquema. No publicar el código nuevo que exige 0020 antes de asegurar ese bloqueo. Esperar finalización de solicitudes en curso.
@@ -34,8 +34,20 @@ La inspección revisa el historial de migraciones y conflictos de billeteras. Un
 
 - Vercel confirma rama de producción `main` y asignación automática de dominios activada. No se cambió esa configuración.
 - El dominio público conserva `dpl_tYAhcpzd9uxqAYPU6869jLzt7dbG`, READY. El objetivo más reciente del proyecto no es evidencia suficiente del despliegue que recibe tráfico.
-- La revisión automática rechazó el intento de descifrar la conexión sensible de producción por falta de autorización específica. No se ejecutó esa consulta ni se utilizó otra vía para recuperar el secreto. El diagnóstico de datos, respaldo y migración permanece pendiente.
-- El navegador interno no tiene sesiones abiertas en esta reanudación. Las comprobaciones autenticadas del nuevo candidato siguen pendientes.
+- La revisión automática rechazó inicialmente el acceso a la conexión sensible por falta de autorización específica. El usuario lo autorizó después. Vercel no devolvió valores para las variables sensibles consultadas; el diagnóstico se realizó mediante la sesión autorizada de Neon abierta desde Vercel, sin extraer credenciales. La equivalencia de las conexiones de ejecución y migración todavía requiere verificación.
+- Las comprobaciones autenticadas del nuevo candidato siguen pendientes; el acceso operativo a Neon no las sustituye.
 - El catálogo respondió HTTP 200 a las 04:43:56 UTC, sin resultados para `website`, `partialResults=false` y registro dinámico disponible. No acredita una oferta válida ni consumo.
 
-Producción no ha sido alterada. No hubo firmas, pagos, financiación, trustlines ni modificaciones de Bazaar.
+## Inspección y respaldo — 14 de septiembre, 05:01–05:04 UTC
+
+Candidato revisado: `fbef8d05acd9aa1e7829ff4062c4f4facb81742b`. Consultas de datos de sólo lectura en producción: cinco usuarios, ocho billeteras, ocho pagos x402 y 19 entradas en el historial de migraciones (hasta 0018). No hay propietarios EVM duplicados, direcciones EVM normalizadas duplicadas, propietarios huérfanos ni combinaciones de red/familia incompatibles.
+
+**Publicación bloqueada:** un propietario tiene dos billeteras Stellar Testnet con dos direcciones distintas. Ese propietario no tiene pagos x402 registrados; esto no demuestra ausencia de fondos ni de otras referencias. No se eligió una billetera canónica ni se modificaron registros. Es necesaria una resolución explícita que preserve identidades y referencias antes de poder cumplir la unicidad de usuario/red de 0020.
+
+**Historial pendiente de reconciliar:** `agent_x402_events` existe, pero 0019 no figura en las 19 entradas observadas. No se ha acreditado equivalencia completa del esquema con 0019. Aplicar el tramo pendiente directamente intentaría crear esa tabla existente. No se alteraron migraciones históricas ni se añadió una entrada artificial al historial.
+
+Neon creó el snapshot manual `main at 2026-09-14 05:01:41 UTC (manual)`, mostrado sin vencimiento. Se probó la opción **Multi-step restore**, que restauró el snapshot en una rama nueva y mantuvo `main` intacta. La copia está separada de QA y no se migraron conexiones ni configuraciones hacia ella. Inventario restaurado: cinco usuarios, ocho billeteras, ocho pagos y 19 migraciones.
+
+Comparación de registros completos, ordenados por ID, entre copia restaurada y producción: huella MD5 de billeteras `ce6c8de6cf66af53e0fb28fd9678243b`; huella de pagos `4c8e619060c03f57c49553473f3b9a86`, iguales en ambos destinos. Estas huellas sirven para comparar el contenido observado, no como garantía criptográfica adversarial ni como prueba de todas las tablas. La restauración funciona; la compatibilidad del despliegue anterior y el procedimiento completo de reapertura siguen pendientes.
+
+Los datos y el despliegue activo de producción permanecen intactos. Sólo se creó el respaldo y su copia restaurada dentro de Neon. No hubo migraciones, merge, promoción, firmas, pagos, financiación, trustlines ni modificaciones de Bazaar.
