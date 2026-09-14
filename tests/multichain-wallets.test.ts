@@ -117,7 +117,7 @@ test("reconnect reuses a legacy Stellar wallet instead of creating a pending dup
   };
 
   try {
-    const wallet = await getOrCreateUserWallet("did:privy:reconnected-user", "stellar");
+    const wallet = await getOrCreateUserWallet("did:privy:reconnected-user", "stellar", { canonicalStellarWallet: async () => null });
     assert.equal(wallet.id, "legacy-stellar-wallet");
     assert.equal(wallet.address, legacyAddress);
     assert.equal(wallet.created, false);

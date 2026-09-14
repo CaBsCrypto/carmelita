@@ -74,8 +74,8 @@ test("provisions exactly one deterministic Stellar wallet per Privy user", async
   };
 
   try {
-    const first = await getOrCreateUserStellarWallet(userId);
-    const second = await getOrCreateUserStellarWallet(userId);
+    const first = await getOrCreateUserStellarWallet(userId, { canonicalStellarWallet: async () => null });
+    const second = await getOrCreateUserStellarWallet(userId, { canonicalStellarWallet: async () => null });
     assert.equal(first.id, walletId);
     assert.equal(first.created, true);
     assert.equal(second.id, walletId);

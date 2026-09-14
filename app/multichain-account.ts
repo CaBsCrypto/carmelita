@@ -147,11 +147,19 @@ export async function persistActivatedWallet(input: {
 }
 
 export async function getCanonicalEvmWallet(userId: string) {
+  return getCanonicalWallet(userId, "ethereum");
+}
+
+export async function getCanonicalStellarWallet(userId: string) {
+  return getCanonicalWallet(userId, "stellar");
+}
+
+async function getCanonicalWallet(userId: string, chainType: "ethereum" | "stellar") {
   if (!userId.startsWith("did:privy:")) throw new Error("invalid_privy_user_id");
   if (!hasDatabase()) throw new Error("database_not_configured");
   const wallets = await getDb().select({
     id: agentWallets.id, userId: agentWallets.userId, address: agentWallets.address, chainType: agentWallets.chainType,
-  }).from(agentWallets).where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, "ethereum"))).limit(2);
+  }).from(agentWallets).where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, chainType))).limit(2);
   if (wallets.length > 1) throw new Error("wallet_identity_conflict");
   return wallets[0] ?? null;
 }
