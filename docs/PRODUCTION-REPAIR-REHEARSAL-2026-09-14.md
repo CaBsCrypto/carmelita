@@ -22,3 +22,12 @@ No se ha iniciado mantenimiento, capturado respaldo final ni aplicado reparació
 La lista específica de reglas del firewall de Vercel confirmó que no hay reglas personalizadas. El comando de resumen devolvió HTTP 402 al consultar IP Bypass, una función de plan superior; eso no acredita que las reglas personalizadas estén indisponibles. No se cambiaron reglas, plan, configuración ni tráfico. La [pausa de proyecto de Vercel](https://vercel.com/docs/projects/managing-projects#pausing-a-project) está documentada para producción, pero su cobertura por sí sola no demuestra el bloqueo de todas las URLs antiguas y otros escritores.
 
 Graphify continúa bloqueado por su lanzador de Python 3.12; no se afirma que el grafo esté actualizado.
+
+## Revalidación para mantenimiento
+
+- CI de `0ac74d3e99d9c27efd0d2a127e7cd108d132258d` completado con éxito: ejecución GitHub `34810486668`. La instalación limpia también pasó.
+- Preview lista: `dpl_HeQvCMwrFT5CrYf32Uydn5htjPg5`, URL `https://agente-asistente-cpkjb0kws-cabscryptocontacto-6028s-projects.vercel.app`. Esto acredita construcción/despliegue, no una aceptación autenticada nueva.
+- Vercel confirmó que no hay cambios de firewall pendientes. No se activó mantenimiento.
+- La consulta explícita en producción mostró cero sesiones adicionales, cero sesiones activas adicionales y cero transacciones abiertas adicionales en el momento observado. Es una fotografía temporal; no acredita que futuros escritores estén bloqueados.
+- El despliegue que atiende producción conserva `dcbb20ef520cb167b582f51263c0660793d94161`. Inspección de ese código: ambas rutas Stellar aún usan identificador determinista o la primera wallet devuelta por Privy; el escritor permite insertar el otro ID. Por tanto, limpiar y reabrir esa versión sin otra protección puede recrear el duplicado.
+- Antes de iniciar la ventana debe quedar preparada y probada una reapertura que preserve la identidad canónica. No se debe promover sin comprobar compatibilidad del candidato con el esquema disponible, ni aplicar 0020/0021 como parte implícita de esta reparación.
