@@ -71,3 +71,7 @@ Retomar la publicación controlada de la PR #28: revisar las migraciones restant
 ## Estado posterior: reparación aplicada
 
 Las dos transacciones ya se aplicaron y Carmelita reabrió con la candidata corregida. Evidencia vigente: [reparación aplicada y reapertura](docs/PRODUCTION-REPAIR-APPLIED-2026-09-14.md). Quedan siete billeteras, veinte migraciones y cero duplicados; evento y pagos preservados. Falta la aceptación visible de reingreso de la cuenta afectada y la comprobación de recuperación posterior. Las secciones anteriores describen la secuencia y sus criterios, no trabajo íntegramente pendiente.
+
+## Cierre
+
+Reingreso autenticado aprobado el 14 de septiembre de 2026: misma Stellar de julio, duplicado ausente, evento conservado y pagos sin cambios. El bootstrap registró una Solana Devnet adicional; por eso ahora hay ocho billeteras totales, con cero duplicados por propietario/red. La reparación y la reconciliación están completas. Continuación: publicación general controlada de la PR #28, con sus migraciones restantes y aceptación independiente.

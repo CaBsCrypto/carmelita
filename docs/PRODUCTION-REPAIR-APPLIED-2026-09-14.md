@@ -35,3 +35,13 @@ Promoción completada. El inventario confirmó que `carmelita-agent.vercel.app`,
 Se retiraron de la regla únicamente los dos dominios públicos que contenía y cuyo destino se verificó. Quedan 69 hosts antiguos bloqueados, sin cambios pendientes del firewall. Comprobación posterior: `/agent` y `/api/health` públicos HTTP 200, `/api/agent/wallets` sin sesión HTTP 401; URL inmutable antigua y alias git-main HTTP 403.
 
 La PR #28 continúa abierta y main no fue integrado. La reapertura compatible no equivale a publicar el conjunto multichain. Falta el reingreso visible de la cuenta afectada para aceptación de recuperación en producción; la cuenta se identificó mediante la base sin incluir su correo en esta evidencia pública.
+
+## Aceptación autenticada final — 14 de septiembre de 2026
+
+El usuario completó Privy en producción. La aplicación mostró la cuenta afectada, bootstrap completo, la dirección Stellar de julio marcada como existente/activa y saldo 9998.9661362 XLM. La actividad de inicio figura a las 06:30:06 UTC. Los mensajes históricos de financiación visibles pertenecen al historial recuperado; no se ejecutó ningún faucet ni pago durante esta aceptación.
+
+Consulta SQL posterior independiente: una Stellar para el propietario, coincidencia exacta del ID/propietario/dirección conservados, cero filas del ID retirado, un evento histórico de creación preservado, ocho pagos con la misma huella y veinte migraciones. Cero grupos duplicados por propietario/red.
+
+El total de billeteras pasó de siete a ocho por el registro de una Solana Devnet durante el bootstrap, creada a las 06:30:06.672730 UTC; no es la reaparición del duplicado Stellar. La interfaz muestra esa Solana con saldo cero. Se conserva como billetera normal del usuario.
+
+La recuperación autenticada pendiente queda aprobada. CI y Preview del corte anterior `cde38a0f655d14bd6b98e128530ec575b7f9152f` aprobaron; CI ejecución `34813409772`. Este cierre añade documentación, sin cambiar código ni exigir otra ejecución de pagos. El siguiente bloque sigue siendo la publicación general de la PR, no realizada como parte de esta reparación.
