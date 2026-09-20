@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { neon } from "@neondatabase/serverless";
 import { applyPreviewMigrations, pendingPreviewMigrationStatements, readPreviewMigrationFiles, type PreviewMigrationJournalEntry } from "./preview-migrate";
+import { firewallDependencies, verifyFirewallMaintenance } from "./production-firewall";
 
 type Environment = Record<string, string | undefined>;
 const liveOrigin = "https://carmelita-agent.vercel.app";
@@ -42,6 +43,10 @@ export function validateReleaseEvidence(value: unknown, fingerprint: string, com
   if (!evidence || evidence.databaseFingerprint !== fingerprint || evidence.commit !== commit || evidence.restoreVerified !== true || evidence.rollbackCompatible !== true || typeof evidence.backupId !== "string" || !evidence.backupId || typeof evidence.maintenanceCommit !== "string" || !/^[a-f0-9]{40}$/.test(evidence.maintenanceCommit)) throw new Error("production_migration_release_evidence");
   const date = typeof evidence.verifiedAt === "string" ? Date.parse(evidence.verifiedAt) : NaN;
   if (!Number.isFinite(date) || date > now || now - date > 60 * 60 * 1000) throw new Error("production_migration_stale_evidence");
+  if (evidence.maintenanceMode !== undefined && !["application", "firewall"].includes(String(evidence.maintenanceMode))) throw new Error("production_migration_maintenance_mode");
+  if (evidence.maintenanceMode === "firewall" &&
+      (typeof evidence.firewallRuleId !== "string" || !/^rule_[\w-]+$/.test(evidence.firewallRuleId) ||
+       typeof evidence.maintenanceDeploymentId !== "string" || !/^dpl_[\w]+$/.test(evidence.maintenanceDeploymentId))) throw new Error("production_migration_release_evidence");
   return evidence;
 }
 
@@ -72,13 +77,21 @@ export async function runProductionMigration(args = process.argv.slice(2), env: 
   if (applying) {
     if (execFileSync("git", ["status", "--porcelain", "--untracked-files=normal"], { encoding: "utf8", windowsHide: true }).trim()) throw new Error("production_migration_dirty_checkout");
     const evidence = validateReleaseEvidence(JSON.parse(readFileSync(required(env, "CARMELITA_RELEASE_EVIDENCE_FILE"), "utf8")), config.fingerprint, config.commit);
-    const response = await fetch(`${liveOrigin}/api/health`, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
-    const health = await response.json();
-    if (!response.ok || health.maintenance !== true || health.deployment?.environment !== "production" || health.deployment?.gitCommitSha !== evidence.maintenanceCommit) throw new Error("production_migration_maintenance_unverified");
-    for (const path of ["/agent", "/api/agent/wallets"]) {
-      const blocked = await fetch(`${liveOrigin}${path}`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
-      if (blocked.status !== 503) throw new Error("production_migration_maintenance_unverified");
-      await blocked.body?.cancel();
+    if (evidence.maintenanceMode === "firewall") {
+      await verifyFirewallMaintenance({
+        ruleId: evidence.firewallRuleId as string,
+        deploymentId: evidence.maintenanceDeploymentId as string,
+        qaFingerprint: required(env, "CARMELITA_QA_DATABASE_FINGERPRINT"),
+      }, firewallDependencies(required(env, "CARMELITA_VERCEL_CLI_PATH")));
+    } else {
+      const response = await fetch(`${liveOrigin}/api/health`, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000) });
+      const health = await response.json();
+      if (!response.ok || health.maintenance !== true || health.deployment?.environment !== "production" || health.deployment?.gitCommitSha !== evidence.maintenanceCommit) throw new Error("production_migration_maintenance_unverified");
+      for (const path of ["/agent", "/api/agent/wallets"]) {
+        const blocked = await fetch(`${liveOrigin}${path}`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+        if (blocked.status !== 503) throw new Error("production_migration_maintenance_unverified");
+        await blocked.body?.cancel();
+      }
     }
     await applyPreviewMigrations({ readJournal: () => sql.query(journalQuery), transaction: async batch => {
       await sql.transaction(batch.map(item => sql.query(item.text, item.parameters)), { isolationLevel: "Serializable" });

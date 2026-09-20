@@ -1,6 +1,16 @@
 # Activación de producción — 14 de septiembre de 2026
 
-Estado: preparación en curso; no se han aplicado migraciones ni promovido una versión. La aceptación histórica del pago permanece vinculada a `968d780`.
+Estado actualizado: la reparación Stellar y la conciliación de 0019 están aplicadas; producción utiliza la candidata compatible descrita en [la evidencia de reparación](PRODUCTION-REPAIR-APPLIED-2026-09-14.md). La PR completa todavía no está publicada. El siguiente tramo esperado es 0020 y 0021, sujeto a inspección nueva. La aceptación histórica del pago permanece vinculada a `968d780`.
+
+La publicación acordada habilita primero multichain y administración. Bazaar permanecerá deshabilitado hasta su aceptación independiente. Las observaciones históricas de las secciones siguientes conservan su contexto original y no sustituyen la evidencia de reparación.
+
+### Preparación posterior a `6eae1e4`
+
+El ejecutor admite evidencia `maintenanceMode: "firewall"` con `firewallRuleId`, `maintenanceDeploymentId` y `CARMELITA_VERCEL_CLI_PATH`. Comprueba la regla publicada del proyecto y equipo, ausencia de borradores y excepciones, inventarios paginados de despliegues y alias, bloqueo efectivo de cada host y aislamiento QA de las Preview excluidas. Relee configuración e inventarios para rechazar cambios durante la comprobación. El modo de mantenimiento de aplicación con HTTP 503 sigue disponible. Un HTTP 403 aislado no permite migrar.
+
+La autorización para verificar conexiones permite cargar variables temporalmente en memoria y guardar únicamente las dos conexiones en `work/`, ignorado por Git. La CLI de Vercel no entregó `DATABASE_URL_DATABASE_URL` ni `DATABASE_URL_UNPOOLED`: no se creó el archivo de conexiones. Se inspeccionó su implementación y los metadatos locales: `env run` lee `.env.local`, no lo escribe. No se descargó el conjunto completo a disco. La comparación efectiva de conexiones continúa pendiente y bloquea la aplicación de migraciones.
+
+Validación local de este cambio el 14 de septiembre: instalación limpia con Node 24.14.0 y npm 11.6.1, lint sin advertencias, 606 pruebas totales (604 aprobadas, cero fallos, dos omisiones externas con su motivo) y build completo. Evidencia privada: `work/multichain-release-install.log` y `work/multichain-release-quality.log`. Graphify continúa bloqueado por su lanzador Python 3.12; el grafo no está actualizado. Esta evidencia corresponde al árbol local posterior a `6eae1e4`, no a un despliegue ni a una migración aceptada.
 
 ## Controles preparados
 

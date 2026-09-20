@@ -23,4 +23,8 @@ test("applying requires fresh backup restoration and compatible rollback evidenc
   const evidence = { databaseFingerprint: fingerprint, commit, maintenanceCommit: "c".repeat(40), backupId: "fixture-backup", restoreVerified: true, rollbackCompatible: true, verifiedAt: new Date(now).toISOString() };
   assert.equal(validateReleaseEvidence(evidence, fingerprint, commit, now), evidence);
   for (const override of [{ backupId: "" }, { restoreVerified: false }, { rollbackCompatible: false }, { databaseFingerprint: "other" }, { commit: "other" }, { verifiedAt: new Date(now - 3600001).toISOString() }, { verifiedAt: new Date(now + 1).toISOString() }]) assert.throws(() => validateReleaseEvidence({ ...evidence, ...override }, fingerprint, commit, now), /production_migration_/);
+  assert.throws(() => validateReleaseEvidence({ ...evidence, maintenanceMode: "firewall" }, fingerprint, commit, now));
+  assert.throws(() => validateReleaseEvidence({ ...evidence, maintenanceMode: "ignore" }, fingerprint, commit, now));
+  const firewall = { ...evidence, maintenanceMode: "firewall", firewallRuleId: "rule_fixture", maintenanceDeploymentId: "dpl_fixture" };
+  assert.equal(validateReleaseEvidence(firewall, fingerprint, commit, now), firewall);
 });
