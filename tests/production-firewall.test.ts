@@ -75,3 +75,24 @@ test("detects draft or inventory changes during verification", async () => {
     await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
   }
 });
+test("retired blocked hosts and orphan aliases may answer 410, live ones must stay 403", async () => {
+  const build = () => {
+    const f = fixture();
+    f.config.active.rules[0].conditionGroup[0].conditions[0].value = [...hosts, "retired.vercel.app"];
+    f.aliases.push({ alias: "gone.vercel.app", projectId: project, deploymentId: "dpl_gone" });
+    const original = f.dependencies.request;
+    f.dependencies.request = async input => {
+      const url = new URL(String(input));
+      if (url.hostname === "retired.vercel.app" || url.hostname === "gone.vercel.app") return new Response(null, { status: 410 });
+      return original(input);
+    };
+    return f;
+  };
+  const passing = build();
+  assert.deepEqual(await verifyFirewallMaintenance(evidence, passing.dependencies), { mode: "firewall", blockedHosts: 4, isolatedDeployments: 1 });
+  for (const mutate of [
+    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "retired.vercel.app" ? new Response(null, { status: 200 }) : original(input); },
+    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "gone.vercel.app" ? new Response(null, { status: 308 }) : original(input); },
+    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "legacy.vercel.app" ? new Response(null, { status: 410 }) : original(input); },
+  ]) { const f = build(); mutate(f); await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies)); }
+});

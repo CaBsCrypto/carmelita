@@ -101,20 +101,22 @@ export async function verifyFirewallMaintenance(
       method: "GET", cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(15000),
     });
   }
-  async function checkBlocked(name: string) {
+  /** Live writers must show the edge deny; retired hosts may show 403 or 410, never anything servable. */
+  async function checkBlocked(name: string, live: boolean) {
     if (checked.has(name)) return;
     for (const path of ["/agent", "/api/agent/wallets"]) {
       const result = await response(name, path);
       const status = result.status;
       await result.body?.cancel();
-      if (status !== 403) return reject();
+      if (live ? status !== 403 : status !== 403 && status !== 410) return reject();
     }
     checked.add(name);
   }
+  const activeUids = new Set(active.map(deployment => String(deployment.uid)));
   const isolated = new Set<unknown>();
   for (const deployment of active) {
     const name = host(deployment.url);
-    if (blocked.has(name)) { await checkBlocked(name); continue; }
+    if (blocked.has(name)) { await checkBlocked(name, true); continue; }
     // Unblocked production deployments are writers, even if their health looks like QA.
     if (deployment.target === "production") return reject();
     if (typeof deployment.uid !== "string") return reject();
@@ -126,12 +128,14 @@ export async function verifyFirewallMaintenance(
   }
   for (const alias of aliases) {
     if (alias.projectId !== projectId) return reject();
-    const name = host(alias.alias);
-    if (blocked.has(name)) await checkBlocked(name);
-    else if (!isolated.has(alias.deploymentId)) return reject();
+    const name = host(alias.alias), live = activeUids.has(String(alias.deploymentId));
+    if (blocked.has(name)) await checkBlocked(name, live);
+    else if (live) { if (!isolated.has(alias.deploymentId)) return reject(); }
+    // An alias whose deployment left the live inventory cannot serve writes only if probes agree.
+    else await checkBlocked(name, false);
   }
   // Every explicitly blocked host is probed, including aliases whose deployment was retired.
-  for (const name of blocked) await checkBlocked(name);
+  for (const name of blocked) await checkBlocked(name, false);
   const health = await response(publicHost, "/api/health");
   if (health.status !== 200) { await health.body?.cancel(); return reject(); }
   await health.body?.cancel();
