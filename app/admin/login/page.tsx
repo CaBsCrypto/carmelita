@@ -7,6 +7,8 @@ import {
   sanitizeAdminReturnTo,
 } from "@/app/admin/auth";
 import AdminLoginForm from "./login-form";
+import PrivyAdminLogin from "./privy-login";
+import { isPrivyAdminConfigured } from "../privy-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -40,11 +42,11 @@ export default async function AdminLoginPage({
             interviews, pilots and proof for YC.
           </p>
         </div>
-        <AdminLoginForm
+        {isPrivyAdminConfigured() ? <PrivyAdminLogin returnTo={returnTo} /> : <AdminLoginForm
           returnTo={returnTo}
           configured={isPasswordAdminConfigured()}
-        />
-        <small>Private access · 12-hour secure session · No public indexing</small>
+        />}
+        <small>Private access · Server-verified session · No public indexing</small>
       </section>
     </main>
   );

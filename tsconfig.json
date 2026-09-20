@@ -44,6 +44,9 @@
                     "drizzle",
                     "examples",
                     "vite.config.ts",
-                    "drizzle.config.ts"
+                    "drizzle.config.ts",
+                    "stellar-bazaar-x402",
+                    "work",
+                    "outputs"
                 ]
 }

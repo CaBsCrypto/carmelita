@@ -60,6 +60,7 @@ export default async function AdminPage() {
     <AdminDashboard
       initialSignups={signups}
       founderName={identity.displayName}
+      privyEnabled={Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim() || process.env.PRIVY_APP_ID?.trim())}
     />
   );
 }

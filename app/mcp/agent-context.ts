@@ -3,8 +3,10 @@ import { getDb } from "@/db";
 import {
   agentExternalConnections,
   agentUsers,
-  agentWallets,
 } from "@/db/schema";
+import { listPersistedUserWallets } from "@/app/multichain-account";
+import { enabledWalletNetworks } from "@/app/wallets/networks";
+import { PRIVY_CHAIN_TYPE_BY_FAMILY, type WalletNetworkId } from "@/app/wallets/types";
 
 type PublicWallet = {
   address: string;
@@ -13,10 +15,14 @@ type PublicWallet = {
   status: string;
 };
 
-const MCP_WALLET_NETWORKS = ["stellar:testnet", "avalanche:fuji", "solana:devnet"] as const;
+const MCP_WALLET_ORDER = ["stellar:testnet", "avalanche:fuji", "solana:devnet", "bnb:testnet", "base:sepolia"] as const;
 
 export function buildMcpWalletContext(wallets: PublicWallet[]) {
-  const ordered = [...wallets].sort((left, right) =>
+  const networks = enabledWalletNetworks().sort((left, right) => MCP_WALLET_ORDER.indexOf(left.id) - MCP_WALLET_ORDER.indexOf(right.id));
+  // Project fields explicitly: persisted rows also carry private provider IDs.
+  const ordered = wallets.filter((wallet) => networks.some((network) =>
+    wallet.network === network.id && wallet.chainType === PRIVY_CHAIN_TYPE_BY_FAMILY[network.family],
+  )).map(({ address, chainType, network, status }) => ({ address, chainType, network, status })).sort((left, right) =>
     left.network.localeCompare(right.network) || left.address.localeCompare(right.address),
   );
   const activeNetworks = new Set(
@@ -25,14 +31,16 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   const visible = ordered.filter(
     (wallet) => wallet.status === "active" || !activeNetworks.has(wallet.network),
   );
-  const active = (network: typeof MCP_WALLET_NETWORKS[number]) =>
+  const active = (network: WalletNetworkId) =>
     ordered.find((wallet) => wallet.network === network && wallet.status === "active") ?? null;
   const walletsByNetwork = {
     stellarTestnet: active("stellar:testnet"),
     avalancheFuji: active("avalanche:fuji"),
     solanaDevnet: active("solana:devnet"),
+    bnbTestnet: active("bnb:testnet"),
+    baseSepolia: active("base:sepolia"),
   };
-  const missingNetworks = MCP_WALLET_NETWORKS.filter((network) => !active(network));
+  const missingNetworks = networks.filter((network) => !active(network.id)).map((network) => network.id);
   return {
     wallets: visible,
     walletsByNetwork,
@@ -57,15 +65,7 @@ export async function getAgentMcpContext(userId: string) {
       .from(agentUsers)
       .where(eq(agentUsers.id, userId))
       .limit(1),
-    db
-      .select({
-        address: agentWallets.address,
-        chainType: agentWallets.chainType,
-        network: agentWallets.network,
-        status: agentWallets.status,
-      })
-      .from(agentWallets)
-      .where(eq(agentWallets.userId, userId)),
+    listPersistedUserWallets(userId),
     db
       .select({
         provider: agentExternalConnections.provider,

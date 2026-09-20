@@ -18,6 +18,7 @@ import {
   freezeRequirement,
   type FrozenX402Requirement,
 } from "@/app/x402/protocol";
+import { freezeX402Request, type FrozenX402Request } from "./request";
 
 const { AssembledTransaction } = contract;
 
@@ -28,6 +29,7 @@ export type PreparedX402Authorization = {
   transactionJson: string;
   authorizationHash: `0x${string}`;
   maxLedger: number;
+  request?: FrozenX402Request;
 };
 
 function assembledOptions(requirement: FrozenX402Requirement) {
@@ -81,6 +83,7 @@ export async function prepareX402ClientAuthorization(input: {
   requirement: PaymentRequirements;
   address: string;
 }) {
+  const request = freezeX402Request(input.x402Version, input.requirement);
   if (input.requirement.extra?.areFeesSponsored !== true) {
     throw new Error("x402_fee_sponsorship_required");
   }
@@ -92,7 +95,7 @@ export async function prepareX402ClientAuthorization(input: {
   );
   const maxLedger =
     latestLedger.sequence +
-    Math.ceil(input.requirement.maxTimeoutSeconds / estimatedLedgerSeconds);
+    Math.floor(Math.min(300, input.requirement.maxTimeoutSeconds) / estimatedLedgerSeconds);
   const options = assembledOptions(freezeRequirement(input.requirement));
   const transaction = await AssembledTransaction.build({
     ...options,
@@ -138,6 +141,7 @@ export async function prepareX402ClientAuthorization(input: {
     transactionJson,
     authorizationHash,
     maxLedger,
+    request,
   } satisfies PreparedX402Authorization;
 }
 

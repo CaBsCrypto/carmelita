@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { parseSolanaFundingRequest } from "@/app/wallets/solana-funding-request";
 import { listPersistedUserWallets } from "@/app/multichain-account";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 import { getSolanaDevnetBalance, requestSolanaDevnetAirdrop } from "@/app/wallets/solana-client";
@@ -7,10 +7,7 @@ import { getSolanaDevnetBalance, requestSolanaDevnetAirdrop } from "@/app/wallet
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const requestSchema = z.object({
-  explicitUserConfirmation: z.literal(true),
-  solAmount: z.number().min(0.1).max(2).optional().default(1),
-}).strict();
+
 
 function bearerToken(request: Request) {
   const value = request.headers.get("authorization") ?? "";
@@ -31,7 +28,7 @@ export async function POST(request: Request) {
 
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
-    const input = requestSchema.parse(await request.json().catch(() => ({ explicitUserConfirmation: true })));
+    const input = await parseSolanaFundingRequest(request);
 
     const wallets = await listPersistedUserWallets(claims.user_id);
     const wallet = wallets.find(

@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-09-08T03:50:14.174Z",
+  "databaseFingerprint": "bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299",
+  "publicTableCount": 38,
+  "tableNames": [
+    "agent_activities",
+    "agent_connection_interests",
+    "agent_conversations",
+    "agent_decision_events",
+    "agent_evm_calls",
+    "agent_external_connections",
+    "agent_gateway_audit_events",
+    "agent_gateway_plans",
+    "agent_gateway_rate_limits",
+    "agent_gateway_receipts",
+    "agent_knowledge_items",
+    "agent_market_watchlist",
+    "agent_messages",
+    "agent_oauth_states",
+    "agent_policies",
+    "agent_stellar_actions",
+    "agent_testnet_faucet_claims",
+    "agent_users",
+    "agent_wallets",
+    "agent_workflow_events",
+    "agent_workflows",
+    "agent_x402_events",
+    "agent_x402_payments",
+    "audit_events",
+    "authorizations",
+    "commerce_intents",
+    "integration_recommendations",
+    "mcp_access_tokens",
+    "oauth_subject_links",
+    "policy_decisions",
+    "receipts",
+    "service_offers",
+    "service_providers",
+    "telegram_link_codes",
+    "telegram_links",
+    "telegram_pending_actions",
+    "waitlist_activities",
+    "waitlist_signups"
+  ],
+  "migrations": [
+    {
+      "count": 20
+    }
+  ],
+  "applicationRows": [
+    {
+      "estimated_rows": 0
+    }
+  ]
+}

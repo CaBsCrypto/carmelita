@@ -48,16 +48,16 @@ export default function WebMcpInspector({
   const t = copy[locale];
   const [status, setStatus] = useState<WebMcpStatus>(() => detectWebMcpStatus());
 
-  async function syncRegistration() {
-    const nextStatus = await registerCarmelitaWebMcpTools(getAccessToken);
-    setStatus(nextStatus);
-  }
+  const [registrationVersion, setRegistrationVersion] = useState(0);
+  function syncRegistration() { setRegistrationVersion(value => value + 1); }
 
   useEffect(() => {
-    void syncRegistration();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+    const controller = new AbortController();
+    void registerCarmelitaWebMcpTools(getAccessToken, controller.signal).then(nextStatus => {
+      if (!controller.signal.aborted) setStatus(nextStatus);
+    });
+    return () => controller.abort();
+  }, [getAccessToken, registrationVersion]);
   return (
     <aside className="webmcp-inspector-card" style={{
       border: "1px solid rgba(255, 255, 255, 0.12)",

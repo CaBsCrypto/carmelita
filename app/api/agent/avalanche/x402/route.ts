@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
@@ -9,8 +8,8 @@ import { freezeAvalancheX402Payment, buildTransferWithAuthorizationTypedData } f
 import { buildAvalancheX402Requirement, createAvalanchePaymentRequired } from "@/app/x402-avalanche/protocol";
 import { avalancheReportBodyHash, avalancheReportUrl } from "@/app/x402-avalanche/resource";
 import { findAvalancheX402Payment, prepareAvalancheX402Payment } from "@/app/x402-avalanche/store";
-import { getDb, hasDatabase } from "@/db";
-import { agentWallets } from "@/db/schema";
+import { hasDatabase } from "@/db";
+import { listPersistedUserWallets } from "@/app/multichain-account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,17 +40,12 @@ async function auth(request: Request) {
 
 async function avalancheWallet(userId: string) {
   if (!hasDatabase()) throw new Error("database_not_configured");
-  const rows = await getDb().select({
-    id: agentWallets.id,
-    address: agentWallets.address,
-  }).from(agentWallets).where(and(
-    eq(agentWallets.userId, userId),
-    eq(agentWallets.chainType, "ethereum"),
-    eq(agentWallets.network, "avalanche:fuji"),
-    eq(agentWallets.status, "active"),
-  )).limit(1);
-  if (!rows[0]) throw new Error("avalanche_wallet_not_ready");
-  return rows[0];
+  const wallet = (await listPersistedUserWallets(userId)).find((candidate) =>
+    candidate.userId === userId && candidate.chainType === "ethereum"
+    && candidate.network === "avalanche:fuji" && candidate.status === "active",
+  );
+  if (!wallet) throw new Error("avalanche_wallet_not_ready");
+  return { id: wallet.id, address: wallet.address };
 }
 
 function publicPayment(row: Awaited<ReturnType<typeof findAvalancheX402Payment>>) {

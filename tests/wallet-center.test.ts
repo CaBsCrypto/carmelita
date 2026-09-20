@@ -8,11 +8,14 @@ test("Wallet Center exposes Fuji and Solana Devnet active cards and diagnostics"
     "utf8",
   );
   assert.match(source, /network: "avalanche:fuji"/);
-  assert.match(source, /\/api\/agent\/wallets\/avalanche/);
+  assert.match(source, /useWalletReadings/);
   assert.match(source, /explicitUserConfirmation: true/);
   assert.match(source, /Solana Devnet/);
   assert.match(source, /\/api\/agent\/wallets\/solana/);
   assert.match(source, /\/api\/agent\/wallets\/solana\/fund/);
+  assert.match(source, /evmNetworks\.map/);
+  assert.match(source, /reading\.balance/);
+  assert.match(source, /t\.unavailable/);
 });
 
 test("Wallet Center is mounted after authenticated onboarding", async () => {

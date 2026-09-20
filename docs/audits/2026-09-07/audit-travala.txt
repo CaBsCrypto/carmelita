@@ -1,0 +1,23 @@
+
+> agente-asistente@0.1.0 acceptance:travala
+> tsx scripts/acceptance.ts travala
+
+
+agent-assistant acceptance - travala
+
+PASS  Safety constants are Testnet-only (0ms)
+      Stellar Testnet, 0.01 USDC payment cap, 0.50 USDC drip
+PASS  Production health contract (366ms)
+      persistence=postgres, mainnet=disabled
+PASS  Production agent page (257ms)
+      HTTP 200
+PASS  MCP discovery contract (314ms)
+      sandbox, personal-agent and provider surfaces advertised
+PASS  Official x402 live challenge (413ms)
+      0.0100000 USDC -> GCHEI4PQ...
+PASS  Internal distributor readiness (453ms)
+      18.0000000 USDC, 9999.9999500 XLM
+FAIL  Live Travala read-only search (174ms)
+      travala_unavailable
+
+6 passed - 1 failed

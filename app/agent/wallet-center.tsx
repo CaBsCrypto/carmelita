@@ -1,72 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@privy-io/react-auth";
 import type { Locale } from "@/app/language-toggle";
 import styles from "./wallet-center.module.css";
-
-type WalletRow = {
-  id: string;
-  address: string;
-  chainType: string;
-  network: string;
-  status: string;
-};
-
-type AvalancheStatus = {
-  address: string;
-  balance: string;
-  nativeAsset: string;
-  nonce: number;
-  funded: boolean;
-  explorerUrl: string;
-  faucetUrl?: string;
-};
-
-type SolanaStatus = {
-  address: string;
-  network: string;
-  balance: string;
-  sol: number;
-  explorerUrl: string;
-};
+import { useWalletReadings } from "./use-wallet-readings";
 
 const copy = {
   en: {
     eyebrow: "YOUR WALLET SYSTEM", title: "One identity. Three wallet families.",
     intro: "Each family has its own address. EVM networks reuse one address while keeping balances and transactions separate.",
     stellar: "Stellar", stellarText: "Your active wallet for XLM, DeFindex, Soroswap and Stellar x402.",
-    evm: "EVM", evmText: "Activate one Privy EVM wallet. Avalanche Fuji is the first test network.",
-    solana: "Solana", solanaText: "Your active Solana wallet for SOL transactions and SPL token operations on Devnet.",
+    evm: "EVM", evmText: "One Privy wallet, one address for every enabled EVM test network.",
+    solana: "Solana", solanaText: "Your Solana Devnet address and balance. Each additional operation has its own acceptance checks.",
     active: "ACTIVE", available: "AVAILABLE", network: "Network",
     balance: "Balance", provider: "Provider", activate: "Activate Fuji",
     activating: "Activating...", refresh: "Refresh", faucet: "Get Test AVAX", solanaFaucet: "Get 1 SOL Devnet",
     fundingSolana: "Funding SOL...", explorer: "Explorer", copy: "Copy", copied: "Copied",
-    shared: "Same 0x address later works on Base and BNB; funds never cross networks automatically.",
+    shared: "One 0x address, separate balances and fees on every network. Funds do not move between networks automatically.",
+    unavailable: "Balance unavailable", loading: "Loading…", notRegistered: "Not registered", failed: "Wallet information could not be loaded. Try again.", actionFailed: "The request failed. Please retry.", receive: "Shared EVM receiving address",
   },
   es: {
     eyebrow: "TU SISTEMA DE WALLETS", title: "Una identidad. Tres familias de wallet.",
     intro: "Cada familia tiene su propia dirección. Las redes EVM reutilizan una dirección, pero mantienen saldos y transacciones separados.",
     stellar: "Stellar", stellarText: "Tu wallet activa para XLM, DeFindex, Soroswap y x402 en Stellar.",
-    evm: "EVM", evmText: "Activa una wallet EVM de Privy. Avalanche Fuji será la primera red de prueba.",
-    solana: "Solana", solanaText: "Tu wallet activa de Solana en Devnet para transacciones SOL y tokens SPL.",
+    evm: "EVM", evmText: "Una wallet Privy, una dirección para cada red EVM de prueba habilitada.",
+    solana: "Solana", solanaText: "Tu dirección y saldo de Solana Devnet. Cada operación adicional tiene sus propias pruebas de aceptación.",
     active: "ACTIVA", available: "DISPONIBLE", network: "Red",
     balance: "Saldo", provider: "Proveedor", activate: "Activar Fuji",
     activating: "Activando...", refresh: "Actualizar", faucet: "Obtener AVAX Testnet", solanaFaucet: "Obtener 1 SOL Devnet",
     fundingSolana: "Fondeando SOL...", explorer: "Explorador", copy: "Copiar", copied: "Copiada",
-    shared: "La misma dirección 0x servirá después en Base y BNB; los fondos nunca cruzan redes automáticamente.",
+    shared: "Una dirección 0x, saldos y comisiones separados en cada red. Los fondos no se mueven entre redes automáticamente.",
+    unavailable: "Saldo no disponible", loading: "Cargando…", notRegistered: "No registrada", failed: "No se pudo cargar la información de las wallets. Reintenta.", actionFailed: "La solicitud falló. Vuelve a intentarlo.", receive: "Dirección compartida para recibir en EVM",
   },
   pt: {
     eyebrow: "SEU SISTEMA DE WALLETS", title: "Uma identidade. Três famílias de wallet.",
     intro: "Cada família tem seu próprio endereço. Redes EVM reutilizam um endereço, mantendo saldos e transações separados.",
     stellar: "Stellar", stellarText: "Sua wallet ativa para XLM, DeFindex, Soroswap e x402 na Stellar.",
-    evm: "EVM", evmText: "Ative uma wallet EVM da Privy. Avalanche Fuji será a primeira rede de teste.",
-    solana: "Solana", solanaText: "Sua wallet ativa da Solana na Devnet para transações SOL e tokens SPL.",
+    evm: "EVM", evmText: "Uma wallet Privy, um endereço para cada rede EVM de teste habilitada.",
+    solana: "Solana", solanaText: "Seu endereço e saldo na Solana Devnet. Cada operação adicional tem suas próprias verificações de aceitação.",
     active: "ATIVA", available: "DISPONÍVEL", network: "Rede",
     balance: "Saldo", provider: "Provedor", activate: "Ativar Fuji",
     activating: "Ativando...", refresh: "Atualizar", faucet: "Obter AVAX Testnet", solanaFaucet: "Obter 1 SOL Devnet",
     fundingSolana: "Fondeando SOL...", explorer: "Explorador", copy: "Copiar", copied: "Copiada",
-    shared: "O mesmo endereço 0x funcionará depois na Base e BNB; fundos nunca cruzam redes automaticamente.",
+    shared: "Um endereço 0x, saldos e taxas separados em cada rede. Os fundos não se movem entre redes automaticamente.",
+    unavailable: "Saldo indisponível", loading: "Carregando…", notRegistered: "Não registrada", failed: "Não foi possível carregar as wallets. Tente novamente.", actionFailed: "A solicitação falhou. Tente novamente.", receive: "Endereço compartilhado para receber em EVM",
   },
 };
 
@@ -87,121 +65,58 @@ export default function WalletCenter({
 }) {
   const t = copy[locale];
   const { refreshUser } = useUser();
-  const [wallets, setWallets] = useState<WalletRow[]>([]);
-  const [avalanche, setAvalanche] = useState<AvalancheStatus | null>(null);
-  const [solana, setSolana] = useState<SolanaStatus | null>(null);
-  const [busy, setBusy] = useState<"load" | "activate" | "solana_fund" | null>("load");
-  const [error, setError] = useState<string | null>(null);
+  const { wallets, networks, readings, loading, failed, reload, owner } = useWalletReadings(getAccessToken);
+  const [action, setAction] = useState<{ owner: string | null; kind: "activate" | "solana_fund" | null; failed: boolean }>({ owner: null, kind: null, failed: false });
   const [copied, setCopied] = useState<string | null>(null);
-
-  const evmWallet = wallets.find((wallet) => wallet.network === "avalanche:fuji" && wallet.status === "active");
+  const request = useRef<AbortController | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { request.current?.abort(); if (copyTimer.current) clearTimeout(copyTimer.current); }, [owner]);
+  const busy = loading || (action.owner === owner && action.kind !== null);
+  const evmWallet = wallets.find((wallet) => wallet.chainType === "ethereum" && wallet.status === "active");
+  const evmNetworks = networks.filter((network) => network.family === "evm");
   const solanaWallet = wallets.find((wallet) => wallet.network === "solana:devnet" && wallet.status === "active");
+  const solana = readings["solana:devnet"];
+  const avalanche = readings["avalanche:fuji"];
 
-  async function authorizedFetch(url: string, init?: RequestInit) {
-    const token = await getAccessToken();
-    if (!token) throw new Error("authentication_required");
-    return fetch(url, {
-      ...init,
-      headers: { ...init?.headers, Authorization: `Bearer ${token}` },
-    });
-  }
-
-  async function load() {
-    setBusy("load");
-    setError(null);
-    await refresh();
-  }
-
-  async function refresh() {
+  async function existingAction(kind: "activate" | "solana_fund") {
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setAction({ owner, kind, failed: false });
     try {
-      const listResponse = await authorizedFetch("/api/agent/wallets");
-      const list = await listResponse.json();
-      if (!listResponse.ok) throw new Error(list.error ?? "wallet_list_failed");
-      const fetchedWallets = (list.wallets ?? []) as WalletRow[];
-      setWallets(fetchedWallets);
-
-      if (fetchedWallets.some((wallet) => wallet.network === "avalanche:fuji")) {
-        const statusResponse = await authorizedFetch("/api/agent/wallets/avalanche");
-        const status = await statusResponse.json();
-        if (statusResponse.ok) setAvalanche(status);
-      } else {
-        setAvalanche(null);
-      }
-
-      if (fetchedWallets.some((wallet) => wallet.network === "solana:devnet")) {
-        const solanaResponse = await authorizedFetch("/api/agent/wallets/solana");
-        const solanaStatus = await solanaResponse.json();
-        if (solanaResponse.ok) setSolana(solanaStatus);
-      } else {
-        setSolana(null);
-      }
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "wallet_center_failed");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function activateAvalanche() {
-    setBusy("activate");
-    setError(null);
-    try {
-      const response = await authorizedFetch("/api/agent/wallets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          network: "avalanche:fuji",
-          explicitUserConfirmation: true,
-        }),
+      const token = await getAccessToken();
+      controller.signal.throwIfAborted();
+      if (!token || !owner) throw new Error("authentication_required");
+      const response = await fetch(kind === "activate" ? "/api/agent/wallets" : "/api/agent/wallets/solana/fund", {
+        method: "POST", signal: controller.signal,
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(kind === "activate" ? { network: "avalanche:fuji", explicitUserConfirmation: true } : { explicitUserConfirmation: true, solAmount: 1 }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "avalanche_activation_failed");
-      await refreshUser();
-      await load();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "avalanche_activation_failed");
-      setBusy(null);
-    }
-  }
-
-  async function fundSolanaDevnet() {
-    setBusy("solana_fund");
-    setError(null);
-    try {
-      const response = await authorizedFetch("/api/agent/wallets/solana/fund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          explicitUserConfirmation: true,
-          solAmount: 1,
-        }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "solana_airdrop_failed");
-      await refresh();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "solana_airdrop_failed");
-      setBusy(null);
+      if (!response.ok) throw new Error("wallet_action_failed");
+      if (kind === "activate") await refreshUser();
+      controller.signal.throwIfAborted();
+      await reload();
+      if (!controller.signal.aborted) setAction({ owner, kind: null, failed: false });
+    } catch {
+      if (!controller.signal.aborted) setAction({ owner, kind: null, failed: true });
     }
   }
 
   async function copyAddress(address: string) {
-    await navigator.clipboard.writeText(address);
-    setCopied(address);
-    window.setTimeout(() => setCopied(null), 1400);
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(address);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopied(null), 1400);
+    } catch { setAction({ owner, kind: null, failed: true }); }
   }
-
-  useEffect(() => {
-    void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <section className={styles.center}>
       <header className={styles.heading}>
         <div><p className="eyebrow">{t.eyebrow}</p><h2>{t.title}</h2></div>
         <p>{t.intro}</p>
       </header>
+      {(failed || action.owner === owner && action.failed) && <p className={styles.error} role="alert">{failed ? t.failed : t.actionFailed}</p>}
       <div className={styles.grid}>
         <article className={`${styles.card} ${styles.stellar}`}>
           <div className={styles.top}><span className={styles.family}>STELLAR</span><b className={styles.badge}>{t.active}</b></div>
@@ -213,19 +128,28 @@ export default function WalletCenter({
 
         <article className={`${styles.card} ${styles.evm}`}>
           <div className={styles.top}><span className={styles.family}>EVM</span><b className={styles.badge}>{evmWallet ? t.active : t.available}</b></div>
-          <div className={styles.mark}>0x</div><h3>{t.evm} · Avalanche Fuji</h3><p>{t.evmText}</p>
-          {evmWallet && <code className={styles.address}>{short(evmWallet.address)}</code>}
-          <div className={styles.facts}><span>{t.network}<b>Fuji · 43113</b></span><span>{t.balance}<b>{avalanche ? `${avalanche.balance} AVAX` : "—"}</b></span></div>
+          <div className={styles.mark}>0x</div><h3>{t.evm}</h3><p>{t.evmText}</p>
+          {evmWallet && <code className={styles.address} aria-label={t.receive} title={evmWallet.address}>{evmWallet.address}</code>}
+          <div className={styles.networks}>
+            {evmNetworks.map((network) => {
+              const wallet = wallets.find((row) => row.network === network.id && row.status === "active");
+              const reading = readings[network.id];
+              return <div className={styles.networkRow} key={`${wallet?.id ?? "missing"}:${network.id}`}>
+                <strong>{network.name}</strong>
+                <span>{!wallet ? t.notRegistered : loading ? t.loading : reading ? `${reading.balance} ${reading.nativeAsset}` : t.unavailable}</span>
+                {reading?.balances?.usdc && <small>{reading.balances.usdc.balance} USDC</small>}
+                {reading?.explorerUrl && <a href={reading.explorerUrl} target="_blank" rel="noreferrer">{t.explorer} ↗</a>}
+              </div>;
+            })}
+          </div>
           <p className={styles.shared}>{t.shared}</p>
           <div className={styles.actions}>
-            {!evmWallet ? <button disabled={Boolean(busy)} onClick={() => void activateAvalanche()}>{busy === "activate" ? t.activating : t.activate}</button> : <>
+            {!evmWallet ? <button disabled={Boolean(busy) || !owner} onClick={() => void existingAction("activate")}>{action.kind === "activate" ? t.activating : t.activate}</button> : <>
               <button onClick={() => void copyAddress(evmWallet.address)}>{copied === evmWallet.address ? t.copied : t.copy}</button>
-              <button className={styles.secondary} disabled={Boolean(busy)} onClick={() => void load()}>{t.refresh}</button>
-              {avalanche?.explorerUrl && <a className={styles.secondary} href={avalanche.explorerUrl} target="_blank" rel="noreferrer">{t.explorer}</a>}
+              <button className={styles.secondary} disabled={Boolean(busy)} onClick={() => void reload()}>{t.refresh}</button>
               {!avalanche?.funded && avalanche?.faucetUrl && <a href={avalanche.faucetUrl} target="_blank" rel="noreferrer">{t.faucet}</a>}
             </>}
           </div>
-          {error && <p className={styles.error}>{error}</p>}
         </article>
 
         <article className={`${styles.card} ${styles.solana}`}>
@@ -234,7 +158,7 @@ export default function WalletCenter({
           {solanaWallet && <code className={styles.address}>{short(solanaWallet.address)}</code>}
           <div className={styles.facts}>
             <span>{t.network}<b>Solana Devnet</b></span>
-            <span>{t.balance}<b>{solana ? solana.balance : "—"}</b></span>
+            <span>{t.balance}<b>{loading ? t.loading : solana ? solana.balance : t.unavailable}</b></span>
           </div>
           <div className={styles.actions}>
             {solanaWallet && (
@@ -242,11 +166,11 @@ export default function WalletCenter({
                 <button onClick={() => void copyAddress(solanaWallet.address)}>
                   {copied === solanaWallet.address ? t.copied : t.copy}
                 </button>
-                <button className={styles.secondary} disabled={Boolean(busy)} onClick={() => void load()}>
+                <button className={styles.secondary} disabled={Boolean(busy)} onClick={() => void reload()}>
                   {t.refresh}
                 </button>
-                <button disabled={Boolean(busy)} onClick={() => void fundSolanaDevnet()}>
-                  {busy === "solana_fund" ? t.fundingSolana : t.solanaFaucet}
+                <button disabled={Boolean(busy)} onClick={() => void existingAction("solana_fund")}>
+                  {action.kind === "solana_fund" ? t.fundingSolana : t.solanaFaucet}
                 </button>
                 {solana?.explorerUrl && (
                   <a className={styles.secondary} href={solana.explorerUrl} target="_blank" rel="noreferrer">

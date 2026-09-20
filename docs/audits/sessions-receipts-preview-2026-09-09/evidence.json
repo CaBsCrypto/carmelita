@@ -1,0 +1,548 @@
+{
+  "generatedAt": "2026-09-09T08:39:54.9122873Z",
+  "status": "pending_real_payment",
+  "codeCommit": "51f21e1f37cc003d39e57a60644864e14881c8b6",
+  "sessions": [
+    {
+      "date": "2026-09-09T08:31:42.523Z",
+      "user": "A",
+      "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+      "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app",
+      "stage": "recovered_after_explicit_logout_and_privy_login",
+      "status": "aprobado",
+      "checks": [
+        {
+          "name": "Preview y versión verificadas",
+          "status": "aprobado"
+        },
+        {
+          "name": "Tres billeteras únicas y cinco redes; misma EVM",
+          "status": "aprobado"
+        },
+        {
+          "name": "Saldo Solana Devnet",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo Fuji",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo Base Sepolia",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo BNB Testnet",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Sin autorización",
+          "status": "aprobado",
+          "http": 401
+        },
+        {
+          "name": "Otro usuario rechazado",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Dirección externa rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "RPC externo rechazado",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Mainnet rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Red desconocida rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Permiso administrativo rechazado",
+          "status": "aprobado",
+          "http": 403
+        },
+        {
+          "name": "Identidades estables tras recuperar sesión",
+          "status": "aprobado"
+        }
+      ],
+      "notes": "Observed visible application report: 14 PASS; original pre-logout reference retained in the same tab. Exact canonical identities also require the independent database check.",
+      "referenceDate": "2026-09-09T08:25:33.111Z",
+      "sessionClosureEvidence": "multichain-session-a-before-logout-20260909.json"
+    },
+    {
+      "date": "2026-09-09T08:19:46.08Z",
+      "user": "B",
+      "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+      "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app",
+      "stage": "recovered_after_explicit_logout_and_privy_login",
+      "status": "aprobado",
+      "checks": [
+        {
+          "name": "Preview y versión verificadas",
+          "status": "aprobado"
+        },
+        {
+          "name": "Tres billeteras únicas y cinco redes; misma EVM",
+          "status": "aprobado"
+        },
+        {
+          "name": "Saldo Solana Devnet",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo Fuji",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo Base Sepolia",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Saldo BNB Testnet",
+          "status": "aprobado",
+          "http": 200
+        },
+        {
+          "name": "Sin autorización",
+          "status": "aprobado",
+          "http": 401
+        },
+        {
+          "name": "Otro usuario rechazado",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Dirección externa rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "RPC externo rechazado",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Mainnet rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Red desconocida rechazada",
+          "status": "aprobado",
+          "http": 400
+        },
+        {
+          "name": "Permiso administrativo rechazado",
+          "status": "aprobado",
+          "http": 403
+        },
+        {
+          "name": "Identidades estables tras recuperar sesión",
+          "status": "aprobado"
+        }
+      ],
+      "notes": "Observed visible application report: 14 PASS; original pre-logout reference retained in the same tab. Exact canonical identities also require the independent database check.",
+      "referenceDate": "2026-09-08T09:03:58.507Z",
+      "sessionClosureEvidence": "stellar-recovery-delivery-checkpoint.json"
+    }
+  ],
+  "administrators": {
+    "recordedAt": "2026-09-09T08:39:54.9122873Z",
+    "datePrecision": "recorded_after_observed_visible_workflow",
+    "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+    "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app",
+    "status": "aprobado",
+    "accounts": [
+      {
+        "label": "admin-1",
+        "checks": [
+          {
+            "name": "Explicit Privy login through admin login after previous session closure",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Authorized administrator identity visible in private registry",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Exactly two test users, six unique wallets and ten associations",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Both users complete with five networks and three unique addresses each",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "No duplicate or EVM identity conflict alerts",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "BNB Testnet filter accepted with two matching users",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Base Sepolia filter accepted with two matching users",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Sign out completed and login offered instead of authorized entry",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Direct admin wallets navigation after logout returned to protected login",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          }
+        ]
+      },
+      {
+        "label": "admin-2",
+        "checks": [
+          {
+            "name": "Explicit Privy login through admin login after previous session closure",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Authorized administrator identity visible in private registry",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Exactly two test users, six unique wallets and ten associations",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Both users complete with five networks and three unique addresses each",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "No duplicate or EVM identity conflict alerts",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "BNB Testnet filter accepted with two matching users",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Base Sepolia filter accepted with two matching users",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Sign out completed and login offered instead of authorized entry",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          },
+          {
+            "name": "Direct admin wallets navigation after logout returned to protected login",
+            "status": "aprobado",
+            "date": "2026-09-09T08:39:54.9122873Z",
+            "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+            "deployment": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app"
+          }
+        ]
+      }
+    ]
+  },
+  "persistence": {
+    "generatedAt": "2026-09-09T08:38:05.653Z",
+    "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+    "status": "PASS",
+    "passed": 30,
+    "failed": 0,
+    "pending": 0,
+    "transaction": {
+      "readOnly": true,
+      "isolation": "RepeatableRead"
+    },
+    "adminRegistryRead": {
+      "onlySelectStatements": true,
+      "previewExpansionEnabled": true,
+      "summary": {
+        "users": 2,
+        "wallets": 6,
+        "uniqueWallets": 6,
+        "networkAssociations": 10,
+        "completeUsers": 2,
+        "needsAttention": 0,
+        "missingStellar": 0,
+        "missingSolana": 0,
+        "missingAvalanche": 0,
+        "missingBnb": 0,
+        "missingBase": 0
+      },
+      "enabledNetworks": [
+        "stellar:testnet",
+        "base:sepolia",
+        "solana:devnet",
+        "avalanche:fuji",
+        "bnb:testnet"
+      ]
+    },
+    "baselineDate": "2026-09-08T06:53:06.767Z",
+    "users": 2,
+    "canonicalWallets": 6,
+    "networkAssociations": 10,
+    "accounts": [
+      {
+        "account": "A",
+        "canonicalWallets": 3,
+        "networkAssociations": 5,
+        "networks": [
+          "avalanche:fuji",
+          "base:sepolia",
+          "bnb:testnet",
+          "solana:devnet",
+          "stellar:testnet"
+        ],
+        "originalEvmIdentityPreserved": true
+      },
+      {
+        "account": "B",
+        "canonicalWallets": 3,
+        "networkAssociations": 5,
+        "networks": [
+          "avalanche:fuji",
+          "base:sepolia",
+          "bnb:testnet",
+          "solana:devnet",
+          "stellar:testnet"
+        ],
+        "originalEvmIdentityPreserved": true
+      }
+    ],
+    "financialRecords": {
+      "payments": 0,
+      "stellarActions": 0,
+      "faucetClaims": 0,
+      "commerceIntents": 0
+    },
+    "migrations": 22,
+    "checks": [
+      {
+        "name": "The isolated Preview guard passed before connection",
+        "status": "PASS"
+      },
+      {
+        "name": "Exactly the two baseline users remain",
+        "status": "PASS"
+      },
+      {
+        "name": "Exactly six canonical identities remain",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity id values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity userId values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity address values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity chainType values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity legacyNetwork values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Canonical identity createdAt values match the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Accounts A and B were identified unambiguously",
+        "status": "PASS"
+      },
+      {
+        "name": "Ten network associations exist after both accounts login",
+        "status": "PASS"
+      },
+      {
+        "name": "Every binding preserves baseline wallet ownership",
+        "status": "PASS"
+      },
+      {
+        "name": "No owner has a duplicate network binding",
+        "status": "PASS"
+      },
+      {
+        "name": "Account A has exactly its expected networks",
+        "status": "PASS"
+      },
+      {
+        "name": "Account A retains its original single EVM identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Account B has exactly its expected networks",
+        "status": "PASS"
+      },
+      {
+        "name": "Account B retains its original single EVM identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Accounts A and B preserve different owners and EVM identities",
+        "status": "PASS"
+      },
+      {
+        "name": "payments remains zero and matches the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "actions remains zero and matches the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "faucets remains zero and matches the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "commerce_intents remains zero and matches the baseline",
+        "status": "PASS"
+      },
+      {
+        "name": "Migration journal contains exactly 22 entries",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary users equals 2",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary wallets equals 6",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary uniqueWallets equals 6",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary networkAssociations equals 10",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary completeUsers equals 2",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin summary needsAttention equals 0",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin registry exposes the five enabled networks",
+        "status": "PASS"
+      }
+    ]
+  },
+  "local": {
+    "date": "2026-09-09T08:30:07Z",
+    "deployment": null,
+    "codeCommit": "51f21e1f37cc003d39e57a60644864e14881c8b6",
+    "tests": 575,
+    "passed": 573,
+    "failed": 0,
+    "skipped": 2,
+    "skippedReasons": [
+      "Avalanche MCP live smoke requires AVALANCHE_MCP_LIVE=1",
+      "Dexalot Testnet live smoke requires DEXALOT_LIVE=1"
+    ],
+    "lint": "aprobado: zero errors and warnings",
+    "build": "aprobado",
+    "cleanInstall": "Inherited approved September 8 evidence; no dependency or lockfile changes",
+    "graphify": {
+      "status": "partial_ast_updated",
+      "files": 433,
+      "nodes": 2939,
+      "edges": 6979,
+      "communities": 146,
+      "unparsedSql": 22,
+      "reason": "tree_sitter_sql unavailable; no claim of semantic document update"
+    }
+  },
+  "pending": [
+    "Publish reviewed receipt isolation control and verify exact Preview version",
+    "One concrete user-approved Stellar Testnet payment with verified full delivery",
+    "Replay same payment ID with zero additional debit",
+    "Session recovery of real receipt and other-owner GET/reconcile rejection"
+  ],
+  "boundaries": {
+    "productionChanges": false,
+    "bazaarChanges": false,
+    "paymentSent": false,
+    "newTrustline": false,
+    "automaticFunding": false,
+    "migrationsAdded": false
+  }
+}

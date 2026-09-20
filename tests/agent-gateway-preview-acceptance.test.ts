@@ -33,6 +33,7 @@ test("Preview acceptance invokes Vercel without a shell", async () => {
   ]);
   assert.ok(args.includes("Authorization: Bearer carmelita_user_test"));
   assert.ok(args.includes("--write-out"));
+  assert.equal(args.includes("--no-color"), false, "Vercel curl forwards unknown CLI flags to native curl");
   const source = await readFile(new URL("../scripts/agent-gateway-preview-acceptance.ts", import.meta.url), "utf8");
   assert.match(source, /spawn\([^;]+shell: false/);
 });

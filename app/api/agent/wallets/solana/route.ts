@@ -40,12 +40,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const balanceInfo = await getSolanaDevnetBalance(solanaWallet.address).catch(() => ({
-      address: solanaWallet.address,
-      lamports: 0,
-      sol: 0,
-      formatted: "0.0000 SOL",
-    }));
+    const balanceInfo = await getSolanaDevnetBalance(solanaWallet.address)
+      .catch(() => { throw new Error("solana_balance_unavailable"); });
 
     return NextResponse.json(
       {
@@ -63,7 +59,7 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : "solana_status_failed";
     return NextResponse.json(
       { error: message },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
+      { status: message === "solana_balance_unavailable" ? 502 : message.includes("access_token") ? 401 : 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

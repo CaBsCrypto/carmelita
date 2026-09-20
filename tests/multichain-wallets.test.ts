@@ -76,8 +76,9 @@ test("provisions one idempotent Privy wallet for each new family", async () => {
 
   try {
     for (const family of ["evm", "solana"] as const) {
-      const first = await getOrCreateUserWallet(userId, family);
-      const second = await getOrCreateUserWallet(userId, family);
+      const lookup = { canonicalEvmWallet: async () => null };
+      const first = await getOrCreateUserWallet(userId, family, lookup);
+      const second = await getOrCreateUserWallet(userId, family, lookup);
       assert.equal(first.created, true);
       assert.equal(second.created, false);
       assert.equal(first.id, second.id);
@@ -116,7 +117,7 @@ test("reconnect reuses a legacy Stellar wallet instead of creating a pending dup
   };
 
   try {
-    const wallet = await getOrCreateUserWallet("did:privy:reconnected-user", "stellar");
+    const wallet = await getOrCreateUserWallet("did:privy:reconnected-user", "stellar", { canonicalStellarWallet: async () => null });
     assert.equal(wallet.id, "legacy-stellar-wallet");
     assert.equal(wallet.address, legacyAddress);
     assert.equal(wallet.created, false);

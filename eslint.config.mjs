@@ -6,7 +6,9 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
-  globalIgnores([
+  globalIgnores(["stellar-bazaar-x402/**",
+    "work/**",
+    "outputs/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

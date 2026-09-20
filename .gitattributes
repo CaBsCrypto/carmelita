@@ -1,1 +1,2 @@
 graphify-out/graph.json merge=graphify
+drizzle/*.sql text eol=lf

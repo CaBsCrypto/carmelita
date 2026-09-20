@@ -214,44 +214,54 @@ export async function saveAgentVaultCommand(
   return publicPolicy(saved[0]);
 }
 
+const vaultMutationDependencies = { ensureSchema: ensureAgentVaultSchema, getDb };
+
 export async function updateAgentVaultRecord(input: {
   userId: string;
   record: "knowledge" | "policy";
   id: string;
   status: "active" | "paused" | "draft";
-}) {
-  await ensureAgentVaultSchema();
-  const db = getDb();
+}, dependencies = vaultMutationDependencies) {
+  await dependencies.ensureSchema();
+  const db = dependencies.getDb();
   const now = new Date();
+  let changed: { id: string }[];
   if (input.record === "knowledge") {
-    await db
+    changed = await db
       .update(agentKnowledgeItems)
       .set({ status: input.status, updatedAt: now })
-      .where(and(eq(agentKnowledgeItems.id, input.id), eq(agentKnowledgeItems.userId, input.userId)));
+      .where(and(eq(agentKnowledgeItems.id, input.id), eq(agentKnowledgeItems.userId, input.userId)))
+      .returning({ id: agentKnowledgeItems.id });
   } else {
-    await db
+    changed = await db
       .update(agentPolicies)
       .set({ status: input.status, updatedAt: now })
-      .where(and(eq(agentPolicies.id, input.id), eq(agentPolicies.userId, input.userId)));
+      .where(and(eq(agentPolicies.id, input.id), eq(agentPolicies.userId, input.userId)))
+      .returning({ id: agentPolicies.id });
   }
+  if (!changed.length) throw new Error("memory_record_not_found");
 }
 
 export async function deleteAgentVaultRecord(input: {
   userId: string;
   record: "knowledge" | "policy";
   id: string;
-}) {
-  await ensureAgentVaultSchema();
-  const db = getDb();
+}, dependencies = vaultMutationDependencies) {
+  await dependencies.ensureSchema();
+  const db = dependencies.getDb();
+  let deleted: { id: string }[];
   if (input.record === "knowledge") {
-    await db
+    deleted = await db
       .delete(agentKnowledgeItems)
-      .where(and(eq(agentKnowledgeItems.id, input.id), eq(agentKnowledgeItems.userId, input.userId)));
+      .where(and(eq(agentKnowledgeItems.id, input.id), eq(agentKnowledgeItems.userId, input.userId)))
+      .returning({ id: agentKnowledgeItems.id });
   } else {
-    await db
+    deleted = await db
       .delete(agentPolicies)
-      .where(and(eq(agentPolicies.id, input.id), eq(agentPolicies.userId, input.userId)));
+      .where(and(eq(agentPolicies.id, input.id), eq(agentPolicies.userId, input.userId)))
+      .returning({ id: agentPolicies.id });
   }
+  if (!deleted.length) throw new Error("memory_record_not_found");
 }
 
 export async function evaluateUserAction(userId: string, action: ActionPreflight) {

@@ -159,13 +159,13 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
     readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/wallets/wallet-registry.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(mcpContextSource, /address:\s*agentWallets\.address/);
-  assert.match(mcpContextSource, /network:\s*agentWallets\.network/);
+  assert.match(mcpContextSource, /listPersistedUserWallets\(userId\)/);
+  assert.match(mcpContextSource, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status \}\)\)/);
   assert.match(mcpRouteSource, /get_agent_context[\s\S]*getAgentMcpContext\(userId\)/);
   assert.match(adminUiSource, /wallet\.networkName/);
   assert.match(adminUiSource, /wallet\.address/);
-  assert.match(adminUiSource, /Avalanche Fuji/);
-  assert.match(adminUiSource, /Stellar Testnet/);
+  assert.match(adminUiSource, /initialRegistry\.networks\.map/);
+  assert.match(adminUiSource, /\{item\.name\}/);
 
   const serialized = JSON.stringify({ mcpVisibleWallets, registry });
   assert.doesNotMatch(serialized, /privateKey|secret|rawSign|sendTransaction/);

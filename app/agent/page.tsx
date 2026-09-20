@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Your agent | Carmelita",
-  description: "Meet Carmelita and receive a user-owned Stellar wallet automatically.",
+  description: "Meet Carmelita with user-owned Stellar, EVM and Solana test wallets. Enabled EVM networks share one address and keep separate balances.",
 };
 
 export default async function AgentPage({
@@ -30,7 +30,7 @@ export default async function AgentPage({
           <BrandLockup />
         </Link>
         <div>
-          <span>PRIVY + STELLAR</span>
+          <span>PRIVY · MULTICHAIN</span>
           <LanguageControl compact />
           <Link href="/guide">Guide</Link>
           <Link href="/demo">Demo</Link>
