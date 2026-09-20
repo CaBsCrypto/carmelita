@@ -10,7 +10,7 @@ El ejecutor admite evidencia `maintenanceMode: "firewall"` con `firewallRuleId`,
 
 La autorización para verificar conexiones permite cargar variables temporalmente en memoria y guardar únicamente las dos conexiones en `work/`, ignorado por Git. La CLI de Vercel no entregó `DATABASE_URL_DATABASE_URL` ni `DATABASE_URL_UNPOOLED`: no se creó el archivo de conexiones. Se inspeccionó su implementación y los metadatos locales: `env run` lee `.env.local`, no lo escribe. No se descargó el conjunto completo a disco. La comparación efectiva de conexiones continúa pendiente y bloquea la aplicación de migraciones.
 
-Validación local de este cambio el 14 de septiembre: instalación limpia con Node 24.14.0 y npm 11.6.1, lint sin advertencias, 606 pruebas totales (604 aprobadas, cero fallos, dos omisiones externas con su motivo) y build completo. Evidencia privada: `work/multichain-release-install.log` y `work/multichain-release-quality.log`. Graphify continúa bloqueado por su lanzador Python 3.12; el grafo no está actualizado. Esta evidencia corresponde al árbol local posterior a `6eae1e4`, no a un despliegue ni a una migración aceptada.
+Validación local de este cambio el 14 de septiembre: instalación limpia con Node 24.14.0 y npm 11.6.1, lint sin advertencias, 606 pruebas totales (604 aprobadas, cero fallos, dos omisiones externas con su motivo) y build completo. Evidencia privada: `work/multichain-release-install.log` y `work/multichain-release-quality.log`. Graphify quedó actualizado el 19 de septiembre con el paquete 0.9.55 (3067 nodos, 7224 aristas). Esta evidencia corresponde al árbol local posterior a `6eae1e4`, no a un despliegue ni a una migración aceptada.
 
 ## Controles preparados
 
