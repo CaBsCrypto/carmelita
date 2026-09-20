@@ -90,4 +90,5 @@ Publicar multichain y administración; Bazaar sigue deshabilitado hasta aceptaci
 - [ ] C.3 respaldo + evidencia fresca
 - [ ] C.4 apply PASS + journal 22
 - [ ] C.5 reapertura comprobada
-- [ ] D publicación PR #28 (estado 20/09: OPEN, MERGEABLE, checks verdes sobre el push previo; `881670c`/`c2d6292` y el trabajo del 20/09 permanecen locales sin push a propósito)
+- [x] Push de `881670c`/`c2d6292`/`44383db` a PR #28 (20/09: head remoto `44383db`, `local-quality` y Vercel preview verdes).
+- [ ] D publicación PR #28 (merge controlado tras el apply: multichain+admin, Bazaar deshabilitado) Falta el tramo D de merge/publicación controlada.
