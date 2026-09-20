@@ -76,6 +76,43 @@ Desactivar/quitar la regla o re-promover según la vía. Comprobar `/api/health`
 
 Publicar multichain y administración; Bazaar sigue deshabilitado hasta aceptación independiente. Revisión de las cinco redes de prueba y WebMCP experimental quedan fuera de este tramo.
 
+## Handoff para el día siguiente (estado al cierre del 20/09)
+
+Todo está verificado salvo las credenciales (único paso humano). Piezas listas y probadas: ejecutor con guardas (tests), verificador firewall con los tres primitivos probados en vivo (`read` API ✓, sondas HTTP ✓, `readQaHealth` sobre `dpl_yvpkck` ✓ aislamiento verificado con fingerprint QA `bfd2efdf…`), generador de evidencia ✓, PR #28 con head remoto `91f542a` y CI verde sobre `44383db`. IDs y datos fijos para la ventana: proyecto `prj_UQnTOdi1AWU6soTr04ACsqNo7YDu`, equipo `team_XjolcoWJ9V9yamVnCdpC7EMY`, CLI `C:\Users\MGC\AppData\Roaming\npm\node_modules\vercel\dist\index.js`, regla vigente `rule_carmelita_legacy_production_maintenance_2026_09_14_AhgPgR`, candidata `dpl_DmZySQCRzpeQYgh15zAoyzLvY5GA` (url `agente-asistente-6yzo3s49v-…`), superseded `dpl_EfnB5FAmqDaiLozZFMvwSWJ83Dtr` (url `agente-asistente-j7ehxot93-…`, responde 503 propio), QA fingerprint `bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299`.
+
+### Secuencia de mañana
+
+**Paso H1 (humano, ~3 min):** app.neon.tech → proyecto con rama `br-patient-block-atq0m38n` → copiar pooled y direct → crear `work\production-db-connections.json`:
+`{"DATABASE_URL_DATABASE_URL":"<pooled>","DATABASE_URL_UNPOOLED":"<direct>"}` (gitignored; nunca pegar credenciales en el chat).
+
+**Paso B2-B4 (asistente):** verificar par en memoria sin imprimir credenciales:
+
+```powershell
+node -e "const{createHash}=require('crypto');const c=require('./work/production-db-connections.json');const id=v=>{const u=new URL(v);return u.hostname.toLowerCase().replace(/-pooler(?=\.)/,'')+u.pathname};const a=id(c.DATABASE_URL_DATABASE_URL),b=id(c.DATABASE_URL_UNPOOLED);const A=new URL(c.DATABASE_URL_DATABASE_URL),B=new URL(c.DATABASE_URL_UNPOOLED);console.log(JSON.stringify({sameDatabase:a===b,sameUser:A.username===B.username,samePassword:A.password===B.password,fingerprint:createHash('sha256').update(a).digest('hex')}))"
+```
+
+Luego `CARMELITA_PRODUCTION_DATABASE_FINGERPRINT` = ese fingerprint, y:
+
+```powershell
+$c = Get-Content work/production-db-connections.json -Raw | ConvertFrom-Json
+$env:DATABASE_URL_DATABASE_URL=$c.DATABASE_URL_DATABASE_URL; $env:DATABASE_URL_UNPOOLED=$c.DATABASE_URL_UNPOOLED
+$env:VERCEL_ENV="production"; $env:CARMELITA_RELEASE_COMMIT=(git rev-parse HEAD).Trim()
+$env:CARMELITA_PRODUCTION_DATABASE_FINGERPRINT="<del paso anterior>"
+$env:CARMELITA_QA_DATABASE_FINGERPRINT="bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299"
+npx tsx scripts/production-migrate.ts inspect   # esperar status PASS, journalBefore 20, remaining > 0
+Remove-Item Env:DATABASE_URL_DATABASE_URL,Env:DATABASE_URL_UNPOOLED,Env:CARMELITA_PRODUCTION_DATABASE_FINGERPRINT
+```
+
+Archivar el JSON de inspect en `work/`. Antes de `apply` hay que quitar las 3 claves sensibles del proceso shell si la sesión se comparte.
+
+**Ventana C (~20-30 min, con aprobación explícita por paso de escritura):**
+1. Extender la regla (Vercel dashboard → Firewall, o API): añadir hosts `carmelita-agent.vercel.app`, `agente-asistente-6yzo3s49v-cabscryptocontacto-6028s-projects.vercel.app`, `agente-asistente-j7ehxot93-cabscryptocontacto-6028s-projects.vercel.app` (mismos host inc + path neq /api/health, deny). Verificar sondas 403 y `/api/health` 200.
+2. Neon: crear rama/backup de `br-patient-block-atq0m38n` (como el `br-proud-sun-attzb8b7` de 0019), consultarla y contrastar conteos/huellas de billeteras y pagos (huellas de referencia 14/09: billeteras `1e4b8847…`, pagos `0a69e512…` — deben haber cambiado solo por filas nuevas desde entonces; lo que se exige es conservacionismo, no igualdad).
+3. Evidencia (ventana 1 h): `npx tsx scripts/production-release-evidence.ts --mode=firewall --rule=rule_carmelita_legacy_production_maintenance_2026_09_14_AhgPgR --deployment=dpl_DmZySQCRzpeQYgh15zAoyzLvY5GA --backup=<id> --restore-verified=true --rollback-compatible=true --out=work/release-evidence-<fecha>.json` (con fingerprint en env).
+4. `npx tsx scripts/production-migrate.ts apply` con `CARMELITA_RELEASE_EVIDENCE_FILE` apuntando al archivo. Cualquier `production_migration_*`: NO repetir, mantener el bloqueo, inspeccionar el journal antes de reintentar.
+5. Aceptar: journal 22; `agent_wallet_networks` consistente con `agent_wallets` (8 filas, cero duplicados); columnas 0021 con defaults/CHECKs. Quitar los 3 hosts nuevos de la regla (dejar la legacy como estaba). Health 200 + rutas vivas.
+6. Registrar resultados aquí y en `PRODUCTION-ACTIVATION-2026-09-14.md`; luego Fase D (merge controlado multichain+admin, Bazaar off) en sesión aparte.
+
 ## Estado de avance
 
 - [x] A.1 `npm run qa:local` verde (19/09: 606 pruebas, 604 pasan, 0 fallos, 2 omisiones justificadas; log `work/runbook-phaseA-qa-20260919.log`)
