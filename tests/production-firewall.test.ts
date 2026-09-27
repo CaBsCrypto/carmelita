@@ -161,9 +161,9 @@ test("retired blocked hosts and orphan aliases may answer 410, live ones must st
   const passing = build();
   assert.deepEqual(await verifyFirewallMaintenance(evidence, passing.dependencies), { mode: "firewall", blockedHosts: 4, isolatedDeployments: 1 });
   for (const mutate of [
-    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "retired.vercel.app" ? new Response(null, { status: 200 }) : original(input); },
-    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "gone.vercel.app" ? new Response(null, { status: 308 }) : original(input); },
-    f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "legacy.vercel.app" ? new Response(null, { status: 410 }) : original(input); },
+    (f: ReturnType<typeof build>) => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "retired.vercel.app" ? new Response(null, { status: 200 }) : original(input); },
+    (f: ReturnType<typeof build>) => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "gone.vercel.app" ? new Response(null, { status: 308 }) : original(input); },
+    (f: ReturnType<typeof build>) => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "legacy.vercel.app" ? new Response(null, { status: 410 }) : original(input); },
   ]) { const f = build(); mutate(f); await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies)); }
 });
 

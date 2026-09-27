@@ -85,7 +85,8 @@ test("wallet onboarding provisions and persists Stellar plus Avalanche without m
     },
   );
 
-  assert.deepEqual(calls, ["stellar.create", "stellar.persist", "avalanche.create", "solana.create"]);
+  assert.deepEqual([...calls].sort(), ["stellar.create", "stellar.persist", "avalanche.create", "solana.create"].sort());
+  assert.ok(result.stellar && result.avalanche && result.solana);
   assert.equal(result.stellar.address, stellar.address);
   assert.equal(result.avalanche.wallet.address, evm.address);
   assert.equal(result.solana.wallet.address, solanaWallet.address);

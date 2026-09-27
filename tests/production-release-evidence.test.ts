@@ -4,7 +4,7 @@ import { buildReleaseEvidence } from "../scripts/production-release-evidence";
 import { validateReleaseEvidence } from "../scripts/production-migrate";
 
 const fingerprint = "a".repeat(64), commit = "b".repeat(40), maintenance = "c".repeat(40);
-const base = { databaseFingerprint: fingerprint, commit, maintenanceCommit: maintenance, backupId: "br_fixture", restoreVerified: true, rollbackCompatible: true };
+const base = { maintenanceMode: "application" as const, databaseFingerprint: fingerprint, commit, maintenanceCommit: maintenance, backupId: "br_fixture", restoreVerified: true, rollbackCompatible: true };
 
 test("builder output round-trips through the migration validator", () => {
   const application = buildReleaseEvidence({ ...base, maintenanceMode: "application" });

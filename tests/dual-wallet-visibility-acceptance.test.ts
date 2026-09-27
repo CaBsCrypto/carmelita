@@ -122,6 +122,7 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
     },
   );
 
+  assert.ok(onboarding.stellar && onboarding.avalanche);
   assert.equal(onboarding.stellar.address, stellarAddress);
   assert.equal(onboarding.avalanche.wallet.address, avalancheAddress);
   assert.equal(onboarding.fundsMoved, false);
