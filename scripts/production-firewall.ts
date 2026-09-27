@@ -126,6 +126,7 @@ export async function verifyFirewallMaintenance(
       const result = await response(name, path);
       let status = result.status;
       const location = result.headers.get("location");
+      const retiredDeploymentMissing = !live && status === 404 && result.headers.get("x-vercel-error") === "DEPLOYMENT_NOT_FOUND";
       await result.body?.cancel();
       // SSO is not evidence of maintenance. Require the same host/path to deny
       // after authenticated deployment access, while the published rule is checked.
@@ -135,7 +136,7 @@ export async function verifyFirewallMaintenance(
         if (redirect.origin !== "https://vercel.com" || redirect.pathname !== "/sso-api" || redirect.username || redirect.password) return reject();
         status = await dependencies.readProtectedStatus(name, path);
       }
-      if (live ? status !== 403 : status !== 403 && status !== 410) return reject();
+      if (live ? status !== 403 : status !== 403 && status !== 410 && !retiredDeploymentMissing) return reject();
     }
     checked.add(name);
   }

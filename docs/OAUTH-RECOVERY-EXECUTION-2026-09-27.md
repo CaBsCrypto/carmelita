@@ -74,3 +74,13 @@ Neon conserva una única plaza de snapshot ocupada por el respaldo del 14/09. Se
 El mantenimiento requiere siete hosts adicionales a los 70 ya bloqueados. Vercel rechazó la primera petición: el esquema oficial limita a 75 elementos cada condición de hosts. Se corrigió a dos grupos disjuntos (70+7), ambos con `path != /api/health`, preservando exactamente la lista y acción deny. El borrador fue aceptado y comparado con el estado anterior; aún NO publicado. El verificador admite ahora grupos exactos dentro de los límites y rechaza duplicados o excepciones diferentes. Ocho pruebas focalizadas aprobadas; validación conjunta en curso. Esquema consultado: https://openapi.vercel.sh, PATCH `/v1/security/firewall/config`.
 
 Validación conjunta del ajuste de grupos completada con salida 0: lint sin advertencias, 623 pruebas (621 aprobadas, cero fallos, dos omisiones externas) y build aprobado. Evidencia local: work/oauth-qa-hostgroups-20260927.log. Graphify update volvió a fallar por el mismo launcher; grafo no actualizado.
+
+## Mantenimiento publicado — 27/09 09:21 UTC
+
+CI y Preview de 9c593c2 aprobados. Se publicó el borrador revisado: 77 hosts en dos grupos, sin otros cambios de firewall. Ambos dominios públicos devolvieron 403 en rutas de aplicación y salud 200. No se aplicaron migraciones.
+
+La verificación completa detectó una URL retirada que devuelve 404 con `x-vercel-error: DEPLOYMENT_NOT_FOUND`. Se comprobó esa respuesta de Vercel; el ejecutor ahora la admite únicamente si el inventario no considera activo el despliegue. Un 404 común o cualquier 404 de un escritor activo sigue rechazándose. Nueve pruebas focalizadas aprobadas. La verificación completa y los controles locales se repiten antes del respaldo final. Producción permanece en mantenimiento mientras se resuelve esta puerta.
+
+El ajuste de hosts retirados pasó lint, 624 pruebas (622 aprobadas, cero fallos, dos omisiones externas) y build. Graphify continúa bloqueado. Mantenimiento completo aprobado a las 09:30:58 UTC: 77 hosts bloqueados, ocho despliegues aislados, inventario y reglas estables.
+
+Respaldo final creado bajo ese mantenimiento a las 09:31:11 UTC: `br-morning-cake-at74w8rj`, nombre `carmelita-pre-oauth-release-20260927`, sin expiración. Copia separada desde ese respaldo: `br-wandering-queen-at4xt2qi`, `carmelita-restore-check-20260927`, expira 28/09 06:31 GMT-3. Comparación de esquema y hashes de todas las tablas en curso; todavía no se afirma restauración verificada ni se han aplicado migraciones.

@@ -145,3 +145,16 @@ test("retired blocked hosts and orphan aliases may answer 410, live ones must st
     f => { const original = f.dependencies.request; f.dependencies.request = async input => new URL(String(input)).hostname === "legacy.vercel.app" ? new Response(null, { status: 410 }) : original(input); },
   ]) { const f = build(); mutate(f); await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies)); }
 });
+
+test("only an inventoried retired host may use Vercel DEPLOYMENT_NOT_FOUND as absence evidence", async () => {
+  for (const [live, error, accepted] of [[false, "DEPLOYMENT_NOT_FOUND", true], [false, "", false], [false, "NOT_FOUND", false], [true, "DEPLOYMENT_NOT_FOUND", false]] as const) {
+    const f = fixture();
+    const hostname = live ? "legacy.vercel.app" : "retired.vercel.app";
+    if (!live) f.config.active.rules[0].conditionGroup[0].conditions[0].value = [...hosts, hostname];
+    const original = f.dependencies.request;
+    f.dependencies.request = async (input, options) => new URL(String(input)).hostname === hostname
+      ? new Response(null, { status: 404, headers: { "x-vercel-error": error } }) : original(input, options);
+    if (accepted) assert.equal((await verifyFirewallMaintenance(evidence, f.dependencies)).blockedHosts, 3);
+    else await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
+  }
+});
