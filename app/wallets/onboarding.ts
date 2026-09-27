@@ -5,14 +5,19 @@ import { ensureSolanaDevnetWallet } from "@/app/wallets/solana-onboarding";
 import { getOrCreateUserWallet } from "@/app/wallets/privy";
 import type { UserWallet } from "@/app/wallets/types";
 import { ensureEvmTestnetWallet } from "@/app/wallets/evm-onboarding";
-import { hasDatabase } from "@/db";
+import { hasDatabase, getDb } from "@/db";
+import { sql } from "drizzle-orm";
+import { persistWalletNetworks } from "@/app/multichain-account";
 
 type StellarAccount = Awaited<ReturnType<typeof getStellarTestnetAccount>>;
 type AgentAccount = Awaited<ReturnType<typeof persistAgentAccount>>;
 type AvalancheAccount = Awaited<ReturnType<typeof ensureAvalancheFujiWallet>>;
 type SolanaAccount = Awaited<ReturnType<typeof ensureSolanaDevnetWallet>>;
 
+export type FamilyPreparation = { status: "ready" | "failed" | "conflict"; error: string | null; retryable: boolean };
+
 export type WalletOnboardingDependencies = {
+  updateStellarStatus?: (wallet: UserWallet, input: { userId: string; email: string | null }, activation: "active" | "pending") => Promise<unknown>;
   ensureEvmWallet?: typeof ensureEvmTestnetWallet;
   getOrCreateStellarWallet: (userId: string) => Promise<UserWallet>;
   getStellarAccount: (address: string) => Promise<StellarAccount>;
@@ -20,7 +25,7 @@ export type WalletOnboardingDependencies = {
     userId: string;
     email: string | null;
     wallet: UserWallet;
-    activation: "active" | "pending";
+    activation: "active" | "pending" | "unknown";
   }) => Promise<AgentAccount>;
   ensureAvalancheWallet: (input: {
     userId: string;
@@ -34,9 +39,16 @@ export type WalletOnboardingDependencies = {
 
 const defaultDependencies: WalletOnboardingDependencies = {
   ensureEvmWallet: ensureEvmTestnetWallet,
+  updateStellarStatus: (wallet, input, activation) => persistWalletNetworks({ ...input, wallet, networks: ["stellar:testnet"], status: activation }),
   getOrCreateStellarWallet: (userId) => getOrCreateUserWallet(userId, "stellar"),
-  getStellarAccount: getStellarTestnetAccount,
-  persistStellarAccount: persistAgentAccount,
+  getStellarAccount: address => getStellarTestnetAccount(address, AbortSignal.timeout(8000)),
+  persistStellarAccount: async input => {
+    try { return await persistAgentAccount(input); }
+    catch (error) {
+      if (error instanceof Error && error.message.includes("conflict")) throw error;
+      throw new Error("wallet_persistence_unavailable", { cause: error });
+    }
+  },
   ensureAvalancheWallet: ensureAvalancheFujiWallet,
   ensureSolanaWallet: ensureSolanaDevnetWallet,
 };
@@ -50,43 +62,59 @@ export async function provisionUserWallets(
   }
   if (dependencies === defaultDependencies && !hasDatabase()) throw new Error("database_not_configured");
 
-  const stellar = await dependencies.getOrCreateStellarWallet(input.userId);
-  if (
-    stellar.family !== "stellar" ||
-    stellar.chainType !== "stellar" ||
-    stellar.owner !== "user"
-  ) {
-    throw new Error("privy_invalid_stellar_wallet_response");
+  if (dependencies === defaultDependencies) {
+    try { await getDb().execute(sql`select 1`); }
+    catch { throw new Error("wallet_persistence_unavailable"); }
   }
+  let persistenceFailed = false;
 
-  const account = await dependencies.getStellarAccount(stellar.address);
-  const activation: "active" | "pending" = account.exists
-    ? "active"
-    : "pending";
-  const agentAccount = await dependencies.persistStellarAccount({
-    userId: input.userId,
-    email: input.email,
-    wallet: stellar,
-    activation,
-  });
-  const expandedEvm = dependencies.ensureEvmWallet ? await dependencies.ensureEvmWallet(input) : null;
-  const avalanche = expandedEvm ? {
-    wallet: expandedEvm.wallet,
-    network: expandedEvm.networks.find((network) => network.id === "avalanche:fuji")!,
-    fundsMoved: false as const,
-    signingRequired: false as const,
-  } : await dependencies.ensureAvalancheWallet(input);
-  const evm = expandedEvm ?? { wallet: avalanche.wallet, networks: [avalanche.network], fundsMoved: false as const, signingRequired: false as const };
-  const solana = await dependencies.ensureSolanaWallet(input);
-
+  const capture = async <T>(work: () => Promise<T>): Promise<{ value: T | null; preparation: FamilyPreparation }> => {
+    try { return { value: await work(), preparation: { status: "ready", error: null, retryable: false } }; }
+    catch (error) {
+      const message = error instanceof Error ? error.message.split(":")[0] : "wallet_preparation_failed";
+      if (message === "wallet_persistence_unavailable" || message === "database_not_configured") persistenceFailed = true;
+      const conflict = message.includes("conflict") || message.includes("ambiguous");
+      // Do not expose raw provider/database messages or credentials in public responses.
+      return { value: null, preparation: { status: conflict ? "conflict" : "failed", error: conflict ? "wallet_identity_conflict" : "wallet_preparation_failed", retryable: !conflict } };
+    }
+  };
+  const [stellarResult, evmResult, solanaResult] = await Promise.all([
+    capture(async () => {
+      const wallet = await dependencies.getOrCreateStellarWallet(input.userId);
+      if (wallet.family !== "stellar" || wallet.chainType !== "stellar" || wallet.owner !== "user") throw new Error("wallet_identity_conflict");
+      // Persist identity before asking the network. Unknown does not downgrade an existing active registration.
+      const agentAccount = await dependencies.persistStellarAccount({ ...input, wallet, activation: "unknown" });
+      let account: StellarAccount | null = null;
+      let activation: "active" | "pending" | "unknown" = "unknown";
+      let readError: string | null = null;
+      try { account = await dependencies.getStellarAccount(wallet.address); }
+      catch { readError = "stellar_account_unavailable"; }
+      if (account) {
+        activation = account.exists ? "active" : "pending";
+        await dependencies.updateStellarStatus?.(wallet, input, activation);
+      }
+      return { wallet, account, activation, agentAccount, readError };
+    }),
+    capture(async () => {
+      if (dependencies.ensureEvmWallet) return dependencies.ensureEvmWallet(input);
+      const avalanche = await dependencies.ensureAvalancheWallet(input);
+      return { wallet: avalanche.wallet, networks: [avalanche.network], fundsMoved: false as const, signingRequired: false as const };
+    }),
+    capture(() => dependencies.ensureSolanaWallet(input)),
+  ]);
+  if (persistenceFailed) throw new Error("wallet_persistence_unavailable");
+  const evm = evmResult.value;
   return {
-    stellar,
-    avalanche,
+    stellar: stellarResult.value?.wallet ?? null,
+    avalanche: evm ? { wallet: evm.wallet, network: evm.networks.find(network => network.id === "avalanche:fuji")!, fundsMoved: false as const, signingRequired: false as const } : null,
     evm,
-    solana,
-    account,
-    activation,
-    agentAccount,
+    solana: solanaResult.value,
+    account: stellarResult.value?.account ?? null,
+    activation: stellarResult.value?.activation ?? "unknown",
+    agentAccount: stellarResult.value?.agentAccount ?? null,
+    persistence: { configured: true, provider: "Neon Postgres" },
+    preparation: { stellar: stellarResult.preparation, evm: evmResult.preparation, solana: solanaResult.preparation },
+    reads: { stellar: { status: stellarResult.value?.account ? "ready" : "failed", error: stellarResult.value?.readError ?? (stellarResult.value ? null : "stellar_wallet_unavailable") } },
     fundsMoved: false as const,
     signingRequired: false as const,
   };

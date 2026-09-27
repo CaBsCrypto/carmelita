@@ -9,7 +9,7 @@ export async function persistAgentAccount(input: {
   userId: string;
   email: string | null;
   wallet: UserWallet;
-  activation: "active" | "activated" | "pending";
+  activation: "active" | "activated" | "pending" | "unknown";
 }) {
   if (!hasDatabase()) {
     return {
@@ -26,7 +26,8 @@ export async function persistAgentAccount(input: {
     email: input.email,
     wallet: input.wallet,
     networks: ["stellar:testnet"],
-    status: input.activation === "pending" ? "pending" : "active",
+    status: input.activation === "active" || input.activation === "activated" ? "active" : "pending",
+    preserveExistingStatus: input.activation === "unknown",
   });
   const db = getDb();
   await db.insert(agentActivities).values({

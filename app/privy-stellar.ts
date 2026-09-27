@@ -149,14 +149,14 @@ export async function fundStellarTestnetWallet(address: string) {
   };
 }
 
-export async function getStellarTestnetAccount(address: string) {
+export async function getStellarTestnetAccount(address: string, signal?: AbortSignal) {
   if (!isValidStellarAddress(address)) {
     throw new Error("invalid_stellar_address");
   }
 
   const response = await fetch(
     STELLAR_TESTNET_HORIZON + "/accounts/" + encodeURIComponent(address),
-    { cache: "no-store" },
+    { cache: "no-store", signal },
   );
 
   if (response.status === 404) {

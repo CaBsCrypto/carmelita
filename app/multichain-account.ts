@@ -41,6 +41,7 @@ export type PersistWalletNetworksInput = {
   wallet: UserWallet;
   networks: WalletNetworkId[];
   status?: "active" | "pending";
+  preserveExistingStatus?: boolean;
 };
 
 const defaultDependencies: WalletPersistenceDependencies = {
@@ -62,7 +63,7 @@ function translatePersistenceError(error: unknown): never {
   if (code === "23505" || code === "23503" || code === "22012") {
     throw new Error("wallet_identity_conflict", { cause: error });
   }
-  throw error;
+  throw new Error("wallet_persistence_unavailable", { cause: error });
 }
 
 /** Exported so database acceptance exercises the exact production SQL. */
@@ -93,7 +94,7 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
       INSERT INTO agent_wallets (id, user_id, address, chain_type, network, status, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, now())
       ON CONFLICT (id) DO UPDATE SET
-        status = CASE WHEN agent_wallets.network = ANY($7::text[]) THEN EXCLUDED.status ELSE agent_wallets.status END,
+        status = CASE WHEN agent_wallets.network = ANY($7::text[]) THEN CASE WHEN $8 THEN agent_wallets.status ELSE EXCLUDED.status END ELSE agent_wallets.status END,
         updated_at = now()
       WHERE agent_wallets.user_id = EXCLUDED.user_id
         AND agent_wallets.chain_type = EXCLUDED.chain_type
@@ -102,12 +103,12 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
           ELSE agent_wallets.address = EXCLUDED.address END
       RETURNING id
     ) SELECT 1 / CASE WHEN count(*) = 1 THEN 1 ELSE 0 END AS wallet_identity_available FROM canonical`,
-    parameters: [input.wallet.id, input.userId, input.wallet.address, input.wallet.chainType, legacyNetwork, status, networks],
+    parameters: [input.wallet.id, input.userId, input.wallet.address, input.wallet.chainType, legacyNetwork, status, networks, input.preserveExistingStatus ?? false],
   }, {
     text: `INSERT INTO agent_wallet_networks (wallet_id, user_id, network, status, updated_at)
       SELECT $1, $2, requested.network, $3, now() FROM unnest($4::text[]) AS requested(network)
-      ON CONFLICT (wallet_id, network) DO UPDATE SET status = EXCLUDED.status, updated_at = now()`,
-    parameters: [input.wallet.id, input.userId, status, networks],
+      ON CONFLICT (wallet_id, network) DO UPDATE SET status = CASE WHEN $5 THEN agent_wallet_networks.status ELSE EXCLUDED.status END, updated_at = now()`,
+    parameters: [input.wallet.id, input.userId, status, networks, input.preserveExistingStatus ?? false],
   }];
   if (input.wallet.created) {
     for (const network of networks) statements.push({
@@ -150,11 +151,15 @@ export async function getCanonicalEvmWallet(userId: string) {
   return getCanonicalWallet(userId, "ethereum");
 }
 
+export async function getCanonicalSolanaWallet(userId: string) {
+  return getCanonicalWallet(userId, "solana");
+}
+
 export async function getCanonicalStellarWallet(userId: string) {
   return getCanonicalWallet(userId, "stellar");
 }
 
-async function getCanonicalWallet(userId: string, chainType: "ethereum" | "stellar") {
+async function getCanonicalWallet(userId: string, chainType: "ethereum" | "stellar" | "solana") {
   if (!userId.startsWith("did:privy:")) throw new Error("invalid_privy_user_id");
   if (!hasDatabase()) throw new Error("database_not_configured");
   const wallets = await getDb().select({
