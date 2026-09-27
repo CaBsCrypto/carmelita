@@ -43,7 +43,7 @@ async function signedToken(input: { issuer?: string; audience?: string; scope?: 
     ? (await generateKeyPair("RS256")).privateKey
     : new TextEncoder().encode("01234567890123456789012345678901");
   // RS256 callers use tokenWithKey below; this helper only creates adversarial HS256 tokens.
-  return new SignJWT({ scope: input.scope ?? "agent:read" })
+  return new SignJWT({ client_id: "carmelita-test-client", scope: input.scope ?? "agent:read" })
     .setProtectedHeader({ alg: algorithm })
     .setIssuer(input.issuer ?? oauthEnv.STYTCH_PROJECT_DOMAIN!)
     .setSubject("user-test-stytch-subject")
@@ -55,7 +55,7 @@ async function signedToken(input: { issuer?: string; audience?: string; scope?: 
 
 async function tokenWithKey(input: { issuer?: string; audience?: string; scope?: string } = {}) {
   const { publicKey, privateKey } = await generateKeyPair("RS256");
-  const token = await new SignJWT({ scope: input.scope ?? "openid agent:read agent:plan" })
+  const token = await new SignJWT({ client_id: "carmelita-test-client", scope: input.scope ?? "openid agent:read agent:plan" })
     .setProtectedHeader({ alg: "RS256", kid: "test-key" })
     .setIssuer(input.issuer ?? oauthEnv.STYTCH_PROJECT_DOMAIN!)
     .setSubject("user-test-stytch-subject")
@@ -102,6 +102,7 @@ test("Stytch JWT verification pins RS256 issuer, audience, expiry and scopes", a
     issuer: config.issuer,
     subject: "user-test-stytch-subject",
     audiences: ["carmelita-test-client"],
+    clientId: "carmelita-test-client",
     scopes: ["agent:read", "agent:plan"],
   });
 
@@ -136,6 +137,7 @@ test("dynamic Stytch client audiences are accepted only when non-empty unless st
     iss: config.issuer,
     sub: "user-test-stytch-subject",
     aud: "dcr-client-id-123",
+    client_id: "dcr-client-id-123",
     exp: Math.floor(Date.now() / 1000) + 300,
     scope: "agent:read",
   };
@@ -227,17 +229,26 @@ test("introspection fails closed on provider failures, malformed data and mismat
   }
 });
 
-test("introspection accepts additional audiences only with one identifiable Connected App client", async () => {
+test("client identity cannot be inferred from audience", () => {
+  const config = readStytchOAuthResourceConfig(oauthEnv);
+  const payload = { iss: config.issuer, sub: "user-1", aud: config.expectedAudience,
+    exp: Math.floor(Date.now() / 1000) + 300, scope: "agent:context" };
+  for (const client_id of [undefined, null, "", [], "https://resource.example", "client with spaces"]) {
+    assert.throws(() => validateStytchOAuthClaims({ ...payload, client_id }, config), /client_invalid/);
+  }
+});
+
+test("introspection uses signed client_id when aud contains only the resource", async () => {
   const config = readStytchOAuthResourceConfig({ ...oauthEnv, STYTCH_CONNECTED_APPS_EXPECTED_AUDIENCE: "" });
   const { privateKey } = await generateKeyPair("RS256");
-  const token = await new SignJWT({ scope: "agent:context" }).setProtectedHeader({ alg: "RS256" })
+  const token = await new SignJWT({ client_id: "connected-app-test-one", scope: "agent:context" }).setProtectedHeader({ alg: "RS256" })
     .setIssuer(config.issuer).setSubject("user-test-1")
-    .setAudience(["https://resource.example", "connected-app-test-one"]).setExpirationTime("5m").sign(privateKey);
+    .setAudience(config.resource).setExpirationTime("5m").sign(privateKey);
   const claims = validateStytchOAuthClaims(decodeJwt(token), config);
   await assertStytchOAuthTokenActive(token, claims, config, async (_url, init) => {
     assert.equal(new URLSearchParams(String(init?.body)).get("client_id"), "connected-app-test-one");
     return Response.json({ ...decodeJwt(token), active: true, client_id: "connected-app-test-one", token_type: "access_token" });
   });
-  await assert.rejects(assertStytchOAuthTokenActive(token, { ...claims, audiences: ["resource-1", "resource-2"] }, config,
+  await assert.rejects(assertStytchOAuthTokenActive(token, { ...claims, clientId: "" }, config,
     async () => { assert.fail("ambiguous client must not submit a token"); }), /inactive_or_unavailable/);
 });
