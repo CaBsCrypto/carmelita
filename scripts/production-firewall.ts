@@ -68,13 +68,18 @@ export function verifyPublishedFirewall(value: unknown, ruleId: string): string[
   const rule = enabled[0], action = object(object(rule.action).mitigate);
   if (action.action !== "deny" || action.actionDuration != null) return reject();
   const groups = list(rule.conditionGroup);
-  if (groups.length !== 1) return reject();
-  const conditions = list(object(groups[0]).conditions).map(object);
-  if (conditions.length !== 2 || conditions.some(c => c.neg === true || c.key != null)) return reject();
-  const hosts = conditions.find(c => c.type === "host" && c.op === "inc");
-  const path = conditions.find(c => c.type === "path" && c.op === "neq" && c.value === "/api/health");
-  if (!hosts || !path) return reject();
-  const values = list(hosts.value).map(host);
+  if (!groups.length || groups.length > 25) return reject();
+  const values: string[] = [];
+  for (const group of groups) {
+    const conditions = list(object(group).conditions).map(object);
+    if (conditions.length !== 2 || conditions.some(c => c.neg === true || c.key != null)) return reject();
+    const hosts = conditions.find(c => c.type === "host" && c.op === "inc");
+    const path = conditions.find(c => c.type === "path" && c.op === "neq" && c.value === "/api/health");
+    if (!hosts || !path) return reject();
+    const groupHosts = list(hosts.value).map(host);
+    if (!groupHosts.length || groupHosts.length > 75) return reject();
+    values.push(...groupHosts);
+  }
   if (!values.length || new Set(values).size !== values.length || !values.includes(publicHost)) return reject();
   return values.sort();
 }

@@ -48,6 +48,21 @@ test("verifies all writer hosts and excludes only runtime-verified QA", async ()
   assert.equal(f.probes.filter(p => p.endsWith("/api/agent/wallets")).length, 2);
 });
 
+test("supports disjoint exact-host groups within the provider limit without broadening health exceptions", () => {
+  const c = configuration();
+  const second = structuredClone(c.active.rules[0].conditionGroup[0]);
+  second.conditions[0].value = ["additional.vercel.app"];
+  c.active.rules[0].conditionGroup.push(second);
+  assert.deepEqual(verifyPublishedFirewall(c, evidence.ruleId), ["additional.vercel.app", ...hosts].sort());
+  second.conditions[1].value = "/api";
+  assert.throws(() => verifyPublishedFirewall(c, evidence.ruleId));
+  second.conditions[1].value = "/api/health";
+  second.conditions[0].value = [hosts[0]];
+  assert.throws(() => verifyPublishedFirewall(c, evidence.ruleId));
+  second.conditions[0].value = Array.from({ length: 76 }, (_, i) => `host-${i}.vercel.app`);
+  assert.throws(() => verifyPublishedFirewall(c, evidence.ruleId));
+});
+
 test("requires the production custom domain to be covered and rejects unapproved domains", async () => {
   const f = fixture();
   f.aliases.push({ alias: "carmelita.browns.studio", projectId: project, deploymentId: "dpl_prod" });

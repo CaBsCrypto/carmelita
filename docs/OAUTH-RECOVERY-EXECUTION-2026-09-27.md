@@ -64,3 +64,13 @@ La protección estándar permite preparar una versión de recuperación funciona
 La ejecución anterior fue interrumpida y su proceso dejó de existir; no se contabilizó como aprobada. La ejecución posterior terminó con código 0: lint sin advertencias, 622 pruebas (620 aprobadas, cero fallos y dos omisiones externas explícitas) y build completo. Evidencia local ignorada: `work/oauth-qa-firewall-final-20260927.log` y archivo `.exit` correspondiente.
 
 Inventario renovado después de construir la candidata: ambos dominios públicos siguen en `dpl_DmZySQCRzpeQYgh15zAoyzLvY5GA`; sólo el alias general protegido apunta a `dpl_J4y2LKcBNoUWNNzeAdfJ49ixXT3w`.
+
+## Privy y preparación de mantenimiento — 27/09 09:12–09:18 UTC
+
+El operador autorizó expresamente el origen Privy. Se añadió únicamente `https://carmelita.browns.studio` en la aplicación existente y se comprobó su presencia tras recargar. No se crearon clientes, claves ni billeteras.
+
+Neon conserva una única plaza de snapshot ocupada por el respaldo del 14/09. Se conservará; el respaldo final pendiente usará una rama separada con verificación de restauración. La copia de ensayo sigue siendo distinta del respaldo final.
+
+El mantenimiento requiere siete hosts adicionales a los 70 ya bloqueados. Vercel rechazó la primera petición: el esquema oficial limita a 75 elementos cada condición de hosts. Se corrigió a dos grupos disjuntos (70+7), ambos con `path != /api/health`, preservando exactamente la lista y acción deny. El borrador fue aceptado y comparado con el estado anterior; aún NO publicado. El verificador admite ahora grupos exactos dentro de los límites y rechaza duplicados o excepciones diferentes. Ocho pruebas focalizadas aprobadas; validación conjunta en curso. Esquema consultado: https://openapi.vercel.sh, PATCH `/v1/security/firewall/config`.
+
+Validación conjunta del ajuste de grupos completada con salida 0: lint sin advertencias, 623 pruebas (621 aprobadas, cero fallos, dos omisiones externas) y build aprobado. Evidencia local: work/oauth-qa-hostgroups-20260927.log. Graphify update volvió a fallar por el mismo launcher; grafo no actualizado.
