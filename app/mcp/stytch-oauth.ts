@@ -190,6 +190,7 @@ export async function verifyStytchOAuthAccessToken(
   try {
     const config = readStytchOAuthResourceConfig(env);
     const claims = await verifyStytchOAuthJwt(token, config);
+    await assertStytchOAuthTokenActive(token, claims, config);
     const privyDid = await resolveOAuthSubject({
       issuer: claims.issuer,
       subject: claims.subject,
@@ -205,6 +206,46 @@ export async function verifyStytchOAuthAccessToken(
     };
   } catch {
     throw new Error("stytch_oauth_token_invalid");
+  }
+}
+
+// Public Connected Apps use client_id without a client secret (RFC 7662).
+// Check every request: local JWT validation alone cannot observe revocation.
+export async function assertStytchOAuthTokenActive(
+  token: string,
+  claims: ReturnType<typeof validateStytchOAuthClaims>,
+  config: StytchOAuthResourceConfig,
+  fetcher: typeof fetch = fetch,
+) {
+  try {
+    // Additional resource audiences are allowed if the client remains unambiguous.
+    const clientAudiences = claims.audiences.filter((audience) => audience.startsWith("connected-app-"));
+    const clientId = claims.audiences.length === 1 ? claims.audiences[0]
+      : clientAudiences.length === 1 ? clientAudiences[0] : undefined;
+    if (!clientId) throw new Error();
+    const response = await fetcher(`${config.issuer}/v1/oauth2/introspect`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token, token_type_hint: "access_token", client_id: clientId }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error();
+    const body: unknown = await response.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
+    const result = body as JWTPayload & { active?: unknown; client_id?: unknown; token_type?: unknown };
+    if (result.active !== true || result.client_id !== clientId || result.token_type !== "access_token") throw new Error();
+    const current = validateStytchOAuthClaims(result, config);
+    if (current.subject !== claims.subject ||
+      current.audiences.length !== claims.audiences.length ||
+      current.audiences.some((audience) => !claims.audiences.includes(audience)) ||
+      current.scopes.length !== claims.scopes.length ||
+      current.scopes.some((scope) => !claims.scopes.includes(scope)) ||
+      result.exp !== decodeJwt(token).exp) throw new Error();
+  } catch {
+    // Never surface a provider body, submitted token, or fetch exception.
+    throw new Error("stytch_oauth_token_inactive_or_unavailable");
   }
 }
 

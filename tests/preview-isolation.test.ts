@@ -93,7 +93,7 @@ test("Preview ignores Marketplace production URLs and selects only the dedicated
   await withRuntimeEnvironment(env, async () => {
     assert.equal(getDatabaseUrl(), env.CARMELITA_PREVIEW_DATABASE_URL);
     assert.equal(hasDatabase(), true);
-    const response = health();
+    const response = await health();
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.equal(body.previewIsolation.databaseFingerprint,
@@ -202,7 +202,7 @@ test("Preview health returns deployment identity and only a normalized database 
     VERCEL_URL: "carmelita-immutable.example.vercel.app",
     VERCEL_GIT_COMMIT_SHA: "a".repeat(40),
   }), async () => {
-    const response = health();
+    const response = await health();
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.deepEqual(body.previewIsolation, {
@@ -219,17 +219,17 @@ test("Preview health returns deployment identity and only a normalized database 
       assert.equal(JSON.stringify(body).includes(privateValue), false);
     }
     process.env.CARMELITA_PREVIEW_DATABASE_URL = process.env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED;
-    assert.deepEqual((await health().json()).previewIsolation, body.previewIsolation);
+    assert.deepEqual((await (await health()).json()).previewIsolation, body.previewIsolation);
     process.env.CARMELITA_PREVIEW_DATABASE_URL = process.env.CARMELITA_PREVIEW_DATABASE_URL!.replace("/qa?", "/%71a?");
     process.env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED = process.env.CARMELITA_PREVIEW_DATABASE_URL;
-    assert.equal((await health().json()).previewIsolation.databaseFingerprint,
+    assert.equal((await (await health()).json()).previewIsolation.databaseFingerprint,
       createHash("sha256").update("ep-qa.example.neon.tech/%71a").digest("hex"));
   });
 });
 
 test("unverified Preview health returns 503 and never reports healthy memory fallback", async () => {
   await withRuntimeEnvironment({ VERCEL_ENV: "preview" }, async () => {
-    const response = health();
+    const response = await health();
     assert.equal(response.status, 503);
     const body = await response.json();
     assert.equal(body.status, "error");
@@ -245,7 +245,7 @@ test("Production database fallback and health contract remain available without 
   await withRuntimeEnvironment({ VERCEL_ENV: "production", DATABASE_URL_DATABASE_URL: connection }, async () => {
     assert.equal(getDatabaseUrl(), connection);
     assert.equal(hasDatabase(), true);
-    const response = health();
+    const response = await health();
     assert.equal(response.status, 200);
     const body = await response.json();
     assert.equal(body.status, "ok");

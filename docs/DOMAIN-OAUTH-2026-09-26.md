@@ -36,3 +36,12 @@ Después: configurar origen público, Privy y consentimiento Stytch; actualizar 
 - Panel Stytch solicita login del operador. No se cambió emisor, callback ni configuración del complemento.
 - Graphify query/update intentados: launcher bloqueado por Python 3.12 ausente. Grafo no actualizado.
 - No se migró producción, no se promovió ni integró main. Aceptación real en ChatGPT, segunda cuenta y revocación siguen pendientes.
+
+## Proveedor existente identificado — 27/09
+
+- Commit `fd1a8073002eb00e82e48e4c13149c59e20bfa9e`: CI `local-quality` y Vercel Preview aprobados.
+- Acceso al workspace Carmelita confirmado. Proyecto Consumer Test `project-test-cb008a21-ce71-47f2-aeb0-7b74552c810d`, dominio `https://abstracted-alpaca-5870.customers.stytch.dev`; ambos coinciden exactamente con los identificadores públicos recuperados de Vercel.
+- Existe el cliente DCR ChatGPT `connected-app-test-79f6ad6b-b401-47c0-9891-e8001ad9c0eb`. Callback observado: `https://chatgpt.com/connector/oauth/lgVZqqPqiew-`. Conservarlo; no sustituir por una URL genérica.
+- Authorization URL sigue en `https://carmelita-oauth-preview.vercel.app/oauth/authorize`. No se modificó antes de publicar una candidata compatible.
+- `STYTCH_SECRET`, proyecto, dominio y scopes existen sólo en Preview. Corrección tras esperar la carga completa del panel: sí existe una credencial creada el 11/08, con último uso mostrado el 13/08. El estado transitorio "None added" no acreditaba ausencia de credenciales. Falta comprobar la validez de la credencial configurada antes de reutilizarla. No se generaron ni rotaron credenciales.
+- No se creó otro workspace, proyecto ni cliente OAuth. Se conserva la sesión administrativa para continuar.
