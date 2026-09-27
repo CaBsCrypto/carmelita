@@ -252,3 +252,21 @@ test("introspection uses signed client_id when aud contains only the resource", 
   await assert.rejects(assertStytchOAuthTokenActive(token, { ...claims, clientId: "" }, config,
     async () => { assert.fail("ambiguous client must not submit a token"); }), /inactive_or_unavailable/);
 });
+
+test("resource JWT accepts client-bound introspection with independently valid expiry", async () => {
+  const config = readStytchOAuthResourceConfig({ ...oauthEnv,
+    STYTCH_CONNECTED_APPS_EXPECTED_AUDIENCE: "https://carmelita-agent.vercel.app/api/mcp/agent" });
+  const signed = await tokenWithKey({ audience: config.resource, scope: "agent:context" });
+  const claims = await verifyStytchOAuthJwt(signed.token, config, signed.publicKey);
+  const payload = decodeJwt(signed.token);
+  const active = { ...payload, aud: [claims.clientId], exp: payload.exp! - 1,
+    active: true, token_type: "access_token" };
+  await assertStytchOAuthTokenActive(signed.token, claims, config, async () => Response.json(active));
+  for (const change of [{ aud: ["unrelated-client"] }, { active: false }, { exp: 1 },
+    { client_id: "unrelated-client" }, { sub: "another-user" }, { scope: "agent:plan" }]) {
+    await assert.rejects(assertStytchOAuthTokenActive(signed.token, claims, config,
+      async () => Response.json({ ...active, ...change })), /inactive_or_unavailable/);
+  }
+  const wrongResource = await tokenWithKey({ audience: "https://other.example/mcp", scope: "agent:context" });
+  await assert.rejects(verifyStytchOAuthJwt(wrongResource.token, config, wrongResource.publicKey));
+});
