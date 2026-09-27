@@ -88,6 +88,27 @@ test("detects draft or inventory changes during verification", async () => {
     await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
   }
 });
+
+test("SSO redirects require an authenticated deny on the exact host and path", async () => {
+  const build = (status: number, location = "https://vercel.com/sso-api?next=test") => {
+    const f = fixture();
+    f.dependencies.request = async input => new Response(null, new URL(String(input)).pathname === "/api/health"
+      ? { status: 200 } : { status: 302, headers: { location } });
+    const authenticated: string[] = [];
+    f.dependencies.readProtectedStatus = async (hostname, pathname) => { authenticated.push(hostname + pathname); return status; };
+    return { ...f, authenticated };
+  };
+  const f = build(403);
+  await verifyFirewallMaintenance(evidence, f.dependencies);
+  assert.deepEqual(f.authenticated.sort(), hosts.flatMap(h => [h + "/agent", h + "/api/agent/wallets"]).sort());
+  for (const status of [200, 401, 302, 404, 410, 503]) await assert.rejects(verifyFirewallMaintenance(evidence, build(status).dependencies));
+  for (const location of ["https://vercel.com.attacker.test/sso-api", "http://vercel.com/sso-api", "https://vercel.com/login", "/sso-api"])
+    await assert.rejects(verifyFirewallMaintenance(evidence, build(403, location).dependencies));
+  const missing = build(403); delete missing.dependencies.readProtectedStatus;
+  await assert.rejects(verifyFirewallMaintenance(evidence, missing.dependencies));
+  const failed = build(403); failed.dependencies.readProtectedStatus = async () => { throw new Error("probe failed"); };
+  await assert.rejects(verifyFirewallMaintenance(evidence, failed.dependencies));
+});
 test("retired blocked hosts and orphan aliases may answer 410, live ones must stay 403", async () => {
   const build = () => {
     const f = fixture();

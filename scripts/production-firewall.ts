@@ -5,7 +5,7 @@ const teamId = "team_XjolcoWJ9V9yamVnCdpC7EMY";
 const publicHost = "carmelita-agent.vercel.app";
 type Json = Record<string, unknown>;
 type Reader = (path: string) => Promise<unknown>;
-export type FirewallDependencies = { read: Reader; request: typeof fetch; readQaHealth: (deploymentId: string) => Promise<unknown> };
+export type FirewallDependencies = { read: Reader; request: typeof fetch; readQaHealth: (deploymentId: string) => Promise<unknown>; readProtectedStatus?: (hostname: string, pathname: string) => Promise<number> };
 
 function reject(): never { throw new Error("production_migration_firewall_unverified"); }
 function object(value: unknown): Json {
@@ -32,6 +32,19 @@ export function firewallDependencies(cliPath: string): FirewallDependencies {
       } catch { return reject(); }
     },
     request: fetch,
+    readProtectedStatus: async (hostname, pathname) => {
+      host(hostname);
+      if (!["/agent", "/api/agent/wallets"].includes(pathname)) return reject();
+      try {
+        const output = execFileSync(process.execPath, [cliPath, "curl", pathname, "--deployment", `https://${hostname}`,
+          "--", "--silent", "--output", process.platform === "win32" ? "NUL" : "/dev/null", "--write-out", "%{http_code}", "--max-time", "15"], {
+          encoding: "utf8", windowsHide: true, timeout: 30000, maxBuffer: 1024,
+          stdio: ["ignore", "pipe", "pipe"],
+        }).trim();
+        if (!/^\d{3}$/.test(output)) return reject();
+        return Number(output);
+      } catch { return reject(); }
+    },
     readQaHealth: async (deploymentId) => {
       if (!/^dpl_[\w]+$/.test(deploymentId)) return reject();
       try {
@@ -106,8 +119,17 @@ export async function verifyFirewallMaintenance(
     if (checked.has(name)) return;
     for (const path of ["/agent", "/api/agent/wallets"]) {
       const result = await response(name, path);
-      const status = result.status;
+      let status = result.status;
+      const location = result.headers.get("location");
       await result.body?.cancel();
+      // SSO is not evidence of maintenance. Require the same host/path to deny
+      // after authenticated deployment access, while the published rule is checked.
+      if (status === 302 && location && dependencies.readProtectedStatus) {
+        let redirect: URL;
+        try { redirect = new URL(location); } catch { return reject(); }
+        if (redirect.origin !== "https://vercel.com" || redirect.pathname !== "/sso-api" || redirect.username || redirect.password) return reject();
+        status = await dependencies.readProtectedStatus(name, path);
+      }
       if (live ? status !== 403 : status !== 403 && status !== 410) return reject();
     }
     checked.add(name);
