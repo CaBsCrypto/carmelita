@@ -138,7 +138,10 @@ export function validateStytchOAuthClaims(
   const scopes = granted.filter((scope): scope is StytchAgentScope =>
     STYTCH_AGENT_SCOPES.includes(scope as StytchAgentScope));
   if (!scopes.length) throw new Error("stytch_oauth_scope_required");
-  return { issuer: config.issuer, subject: payload.sub, audiences, scopes };
+  if (typeof payload.client_id !== "string" || !/^[A-Za-z0-9_-]{1,256}$/.test(payload.client_id)) {
+    throw new Error("stytch_oauth_client_invalid");
+  }
+  return { issuer: config.issuer, subject: payload.sub, audiences, scopes, clientId: payload.client_id };
 }
 
 function jwksFor(url: string) {
@@ -207,6 +210,7 @@ export async function verifyStytchOAuthAccessToken(
       issuer: claims.issuer,
       subject: claims.subject,
       audiences: claims.audiences,
+      clientId: claims.clientId,
     };
   } catch (error) {
     console.warn("oauth_verification_rejected", { stage, reason: safeOAuthDiagnostic(error) });
@@ -239,10 +243,8 @@ export async function assertStytchOAuthTokenActive(
   fetcher: typeof fetch = fetch,
 ) {
   try {
-    // Additional resource audiences are allowed if the client remains unambiguous.
-    const clientAudiences = claims.audiences.filter((audience) => audience.startsWith("connected-app-"));
-    const clientId = claims.audiences.length === 1 ? claims.audiences[0]
-      : clientAudiences.length === 1 ? clientAudiences[0] : undefined;
+    // aud identifies the resource; the verified client_id identifies its OAuth client.
+    const clientId = claims.clientId;
     if (!clientId) throw new Error();
     const response = await fetcher(`${config.issuer}/v1/oauth2/introspect`, {
       method: "POST",
@@ -276,7 +278,7 @@ export function stytchPrincipalAuthInfo(
 ): AuthInfo {
   return {
     token,
-    clientId: principal.audiences[0] ?? `stytch:${principal.subject}`,
+    clientId: principal.clientId,
     scopes: principal.scopes,
     expiresAt: principal.expiresAt,
     extra: {
