@@ -259,13 +259,20 @@ export async function assertStytchOAuthTokenActive(
     if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
     const result = body as JWTPayload & { active?: unknown; client_id?: unknown; token_type?: unknown };
     if (result.active !== true || result.client_id !== clientId || result.token_type !== "access_token") throw new Error();
-    const current = validateStytchOAuthClaims(result, config);
+    // Stytch introspection identifies the client in aud, while a resource-bound
+    // signed JWT identifies the MCP resource. Validate each in its own context.
+    const current = validateStytchOAuthClaims(result, { ...config, expectedAudience: undefined });
+    const sameAudience = current.audiences.length === claims.audiences.length &&
+      current.audiences.every((audience) => claims.audiences.includes(audience));
+    const clientAudience = current.audiences.length === 1 && current.audiences[0] === clientId;
     if (current.subject !== claims.subject ||
-      current.audiences.length !== claims.audiences.length ||
-      current.audiences.some((audience) => !claims.audiences.includes(audience)) ||
+      (!sameAudience && !clientAudience) ||
       current.scopes.length !== claims.scopes.length ||
-      current.scopes.some((scope) => !claims.scopes.includes(scope)) ||
-      result.exp !== decodeJwt(token).exp) throw new Error();
+      current.scopes.some((scope) => !claims.scopes.includes(scope))) throw new Error();
+    // Both expirations must independently be valid. Introspection must never
+    // extend the lifetime already enforced by JWT signature/expiry validation.
+    const signedExpiry = decodeJwt(token).exp;
+    if (typeof signedExpiry !== "number" || signedExpiry <= Math.floor(Date.now() / 1000)) throw new Error();
   } catch {
     // Never surface a provider body, submitted token, or fetch exception.
     throw new Error("stytch_oauth_token_inactive_or_unavailable");
