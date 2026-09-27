@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { isDeepStrictEqual } from "node:util";
 
 const projectId = "prj_UQnTOdi1AWU6soTr04ACsqNo7YDu";
 const teamId = "team_XjolcoWJ9V9yamVnCdpC7EMY";
@@ -169,7 +170,7 @@ export async function verifyFirewallMaintenance(
   await health.body?.cancel();
   const finalConfig = await readConfig();
   verifyPublishedFirewall(finalConfig, evidence.ruleId);
-  if (JSON.stringify(finalConfig) !== JSON.stringify(initialConfig)) return reject();
+  if (!isDeepStrictEqual(finalConfig, initialConfig)) return reject();
   const finalDeployments = await inventory(dependencies.read, "/v6/deployments", "deployments");
   const finalAliases = await inventory(dependencies.read, "/v4/aliases", "aliases");
   const signature = (rows: Json[], keys: string[]) => JSON.stringify(rows.map(row => keys.map(key => row[key])).sort());

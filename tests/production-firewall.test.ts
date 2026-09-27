@@ -104,6 +104,27 @@ test("detects draft or inventory changes during verification", async () => {
   }
 });
 
+test("accepts reordered JSON object keys but rejects actual configuration changes", async () => {
+  function reorder(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(reorder);
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).reverse().map(([key, item]) => [key, reorder(item)]));
+    return value;
+  }
+  for (const changed of [false, true]) {
+    const f = fixture(), original = f.dependencies.read;
+    let calls = 0;
+    f.dependencies.read = async path => {
+      const result = await original(path);
+      if (!path.includes("firewall/config") || ++calls !== 2) return result;
+      const copy = structuredClone(f.config);
+      if (changed) copy.active.rules[0].conditionGroup[0].conditions[0].value = [...hosts, "new.vercel.app"];
+      return reorder(copy);
+    };
+    if (changed) await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
+    else assert.equal((await verifyFirewallMaintenance(evidence, f.dependencies)).blockedHosts, 2);
+  }
+});
+
 test("SSO redirects require an authenticated deny on the exact host and path", async () => {
   const build = (status: number, location = "https://vercel.com/sso-api?next=test") => {
     const f = fixture();

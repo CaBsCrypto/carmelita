@@ -84,3 +84,11 @@ La verificación completa detectó una URL retirada que devuelve 404 con `x-verc
 El ajuste de hosts retirados pasó lint, 624 pruebas (622 aprobadas, cero fallos, dos omisiones externas) y build. Graphify continúa bloqueado. Mantenimiento completo aprobado a las 09:30:58 UTC: 77 hosts bloqueados, ocho despliegues aislados, inventario y reglas estables.
 
 Respaldo final creado bajo ese mantenimiento a las 09:31:11 UTC: `br-morning-cake-at74w8rj`, nombre `carmelita-pre-oauth-release-20260927`, sin expiración. Copia separada desde ese respaldo: `br-wandering-queen-at4xt2qi`, `carmelita-restore-check-20260927`, expira 28/09 06:31 GMT-3. Comparación de esquema y hashes de todas las tablas en curso; todavía no se afirma restauración verificada ni se han aplicado migraciones.
+
+## Restauración verificada y corrección del guard — 27/09 09:48 UTC
+
+A las 09:32:16 UTC se verificaron las 41 tablas, sus hashes y esquema entre producción, respaldo y copia restaurada; producción permaneció estable. Evidencia privada sin credenciales: `work/final-backup-verification-20260927.json`.
+
+Los intentos protegidos de aplicación se detuvieron antes de las migraciones. Las inspecciones posteriores conservaron historial 20, únicamente 0020/0021 pendientes, ocho billeteras y ocho pagos con hashes idénticos. La verificación independiente del mantenimiento pasó a las 09:41:15 UTC con 77 hosts y nueve Previews aisladas.
+
+El diagnóstico identificó un falso rechazo al comparar JSON serializado del firewall: dos lecturas consecutivas tenían estructuras idénticas y distinto orden de claves. Se sustituyó por igualdad estructural estricta, conservando todos los campos y el rechazo de cambios reales. La regresión prueba ambos casos. Graphify update sigue bloqueado por el launcher Python 3.12 ausente; no se declara actualizado el grafo. La validación local del ajuste está en curso. Producción permanece en mantenimiento y sin migraciones aplicadas en este corte.
