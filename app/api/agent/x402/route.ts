@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { neon } from "@neondatabase/serverless";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { evaluateUserAction } from "@/app/agent-memory-store";
@@ -11,7 +10,6 @@ import {
 } from "@/app/connectors/defindex";
 import {
   getStellarTestnetAccount,
-  fundStellarTestnetWallet,
   verifyStellarSignature,
   verifyPrivyAccessToken,
 } from "@/app/privy-stellar";
@@ -20,8 +18,6 @@ import {
   X402_TESTNET_USDC,
 } from "@/app/x402/assets";
 import {
-  createSignedX402Payload,
-  isPreparedX402Authorization,
   prepareX402ClientAuthorization,
   stellarClientSignatureBytes,
 } from "@/app/x402/client-authorization";
@@ -33,119 +29,54 @@ import {
 } from "@/app/x402/testnet-faucet";
 import {
   inspectX402Resource,
-  payPreparedX402Resource,
 } from "@/app/x402/protocol";
-import { guardX402Execution } from "@/app/x402/execution-guard";
-import { getDatabaseUrl, getDb, hasDatabase } from "@/db";
+import { getDb, hasDatabase } from "@/db";
 import {
   agentActivities,
   agentStellarActions,
   agentTestnetFaucetClaims,
-  agentWallets,
   agentX402Events,
   agentX402Payments,
 } from "@/db/schema";
+import { listPersistedUserWallets } from "@/app/multichain-account";
+
+import { createX402ExecutionService, safeX402Error } from "@/app/x402/service";
+import { publicX402Payment as publicPayment } from "@/app/x402/view";
+import { assertX402Preconditions } from "@/app/x402/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const prepareSchema = z.object({
   action: z.literal("prepare"),
   requestId: z.string().trim().min(8).max(100),
-});
+}).strict();
 const prepareTrustlineSchema = z.object({
   action: z.literal("prepare_trustline"),
   requestId: z.string().trim().min(8).max(100),
-});
+}).strict();
 const executeTrustlineSchema = z.object({
   action: z.literal("execute_trustline"),
   approvalId: z.string().uuid(),
   explicitConfirmation: z.literal(true),
   signature: z.string().regex(/^0x[0-9a-fA-F]{128}$/),
-});
+}).strict();
 const executeSchema = z.object({
   action: z.literal("execute"),
   paymentId: z.string().uuid(),
   explicitConfirmation: z.literal(true),
   signature: z.string().regex(/^0x[0-9a-fA-F]{128}$/).optional(),
-});
+}).strict();
 const claimTestnetUsdcSchema = z.object({
   action: z.literal("claim_testnet_usdc"),
 });
 
-let schemaPromise: Promise<void> | null = null;
-async function ensureSchema() {
-  if (schemaPromise) return schemaPromise;
-  schemaPromise = (async () => {
-    const url = getDatabaseUrl();
-    if (!url) throw new Error("database_not_configured");
-    const sql = neon(url);
-    await sql.query(`CREATE TABLE IF NOT EXISTS agent_x402_payments (
-      id text PRIMARY KEY,
-      user_id text NOT NULL REFERENCES agent_users(id) ON DELETE CASCADE,
-      wallet_id text NOT NULL,
-      wallet_address text NOT NULL,
-      resource_url text NOT NULL,
-      network text NOT NULL,
-      asset_contract text NOT NULL,
-      pay_to text NOT NULL,
-      amount_atomic numeric(30,0) NOT NULL,
-      amount_display numeric(20,7) NOT NULL,
-      status text NOT NULL DEFAULT 'prepared',
-      idempotency_key text NOT NULL,
-      payment_required jsonb NOT NULL,
-      settlement jsonb,
-      transaction_hash text,
-      resource_preview text,
-      expires_at timestamptz NOT NULL,
-      error text,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
-      confirmed_at timestamptz
-    )`, []);
-    await sql.query("CREATE UNIQUE INDEX IF NOT EXISTS agent_x402_payments_idempotency_uidx ON agent_x402_payments(idempotency_key)", []);
-    await sql.query("CREATE UNIQUE INDEX IF NOT EXISTS agent_x402_payments_tx_hash_uidx ON agent_x402_payments(transaction_hash)", []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_x402_payments_user_created_idx ON agent_x402_payments(user_id, created_at)", []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_x402_payments_status_idx ON agent_x402_payments(status)", []);
-    await sql.query(`CREATE TABLE IF NOT EXISTS agent_x402_events (
-      id text PRIMARY KEY,
-      payment_id text NOT NULL REFERENCES agent_x402_payments(id) ON DELETE CASCADE,
-      user_id text NOT NULL REFERENCES agent_users(id) ON DELETE CASCADE,
-      event_type text NOT NULL,
-      payload jsonb NOT NULL DEFAULT '{}'::jsonb,
-      created_at timestamptz NOT NULL DEFAULT now()
-    )`, []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_x402_events_payment_created_idx ON agent_x402_events(payment_id, created_at)", []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_x402_events_user_created_idx ON agent_x402_events(user_id, created_at)", []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_x402_events_type_idx ON agent_x402_events(event_type)", []);
-
-    await sql.query(`CREATE TABLE IF NOT EXISTS agent_testnet_faucet_claims (
-      id text PRIMARY KEY,
-      user_id text NOT NULL REFERENCES agent_users(id) ON DELETE CASCADE,
-      wallet_address text NOT NULL,
-      asset text NOT NULL,
-      amount numeric(20,7) NOT NULL,
-      claim_window text NOT NULL,
-      status text NOT NULL DEFAULT 'pending',
-      transaction_hash text,
-      error text,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )`, []);
-    await sql.query("CREATE UNIQUE INDEX IF NOT EXISTS agent_testnet_faucet_claims_user_asset_window_uidx ON agent_testnet_faucet_claims(user_id, asset, claim_window)", []);
-    await sql.query("CREATE UNIQUE INDEX IF NOT EXISTS agent_testnet_faucet_claims_tx_hash_uidx ON agent_testnet_faucet_claims(transaction_hash)", []);
-    await sql.query("CREATE INDEX IF NOT EXISTS agent_testnet_faucet_claims_status_idx ON agent_testnet_faucet_claims(status)", []);
-  })().catch((error) => {
-    schemaPromise = null;
-    throw error;
-  });
-  return schemaPromise;
-}
-
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
-  return !origin || !host || new URL(origin).host === host;
+  try { return !origin || (Boolean(host) && new URL(origin).origin === new URL(request.url).origin); }
+  catch { return false; }
 }
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") ?? "";
@@ -154,52 +85,22 @@ function bearerToken(request: Request) {
     : "";
 }
 async function auth(request: Request) {
-  if (!sameOrigin(request)) throw new Error("invalid_origin");
+  if (!sameOrigin(request)) throw new Error("x402_invalid_origin");
   const accessToken = bearerToken(request);
-  const claims = await verifyPrivyAccessToken(accessToken);
-  return { userId: claims.user_id, accessToken };
+  if (!accessToken) throw new Error("x402_authorization_required");
+  try { const claims = await verifyPrivyAccessToken(accessToken); return { userId: claims.user_id }; }
+  catch { throw new Error("x402_authorization_invalid"); }
 }
 async function userWallet(userId: string) {
   if (!hasDatabase()) throw new Error("database_not_configured");
-  await ensureSchema();
-  const rows = await getDb()
-    .select({ id: agentWallets.id, address: agentWallets.address, network: agentWallets.network })
-    .from(agentWallets)
-    .where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, "stellar")))
-    .limit(1);
-  if (!rows[0] || rows[0].network !== "stellar:testnet") {
+  const wallet = (await listPersistedUserWallets(userId)).find((candidate) =>
+    candidate.userId === userId && candidate.network === "stellar:testnet" && candidate.chainType === "stellar"
+    && (candidate.status === "active" || candidate.status === "pending"),
+  );
+  if (!wallet) {
     throw new Error("stellar_wallet_not_ready");
   }
-  return rows[0];
-}
-function publicPayment(row: typeof agentX402Payments.$inferSelect) {
-  const prepared = isPreparedX402Authorization(row.paymentRequired)
-    ? row.paymentRequired
-    : null;
-  return {
-    id: row.id,
-    signingAddress: row.walletAddress,
-    signingHash: prepared?.authorizationHash ?? null,
-    resourceUrl: row.resourceUrl,
-    network: row.network,
-    asset: "USDC",
-    assetContract: row.assetContract,
-    payTo: row.payTo,
-    amount: row.amountDisplay,
-    status: row.status,
-    transactionHash: row.transactionHash,
-    explorerUrl: row.transactionHash
-      ? `https://stellar.expert/explorer/testnet/tx/${row.transactionHash}`
-      : null,
-    resourcePreview: row.resourcePreview,
-    evidence: row.settlement &&
-      typeof row.settlement.resourceEvidence === "object"
-      ? row.settlement.resourceEvidence
-      : null,
-    expiresAt: row.expiresAt.toISOString(),
-    confirmedAt: row.confirmedAt?.toISOString() ?? null,
-    error: row.error,
-  };
+  return { id: wallet.id, address: wallet.address, network: wallet.network };
 }
 function publicTrustline(row: typeof agentStellarActions.$inferSelect) {
   return {
@@ -245,9 +146,31 @@ async function appendX402Event(
   });
 }
 
+const payments = createX402ExecutionService({
+  findPayment,
+  preflight: async (payment) => {
+    const wallet = await userWallet(payment.userId);
+    if (wallet.id !== payment.walletId || wallet.address !== payment.walletAddress) throw new Error("x402_wallet_changed");
+    assertX402Preconditions(await getStellarTestnetAccount(wallet.address), payment.amountAtomic);
+  },
+});
+
+function failure(error: unknown) {
+  const message = safeX402Error(error);
+  const status = message === "x402_invalid_origin" ? 403 : message.includes("authorization_required") || message.includes("authorization_invalid") ? 401
+    : message.endsWith("not_found") ? 404 : /expired|reconciliation|requires_fresh_review|concurrent|changed/.test(message) ? 409 : 400;
+  return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
 export async function GET(request: Request) {
   try {
     const { userId } = await auth(request);
+    const params = new URL(request.url).searchParams;
+    if ([...params.keys()].some(k => k !== "paymentId") || params.getAll("paymentId").length > 1) throw new Error("x402_query_invalid");
+    if (params.has("paymentId")) {
+      const paymentId = z.string().uuid().parse(params.get("paymentId"));
+      return NextResponse.json({ payment: publicPayment(await findPayment(userId, paymentId)) }, { headers: { "Cache-Control": "no-store" } });
+    }
     const wallet = await userWallet(userId);
     const account = await getStellarTestnetAccount(wallet.address);
     const usdc = account.balances.find(
@@ -256,7 +179,11 @@ export async function GET(request: Request) {
     const recent = await getDb().select().from(agentX402Payments)
       .where(eq(agentX402Payments.userId, userId))
       .orderBy(desc(agentX402Payments.createdAt)).limit(5);
+    const [pending] = await getDb().select().from(agentX402Payments).where(and(
+      eq(agentX402Payments.userId, userId), inArray(agentX402Payments.status, ["prepared", "signing", "reconciliation_required"]),
+    )).orderBy(desc(agentX402Payments.createdAt)).limit(1);
     return NextResponse.json({
+      pendingPayment: pending ? publicPayment(pending) : null,
       wallet: { address: wallet.address, exists: account.exists },
       x402Usdc: {
         trustlineActive: Boolean(usdc),
@@ -268,17 +195,22 @@ export async function GET(request: Request) {
       },
       resource: X402_TESTNET_RESOURCE,
       recent: recent.map(publicPayment),
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "x402_status_failed" }, { status: 400 });
+    return failure(error);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const { userId } = await auth(request);
-    const wallet = await userWallet(userId);
     const body = await request.json();
+    const reconcile = z.object({ action: z.literal("reconcile"), paymentId: z.string().uuid() }).strict().safeParse(body);
+    if (reconcile.success) {
+      const result = await payments.reconcile(userId, reconcile.data.paymentId);
+      return NextResponse.json({ ...result, payment: publicPayment(result.payment) }, { headers: { "Cache-Control": "no-store" } });
+    }
+    const wallet = await userWallet(userId);
     const claimTestnetUsdc = claimTestnetUsdcSchema.safeParse(body);
     if (claimTestnetUsdc.success) {
       const readiness = getInternalTestnetFaucetReadiness();
@@ -359,16 +291,8 @@ export async function POST(request: Request) {
 
     const prepareTrustline = prepareTrustlineSchema.safeParse(body);
     if (prepareTrustline.success) {
-      let account = await getStellarTestnetAccount(wallet.address);
-      if (!account.exists) {
-        const funding = await fundStellarTestnetWallet(wallet.address);
-        await getDb().insert(agentActivities).values({
-          id: randomUUID(), userId, eventType: "testnet.friendbot.funded",
-          summary: "Activated the Privy wallet on Stellar Testnet",
-          metadata: { walletAddress: wallet.address, transactionHash: funding.transactionHash },
-        });
-        account = await getStellarTestnetAccount(wallet.address);
-      }
+      const account = await getStellarTestnetAccount(wallet.address);
+      if (!account.exists) throw new Error("x402_stellar_account_not_active");
       const existing = account.balances.find((balance) => balance.asset === "USDC" && balance.issuer === X402_TESTNET_USDC.issuer);
       if (existing) return NextResponse.json({ alreadyComplete: true, balance: existing.balance });
       const decision = await evaluateUserAction(userId, { actionType: "stellar.trustline.x402_usdc", network: "stellar:testnet", asset: "USDC", amount: 0, financial: true, irreversible: true });
@@ -386,127 +310,21 @@ export async function POST(request: Request) {
     }
     const execute = executeSchema.safeParse(body);
     if (execute.success) {
-      let payment = await findPayment(userId, execute.data.paymentId);
-      const guard = guardX402Execution(payment.status);
-      if (guard.action === "replay") {
-        await Promise.allSettled([appendX402Event(payment.id, userId, "replay_returned", {
-          transactionHash: payment.transactionHash,
-          status: payment.status,
-        })]);
-        return NextResponse.json({ replayed: true, payment: publicPayment(payment) });
-      }
-      if (guard.action === "reject") throw new Error(guard.error);
-      if (payment.expiresAt.getTime() <= Date.now()) throw new Error("x402_approval_expired");
-      if (!isPreparedX402Authorization(payment.paymentRequired)) {
-        throw new Error("x402_payment_requires_fresh_review");
-      }
-      if (!execute.data.signature) {
-        throw new Error("x402_authorization_signature_required");
-      }
-      const signedPayload = await createSignedX402Payload({
-        prepared: payment.paymentRequired,
-        address: payment.walletAddress,
-        signature: execute.data.signature,
-      });
-      const claimed = await getDb()
-        .update(agentX402Payments)
-        .set({ status: "signing", updatedAt: new Date(), error: null })
-        .where(and(
-          eq(agentX402Payments.id, payment.id),
-          eq(agentX402Payments.userId, userId),
-          eq(agentX402Payments.status, "prepared"),
-        ))
-        .returning({ id: agentX402Payments.id });
-      if (!claimed.length) {
-        payment = await findPayment(userId, payment.id);
-        const latestGuard = guardX402Execution(payment.status);
-        if (latestGuard.action === "replay") {
-          await Promise.allSettled([appendX402Event(payment.id, userId, "replay_returned", {
-            transactionHash: payment.transactionHash,
-            status: payment.status,
-            concurrentRequest: true,
-          })]);
-          return NextResponse.json({ replayed: true, payment: publicPayment(payment) });
-        }
-        throw new Error(
-          latestGuard.action === "reject"
-            ? latestGuard.error
-            : "x402_payment_concurrent_execution",
-        );
-      }
-      await Promise.allSettled([appendX402Event(payment.id, userId, "execution_claimed", {
-        walletAddress: payment.walletAddress,
-        amount: payment.amountDisplay,
-        asset: "USDC",
-      })]);
-      try {
-        const result = await payPreparedX402Resource({
-          resourceUrl: payment.resourceUrl,
-          frozen: signedPayload.requirement,
-          x402Version: signedPayload.x402Version,
-          transaction: signedPayload.transaction,
-        });
-        const transactionHash = result.settlement?.transaction ?? null;
-        if (!transactionHash) {
-          throw new Error("x402_settlement_transaction_missing");
-        }
-        const now = new Date();
-        const resourceEvidence = {
-          status: result.resourceStatus,
-          contentType: result.resourceContentType,
-          sha256: result.resourceSha256,
-          deliveredAt: now.toISOString(),
-        };
-        await getDb().update(agentX402Payments).set({
-          status: "confirmed",
-          settlement: {
-            ...(result.settlement
-              ? result.settlement as unknown as Record<string, unknown>
-              : {}),
-            resourceEvidence,
-          },
-          transactionHash,
-          resourcePreview: result.resourcePreview,
-          confirmedAt: now,
-          updatedAt: now,
-          error: null,
-        }).where(eq(agentX402Payments.id, payment.id));
-        await Promise.allSettled([
-          appendX402Event(payment.id, userId, "settled", {
-            transactionHash,
-            settlement: result.settlement,
-          }),
-          appendX402Event(payment.id, userId, "resource_delivered", resourceEvidence),
-          getDb().insert(agentActivities).values({
-            id: randomUUID(), userId, eventType: "x402.payment.confirmed",
-            summary: "Paid the Stellar x402 Testnet demo with Privy",
-            metadata: { paymentId: payment.id, transactionHash, amount: payment.amountDisplay, asset: "USDC" },
-          }),
-        ]);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "x402_payment_failed";
-        await getDb().update(agentX402Payments).set({
-          status: "reconciliation_required",
-          error: errorMessage,
-          updatedAt: new Date(),
-        }).where(and(
-          eq(agentX402Payments.id, payment.id),
-          eq(agentX402Payments.status, "signing"),
-        ));
-        await getDb().insert(agentActivities).values({
-          id: randomUUID(), userId, eventType: "x402.payment.reconciliation_required",
-          summary: "Stopped automatic retries after an ambiguous x402 result",
-          metadata: { paymentId: payment.id, error: errorMessage },
-        }).catch(() => undefined);
-        throw error;
-      }
-      payment = await findPayment(userId, payment.id);
-      return NextResponse.json({ replayed: false, payment: publicPayment(payment) });
+      const result = await payments.execute(userId, execute.data.paymentId, execute.data.signature);
+      return NextResponse.json({ ...result, payment: publicPayment(result.payment) }, { headers: { "Cache-Control": "no-store" } });
     }
 
     const prepare = prepareSchema.safeParse(body);
     if (!prepare.success) throw new Error("invalid_x402_request");
+    const key = createHash("sha256").update(`x402:${userId}:${prepare.data.requestId}`).digest("hex");
+    const [previous] = await getDb().select().from(agentX402Payments).where(and(eq(agentX402Payments.userId, userId), eq(agentX402Payments.idempotencyKey, key))).limit(1);
+    if (previous) return NextResponse.json({ replayed: true, payment: publicPayment(previous) }, { headers: { "Cache-Control": "no-store" } });
+    const [unresolved] = await getDb().select().from(agentX402Payments).where(and(
+      eq(agentX402Payments.userId, userId), inArray(agentX402Payments.status, ["signing", "reconciliation_required"]),
+    )).limit(1);
+    if (unresolved) throw new Error("x402_payment_reconciliation_required");
     const challenge = await inspectX402Resource(X402_TESTNET_RESOURCE);
+    assertX402Preconditions(await getStellarTestnetAccount(wallet.address), challenge.requirement.amount);
     const decision = await evaluateUserAction(userId, {
       actionType: "x402.payment",
       network: challenge.requirement.network,
@@ -524,10 +342,10 @@ export async function POST(request: Request) {
       address: wallet.address,
     });
     const approvalLifetimeMs = Math.max(
-      15_000,
+      1_000,
       Math.min(5 * 60_000, challenge.requirement.maxTimeoutSeconds * 1_000 - 5_000),
     );
-    const key = createHash("sha256").update(`x402:${userId}:${prepare.data.requestId}`).digest("hex");
+
     const inserted = await getDb().insert(agentX402Payments).values({
       id: randomUUID(), userId, walletId: wallet.id, walletAddress: wallet.address,
       resourceUrl: X402_TESTNET_RESOURCE,
@@ -560,13 +378,6 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ replayed: inserted.length === 0, decision, payment: publicPayment(rows[0]) });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "x402_request_failed";
-    const conflict = [
-      "expired", "reconciliation", "requires_new_review", "concurrent_execution",
-    ].some((code) => message.includes(code));
-    const status = message.includes("authorization")
-      ? 401
-      : conflict ? 409 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return failure(error);
   }
 }

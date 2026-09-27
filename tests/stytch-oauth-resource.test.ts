@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { generateKeyPair, SignJWT } from "jose";
+import { decodeJwt, generateKeyPair, SignJWT } from "jose";
 import { GET as protectedResourceMetadata } from "../app/.well-known/oauth-protected-resource/route";
 import {
   STYTCH_AGENT_SCOPES,
+  assertStytchOAuthTokenActive,
   agentOAuthBearerChallenge,
   readStytchOAuthResourceConfig,
   stytchProtectedResourceMetadata,
@@ -159,4 +160,72 @@ test("PAT and Privy fallbacks remain separate from the Stytch issuer path", asyn
   const privy = auth.indexOf("verifyPrivyAccessToken(token)");
   assert.ok(pat >= 0 && stytch > pat && privy > stytch);
   assert.doesNotMatch(auth, /agent:sign|agent:execute|agent:submit/);
+});
+
+test("public-client introspection rejects a revoked unexpired JWT and checks again after reconnection", async () => {
+  const config = readStytchOAuthResourceConfig(oauthEnv);
+  const old = await tokenWithKey({ scope: "agent:context" });
+  const fresh = await tokenWithKey({ scope: "agent:context" });
+  let revoked = false;
+  let calls = 0;
+  const fetcher: typeof fetch = async (url, init) => {
+    calls++;
+    assert.equal(url, `${config.issuer}/v1/oauth2/introspect`);
+    assert.equal(init?.cache, "no-store");
+    assert.equal(init?.redirect, "error");
+    assert.ok(init?.signal);
+    const form = new URLSearchParams(String(init?.body));
+    assert.equal(form.get("client_id"), "carmelita-test-client");
+    assert.equal(form.get("token_type_hint"), "access_token");
+    assert.equal(form.has("client_secret"), false);
+    const token = form.get("token")!;
+    return Response.json(revoked && token === old.token ? { active: false } : {
+      ...decodeJwt(token), active: true, client_id: "carmelita-test-client", token_type: "access_token",
+    });
+  };
+  const claims = await verifyStytchOAuthJwt(old.token, config, old.publicKey);
+  await assertStytchOAuthTokenActive(old.token, claims, config, fetcher);
+  revoked = true;
+  // Its signature and expiry still pass; only live introspection sees revocation.
+  await verifyStytchOAuthJwt(old.token, config, old.publicKey);
+  await assert.rejects(assertStytchOAuthTokenActive(old.token, claims, config, fetcher), /inactive_or_unavailable/);
+  await assertStytchOAuthTokenActive(fresh.token, await verifyStytchOAuthJwt(fresh.token, config, fresh.publicKey), config, fetcher);
+  await assert.rejects(assertStytchOAuthTokenActive(old.token, claims, config, fetcher), /inactive_or_unavailable/);
+  assert.equal(calls, 4);
+});
+
+test("introspection fails closed on provider failures, malformed data and mismatched identity without exposing input", async () => {
+  const config = readStytchOAuthResourceConfig(oauthEnv);
+  const signed = await tokenWithKey({ scope: "agent:context" });
+  const claims = await verifyStytchOAuthJwt(signed.token, config, signed.publicKey);
+  const active = { ...decodeJwt(signed.token), active: true, client_id: "carmelita-test-client", token_type: "access_token" };
+  const failures: Array<typeof fetch> = [
+    async () => { throw new Error(`timeout ${signed.token}`); },
+    async () => new Response(signed.token, { status: 503 }),
+    async () => new Response("invalid JSON"),
+    ...[null, [], { ...active, active: "true" }, { ...active, sub: "other-user" },
+      { ...active, iss: "https://other.example" }, { ...active, scope: "agent:plan" },
+      { ...active, aud: "other-client" }, { ...active, client_id: "other-client" },
+      { ...active, token_type: "refresh_token" }, { ...active, exp: 1 }].map((body) => async () => Response.json(body)),
+  ];
+  for (const fetcher of failures) {
+    await assert.rejects(assertStytchOAuthTokenActive(signed.token, claims, config, fetcher), {
+      message: "stytch_oauth_token_inactive_or_unavailable",
+    });
+  }
+});
+
+test("introspection accepts additional audiences only with one identifiable Connected App client", async () => {
+  const config = readStytchOAuthResourceConfig({ ...oauthEnv, STYTCH_CONNECTED_APPS_EXPECTED_AUDIENCE: "" });
+  const { privateKey } = await generateKeyPair("RS256");
+  const token = await new SignJWT({ scope: "agent:context" }).setProtectedHeader({ alg: "RS256" })
+    .setIssuer(config.issuer).setSubject("user-test-1")
+    .setAudience(["https://resource.example", "connected-app-test-one"]).setExpirationTime("5m").sign(privateKey);
+  const claims = validateStytchOAuthClaims(decodeJwt(token), config);
+  await assertStytchOAuthTokenActive(token, claims, config, async (_url, init) => {
+    assert.equal(new URLSearchParams(String(init?.body)).get("client_id"), "connected-app-test-one");
+    return Response.json({ ...decodeJwt(token), active: true, client_id: "connected-app-test-one", token_type: "access_token" });
+  });
+  await assert.rejects(assertStytchOAuthTokenActive(token, { ...claims, audiences: ["resource-1", "resource-2"] }, config,
+    async () => { assert.fail("ambiguous client must not submit a token"); }), /inactive_or_unavailable/);
 });

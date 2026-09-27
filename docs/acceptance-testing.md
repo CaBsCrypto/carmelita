@@ -1,173 +1,153 @@
 # Acceptance testing
 
-The acceptance runner gives the project one repeatable way to check local quality, deployed contracts, Stellar Testnet readiness and, when explicitly authorized, the complete Privy x402 flow.
+## Current workflow — September 8, 2026
 
-## Commands
+This delivery validates an isolated Carmelita Preview: application contracts, dedicated test identities, registered wallets and the read/planning Gateway. Production remains at `https://carmelita-agent.vercel.app/`. No funding, trustline preparation, signature, payment, reservation or Bazaar mutation belongs to this workflow.
 
-| Command | External effects | Purpose |
-| --- | --- | --- |
-| `npm run qa:local` | None beyond local build files | Lint, automated tests and production build |
-| `npm run acceptance:doctor` | Read-only HTTP and Horizon requests | Production health, MCP discovery, official x402 challenge and distributor balances |
-| `npm run acceptance:travala` | Read-only remote MCP request | Reproducible future hotel search and normalized inventory |
-| `npm run acceptance:authenticated` | May create/persist the dedicated Privy test user and wallet | Verifies Privy identity, bootstrap and wallet binding without signing or paying |
-| `npm run acceptance:second-user:start` | Friendbot Testnet funding | Fresh identity, distinct wallet and XLM activation |
-| `npm run acceptance:second-user:fund-usdc` | Sends 0.50 Testnet USDC | Continues after the human trustline signature |
-| `npm run acceptance:second-user:verify` | Read-only API and Horizon checks | Verifies one 0.01 payment, final balance, resource and receipt |
-| `npm run x402:replay:confirmed` | Read-only replay of an existing Testnet payment | Same payment ID, same receipt and zero second debit |
-| `npm run x402:replay:execute` | One real `0.01 USDC` Testnet payment | First execution plus exact-body replay with balance assertions |
-| `npm run qa` | Local QA plus production doctor | Final post-deploy gate |
+The commands below describe the current runner interfaces. They are not evidence that a deployment or human acceptance has passed. Save the actual dated output together with the reviewed commit and deployment.
 
-Add `-- --json` to an acceptance command for a machine-readable report.
+For the current PR #28 Preview, administrator access uses the server-verified
+Privy allowlist (`CARMELITA_ADMIN_EMAILS`). The password-based wallet-registry
+runner below is a legacy interface and cannot authenticate this configuration.
+Keep the allowlist enabled. Use the visible `/admin/login` flow and
+`/admin/wallets` for the registry check; `/preview-acceptance` supports the
+real-session ownership checks without exporting tokens. Close both Privy and
+administrator sessions when switching accounts. The completed two-user evidence
+and its limits are in [the dated report](real-user-preview-acceptance-2026-09-08.md).
 
-## Safe default: doctor
+| Command | Effects and coverage |
+| --- | --- |
+| `npm run qa:local` | Local lint, tests and build; no deployment or migration |
+| `npm run acceptance:doctor -- --url URL --json` | Public HTTP contracts, official x402 challenge and distributor balances; external reads only |
+| `npm run acceptance:travala -- --url URL --json` | Doctor checks plus a live future hotel search; no reservation |
+| `npm run acceptance:authenticated -- --url URL --deployment DEPLOYMENT --commit SHA40 --json` | Protected Preview contracts and authenticated persisted wallet status; no bootstrap by default |
+| Same authenticated command with `--allow-bootstrap` | Explicitly provisions the dedicated test user's records and wallets, repeats bootstrap, then compares all three addresses |
+| `npm run gateway:preview:acceptance -- --url URL --deployment DEPLOYMENT --commit SHA40` | Creates synthetic test PATs and planning fixtures in the isolated database; verifies REST/MCP authorization, idempotency and revocation; cleans up exact fixture IDs |
+| `npm run wallets:preview:acceptance -- --url URL --deployment DEPLOYMENT --commit SHA40 --email USER_A --second-email USER_B` | Legacy password-admin runner; unavailable with the current Privy allowlist. Use the visible administration flow above. |
+| `npm run acceptance:execute` | Disabled: exits before requests with `automatic_payment_execution_disabled_use_visible_application_approval` |
 
-~~~powershell
-npm run acceptance:doctor
-~~~
+`acceptance:doctor` and `acceptance:travala` have no default production URL. `qa:production` delegates to doctor, so it also needs an explicit URL through its arguments or `AGENT_ACCEPTANCE_BASE_URL`. `npm run qa` is not a self-contained release gate without that configuration. Keep external checks separate from local CI.
 
-This mode never signs a transaction, requests Friendbot funding, claims faucet USDC or changes database state. It verifies:
+## Select and verify the isolated Preview
 
-1. Testnet-only constants and payment limits.
-2. Production `/api/health` semantics.
-3. The deployed `/agent` route.
-4. MCP discovery and its payment boundary.
-5. The live HTTP 402 challenge from the official Stellar demo.
-6. The pinned distributor account, exact Circle Testnet USDC trustline and minimum XLM/USDC balances.
+Before any authenticated run, provision a dedicated empty test database, apply its migrations separately from the build, and verify that the branch-scoped Vercel variables point to that resource. Do not copy production users or credentials into it.
 
-Any failed check exits with code `1`.
+All three authenticated runners require a target URL, deployment and full 40-character commit. Supply the command-line flags above or the documented environment equivalents:
 
-## Authenticated mode
+| Variable | Requirement |
+| --- | --- |
+| `CARMELITA_PREVIEW_ISOLATED` | Must be exactly `true` |
+| `CARMELITA_PREVIEW_DATABASE_HOST` | Exact isolated database endpoint hostname; the guard normalizes Neon's `-pooler` suffix |
+| `CARMELITA_PREVIEW_DATABASE_URL` | Required dedicated runtime connection for the isolated resource, with TLS |
+| `CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED` | Required dedicated direct migration connection to the same database with the same identity; a pooled migration URL is rejected |
+| `CARMELITA_PRODUCTION_DATABASE_HOST` | Optional explicit production-host comparison; if supplied, it must differ from the isolated host |
+| `CARMELITA_PREVIEW_ORIGIN` | Exact HTTPS application origin; no path, credentials, query or fragment |
+| `CARMELITA_PREVIEW_DEPLOYMENT` | Explicit selected Vercel deployment; `--deployment` must agree with it |
+| `CARMELITA_PREVIEW_COMMIT` | Full reviewed commit, used when `--commit` is omitted |
+| `AGENT_ACCEPTANCE_BASE_URL` | URL fallback for `acceptance.ts`; `--url` must still match the isolated origin in authenticated mode |
+| `CARMELITA_PREVIEW_URL` | URL fallback for the Gateway and wallet-registry runners |
+| `AGENT_ACCEPTANCE_PRIVY_TOKEN` | Temporary token for one exclusive Privy test identity; authenticated runner only |
+| `CARMELITA_ADMIN_USERNAME`, `CARMELITA_ADMIN_PASSWORD` | Legacy password-admin credentials; not used or supported by the current Privy-only Preview |
 
-Interactive Privy login cannot be safely automated by pretending that an email OTP is a permanent credential. The runner therefore accepts only a temporary access token for a dedicated test identity.
+Provide secrets through the session's approved secret mechanism. These runners do not read `.env.migrate` or automatically load another environment file. A local variable declaration alone does not prove the remote deployment uses that database.
 
-~~~powershell
-$env:AGENT_ACCEPTANCE_PRIVY_TOKEN = Read-Host "Temporary Privy test token"
-npm run acceptance:authenticated
-Remove-Item Env:AGENT_ACCEPTANCE_PRIVY_TOKEN
-~~~
+Preview runtime, isolated migrations and authenticated acceptance use the two dedicated `CARMELITA_PREVIEW_DATABASE_URL*` connections. They ignore the legacy `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `DATABASE_URL_DATABASE_URL` and `DATABASE_URL_DATABASE_URL_UNPOOLED` variables in this workflow. Marketplace integrations can supply those legacy names with other values, so they are never a Preview fallback. If either dedicated connection is missing or invalid, the operation fails before authenticated work; it must not use an inherited production connection. Production retains its existing database configuration.
 
-Never commit the token, place it in `.env.example`, paste it into an issue or reuse a personal production session. A future CI setup should refresh a dedicated test identity through an approved Privy test-auth flow or secret manager.
+Before issuing PATs, logging in as administrator or invoking bootstrap, the runners read the selected deployment's `/api/health` and require all of the following:
 
-## Confirmed-payment replay audit
+- `previewIsolation.verified` is `true`.
+- Its database fingerprint matches the local acceptance database. The fingerprint is SHA-256 of the normalized hostname plus `/` plus the database path without its leading slash; it contains no credentials.
+- `deployment.environment` is `preview`.
+- `deployment.gitCommitSha` matches the exact requested commit.
 
-The safest live check starts from the most recent confirmed x402 payment. It sends
-the same `paymentId` back through the authenticated endpoint, compares the wallet
-balance before and after, requires `replayed: true`, and verifies the original
-transaction hash against Horizon Testnet.
+Missing metadata, a production deployment, a changed commit, a different database or a URL/deployment mismatch blocks authenticated work. Failed remote verification is reported with the remaining authenticated work pending.
 
-~~~powershell
-$env:AGENT_ACCEPTANCE_PRIVY_TOKEN = Read-Host "Temporary Privy access token"
-npm run x402:replay:confirmed
-Remove-Item Env:AGENT_ACCEPTANCE_PRIVY_TOKEN
-~~~
+Authenticated HTTP requests use `vercel curl` through the authorized local Vercel CLI session. The folder must already be linked to the correct Vercel project and that session must have access to the selected deployment. Keep Preview protection enabled. The runners do not follow HTTP redirects or silently switch to production. Bootstrap and administrator requests include the selected origin. Tokens, administrator cookies and database connection strings must never be copied into evidence, screenshots or Git.
 
-Set `AGENT_ACCEPTANCE_X402_PAYMENT_ID` and
-`AGENT_ACCEPTANCE_X402_TRANSACTION_HASH` to audit a specific older receipt. This
-mode does not sign or settle a transaction. It will fail if the replay changes
-the balance, hash, payment ID, network or confirmed state.
+## Execute checks without funding or payments
 
-## First execution plus exact replay
+### Public diagnostics
 
-The strict mutation proof starts with a prepared payment and its one-time Privy
-signature. The same serialized request body is submitted twice. The runner
-requires:
-
-1. The first response is not a replay.
-2. The first debit is exactly `0.0100000 USDC`.
-3. The protected resource is delivered.
-4. The second response has `replayed: true`.
-5. The second response carries the original transaction hash.
-6. The balance does not change after the replay.
-7. Horizon Testnet reports the original transaction as successful.
-
-~~~powershell
-$env:AGENT_ACCEPTANCE_PRIVY_TOKEN = Read-Host "Temporary Privy access token"
-$env:AGENT_ACCEPTANCE_X402_PAYMENT_ID = "<prepared payment UUID>"
-$env:AGENT_ACCEPTANCE_X402_SIGNATURE = Read-Host "One-time 0x Privy signature"
-$env:ACCEPT_TESTNET_MUTATIONS = "I_UNDERSTAND_TESTNET_ONLY"
-npm run x402:replay:execute
-Remove-Item Env:AGENT_ACCEPTANCE_PRIVY_TOKEN
-Remove-Item Env:AGENT_ACCEPTANCE_X402_PAYMENT_ID
-Remove-Item Env:AGENT_ACCEPTANCE_X402_SIGNATURE
-Remove-Item Env:ACCEPT_TESTNET_MUTATIONS
-~~~
-
-The prepared payment and signature should come from a dedicated acceptance
-fixture or browser test client. A normal user never copies a signature. The
-runner never prints the token or signature. Its target is allowlisted to the
-production application, `localhost` or `127.0.0.1`, and it refuses to run unless
-`/api/health` reports `stellar-testnet` with Mainnet disabled.
-
-## Duplicate and reconciliation policy
-
-Only a payment in `prepared` state may atomically transition to `signing`. Concurrent requests cannot both claim that transition.
-
-- `confirmed` returns the original receipt.
-- `signing` or `reconciliation_required` never retries automatically.
-- `failed` requires a new review.
-- An ambiguous result after signing is stored as `reconciliation_required` for manual on-chain review.
-
-This favors avoiding a duplicate charge over automatic recovery.
-
-## Recommended release sequence
-
-~~~text
-npm run qa:local
-git push
-wait for Vercel Ready
-npm run acceptance:doctor
-npm run x402:replay:confirmed
-manual Privy payment or x402:replay:execute
-save explorer receipt and JSON report
-~~~
-
-Passing doctor proves readiness, not payment completion. A payment is proven only by a confirmed explorer transaction, delivered resource and duplicate replay with the same hash.
-
-## Live Travala acceptance
+For an explicitly selected public URL:
 
 ```powershell
-npm run acceptance:travala
+npm run acceptance:doctor -- --url https://carmelita-agent.vercel.app/ --json
 ```
 
-This read-only check generates a two-night stay beginning 45 days from execution and searches `Santiago, Chile` through the public Travala Travel MCP. It requires a real MCP session and at least one normalized hotel result. Override only the location with `TRAVALA_ACCEPTANCE_LOCATION` when necessary.
+Doctor checks Testnet safety constants, health semantics, `/agent`, MCP discovery, the official HTTP 402 challenge and distributor balances. It does not prove login, wallet ownership, isolation, delivery or a completed payment. Preview environment variables do not silently replace this public target. For a protected Preview, pass its URL and `--deployment` explicitly.
 
-Success proves live search, not booking, payment or reserved inventory. Stable failures distinguish invalid dates, upstream unavailability, rate limiting and timeout; the connector never invents results.
-
-## Fresh second-user acceptance
-
-Use an unused email. Email/Google login, OTP and both Privy signatures remain intentional human boundaries. The runner automates the rest and rejects a wallet that was previously activated, funded or used for x402.
-
-After login, set a temporary access token for the dedicated test identity and the existing primary wallet address:
+Travala remains a separate external check:
 
 ```powershell
-$env:AGENT_ACCEPTANCE_PRIVY_TOKEN = Read-Host "Temporary second-user Privy token"
-$env:AGENT_ACCEPTANCE_PRIMARY_WALLET = "G...PRIMARY"
-$env:ACCEPT_TESTNET_MUTATIONS = "I_UNDERSTAND_TESTNET_ONLY"
-npm run acceptance:second-user:start
+npm run acceptance:travala -- --url https://carmelita-agent.vercel.app/ --json
 ```
 
-The start stage proves the wallet differs from the primary account, records an empty baseline, requests Friendbot through the chat and verifies the transition to an active account with Testnet XLM.
+It searches a two-night stay beginning 45 days after execution in Santiago, Chile. `TRAVALA_ACCEPTANCE_LOCATION` changes the location. A successful search proves returned inventory only. The September 7 audit observed HTTP 401; resolution needs new evidence and does not block isolated Stellar onboarding acceptance.
 
-Return to the same browser session, prepare x402 and approve the USDC trustline with Privy. Then run:
+### Dedicated Privy identity
+
+Complete visible Privy login with an exclusive test identity, then provide its temporary access token through the configured secret mechanism. With `$previewUrl`, `$deployment` and `$commit` set to the reviewed target:
 
 ```powershell
-npm run acceptance:second-user:fund-usdc
+npm run acceptance:authenticated -- --url "$previewUrl" --deployment "$deployment" --commit "$commit" --json
 ```
 
-That stage verifies the trustline and sends exactly `0.50 USDC` from the internal Testnet distributor. In the browser, review and approve exactly one `0.01 USDC` x402 purchase. Finally run:
+Bootstrap is skipped and reported `PENDING` by default. To explicitly authorize this runner to provision that test identity's records and wallets:
 
 ```powershell
-npm run acceptance:second-user:verify
+npm run acceptance:authenticated -- --url "$previewUrl" --deployment "$deployment" --commit "$commit" --allow-bootstrap --json
 ```
 
-Verification requires the same wallet, the Friendbot transition, active trustline, faucet receipt, exactly one new payment, a `0.49 USDC` final balance, delivered resource and a successful Horizon Testnet transaction. State is stored in ignored `outputs/second-user-acceptance.json`.
+The runner invokes bootstrap twice and checks that Stellar Testnet, Avalanche Fuji and Solana Devnet addresses remain unchanged. It then reads authenticated x402 wallet status. It never prepares a trustline, calls Friendbot or a USDC faucet, supplies confirmation, signs or executes a payment. The status endpoint is GET-based but may initialize its database schema; isolated database configuration is therefore required even without bootstrap.
 
-Remove secrets from the shell when finished:
+Repeat with the second dedicated test identity and keep the reports distinct. These token-based checks do not prove the visible login experience, recovery after logout, concurrent onboarding or isolation between both users. Remove temporary credentials from the process environment when finished.
+
+### Gateway and registered wallets
+
+The wallet command shown here describes the legacy password-admin interface.
+Do not run it against the current Privy-only Preview or disable the allowlist to
+make it pass. Its registry assertions remain covered by local tests; live
+registry acceptance uses the visible administrator session.
 
 ```powershell
-Remove-Item Env:AGENT_ACCEPTANCE_PRIVY_TOKEN
-Remove-Item Env:AGENT_ACCEPTANCE_PRIMARY_WALLET
-Remove-Item Env:ACCEPT_TESTNET_MUTATIONS
+npm run gateway:preview:acceptance -- --url "$previewUrl" --deployment "$deployment" --commit "$commit"
+npm run wallets:preview:acceptance -- --url "$previewUrl" --deployment "$deployment" --commit "$commit" --email "test-a@example.com" --second-email "test-b@example.com"
 ```
 
-Never place the token in source control, screenshots, recordings or issue trackers.
+Replace the example emails with the two exclusive test identities. They must differ. The wallet runner checks one valid registered address for each current bootstrap network, no duplicate identity records, no shared wallet address between the selected users and consistent registry totals. An unfunded wallet can pass registration checks; on-chain activation is not required. The runner does not create those users or log them into Privy. Providing fewer than two identities leaves that requirement pending.
+
+The Gateway uses synthetic actors, not actual Privy sessions. It checks read-only scope rejection, plan creation and exact replay, changed-input conflicts, cross-actor plan and receipt denial, MCP discovery and planning boundaries, and token revocation. It never exposes or invokes a signing or execution tool. Cleanup selects this run's token IDs, actor/idempotency-key plan pairs, exact request IDs for audit events and actor/token-specific rate-limit scopes and pseudonyms. The report includes the counts actually removed. Shared or historical rate buckets, unrelated audit events and the two Privy test users and wallets are not selected.
+
+Both commands print JSON directly. `--json` is needed only for the general `acceptance:*` runner's JSON output.
+
+## Interpret evidence and close the delivery
+
+Each report includes `generatedAt`, `url`, `deployment`, `commit`, per-check outcomes and dynamically counted `passed`, `failed` and `pending` totals. Any failed check makes the report `FAIL` and sets a nonzero exit code. Configuration errors also terminate with a nonzero exit. A report containing only passes plus pending work remains `PENDING`; it may exit with code zero, which does not mean full acceptance is complete.
+
+The authenticated, Gateway and registry runners deliberately retain a pending human-acceptance item. There is no flag to turn that item into a pass. Attach separate dated browser evidence for:
+
+1. Two exclusive users completing Privy login and recovering their sessions.
+2. Stable wallets after repeated onboarding and session recovery, without funding.
+3. Each user's chat and memory surviving logout and reconnection.
+4. Rejection of cross-user data, plan and receipt access through real user identities.
+5. WebMCP registration, cleanup, session changes and use of the application in a browser without WebMCP support.
+
+Publish the reviewed Preview only after installation, lint, tests and build pass on the consolidated commit, and after branch database configuration and independent migrations are verified. Record the immutable deployment URL/ID, commit, runner output and browser evidence. Keep production unchanged. A public endpoint returning HTTP 200 cannot close this delivery.
+
+## Historical payment procedures — outside this Preview delivery
+
+Earlier versions of this document described production-targeted replay and funded second-user workflows. Those scripts still exist, but they were not converted into the isolated, no-payment acceptance workflow above:
+
+| Historical command | Historical purpose; not part of this delivery |
+| --- | --- |
+| `acceptance:second-user:start` | Creates a funded Testnet baseline through Friendbot |
+| `acceptance:second-user:fund-usdc` | Sends 0.50 Testnet USDC after a separately signed trustline |
+| `acceptance:second-user:verify` | Checks the funded baseline, one payment, receipt and final balance |
+| `x402:replay:confirmed` | Replays an existing confirmed payment ID and compares receipt and balance |
+| `x402:replay:execute` | Submits a prepared payment and its one-time signature, then checks exact replay |
+
+Do not reuse the old sequence of pushing, running production diagnostics and immediately executing a payment to close this Preview milestone. Those legacy runners need their own reviewed targets, preconditions and payment-specific user approval in a later delivery. Disabling `acceptance:execute` does not disable these separate legacy scripts.
+
+The underlying payment recovery policy is unchanged: only `prepared` may atomically enter `signing`; `confirmed` returns the existing receipt; `signing` or `reconciliation_required` must not retry automatically; `failed` requires a new review. A future payment acceptance needs a successful on-chain transaction, a delivered resource and replay evidence showing the same receipt without a second debit. None of those outcomes can be inferred from this milestone's local tests or public health checks.
+
+For dated earlier evidence, see [September 7 stabilization](stabilization-2026-09-07.md). Historical results do not establish the status of a later commit or deployment.

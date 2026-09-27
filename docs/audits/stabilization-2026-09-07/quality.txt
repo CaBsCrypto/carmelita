@@ -1,0 +1,531 @@
+
+> agente-asistente@0.1.0 qa:local
+> npm run lint && npm run test && npm run build
+
+
+> agente-asistente@0.1.0 lint
+> eslint . --ignore-pattern dist --ignore-pattern .next --max-warnings 0
+
+
+> agente-asistente@0.1.0 test
+> tsx --test tests/*.test.ts
+
+✔ buildUsdcPermitTypedData produces canonical EIP-712 Permit structure (1.527ms)
+✔ splitPermitSignature parses 65-byte hex and normalizes v (1.0061ms)
+✔ splitPermitSignature rejects malformed signature lengths (0.5893ms)
+✔ encodeAaveSupplyWithPermit and encodeAaveWithdraw produce hex calldata (5.6131ms)
+✔ getUsdcNonce and getUsdcAllowance query RPC with ABI decoding (32.4573ms)
+✔ simulateAaveSupplyWithPermit catches simulation revert error (1.2441ms)
+✔ health distinguishes sandbox settlement from live Testnet x402 (9.4227ms)
+✔ MCP discovery publishes the same payment boundary (2.7297ms)
+✔ x402 execution guard never retries ambiguous states (0.2734ms)
+✔ a valid but unexpected distributor secret is rejected (31.6994ms)
+✔ admin credentials require the configured founder and password (155.7962ms)
+✔ admin return paths cannot escape the protected area (0.351ms)
+✔ wallet registry identifies complete and incomplete Privy users (20.763ms)
+✔ wallet registry never marks malformed or inactive wallet records as ready (0.3773ms)
+✔ wallet registry detects duplicate networks without exposing wallet IDs (0.3139ms)
+✔ admin wallet API is authenticated, read-only and no-store (11.3897ms)
+✔ founder navigation exposes the protected wallet registry (2.2808ms)
+✔ recognizes active pilot aliases in natural language (8.5061ms)
+✔ offers a real OAuth action for Notion (1.9797ms)
+✔ reports Notion as connected after OAuth state is present (1.1059ms)
+✔ recognizes portfolio and market data targets (1.7715ms)
+✔ reports real connection status without claiming unavailable execution (0.4395ms)
+✔ guides an authenticated user through the Testnet proof (0.3267ms)
+✔ uses live wallet context while preserving authorization boundary (0.5215ms)
+✔ offers concrete starting points for an ambiguous request (0.4222ms)
+✔ supports Portuguese connection commands and replies (0.4079ms)
+✔ keeps financial fields canonical in Portuguese Testnet guidance (0.4271ms)
+✔ parses conversational DeFindex deposits without signing them (2.2204ms)
+✔ returns a structured DeFindex review intent from the chat (0.3477ms)
+✔ parses the chat-native Testnet onboarding sequence (0.4266ms)
+✔ prepares the official x402 demo through the Privy review flow (0.2237ms)
+✔ guides UNBLCK through its official Agent API instead of browser automation (0.2757ms)
+✔ gateway capability contract is explicit and Testnet-only (1.9161ms)
+✔ gateway plan serialization cannot contain signing material (16.8958ms)
+✔ blocked plans fail closed before approval (0.5982ms)
+✔ Gateway v1 has no execute, sign or submit REST route (14.1807ms)
+✔ Gateway documentation names the authorization and approval boundaries (1.2739ms)
+✔ Gateway migration is additive and enforces durable idempotency (1.4507ms)
+✔ Gateway REST scopes follow least privilege (1.6657ms)
+✔ external MCP pilot adds auth and optional Vercel bypass headers (2.0207ms)
+✔ external MCP pilot rejects execution-like tool names (0.4772ms)
+✔ external MCP pilot lists and plans Testnet without execution (1.0766ms)
+✔ external MCP pilot fails closed when an unsafe tool is exposed (3.7827ms)
+✔ Gateway PAT limits use stable fixed windows (3.0806ms)
+✔ Gateway identities are pseudonymized with domain separation (0.8676ms)
+✔ Gateway rate errors return stable 429 and Retry-After (5.5462ms)
+✔ Gateway limiter is distributed and audit schema excludes sensitive payloads (18.862ms)
+✔ Gateway surfaces apply endpoint audit and PAT verification limiting (8.1186ms)
+✔ Preview acceptance redacts personal credentials from failures (1.2072ms)
+✔ Preview acceptance invokes Vercel without a shell (17.9748ms)
+✔ Preview acceptance parses an explicit HTTP status marker (1.0643ms)
+✔ Preview acceptance parses MCP Streamable HTTP SSE (0.4356ms)
+✔ Preview acceptance accepts positional and named deployment URLs (0.2809ms)
+✔ Preview acceptance preserves HTTP status for non-JSON bodies (0.2627ms)
+✔ gateway exposes a versioned, honest multichain Testnet catalog (1.5947ms)
+✔ financial planning is idempotent, noncustodial and never executable (26.6135ms)
+✔ idempotency conflicts and cross-user reads fail closed (1.3284ms)
+✔ idempotency freezes requirement context as well as parameters (2.5649ms)
+✔ planned capabilities remain blocked even when context is declared (1.0964ms)
+✔ concurrent duplicate plans resolve to one stable action (2.2267ms)
+✔ verified receipts are plan-bound and immutable (1.1802ms)
+✔ public API has no execute route and requires bearer auth for user state (22.3497ms)
+✔ planning rejects mainnet and incompatible network overrides (1.7963ms)
+✔ planning accepts only the capability network and Fuji chain ID (0.6775ms)
+✔ network override rejection is a stable HTTP 400 (7.9918ms)
+✔ routes a travel request only to travel memories (2.5597ms)
+✔ keeps unrelated project and finance memories out of a task request (0.3051ms)
+✔ recognizes Spanish and Portuguese topic signals (0.2956ms)
+✔ turns conversational preferences into portable knowledge (1.847ms)
+✔ turns spending language into a hard structured policy (1.0197ms)
+✔ keeps dangerous delegated authority as a draft (0.2218ms)
+✔ blocks an action before signing when a user limit is exceeded (0.4764ms)
+✔ allows preparation inside the limit but still requires approval (0.1805ms)
+✔ mainnet remains blocked independently of user memory (0.1704ms)
+✔ classifies natural Spanish payment obligations as an approval policy (0.3347ms)
+✔ classifies English and Portuguese approval obligations as policies (0.2497ms)
+✔ understands natural-language spend limits (0.5957ms)
+✔ Testnet Autopilot enforces caps before delegated execution (1.496ms)
+✔ Testnet Autopilot removes the approval step only when delegated signing is ready (0.294ms)
+✔ an explicit approval rule overrides Testnet Autopilot delegation (0.2233ms)
+✔ forces approval for every financial planner intent (1.7497ms)
+✔ does not label a read-only Soroswap quote as financial (0.2927ms)
+✔ planner is opt-in and requires a server API key (0.4236ms)
+✔ planner defaults to OpenRouter and accepts its server key (0.3338ms)
+✔ LangGraph completes a connected low-risk read without approval (104.5744ms)
+✔ LangGraph pauses a financial action and resumes only with matching approval (81.9852ms)
+✔ LangGraph blocks approval for a different frozen action (43.1557ms)
+✔ LangGraph waits for a missing provider connection (20.0609ms)
+✔ Pangolin remains ready_to_test until a Fuji receipt exists (1.2702ms)
+✔ Pangolin policy blocks unfunded wallets and requires Privy approval (0.3747ms)
+✔ Avalanche acceptance runner cannot broadcast or handle private keys (2.8483ms)
+✔ Avalanche registry separates reads from approval-bound financial actions (1.2577ms)
+✔ Avalanche capabilities are grouped into complete product sections (1.2299ms)
+✔ x402 preflight requires Fuji USDC but not AVAX (0.2927ms)
+✔ CCTP preflight enumerates cross-chain blockers deterministically (0.1951ms)
+✔ personal MCP exposes discovery and planning without execution (17.0919ms)
+✔ capability API is authenticated and same-origin (1.4751ms)
+✔ capability parser supports English, Spanish and Portuguese (2.8552ms)
+✔ a Dexalot quote is not advertised as live while the upstream circuit breaker is active (0.2858ms)
+✔ the pair catalog is not taken down with the quote endpoint (0.1625ms)
+✔ a planned capability is never executable, even with every requirement satisfied (0.2567ms)
+✔ Wave 1 read capabilities are planned-free reads that never require approval (0.219ms)
+✔ mainnet-scoped reads disclose their data scope instead of claiming Fuji (0.215ms)
+✔ floor price row is honest about having no source (0.1859ms)
+✔ parses activate, status, fund and exact send intents in EN/ES/PT (2.5703ms)
+✔ chat reply returns structured in-chat actions and never claims execution (3.2749ms)
+✔ distributor is fail-closed without every server-side control (1.8558ms)
+✔ freezes exact Fuji transfer value, nonce and gas after RPC validation (27.2745ms)
+✔ receipt evidence verifies Fuji chain and transaction fields (2.36ms)
+✔ client action is locked to preview nonce/value and does not enable sponsorship (15.9458ms)
+✔ Fuji funding stays inside Carmelita and fails over to a secure popup (1.3305ms)
+✔ CCTP gas blocker offers the in-chat Fuji funding action (2.8395ms)
+✔ submitted receipt retries re-query the same hash instead of returning stale evidence (1.4331ms)
+✔ distributor input exposes a separate type-safe Fuji RPC verifier (1.2175ms)
+✔ distributor configuration is fail-closed (1.4894ms)
+✔ claim identity is stable per user and never exposes the raw Privy ID (36.7447ms)
+✔ duplicate claims reuse one idempotency key and one verifiable hash (2.6449ms)
+✔ receipt mismatch and daily-cap overrun fail closed (1.3104ms)
+✔ fund route authenticates, checks ownership and never contains a signer (14.629ms)
+✔ external receipt is accepted only after Fuji RPC verifies exact value and recipient (2.9951ms)
+✔ runtime doctor treats an unconfigured distributor as the safe passing state (6.4416ms)
+✔ prediction sector read recomputes the Avalanche share from DefiLlama (32.1988ms)
+✔ prediction markets read returns venues labeled as mainnet (1.7824ms)
+✔ Aave market read decodes live Fuji reserves through eth_call (13.9387ms)
+✔ NFT collection read is keyless and bounded (1.6295ms)
+✔ NFT provenance read cross-checks two indexers (4.0486ms)
+✔ DefiLlama yields read filters Avalanche and labels origin chain (1.028ms)
+✔ LFJ quote is a liveness check, not a price claim (1.018ms)
+✔ ecosystem parser is deterministic and scoped to Avalanche (0.791ms)
+✔ ecosystem route has no execution surface (28.8881ms)
+✔ diagnoses an activated Privy EVM wallet on Avalanche Fuji (65.6311ms)
+✔ rejects an RPC connected to the wrong EVM chain (8.0843ms)
+✔ connector is pinned to the official endpoint and one local tool (2.1164ms)
+✔ tools/list filters the remote catalog through the closed allowlist (32.5711ms)
+✔ docs search lists tools first and sends no credentials (3.0402ms)
+✔ timeout fails closed and one invocation makes only one docs_search call (1.243ms)
+✔ HTTP failure is not retried (0.9731ms)
+✔ strict JSON-RPC rejects ID mismatch and extra envelope fields (2.0918ms)
+✔ response size and MCP errors fail closed (1.2014ms)
+✔ knowledge route is authenticated and contains no mutation surface (13.7774ms)
+﹣ live official MCP smoke remains read-only (0.3312ms) # SKIP
+✔ merchant flow settles and delivers once, then replays without a second charge (32.6621ms)
+✔ ambiguous settlement is quarantined and never delivered (10.5319ms)
+✔ merchant challenge is canonical x402 v2 for Fuji USDC (1.9897ms)
+✔ merchant payment recovers payer and binds raw body plus resource (74.1697ms)
+✔ merchant store prevents identifier, signature and nonce replays (10.2129ms)
+✔ receipt verifier proves exact Fuji USDC transfer (1.5666ms)
+✔ receipt verifier rejects wrong chain, reverted and wrong amount (0.8291ms)
+✔ receipt verifier rejects removed or duplicate matching logs (0.3992ms)
+✔ RPC evidence binds hash, tx chain, nonce, gas and gas price (31.6156ms)
+✔ contract call preview carries calldata and evidence binds it byte-for-byte (6.7078ms)
+✔ verifyEvmContractCall confirms only a byte-identical calldata (1.8402ms)
+✔ prepare and record use persisted atomic winners, never local race losers (9.882ms)
+✔ hash becomes durable before RPC evidence and retries only the same hash (1.1721ms)
+✔ receipt failure is terminal and every frozen transaction field is verified (0.946ms)
+✔ client uses only Privy wallet, checks Fuji and expiry, and cannot rebroadcast (1.0677ms)
+✔ recording preserves a broadcast hash if expiry crosses during Privy approval (1.1729ms)
+✔ onboards a second Privy user to Fuji without signing or funding (1.2917ms)
+✔ replays keep the same wallet and idempotent persistence key (1.3139ms)
+✔ different DIDs remain isolated and invalid families fail closed (0.8355ms)
+✔ protected report authenticates before exposing its x402 challenge (2.2243ms)
+✔ challenge is pinned to x402 v2 exact, Fuji, official test USDC and 0.01 USDC (1.2695ms)
+✔ preparation exposes explicit approval and never signs server-side (0.8356ms)
+✔ store makes first signature, settlement claim and delivery single-winner operations (0.3707ms)
+✔ same signature replays safely while a replacement is rejected (0.3151ms)
+✔ ambiguous settlement is quarantined for reconciliation and never silently delivered (0.4881ms)
+✔ live execution remains localhost Fuji-only and fail-closed (0.7424ms)
+✔ accepts only the exact prepared Fuji payment requiring explicit approval (1.408ms)
+✔ rejects wrong origin, chain, token, amount, payTo or resource binding (1.7098ms)
+✔ rejects malformed Privy signatures before creating a payment header (0.4478ms)
+✔ PAYMENT-SIGNATURE binds payment, method, resource and canonical body hash (0.7217ms)
+✔ session key is deterministic and payment-scoped (0.2676ms)
+✔ core codecs emit v2 PAYMENT-REQUIRED and PAYMENT-SIGNATURE payloads (59.1929ms)
+✔ cryptographically recovers the exact persisted Privy payer (11.6264ms)
+✔ request and requirement mutations fail closed (4.1413ms)
+✔ signature from another wallet is rejected (12.8773ms)
+✔ live configuration requires non-zero payTo plus explicit localhost Fuji flags (0.4275ms)
+✔ facilitator is injectable and never contacts remote services in tests (40.6259ms)
+✔ a valid settle is recorded with evidence bound to the persisted payment (5.276ms)
+✔ an unverified on-chain receipt is quarantined before delivery (1.7468ms)
+✔ an invalid verification fails terminally, maps to a fresh 402 challenge and never settles (0.6014ms)
+✔ a settle response with success:false is terminally failed with the facilitator reason (0.8446ms)
+✔ a reverted settle response is terminally reverted (0.9286ms)
+✔ facilitator settle 4xx rejections are definitive terminal failures (81.3447ms)
+✔ facilitator settle 5xx quarantines the payment and a retry never auto-settles (1.6044ms)
+✔ a network failure during settle quarantines the payment (1.0632ms)
+✔ a settle abort quarantines the payment for reconciliation (1.2739ms)
+✔ a record conflict after a successful settle quarantines instead of wedging (0.7302ms)
+✔ a settle payload from another network is quarantined, not recorded (0.5187ms)
+✔ a settle payload from another payer is quarantined, not recorded (0.4487ms)
+✔ a success payload without a usable transaction is quarantined as malformed (0.6119ms)
+✔ a success payload that omits network and payer still settles (0.4102ms)
+✔ the route truthfully maps each settle outcome to the client (0.5012ms)
+✔ duplicate prepare returns one immutable Avalanche payment (3.2874ms)
+✔ first signature wins and replacement is rejected (2.0059ms)
+✔ settlement can be claimed once and delivery is byte-stable (2.0623ms)
+✔ paid-report intent is recognised in the three supported languages (1.9352ms)
+✔ paid-report intent never hijacks activation, funding, status or transfer (0.5521ms)
+✔ canonical delivery serialization sorts keys like the server (0.3131ms)
+✔ a delivery bound to this payment, amount and network is accepted (0.4487ms)
+✔ delivery validation fails closed on every substitution (1.7149ms)
+✔ the x402 chat card asks for exactly one signature and never broadcasts (0.6802ms)
+✔ the chat routes the x402 action to its own card (1.568ms)
+✔ expired approvals are refreshed only inside the previously reviewed scope (0.5169ms)
+✔ fresh chat mode clears only the visible session (1.8951ms)
+✔ 0xGasless envelope maps canonical v2 data without leaking Carmelita extensions (1.8726ms)
+✔ 0xGasless adapter fails closed on legacy, missing-resource, or mismatched input (0.6162ms)
+✔ facilitator sends the exact 0xGasless wire shape to both endpoints (25.7453ms)
+✔ facilitator normalizes the Fuji slug to the persisted CAIP-2 network (0.5374ms)
+✔ facilitator errors retain only allowlisted diagnostic tokens (3.3662ms)
+✔ discovery requires the live 0xGasless Fuji EIP-3009 contract (1.3258ms)
+✔ runtime discovery calls /tokens and fails closed on an HTTP error (29.085ms)
+✔ freezes exact EIP-3009 authorization and stable payment identity (1.25ms)
+✔ wrong network, token metadata, amount and nonce fail closed (0.7086ms)
+✔ Privy checks confirmation, Fuji chain and requests typed-data v4 (2.2448ms)
+✔ one payment binds one signature and replays only that signature (0.3263ms)
+✔ preparation layer has no custody or settlement primitive (11.0362ms)
+✔ AVAX Skills search is allowlisted, bounded and advisory-only (37.0523ms)
+✔ known unsafe patterns are explicitly flagged (1.524ms)
+✔ malformed remote data fails closed (2.6977ms)
+✔ AVAX Skills route requires Privy and cannot execute remote instructions (17.2508ms)
+✔ chat parser recognizes AVAX Skills in English, Spanish and Portuguese (3.5841ms)
+✔ personal MCP exposes advisory search as a read-only tool (4.6256ms)
+✔ chat reports AVAX Skills with a supported read-only connection stage (2.0392ms)
+✔ first-party bootstrap provisions Fuji additively and retains Stellar (12.9759ms)
+✔ onboarding is metadata-only and MCP context exposes persisted networks (8.5092ms)
+✔ onboarding UI renders the named Fuji wallet while retaining the Stellar wallet (1.5031ms)
+✔ accepts a bounded read-only UNBLCK bridge response (1.6055ms)
+✔ rejects spoofed or malformed bridge events (0.2708ms)
+✔ creates only the read-status bridge command (0.4428ms)
+✔ CCTP approve grants only the exact bridge amount (4.0552ms)
+✔ CCTP burn is pinned to Stellar forwarder, standard finality and bounded fee (2.7357ms)
+✔ CCTP burn rejects different mint recipient and destination caller (0.7037ms)
+✔ Circle attestation polling is one bounded read and reports pending (19.7186ms)
+✔ Circle complete attestation is normalized without automatic mint (2.5551ms)
+✔ Circle attestation rejects malformed JSON and partial hex bytes (1.4193ms)
+✔ CCTP execution API is authenticated, capped and confirmation-scoped (8.9774ms)
+✔ CCTP execution resumes submitted hashes instead of requesting a new signature (0.8795ms)
+✔ CCTP client persists a broadcast hash before server verification (0.6815ms)
+✔ CCTP durable store rejects replacement hashes and quarantines ambiguity (0.9186ms)
+✔ CCTP Stellar mint stores one signed payload and checks chain before replay (1.0501ms)
+✔ expired EVM previews refresh only before a hash is broadcast (0.8711ms)
+✔ attested CCTP message is bound to domains, wallets, amount and hook (1.2202ms)
+✔ attested CCTP message rejects a different amount before mint (0.421ms)
+✔ attested CCTP message rejects a different destination hook before mint (0.3281ms)
+✔ CCTP constants pin the first bridge to official Fuji and Stellar Testnet deployments (1.7985ms)
+✔ CCTP forwarder hook encodes the final Stellar strkey without a private key (5.2628ms)
+✔ CCTP plan is noncustodial, testnet-only and execution-disabled (4.8153ms)
+✔ CCTP plan exposes every balance and trustline blocker (2.0092ms)
+✔ Circle Sandbox fee lookup is fixed to domains 1 -> 27 and read-only (36.4927ms)
+✔ CCTP chat parser supports Spanish, English and Portuguese (0.6689ms)
+✔ CCTP API exposes readiness, fees and plan but no execution endpoint (13.5142ms)
+✔ maps a ticker to its CoinGecko id (1.453ms)
+✔ getCoinGeckoQuote parses a markets response into a MarketQuote (27.7329ms)
+✔ getMarketQuote falls back to CoinMarketCap when CoinGecko fails (1.3147ms)
+✔ extracts common asset names and symbols (2.1104ms)
+✔ loads and normalizes a CoinMarketCap keyless quote (70.0288ms)
+✔ does not present an absent CoinMarketCap asset as a quote (1.2651ms)
+✔ idempotency returns the same intent and receipt (2.8299ms)
+✔ policy rejects an amount above the demo limit (1.3237ms)
+✔ execution requires the exact authorization capability (0.4669ms)
+✔ Live Context mounts the compact multichain wallet selector (12.6131ms)
+✔ formats official Fuji ERC-20 balances for the selector (34.2423ms)
+✔ parses Stellar amounts with seven decimal places (1.5462ms)
+✔ pins the public DeFindex Testnet vaults and exact USDC issuer (0.183ms)
+✔ attaches only a signature that matches the transaction source (72.1115ms)
+✔ accepts a browser Privy raw signature and attaches it to the prepared XDR (15.8374ms)
+✔ Dexalot connector is pinned to Testnet and read-only endpoints (33.1169ms)
+✔ Dexalot simple quote resolves direction and never requests a firm quote (2.6248ms)
+✔ Dexalot parser supports Spanish, English and Portuguese (1.2517ms)
+✔ Avalanche knowledge parser does not intercept wallet or Dexalot actions (0.2952ms)
+✔ Dexalot route requires Privy and has no execution surface (14.3ms)
+﹣ live Dexalot Testnet smoke is explicit (0.1849ms) # SKIP
+✔ new Privy user can see Stellar and Avalanche Fuji in MCP and admin surfaces (32.2783ms)
+✔ OpenZeppelin Channels is pinned to Testnet and does not expose its key (1.4748ms)
+✔ MPP Router catalog exposes bounded live prices without payment execution (1.2887ms)
+✔ Stellar 8004 material never claims registration before an on-chain proof (0.2051ms)
+✔ LangGraph readiness exposes the first production-routed capability (0.3682ms)
+✔ integration recommendation normalizes a valid submission (8.3357ms)
+✔ integration recommendation requires an email and consent (1.1683ms)
+✔ integration recommendation accepts a minimal request (0.2672ms)
+✔ MCP wallet context names all persisted testnet wallets deterministically (23.4612ms)
+✔ MCP wallet context reports missing Fuji instead of inventing it (0.4274ms)
+✔ MCP reconnect view preserves active Stellar and suppresses its stale pending duplicate (0.2228ms)
+✔ provider MCP tokens have an identifiable prefix and stable hash (1.4362ms)
+✔ MCP principals are isolated by subject type and scope (0.6286ms)
+✔ personal agent MCP requires a user principal (0.1596ms)
+✔ provider MCP handler listens on its actual Next.js route (8.2617ms)
+✔ MCP errors expose stable codes without internal details (0.3994ms)
+✔ agent:read cannot access opted-in personal data (0.2261ms)
+✔ app/agent-chat-store.ts rejects non-Stellar wallets before Stellar execution (2.1852ms)
+✔ app/api/agent/defindex/route.ts rejects non-Stellar wallets before Stellar execution (0.3755ms)
+✔ app/api/agent/soroswap/route.ts rejects non-Stellar wallets before Stellar execution (0.3013ms)
+✔ app/api/agent/x402/route.ts rejects non-Stellar wallets before Stellar execution (0.2901ms)
+✔ groups Stellar, EVM and Solana networks without duplicating the EVM family (3.0712ms)
+✔ validates addresses by cryptographic wallet family (0.3779ms)
+✔ provisions one idempotent Privy wallet for each new family (46.8474ms)
+✔ reconnect reuses a legacy Stellar wallet instead of creating a pending duplicate (7.4138ms)
+✔ Notion workflow connector prepares a bounded read-only action (15.7887ms)
+✔ Notion workflow verification rejects an empty MCP response (0.3186ms)
+✔ wallet onboarding provisions and persists Stellar plus Avalanche without moving funds (1.8612ms)
+✔ chat OAuth provisions wallets only after consent and before issuing authorization (6.3561ms)
+✔ quotes 0.1 AVAX into Circle USDC against the verified Fuji pair (42.072ms)
+✔ assertPangolinFujiDeployment pins the verified Fuji factory and pair (1.7558ms)
+✔ rejects malformed and zero amounts (0.6722ms)
+✔ rejects a factory that does not match the verified Fuji deployment (1.9985ms)
+✔ rejects a quote above the USDC sanity cap (1.8376ms)
+✔ propagates a reverted getAmountsOut RPC error (2.7687ms)
+✔ personal MCP credentials use a recognizable high-entropy prefix and SHA-256 hash (1.8985ms)
+✔ personal MCP scopes are allowlisted and deduplicated (1.4796ms)
+✔ personal MCP token API is Privy authenticated, same-origin and no-store (13.3216ms)
+✔ personal MCP storage never exposes token hashes as metadata (1.9782ms)
+✔ agent MCP auth accepts personal credentials without weakening provider auth (3.189ms)
+✔ personal MCP config follows the current deployment origin (2.9152ms)
+✔ external MCP cannot reach the mutating chat runtime (10.8453ms)
+✔ personal MCP handler listens on its actual Next.js route (2.0491ms)
+✔ personal PATs have bounded expiry and active-token count (8.1186ms)
+✔ sensitive personal MCP tools require explicit scopes and UI opt-in (29.3106ms)
+✔ validates Stellar Ed25519 public addresses (45.7138ms)
+✔ verifies the signature primitive used by the Privy test harness (13.2583ms)
+✔ readiness never exposes Privy secrets (1.0327ms)
+✔ provisions exactly one deterministic Stellar wallet per Privy user (42.8777ms)
+✔ keeps Stellar active while reserving separate EVM and Solana wallet families (0.2461ms)
+✔ isValidWalletAddress validates Solana Base58 public key addresses (1.0534ms)
+✔ buildSolanaTransferTransaction validates input addresses and amounts (0.9786ms)
+✔ getSolanaDevnetBalance queries Solana JSON-RPC and formats SOL balance (29.5541ms)
+✔ requestSolanaDevnetAirdrop sends requestAirdrop JSON-RPC to Devnet (1.0281ms)
+✔ Solana client rejects invalid Base58 address (0.7827ms)
+✔ isValidWalletAddress validates Solana Base58 addresses (0.7589ms)
+✔ getPrivyUserWalletExternalId generates aa_solana_ prefix (0.2512ms)
+✔ buildMcpWalletContext incorporates solana:devnet deterministically (6.974ms)
+✔ converts Stellar Testnet amounts without floating point loss (1.723ms)
+✔ requests an authenticated XLM to USDC quote on Testnet only (31.9069ms)
+✔ builds unsigned XDR from the server quote and user wallet (1.3772ms)
+✔ submits only a signed XDR and requires a transaction hash (1.0157ms)
+✔ maps authentication failures without leaking upstream content (0.9675ms)
+✔ reports when Soroswap Testnet has no live protocols (1.2015ms)
+✔ lists only sanitized Connected App metadata and revokes through the mapped Stytch user path (27.6353ms)
+✔ refuses to revoke an app not returned for the mapped user (1.0306ms)
+✔ self-service API derives identity only from Privy and the issuer mapping (11.5653ms)
+✔ pins the canonical MCP resource (2.0659ms)
+✔ rejects non-S256 PKCE and malformed authorization requests (1.3518ms)
+✔ pins authorization to the canonical MCP resource (0.493ms)
+✔ fails closed while OAuth is disabled (0.2148ms)
+✔ derives a stable privacy-safe external id (0.43ms)
+✔ sanitizes upstream failure instead of leaking the Stytch body (27.1149ms)
+✔ rejects an upstream redirect that changes the registered callback origin (0.8061ms)
+✔ OAuth subject-link migration is additive, ordered, and enforces one-to-one identity mapping (19.8054ms)
+✔ RFC 9728 metadata is feature-flagged and publishes only non-executing agent scopes (5.9328ms)
+✔ OAuth challenge is inert while disabled and advertises exact PRM only while enabled (0.7687ms)
+✔ Stytch JWT verification pins RS256 issuer, audience, expiry and scopes (163.409ms)
+✔ claim validation rejects unknown agent authority and tokens without Carmelita scopes (0.7526ms)
+✔ dynamic Stytch client audiences are accepted only when non-empty unless strict audience mode is configured (0.2781ms)
+✔ OAuth identity mapping is exact issuer plus subject and cannot be remapped by email (3.908ms)
+✔ PAT and Privy fallbacks remain separate from the Stytch issuer path (0.9963ms)
+✔ uses the official Stytch preflight response and minimal request fields (29.1469ms)
+✔ refuses a scope Stytch says cannot be granted (1.2828ms)
+✔ submit forwards PKCE challenge but not code_challenge_method (0.9314ms)
+✔ escapes HTML-sensitive characters for Telegram (1.3149ms)
+✔ converts **bold** markers into Telegram <b> while escaping the rest (0.3167ms)
+✔ maps message actions to short callback ids and links to url buttons (2.0699ms)
+✔ callback_data stays within Telegram's 64-byte limit even for long confirm tokens (0.4857ms)
+✔ a reply with no actions produces no keyboard (0.3665ms)
+✔ short text is not split (0.3033ms)
+✔ long text splits on paragraph boundaries and stays under the limit (0.2562ms)
+✔ a single over-long paragraph is hard-split (0.1776ms)
+✔ renderReplyMessages puts the keyboard only on the last message (0.39ms)
+✔ renderReply maps a web_app action to a Mini App button (0.3742ms)
+✔ validateTelegramInitData accepts a correctly signed payload (1.6075ms)
+✔ validateTelegramInitData rejects a tampered payload (0.7548ms)
+✔ validateTelegramInitData rejects a stale payload (0.3578ms)
+✔ link codes are 8 chars from an unambiguous alphabet (0.7113ms)
+✔ internal USDC faucet stays disabled without a dedicated Testnet secret (0.9854ms)
+✔ builds reproducible future dates in UTC (2.9989ms)
+✔ rejects impossible calendar dates and past check-in (3.2846ms)
+✔ maps Travala rate limits and upstream failures to stable errors (29.4222ms)
+✔ rejects malformed successful responses without inventing inventory (2.5031ms)
+✔ maps an aborted Travala request to a stable timeout (5.9449ms)
+✔ rejects an invalid hotel date range (6.1591ms)
+✔ calls only Travala hotel search and normalizes its response (35.1604ms)
+✔ links an UNBLCK channel using only the documented contract (27.0956ms)
+✔ reads hub state with the linked channel headers (2.1559ms)
+✔ uses the documented booking and cancellation routes (1.5092ms)
+✔ parses link, state, mutation and bound confirmation commands (2.2949ms)
+✔ UNBLCK workflow prepares immutable writes and verifies provider evidence (0.4934ms)
+✔ waitlist normalizes email and optional fields (3.9529ms)
+✔ waitlist requires explicit consent and valid categories (1.4599ms)
+✔ waitlist accepts the minimal public form (0.4665ms)
+✔ Wallet Center exposes Fuji and Solana Devnet active cards and diagnostics (11.4861ms)
+✔ Wallet Center is mounted after authenticated onboarding (4.0861ms)
+✔ wallet persistence verifies ownership before and after its upsert (12.9451ms)
+✔ Privy recovery accepts only the deterministic external_id (0.669ms)
+✔ wallet ownership is immutable across users (0.4433ms)
+✔ wallet ID/address collisions fail closed even for the same user (0.2285ms)
+✔ wallet.created activity IDs are deterministic across replay and concurrent requests (0.2142ms)
+✔ WebMCP is optional outside a supported browser (1.7364ms)
+✔ wallet tools use current credentials, report failures and clean up without duplicates (33.0277ms)
+✔ aborting during asynchronous registration removes the late tool (2.7003ms)
+✔ faucet rejects malformed JSON, absent confirmation and out-of-range amounts (7.1892ms)
+✔ native signal-only registration cleans up and cancelled calls do not fetch (27.9882ms)
+✔ turns a paid HTML response into a concise text-only summary (1.9481ms)
+✔ only exposes a small allowlisted summary from JSON (0.2615ms)
+✔ caps unexpectedly large resource bodies (0.5557ms)
+✔ formats Stellar atomic USDC amounts (0.7039ms)
+✔ accepts only the capped official Stellar x402 Testnet USDC option (0.3935ms)
+✔ freezes every payment field before Privy approval (0.131ms)
+✔ Privy signer hashes the auth-entry bytes exactly as SEP-43 expects (0.5685ms)
+✔ accepts only a complete client-signature authorization envelope (0.1751ms)
+✔ rejects malformed Privy Stellar signatures before submission (0.1674ms)
+✔ converts Stellar decimal balances to exact atomic units (0.1963ms)
+✔ proves one x402 debit and a zero-debit replay with the original receipt (0.3136ms)
+✔ fails the replay proof if an adapter debits twice (0.2908ms)
+✔ audits an already confirmed replay without another debit (0.2522ms)
+ℹ tests 413
+ℹ suites 0
+ℹ pass 411
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 0
+ℹ duration_ms 9030.1306
+
+> agente-asistente@0.1.0 build
+> next build
+
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.2s
+  Running TypeScript ...
+  Finished TypeScript in 12.7s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/22) ...
+  Generating static pages using 15 workers (5/22)
+  Generating static pages using 15 workers (10/22)
+  Generating static pages using 15 workers (16/22)
+✓ Generating static pages using 15 workers (22/22) in 577ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /.well-known/mcp
+├ ƒ /.well-known/oauth-protected-resource
+├ ƒ /.well-known/oauth-protected-resource/api/mcp/agent
+├ ƒ /admin
+├ ƒ /admin/integrations
+├ ƒ /admin/login
+├ ƒ /admin/providers
+├ ƒ /admin/stellar
+├ ƒ /admin/wallets
+├ ƒ /agent
+├ ƒ /api/admin/providers
+├ ƒ /api/admin/session
+├ ƒ /api/admin/stellar
+├ ƒ /api/admin/waitlist/[id]
+├ ƒ /api/admin/waitlist/export
+├ ƒ /api/admin/wallets
+├ ƒ /api/agent/autopilot
+├ ƒ /api/agent/avalanche/capabilities
+├ ƒ /api/agent/avalanche/dexalot
+├ ƒ /api/agent/avalanche/knowledge
+├ ƒ /api/agent/avalanche/skills
+├ ƒ /api/agent/avalanche/x402
+├ ƒ /api/agent/bootstrap
+├ ƒ /api/agent/bridge/cctp
+├ ƒ /api/agent/bridge/cctp/execute
+├ ƒ /api/agent/chat
+├ ƒ /api/agent/connected-apps
+├ ƒ /api/agent/defindex
+├ ƒ /api/agent/infrastructure
+├ ƒ /api/agent/mcp-tokens
+├ ƒ /api/agent/mcp-tokens/[tokenId]
+├ ƒ /api/agent/memory
+├ ƒ /api/agent/soroswap
+├ ƒ /api/agent/travel/search
+├ ƒ /api/agent/wallets
+├ ƒ /api/agent/wallets/avalanche
+├ ƒ /api/agent/wallets/avalanche/fund
+├ ƒ /api/agent/wallets/avalanche/pangolin-swap
+├ ƒ /api/agent/wallets/avalanche/transfer
+├ ƒ /api/agent/wallets/solana
+├ ƒ /api/agent/wallets/solana/fund
+├ ƒ /api/agent/wallets/solana/transfer
+├ ƒ /api/agent/x402
+├ ƒ /api/commerce
+├ ƒ /api/connections
+├ ƒ /api/connections/notion/callback
+├ ƒ /api/connections/notion/start
+├ ƒ /api/connections/telegram/link
+├ ƒ /api/connections/unblck/link
+├ ƒ /api/demo/avalanche-report
+├ ƒ /api/demo/merchant/avalanche-report
+├ ƒ /api/health
+├ ƒ /api/integration-recommendations
+├ ƒ /api/mcp
+├ ƒ /api/mcp/agent
+├ ƒ /api/mcp/provider
+├ ƒ /api/oauth/stytch/authorize
+├ ƒ /api/oauth/stytch/preflight
+├ ƒ /api/telegram/mini/session
+├ ƒ /api/telegram/webhook
+├ ƒ /api/v1/actions/[id]
+├ ƒ /api/v1/actions/plan
+├ ƒ /api/v1/capabilities
+├ ƒ /api/v1/receipts/[id]
+├ ƒ /api/waitlist
+├ ○ /connections
+├ ○ /demo
+├ ○ /developers
+├ ○ /guide
+├ ƒ /login
+├ ƒ /oauth/authorize
+├ ○ /telegram/sign
+└ ○ /waitlist
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

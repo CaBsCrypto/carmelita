@@ -1,4 +1,5 @@
 import { connections, type Connection } from "@/app/connections/data";
+import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
 import { parseAvalancheChatIntent } from "@/app/wallets/avalanche-intents";
 import { parseAvalancheEcosystemReadIntent } from "@/app/connectors/avalanche-read-intents";
 
@@ -29,6 +30,7 @@ export type AgentChatAction = {
     completionMessage: string;
     permissions: string[];
   };
+  bazaarAction?: { query: string };
 
 };
 export type AgentTestnetSetupIntent =
@@ -106,6 +108,39 @@ export function parseTestnetSetupIntent(
   return asksForReadiness ? "readiness" : null;
 }
 export type AgentX402Intent = { operation: "demo_payment" };
+
+const bazaarSearchTerms = [
+  "busca", "buscar", "search", "find", "encuentra", "muestra", "muéstrame",
+  "show", "lista", "list", "pesquis", "descubre", "discover", "explora",
+];
+
+/**
+ * Detects a Stellar Bazaar catalog search. Returns null when the message is
+ * not a Bazaar search, or the query text to submit (possibly empty when the
+ * user asked to search without naming a target).
+ */
+export function parseStellarBazaarSearchIntent(message: string): string | null {
+  const query = normalized(message);
+  if (!/\bbazaar\b/.test(query) || !/\bstellar\b/.test(query)) return null;
+  if (!bazaarSearchTerms.some((term) => query.includes(normalized(term)))) return null;
+  const residue = message
+    .replace(/stellar\s+bazaar/gi, " ")
+    .replace(/\bbazaar\b|\bstellar\b/gi, " ")
+    .replace(/[¿?¡!.,;:"]/g, " ")
+    .replace(
+      new RegExp(
+        "\\b(busca(?:r|do)?|búsqueda|search(?:ing| for| in)?|find|encuentra|" +
+        "muéstrame|muestra(?:r)?|show|lista(?:r)?|list|pesquis[aeo](?:r)?|" +
+        "descubre|discover|explora|qué|que|cuáles|cuales|dime|enséñame|" +
+        "en|por|de|del|the|some|for|in|a|mi|my|me)\\b",
+        "giu",
+      ),
+      " ",
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+  return residue.length > 120 ? residue.slice(0, 120).trim() : residue;
+}
 
 export type AgentDefindexIntent =
   | { operation: "deposit"; asset: "XLM" | "USDC"; amount: string }
@@ -481,6 +516,38 @@ export function buildAgentReply(message: string, context: AgentChatContext = {})
       }[language],
       actions: [],
       x402Intent: { operation: "demo_payment" },
+    };
+  }
+  const bazaarQuery = parseStellarBazaarSearchIntent(message);
+  if (bazaarQuery !== null) {
+    if (!getStellarBazaarConfig().enabled) return {
+      content: {
+        es: "La búsqueda en Stellar Bazaar todavía no está habilitada en este entorno.",
+        en: "Stellar Bazaar search is not enabled in this environment yet.",
+        pt: "A pesquisa na Stellar Bazaar ainda não está habilitada neste ambiente.",
+      }[language],
+      actions: [],
+    };
+    if (bazaarQuery.length < 2) {
+      return {
+        content: {
+          en: "I can search the public Stellar Bazaar catalog. Tell me what to look for, for example: \"search Stellar Bazaar for website audit\".",
+          es: "Puedo buscar en el catálogo público de Stellar Bazaar. Dime qué buscar, por ejemplo: \"busca en stellar bazaar informes de sitios web\".",
+          pt: "Posso pesquisar no catálogo público da Stellar Bazaar. Diga o que procurar, por exemplo: \"pesquise na stellar bazaar relatórios de sites\".",
+        }[language],
+        actions: [],
+      };
+    }
+    return {
+      content: {
+        en: `I will run one read-only search in the public **Stellar Bazaar** catalog for "${bazaarQuery}". Discovery never contacts a provider, signs or pays. The card shows provider, price, inputs and delivery terms exactly as listed.`,
+        es: `Ejecutaré una búsqueda de solo lectura en el catálogo público de **Stellar Bazaar** para "${bazaarQuery}". El descubrimiento nunca contacta proveedores, firma ni paga. La ficha muestra proveedor, precio, entradas y condiciones de entrega tal como están listadas.`,
+        pt: `Vou executar uma pesquisa somente leitura no catálogo público da **Stellar Bazaar** para "${bazaarQuery}". A descoberta nunca contata provedores, assina ou paga. O cartão mostra provedor, preço, entradas e condições de entrega exatamente como listados.`,
+      }[language],
+      actions: [{
+        label: `${language === "es" ? "Buscar en Stellar Bazaar" : language === "pt" ? "Pesquisar na Stellar Bazaar" : "Search Stellar Bazaar"}: ${bazaarQuery}`,
+        bazaarAction: { query: bazaarQuery },
+      }],
     };
   }
   if (["testnet", "prueba onchain", "probar onchain", "teste onchain", "testar onchain", "prova onchain"].some((term) => query.includes(term))) {

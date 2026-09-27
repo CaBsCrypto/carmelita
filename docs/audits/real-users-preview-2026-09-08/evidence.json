@@ -1,0 +1,136 @@
+{
+  "date": "2026-09-08",
+  "codeCommit": "162db806321d7cfd95b19696dad2e43b019b445e",
+  "deploymentId": "dpl_8TBUE2URbrVo8YbnZFoR51zSJBda",
+  "databaseFingerprint": "bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299",
+  "realSessions": [
+    {
+      "account": "A",
+      "date": "2026-09-08T05:47:56.510Z",
+      "commit": "162db806321d7cfd95b19696dad2e43b019b445e",
+      "deployment": "https://agente-asistente-dyxwbihut-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": {
+        "chatOwnScope": true,
+        "memoryOwnScope": true,
+        "walletsOwnScope": true,
+        "adminHttp": 401,
+        "foreignMemoryPatchHttp": 404
+      },
+      "foreignMemoryExistedBefore": true
+    },
+    {
+      "account": "B",
+      "date": "2026-09-08T05:53:26.414Z",
+      "commit": "162db806321d7cfd95b19696dad2e43b019b445e",
+      "deployment": "https://agente-asistente-dyxwbihut-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "path": "/api/agent/chat",
+          "status": "aprobado",
+          "baselineHttp": 200,
+          "attemptedHttp": 200
+        },
+        {
+          "path": "/api/agent/memory",
+          "status": "aprobado",
+          "baselineHttp": 200,
+          "attemptedHttp": 200
+        },
+        {
+          "path": "/api/agent/wallets",
+          "status": "aprobado",
+          "baselineHttp": 200,
+          "attemptedHttp": 200
+        },
+        {
+          "path": "/api/admin/wallets",
+          "status": "aprobado",
+          "baselineHttp": 401,
+          "attemptedHttp": 401
+        },
+        {
+          "path": "PATCH /api/agent/memory (ficticia ajena)",
+          "status": "aprobado",
+          "baselineHttp": 404,
+          "attemptedHttp": 404
+        }
+      ],
+      "scope": "Own-scope queries and foreign-memory mutation rejection; full database snapshots checked separately. Does not test receipts or payments."
+    }
+  ],
+  "administrativeRegistry": {
+    "date": "2026-09-08T06:01:53Z",
+    "method": "Visible Privy administrator session on the branch Preview",
+    "users": 2,
+    "wallets": 6,
+    "completeUsers": 2,
+    "needsAttention": 0,
+    "networks": [
+      "stellar:testnet",
+      "avalanche:fuji",
+      "solana:devnet"
+    ],
+    "solanaSelector": "aprobado",
+    "solanaExplorerLinks": "aprobado",
+    "personalIdentifiersOmitted": true
+  },
+  "foreignMemoriesUnchanged": {
+    "date": "2026-09-08T05:54:42.016Z",
+    "memoriesUnchanged": true,
+    "checkedRows": 2
+  },
+  "cleanup": {
+    "date": "2026-09-08T05:55:08.567Z",
+    "messages": 4,
+    "memories": 2,
+    "verified": 1
+  },
+  "preservation": {
+    "date": "2026-09-08T05:55:38.600Z",
+    "usersUnchanged": 2,
+    "walletsUnchanged": 6,
+    "conversationsUnchanged": 2,
+    "exactMessagesRemoved": 4,
+    "exactMemoriesRemoved": 2,
+    "allRemainingRowsUnchanged": true
+  },
+  "integrity": {
+    "date": "2026-09-08T05:55:45.295Z",
+    "counts": {
+      "users": 2,
+      "wallets": 6,
+      "payments": 0,
+      "stellar_actions": 0,
+      "faucet_claims": 0
+    },
+    "duplicateNetworks": 0,
+    "sharedAddresses": 0
+  },
+  "quality": {
+    "commit": "162db806321d7cfd95b19696dad2e43b019b445e",
+    "tests": 458,
+    "passed": 456,
+    "failed": 0,
+    "skipped": 2,
+    "lint": "aprobado",
+    "build": "aprobado",
+    "cleanInstall": "aprobado (CI)",
+    "ci": "https://github.com/CaBsCrypto/carmelita/actions/runs/34191836259/job/101951311714",
+    "explicitSkips": [
+      {
+        "name": "live official MCP smoke remains read-only",
+        "requires": "AVALANCHE_MCP_LIVE=1"
+      },
+      {
+        "name": "live Dexalot Testnet smoke is explicit",
+        "requires": "DEXALOT_LIVE=1"
+      }
+    ]
+  },
+  "limits": [
+    "Stellar wallets were reused and had existing Testnet balances.",
+    "This run did not fund, sign, pay or validate delivery/receipts.",
+    "Gateway real-identity plan/receipt/token acceptance remains separate from earlier synthetic tests.",
+    "Graphify update blocked: missing Python 3.12 interpreter."
+  ]
+}

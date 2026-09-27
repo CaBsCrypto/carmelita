@@ -1,12 +1,66 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { backend } from "@/app/commerce-backend";
+import { assertPreviewIsolation } from "@/app/preview-isolation";
+import { maintenanceEnabled } from "@/app/maintenance";
+import { neon } from "@neondatabase/serverless";
+import { getDatabaseUrl } from "@/db";
+import { verifyProductionDatabase } from "@/app/production-database-verification";
 
-export function GET() {
+// Acceptance checks must observe the deployed runtime, never a build-time response.
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const deployment = {
+    environment: process.env.VERCEL_ENV ?? "local",
+    gitCommitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+    url: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  };
+  let previewIsolation: { verified: true; databaseFingerprint: string } | undefined;
+  let productionDatabase: { verified: true; databaseFingerprint: string } | undefined;
+  if (process.env.VERCEL_ENV === "production" && maintenanceEnabled()) {
+    try {
+      productionDatabase = await verifyProductionDatabase(getDatabaseUrl(), process.env, async url => {
+        const sql = neon(url, { fetchOptions: { signal: AbortSignal.timeout(10000) } });
+        return await sql.query("SELECT current_database() AS database_name, current_user AS role_name") as { database_name: string; role_name: string }[];
+      });
+    } catch {
+      return NextResponse.json({
+        service: "agente-asistente", status: "error", error: "production_database_not_verified",
+        maintenance: true, productionDatabase: { verified: false }, deployment,
+        timestamp: new Date().toISOString(),
+      }, { status: 503 });
+    }
+  }
+  if (process.env.VERCEL_ENV === "preview") {
+    try {
+      const isolation = assertPreviewIsolation();
+      const database = new URL(isolation.databaseUrl);
+      const identity = `${database.hostname.toLowerCase().replace(/-pooler(?=\.)/, "")}/${database.pathname.slice(1)}`;
+      previewIsolation = {
+        verified: true,
+        databaseFingerprint: createHash("sha256").update(identity).digest("hex"),
+      };
+    } catch {
+      return NextResponse.json({
+        service: "agente-asistente",
+        status: "error",
+        error: "preview_isolation_not_verified",
+        previewIsolation: { verified: false },
+        deployment,
+        timestamp: new Date().toISOString(),
+      }, { status: 503 });
+    }
+  }
   return NextResponse.json({
     service: "agente-asistente",
     status: "ok",
+    maintenance: maintenanceEnabled(),
     environment: "stellar-testnet",
     persistence: backend.mode(),
+    ...(previewIsolation ? { previewIsolation } : {}),
+    ...(productionDatabase ? { productionDatabase } : {}),
+    deployment,
     custody: {
       userFunds: false,
       testnetDistributor: true,

@@ -6,6 +6,7 @@ import {
   GATEWAY_API_VERSION,
   type GatewayCapability,
 } from "@/app/agent-gateway/types";
+import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
 
 type StaticCapability = Omit<GatewayCapability, "version" | "execution" | "requiresApproval">;
 
@@ -178,6 +179,20 @@ const staticCapabilities: readonly StaticCapability[] = [
     evidence: "Per-user OAuth token retrieval and bounded MCP search are implemented.",
     nextAction: "Connect Notion in Carmelita, then run a scoped workspace search.",
   },
+  {
+    id: "stellar.bazaar.discovery",
+    title: "Search the public Stellar Bazaar catalog",
+    description: "Read-only discovery of x402 paid services listed in Stellar Bazaar without contacting, approving, signing or paying any provider.",
+    provider: "Stellar Bazaar",
+    category: "discovery",
+    status: "ready_to_test",
+    operation: "read",
+    network: "stellar:testnet",
+    approval: "none",
+    requirements: ["privy_session"],
+    evidence: "The authenticated search adapter validates ServiceCard v0, propagates partial or unavailable registries and keeps provider origins on a static allowlist.",
+    nextAction: "Run a dated Bazaar search inside Carmelita; consumption stays gated until its own acceptance.",
+  },
 ] as const;
 
 function executionFor(operation: GatewayCapability["operation"]) {
@@ -209,7 +224,7 @@ function fromAvalanche(capability: AvalancheCapability & { category: string }): 
 
 export function listGatewayCapabilities(): GatewayCapability[] {
   return [
-    ...staticCapabilities.map((capability) => ({
+    ...staticCapabilities.filter((capability) => capability.id !== "stellar.bazaar.discovery" || getStellarBazaarConfig().enabled).map((capability) => ({
       ...capability,
       requiresApproval: capability.approval !== "none",
       version: GATEWAY_API_VERSION,

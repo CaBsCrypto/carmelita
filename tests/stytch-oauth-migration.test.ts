@@ -13,5 +13,5 @@ test("OAuth subject-link migration is additive, ordered, and enforces one-to-one
   assert.match(migration, /UNIQUE INDEX "oauth_subject_links_issuer_subject_uidx"[\s\S]*\("issuer","subject"\)/);
   assert.match(migration, /UNIQUE INDEX "oauth_subject_links_issuer_privy_uidx"[\s\S]*\("issuer","privy_did"\)/);
   assert.doesNotMatch(migration, /DROP\s|TRUNCATE\s|DELETE\s+FROM|ALTER\s+TABLE[\s\S]*DROP/i);
-  assert.deepEqual(journal.entries.at(-1), { idx: 18, version: "7", when: 1786408276115, tag: "0018_oauth_subject_links", breakpoints: true });
+  assert.deepEqual(journal.entries.find((entry) => entry.idx === 18), { idx: 18, version: "7", when: 1786408276115, tag: "0018_oauth_subject_links", breakpoints: true });
 });

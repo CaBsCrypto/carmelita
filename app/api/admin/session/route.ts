@@ -72,6 +72,7 @@ export async function DELETE(request: Request) {
   }
 
   const response = NextResponse.json({ status: "signed_out" });
+  response.cookies.set("aa_admin_privy", "", { ...adminCookieOptions(), maxAge: 0 });
   response.cookies.set(ADMIN_COOKIE, "", {
     ...adminCookieOptions(),
     maxAge: 0,

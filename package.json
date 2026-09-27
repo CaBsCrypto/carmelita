@@ -3,7 +3,8 @@
     "version": "0.1.0",
     "private": true,
     "engines": {
-        "node": ">=22.13.0"
+        "node": "24.14.0",
+        "npm": "11.6.1"
     },
     "scripts": {
         "dev": "next dev",
@@ -26,7 +27,7 @@
         "qa:local": "npm run lint && npm run test && npm run build",
         "qa:production": "npm run acceptance:doctor",
         "qa": "npm run qa:local && npm run qa:production",
-        "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+        "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --max-warnings 0",
         "db:generate": "drizzle-kit generate",
         "test:build": "npm run test && npm run build",
         "db:migrate": "drizzle-kit migrate",
@@ -47,7 +48,9 @@
         "runtime:doctor": "node --env-file-if-exists=.env.local scripts/runtime-doctor.mjs",
         "acceptance:avalanche:doctor": "tsx scripts/avalanche-acceptance.ts doctor",
         "acceptance:avalanche:authenticated": "tsx scripts/avalanche-acceptance.ts authenticated",
-        "acceptance:avalanche:prepare": "tsx scripts/avalanche-acceptance.ts prepare"
+        "acceptance:avalanche:prepare": "tsx scripts/avalanche-acceptance.ts prepare",
+        "db:migrate:preview": "tsx scripts/preview-migrate.ts",
+        "db:migrate:production": "tsx scripts/production-migrate.ts"
     },
     "dependencies": {
         "@langchain/langgraph": "^1.4.8",

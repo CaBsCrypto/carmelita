@@ -23,8 +23,8 @@ import { getDatabaseUrl, getDb, hasDatabase } from "@/db";
 import {
   agentActivities,
   agentStellarActions,
-  agentWallets,
 } from "@/db/schema";
+import { listPersistedUserWallets } from "@/app/multichain-account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -125,22 +125,16 @@ async function auth(request: Request) {
 async function userWallet(userId: string) {
   await ensureSchema();
   if (!hasDatabase()) throw new Error("database_not_configured");
-  const rows = await getDb()
-    .select({
-      id: agentWallets.id,
-      address: agentWallets.address,
-      network: agentWallets.network,
-    })
-    .from(agentWallets)
-    .where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, "stellar")))
-    .limit(1);
-  const wallet = rows[0];
-  if (!wallet || wallet.network !== "stellar:testnet") {
+  const wallet = (await listPersistedUserWallets(userId)).find((candidate) =>
+    candidate.userId === userId && candidate.network === "stellar:testnet" && candidate.chainType === "stellar"
+    && (candidate.status === "active" || candidate.status === "pending"),
+  );
+  if (!wallet) {
     throw new Error("stellar_wallet_not_ready");
   }
   const account = await getStellarTestnetAccount(wallet.address);
   if (!account.exists) throw new Error("stellar_wallet_not_active");
-  return wallet;
+  return { id: wallet.id, address: wallet.address, network: wallet.network };
 }
 
 function idempotencyKey(

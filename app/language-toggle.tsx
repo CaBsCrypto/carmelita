@@ -1,31 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-export type Locale = "en" | "es" | "pt";
-
-function isLocale(value: string | null): value is Locale {
-  return value === "en" || value === "es" || value === "pt";
-}
+import { useSyncExternalStore } from "react";
+import { localeStore, type Locale } from "./locale-store";
+export type { Locale } from "./locale-store";
 
 export function useLocale() {
-  const [locale, setLocaleState] = useState<Locale>("en");
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem("aa-locale");
-    const initial = isLocale(saved) ? saved : "en";
-    document.documentElement.lang = initial === "pt" ? "pt-BR" : initial;
-    const task = window.setTimeout(() => setLocaleState(initial), 0);
-    return () => window.clearTimeout(task);
-  }, []);
-
-  function setLocale(next: Locale) {
-    setLocaleState(next);
-    window.localStorage.setItem("aa-locale", next);
-    document.documentElement.lang = next === "pt" ? "pt-BR" : next;
-  }
-
-  return { locale, setLocale };
+  const locale = useSyncExternalStore(localeStore.subscribe, localeStore.getSnapshot, localeStore.getServerSnapshot);
+  return { locale, setLocale: localeStore.setLocale };
 }
 
 export default function LanguageToggle({

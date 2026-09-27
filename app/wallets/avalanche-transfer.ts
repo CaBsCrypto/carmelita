@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { agentActivities, agentWallets } from "@/db/schema";
+import { agentActivities } from "@/db/schema";
+import { listPersistedUserWallets } from "@/app/multichain-account";
 import {
   estimateEvmNativeTransfer,
   getEvmTransactionEvidence,
@@ -22,18 +23,13 @@ function activityId(userId: string, requestId: string) {
     .slice(0, 48);
 }
 
-export async function getActiveFujiWallet(userId: string) {
-  const [wallet] = await getDb().select({
-    id: agentWallets.id,
-    address: agentWallets.address,
-  }).from(agentWallets).where(and(
-    eq(agentWallets.userId, userId),
-    eq(agentWallets.chainType, "ethereum"),
-    eq(agentWallets.network, "avalanche:fuji"),
-    eq(agentWallets.status, "active"),
-  )).limit(1);
+export async function getActiveFujiWallet(userId: string, listWallets = listPersistedUserWallets) {
+  const wallet = (await listWallets(userId)).find((candidate) =>
+    candidate.userId === userId && candidate.chainType === "ethereum"
+    && candidate.network === "avalanche:fuji" && candidate.status === "active",
+  );
   if (!wallet) throw new Error("avalanche_not_activated");
-  return wallet;
+  return { id: wallet.id, address: wallet.address };
 }
 
 export async function prepareFujiDemoTransfer(input: {

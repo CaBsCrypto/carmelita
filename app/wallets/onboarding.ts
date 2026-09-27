@@ -4,6 +4,8 @@ import { ensureAvalancheFujiWallet } from "@/app/wallets/avalanche-onboarding";
 import { ensureSolanaDevnetWallet } from "@/app/wallets/solana-onboarding";
 import { getOrCreateUserWallet } from "@/app/wallets/privy";
 import type { UserWallet } from "@/app/wallets/types";
+import { ensureEvmTestnetWallet } from "@/app/wallets/evm-onboarding";
+import { hasDatabase } from "@/db";
 
 type StellarAccount = Awaited<ReturnType<typeof getStellarTestnetAccount>>;
 type AgentAccount = Awaited<ReturnType<typeof persistAgentAccount>>;
@@ -11,6 +13,7 @@ type AvalancheAccount = Awaited<ReturnType<typeof ensureAvalancheFujiWallet>>;
 type SolanaAccount = Awaited<ReturnType<typeof ensureSolanaDevnetWallet>>;
 
 export type WalletOnboardingDependencies = {
+  ensureEvmWallet?: typeof ensureEvmTestnetWallet;
   getOrCreateStellarWallet: (userId: string) => Promise<UserWallet>;
   getStellarAccount: (address: string) => Promise<StellarAccount>;
   persistStellarAccount: (input: {
@@ -30,6 +33,7 @@ export type WalletOnboardingDependencies = {
 };
 
 const defaultDependencies: WalletOnboardingDependencies = {
+  ensureEvmWallet: ensureEvmTestnetWallet,
   getOrCreateStellarWallet: (userId) => getOrCreateUserWallet(userId, "stellar"),
   getStellarAccount: getStellarTestnetAccount,
   persistStellarAccount: persistAgentAccount,
@@ -44,6 +48,7 @@ export async function provisionUserWallets(
   if (!input.userId.startsWith("did:privy:")) {
     throw new Error("invalid_privy_user_id");
   }
+  if (dependencies === defaultDependencies && !hasDatabase()) throw new Error("database_not_configured");
 
   const stellar = await dependencies.getOrCreateStellarWallet(input.userId);
   if (
@@ -64,12 +69,20 @@ export async function provisionUserWallets(
     wallet: stellar,
     activation,
   });
-  const avalanche = await dependencies.ensureAvalancheWallet(input);
+  const expandedEvm = dependencies.ensureEvmWallet ? await dependencies.ensureEvmWallet(input) : null;
+  const avalanche = expandedEvm ? {
+    wallet: expandedEvm.wallet,
+    network: expandedEvm.networks.find((network) => network.id === "avalanche:fuji")!,
+    fundsMoved: false as const,
+    signingRequired: false as const,
+  } : await dependencies.ensureAvalancheWallet(input);
+  const evm = expandedEvm ?? { wallet: avalanche.wallet, networks: [avalanche.network], fundsMoved: false as const, signingRequired: false as const };
   const solana = await dependencies.ensureSolanaWallet(input);
 
   return {
     stellar,
     avalanche,
+    evm,
     solana,
     account,
     activation,

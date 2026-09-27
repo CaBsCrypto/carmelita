@@ -1,0 +1,3 @@
+{"check":"travala-http","status":401,"contentType":"application/json; charset=utf-8"}
+travala: travala_unavailable
+{"check":"coingecko-XLM","ok":true,"fields":["id","name","symbol","currency","price","rank","change24h","change7d","marketCap","volume24h","updatedAt","source","access"]}

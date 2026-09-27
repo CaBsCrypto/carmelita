@@ -1,0 +1,15 @@
+stellar-bazaar-x402/
+node_modules/
+.git/
+work/
+outputs/
+.env*
+**/.env*
+!.env.example
+.codex/
+.agents/
+graphify-out/
+.next/
+coverage/
+*.log
+*.pem

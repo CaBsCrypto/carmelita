@@ -1,164 +1,111 @@
 "use client";
 
-export type WebMcpToolContent = {
-  type: "text" | "json";
-  text?: string;
-  json?: unknown;
-};
-
-export type WebMcpToolResponse = {
-  content: WebMcpToolContent[];
-  isError?: boolean;
-};
-
+export type WebMcpToolResponse = { content: { type: "text"; text: string }[]; isError?: boolean };
 export type WebMcpToolDefinition = {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  execute: (args: Record<string, unknown>) => Promise<WebMcpToolResponse>;
+  annotations?: Record<string, boolean>;
+  execute: (args: Record<string, unknown>, options?: { signal?: AbortSignal }) => Promise<WebMcpToolResponse>;
 };
-
 export type WebMcpModelContext = {
-  registerTool?: (tool: WebMcpToolDefinition) => Promise<void>;
-  unregisterTool?: (name: string) => Promise<void>;
-  getTools?: () => Promise<WebMcpToolDefinition[]>;
-  clearTools?: () => Promise<void>;
+  registerTool?: (tool: WebMcpToolDefinition, options?: { signal?: AbortSignal }) => void | Promise<void>;
+  unregisterTool?: (name: string) => void | Promise<void>;
 };
-
 declare global {
-  interface Document {
-    modelContext?: WebMcpModelContext;
-  }
-  interface Navigator {
-    modelContext?: WebMcpModelContext;
-  }
+  interface Document { modelContext?: WebMcpModelContext }
+  interface Navigator { modelContext?: WebMcpModelContext }
 }
-
 export type WebMcpStatus = {
   supported: boolean;
-  source: "document.modelContext" | "navigator.modelContext" | "polyfill" | "none";
+  source: "document.modelContext" | "navigator.modelContext" | "none";
   toolsRegistered: string[];
   flagInstructionsNeeded: boolean;
 };
-
 export function getBrowserModelContext(): WebMcpModelContext | null {
-  const g = globalThis as unknown as { document?: Document; navigator?: Navigator };
-
-  if (g.document && g.document.modelContext) {
-    return g.document.modelContext;
-  }
-  if (g.navigator && g.navigator.modelContext) {
-    return g.navigator.modelContext;
-  }
-
+  if (typeof document !== "undefined" && document.modelContext?.registerTool) return document.modelContext;
+  if (typeof navigator !== "undefined" && navigator.modelContext?.registerTool) return navigator.modelContext;
   return null;
 }
-
 export function detectWebMcpStatus(): WebMcpStatus {
-  const g = globalThis as unknown as { document?: Document; navigator?: Navigator; window?: unknown };
   const context = getBrowserModelContext();
-
-  if (context?.registerTool) {
-    const source = g.document?.modelContext ? "document.modelContext" : "navigator.modelContext";
-    return { supported: true, source, toolsRegistered: [], flagInstructionsNeeded: false };
-  }
-
   return {
-    supported: false,
-    source: "none",
-    toolsRegistered: [],
-    flagInstructionsNeeded: true,
+    supported: Boolean(context),
+    source: !context ? "none" : typeof navigator !== "undefined" && navigator.modelContext === context ? "navigator.modelContext" : "document.modelContext",
+    toolsRegistered: [], flagInstructionsNeeded: !context,
   };
 }
+export function toolError(message: string): WebMcpToolResponse {
+  return { content: [{ type: "text", text: message }], isError: true };
+}
+export async function webMcpRequest(url: string, init?: RequestInit): Promise<WebMcpToolResponse> {
+  try {
+    const response = await fetch(url, init);
+    if (!response.ok) return toolError(`request_failed_${response.status}`);
+    const body: unknown = await response.json();
+    return { content: [{ type: "text", text: JSON.stringify(body) }] };
+  } catch { return toolError("request_unavailable"); }
+}
 
-export async function registerCarmelitaWebMcpTools(
-  getAccessToken: () => Promise<string | null>,
-): Promise<WebMcpStatus> {
+type Registration = { controller: AbortController; owner?: AbortSignal };
+const registrations = new WeakMap<WebMcpModelContext, Map<string, Registration>>();
+const queues = new WeakMap<WebMcpModelContext, Promise<unknown>>();
+function serialize<T>(context: WebMcpModelContext, task: () => Promise<T>): Promise<T> {
+  const next = (queues.get(context) ?? Promise.resolve()).catch(() => undefined).then(task);
+  queues.set(context, next.catch(() => undefined));
+  return next;
+}
+export async function registerWebMcpTools(tools: WebMcpToolDefinition[], signal?: AbortSignal): Promise<WebMcpStatus> {
   const status = detectWebMcpStatus();
   const context = getBrowserModelContext();
-
-  if (!context?.registerTool) {
+  if (!context?.registerTool || signal?.aborted) return status;
+  const owned = registrations.get(context) ?? new Map<string, Registration>();
+  registrations.set(context, owned);
+  async function remove(name: string, registration: Registration) {
+    registration.controller.abort();
+    if (owned.get(name) !== registration) return;
+    await context?.unregisterTool?.(name);
+    owned.delete(name);
+  }
+  const cleanup = () => { void serialize(context, async () => {
+    for (const [name, registration] of owned) if (registration.owner === signal) await remove(name, registration);
+  }).catch(() => undefined); };
+  signal?.addEventListener("abort", cleanup, { once: true });
+  return serialize(context, async () => {
+    for (const tool of tools) {
+      if (signal?.aborted) break;
+      const prior = owned.get(tool.name);
+      if (prior) await remove(tool.name, prior);
+      const registration: Registration = { controller: new AbortController(), owner: signal };
+      try {
+        await context.registerTool?.({ ...tool, execute: async (args, options) => {
+          if (signal?.aborted || registration.controller.signal.aborted || options?.signal?.aborted) return toolError("tool_inactive");
+          try { return await tool.execute(args, { signal: AbortSignal.any([registration.controller.signal, ...(signal ? [signal] : []), ...(options?.signal ? [options.signal] : [])]) }); } catch { return toolError("tool_failed"); }
+        } }, { signal: registration.controller.signal });
+        owned.set(tool.name, registration);
+        if (signal?.aborted) await remove(tool.name, registration);
+        else status.toolsRegistered.push(tool.name);
+      } catch {
+        registration.controller.abort();
+        // The inspector reports only registrations that actually succeeded.
+      }
+    }
     return status;
-  }
-
-  const registeredNames: string[] = [];
-
-  try {
-    // Tool 1: Get Multichain Wallets (Stellar + Avalanche + Solana)
-    await context.registerTool({
-      name: "carmelita_get_multichain_wallets",
-      description: "Returns active user wallets and balances across Stellar, Avalanche, and Solana",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-      execute: async () => {
-        const token = await getAccessToken();
-        if (!token) return { content: [{ type: "text", text: "authentication_required" }], isError: true };
-        const response = await fetch("/api/agent/wallets", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await response.json();
-        return { content: [{ type: "text", text: JSON.stringify(json) }] };
-      },
-    });
-    registeredNames.push("carmelita_get_multichain_wallets");
-
-    // Tool 2: Fund Solana Devnet Wallet
-    await context.registerTool({
-      name: "carmelita_fund_solana_devnet",
-      description: "Requests a 1 SOL Devnet airdrop faucet to the user's active Solana wallet",
-      inputSchema: {
-        type: "object",
-        properties: {
-          solAmount: { type: "number", description: "SOL amount to request (default 1)" },
-        },
-      },
-      execute: async (args) => {
-        const token = await getAccessToken();
-        if (!token) return { content: [{ type: "text", text: "authentication_required" }], isError: true };
-        const response = await fetch("/api/agent/wallets/solana/fund", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            explicitUserConfirmation: true,
-            solAmount: Number(args.solAmount ?? 1),
-          }),
-        });
-        const json = await response.json();
-        return { content: [{ type: "text", text: JSON.stringify(json) }] };
-      },
-    });
-    registeredNames.push("carmelita_fund_solana_devnet");
-
-    // Tool 3: Get Solana Devnet Balance & Status
-    await context.registerTool({
-      name: "carmelita_get_solana_status",
-      description: "Returns Solana Devnet address, SOL balance, and explorer link",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-      execute: async () => {
-        const token = await getAccessToken();
-        if (!token) return { content: [{ type: "text", text: "authentication_required" }], isError: true };
-        const response = await fetch("/api/agent/wallets/solana", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await response.json();
-        return { content: [{ type: "text", text: JSON.stringify(json) }] };
-      },
-    });
-    registeredNames.push("carmelita_get_solana_status");
-  } catch (error) {
-    console.warn("WebMCP registration warning:", error);
-  }
-
-  return {
-    ...status,
-    toolsRegistered: registeredNames,
-  };
+  });
+}
+export function registerCarmelitaWebMcpTools(getAccessToken: () => Promise<string | null>, signal?: AbortSignal) {
+  const read = (name: string, description: string, url: string): WebMcpToolDefinition => ({
+    name, description, inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true, destructiveHint: false },
+    execute: async (_args, options) => {
+      const token = await getAccessToken();
+      if (signal?.aborted || options?.signal?.aborted) return toolError("tool_inactive");
+      if (!token) return toolError("authentication_required");
+      return webMcpRequest(url, { headers: { Authorization: `Bearer ${token}` }, signal: options?.signal ?? signal });
+    },
+  });
+  return registerWebMcpTools([
+    read("carmelita_get_multichain_wallets", "Return the user's registered wallets", "/api/agent/wallets"),
+    read("carmelita_get_solana_status", "Return Solana Devnet wallet status", "/api/agent/wallets/solana"),
+  ], signal);
 }

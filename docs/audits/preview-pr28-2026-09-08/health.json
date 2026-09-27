@@ -1,0 +1,26 @@
+{
+  "service": "agente-asistente",
+  "status": "ok",
+  "environment": "stellar-testnet",
+  "persistence": "postgres",
+  "previewIsolation": {
+    "verified": true,
+    "databaseFingerprint": "bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299"
+  },
+  "deployment": {
+    "environment": "preview",
+    "gitCommitSha": "4c9d642e10194319e06c1bc27535938e44cb2848",
+    "url": "https://agente-asistente-ewb24zqe8-cabscryptocontacto-6028s-projects.vercel.app"
+  },
+  "custody": {
+    "userFunds": false,
+    "testnetDistributor": true
+  },
+  "payments": {
+    "commerceSandbox": "simulated",
+    "x402StellarTestnet": "enabled",
+    "mainnet": "disabled"
+  },
+  "mcp": "/api/mcp",
+  "timestamp": "2026-09-08T04:14:09.273Z"
+}

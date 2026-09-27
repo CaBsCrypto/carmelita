@@ -57,7 +57,41 @@ export const WALLET_NETWORKS: Record<WalletNetworkId, WalletNetwork> = {
 };
 
 export function getWalletNetwork(input: string) {
-  return WALLET_NETWORKS[walletNetworkIdSchema.parse(input)];
+  const network = WALLET_NETWORKS[walletNetworkIdSchema.parse(input)];
+  return isEvmExpansionNetwork(network.id) && isEvmExpansionEnabled()
+    ? { ...network, rollout: "experimental" as const }
+    : network;
+}
+
+export function isEvmExpansionNetwork(input: string) {
+  return input === "bnb:testnet" || input === "base:sepolia";
+}
+
+export function isEvmExpansionEnabled(env: Record<string, string | undefined> = process.env) {
+  if (env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED !== "true") return false;
+  if (env.VERCEL_ENV === "production") {
+    return env.CARMELITA_PREVIEW_ISOLATED !== "true"
+      && env.CARMELITA_PREVIEW_DATABASE_URL === undefined
+      && env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED === undefined;
+  }
+  return env.VERCEL_ENV === "preview" && env.CARMELITA_PREVIEW_ISOLATED === "true";
+}
+
+export function isWalletNetworkEnabled(input: string) {
+  const parsed = walletNetworkIdSchema.safeParse(input);
+  return parsed.success && getWalletNetwork(parsed.data).rollout !== "planned";
+}
+
+export function enabledWalletNetworks() {
+  return Object.keys(WALLET_NETWORKS).filter(isWalletNetworkEnabled).map(getWalletNetwork);
+}
+
+export function enabledEvmNetworks() {
+  return enabledWalletNetworks().filter((network) => network.family === "evm")
+    .sort((left, right) => {
+      const order = ["avalanche:fuji", "bnb:testnet", "base:sepolia"];
+      return order.indexOf(left.id) - order.indexOf(right.id);
+    });
 }
 
 export function networksForFamily(family: WalletFamily) {

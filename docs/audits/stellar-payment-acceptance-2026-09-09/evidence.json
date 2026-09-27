@@ -1,0 +1,1498 @@
+{
+  "version": "stellar-payment-acceptance-v1",
+  "status": "PASS",
+  "evidenceCutoff": "2026-09-09T09:05:42.8056423Z",
+  "pullRequest": "https://github.com/CaBsCrypto/carmelita/pull/28",
+  "codeCommit": "51f21e1f37cc003d39e57a60644864e14881c8b6",
+  "deliveredCommit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+  "immutablePreview": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+  "previewAlias": "https://agente-asistente-git-f-22838e-cabscryptocontacto-6028s-projects.vercel.app",
+  "deploymentId": "dpl_F5ctqE9EXPtEqLQoKzJZsiguZtm3",
+  "databaseFingerprint": "bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299",
+  "subjects": [
+    "user-A",
+    "user-B",
+    "admin-1",
+    "admin-2"
+  ],
+  "currentChecks": [
+    {
+      "name": "Exact commit CI, including clean installation and local quality controls",
+      "status": "PASS",
+      "date": "2026-09-09T08:44:01Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "evidence": "receipt-acceptance-ci-20260909.json",
+      "url": "https://github.com/CaBsCrypto/carmelita/actions/runs/34330501829"
+    },
+    {
+      "name": "Preview isolation, exact version, public pages and unauthenticated API rejection",
+      "status": "PASS",
+      "date": "2026-09-09T08:44:38.329Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 8,
+      "failed": 0,
+      "evidence": "receipt-acceptance-preview-health-20260909.json",
+      "limit": "Public and unauthenticated checks do not establish authenticated payment acceptance."
+    },
+    {
+      "name": "Empty payment UUID rejected before receipt requests",
+      "status": "PASS",
+      "date": "2026-09-09T08:47:48.985Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "evidence": "receipt-acceptance-invalid-input-browser-20260909.json",
+      "limit": "Expected panel FAIL for invalid input; this is not cross-owner receipt acceptance."
+    },
+    {
+      "name": "Account B baseline before payment preparation",
+      "status": "PASS",
+      "date": "2026-09-09T08:49:06.273Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 4,
+      "failed": 0,
+      "evidence": "stellar-real-payment-before-20260909.json"
+    },
+    {
+      "name": "Account B approved payment, exact debit and complete verified delivery",
+      "status": "PASS",
+      "date": "2026-09-09T08:53:47.196Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 16,
+      "failed": 0,
+      "evidence": "stellar-real-payment-after-20260909.json"
+    },
+    {
+      "name": "Visible replay preserves payment and delivery without additional debit",
+      "status": "PASS",
+      "date": "2026-09-09T08:54:46.835Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 17,
+      "failed": 0,
+      "evidence": "stellar-real-payment-replay-20260909.json",
+      "visibleAction": "Verificar protección contra duplicados",
+      "visibleObservationSource": "Root observed the application workflow and reported its result in the current acceptance task."
+    },
+    {
+      "name": "Payment recovery after explicit logout and new Privy login",
+      "status": "PASS",
+      "date": "2026-09-09T08:57:24.352Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 17,
+      "failed": 0,
+      "evidence": "stellar-real-payment-recovered-20260909.json",
+      "visibleObservationSource": "Root observed B logout, a new Privy login, Recibo x402 reporting the original payment recovered, and Consultar estado del pago confirming payment and delivery."
+    },
+    {
+      "name": "Account A cannot GET or reconcile B's real payment",
+      "status": "PASS",
+      "date": "2026-09-09T09:03:02.99Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "evidence": "stellar-real-receipt-isolation-20260909.json",
+      "acceptance": "The real B payment ID must yield 404 for GET and POST reconcile under A; unexpected GET stops before POST.",
+      "passed": 6,
+      "failed": 0,
+      "independentOwnership": "Real payment belongs to B, independently checked before A obtained GET 404 and POST reconcile 404."
+    },
+    {
+      "name": "Payment unchanged after cross-owner rejection",
+      "status": "PASS",
+      "date": "2026-09-09T09:04:36.945Z",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 17,
+      "failed": 0,
+      "evidence": "stellar-real-payment-after-isolation-20260909.json"
+    },
+    {
+      "name": "Final identities, associations and financial counts",
+      "status": "PASS",
+      "date": "2026-09-09T09:04:35.921Z",
+      "datePrecision": "Report generation timestamp; no individual check times were recorded",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "passed": 30,
+      "failed": 0,
+      "evidence": "stellar-payment-final-wallets-20260909.json"
+    },
+    {
+      "name": "Production deployment unchanged at closure",
+      "status": "PASS",
+      "date": "2026-09-09T09:05:42.8056423Z",
+      "datePrecision": "Snapshot recording time",
+      "deploymentId": "dpl_tYAhcpzd9uxqAYPU6869jLzt7dbG",
+      "readyState": "READY",
+      "evidence": "stellar-payment-final-production-20260909.json"
+    }
+  ],
+  "approval": {
+    "status": "APPROVED_REPORTED_BY_ACCEPTANCE_OPERATOR",
+    "account": "B",
+    "approvalTimestamp": null,
+    "source": "Root confirmed the user's concrete approval and actual payment in the current task; no exact approval timestamp supplied.",
+    "preparedTermsEvidence": "stellar-payment-approval-snapshot-20260909.json",
+    "preparedSnapshotDate": "2026-09-09T08:51:29.867Z",
+    "preparedSnapshotIsNotApprovalEvidence": true,
+    "terms": {
+      "resource": "https://stellar.org/x402-demo/api/protected/testnet",
+      "method": "GET",
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "stellar:testnet",
+      "asset": "official Testnet USDC",
+      "amount": "0.0100000",
+      "sponsored": true,
+      "expiresAt": "2026-09-09T08:55:09.306Z"
+    }
+  },
+  "payment": {
+    "id": "b6a6bb7f-1a96-46d0-8056-bfbc66204415",
+    "owner": "B",
+    "status": "confirmed",
+    "paymentState": "confirmed",
+    "deliveryState": "received",
+    "amount": "0.0100000",
+    "transactionHash": "d09a654b2e0efcc0742d46de9bad11703b8b7dc29aa5631a62dd99e7ce5e50f4",
+    "resourceSha256": "16bf56dcb79dd7b26e1b155ed51857a46a90e931894f5f366b1622312916fc94",
+    "resourceBytes": 6851,
+    "resourceStatus": 200,
+    "receiptPresent": true,
+    "receiptConsistent": true,
+    "storedVerificationConsistent": true,
+    "fullBodyMatchesHash": true,
+    "baseline": {
+      "date": "2026-09-09T08:49:06.273Z",
+      "usdc": "0.4900000",
+      "xlm": "9999.9999800",
+      "accountPayments": 0,
+      "totalPreviewPayments": 0
+    },
+    "after": {
+      "date": "2026-09-09T08:53:47.195Z",
+      "usdc": "0.4800000",
+      "xlm": "9999.9999800",
+      "accountPayments": 1,
+      "totalPreviewPayments": 1
+    },
+    "replay": {
+      "date": "2026-09-09T08:54:46.835Z",
+      "usdc": "0.4800000",
+      "xlm": "9999.9999800",
+      "accountPayments": 1,
+      "totalPreviewPayments": 1
+    },
+    "recovered": {
+      "date": "2026-09-09T08:57:24.351Z",
+      "usdc": "0.4800000",
+      "xlm": "9999.9999800",
+      "accountPayments": 1,
+      "totalPreviewPayments": 1
+    },
+    "firstDebit": "0.0100000",
+    "replayAdditionalDebit": "0.0000000",
+    "replaySameIdTransactionAndBodyHash": true,
+    "recoveryAdditionalDebit": "0.0000000",
+    "recoverySameIdTransactionAndBodyHash": true,
+    "accountAndAuthorizedUsdcTrustlineExistedBeforePayment": true,
+    "afterIsolation": {
+      "date": "2026-09-09T09:04:36.944Z",
+      "usdc": "0.4800000",
+      "xlm": "9999.9999800",
+      "accountPayments": 1,
+      "totalPreviewPayments": 1,
+      "additionalDebit": "0.0000000",
+      "sameIdTransactionAndBodyHash": true
+    }
+  },
+  "verificationLayers": {
+    "application": "Carmelita performed the exact Stellar Testnet RPC verification of transaction, authorization, nonce, transfer terms and fee sponsorship; its proof is persisted.",
+    "independentReadOnlyHelper": "The helper checked owner B, persisted proof consistency, receipt conditions, full resource body SHA-256 and exact seven-decimal Horizon balance differences. It did not independently replay cryptographic XDR verification.",
+    "localFailureCoverage": "Concurrency, timeout, contradictory receipt and recovery failure scenarios retain their dated local/isolated SQL evidence; no new real failure was induced in this payment acceptance."
+  },
+  "earlierAcceptance": {
+    "commit": "6be6bc5dba14b85ebf51dc33f3bc4e0ef1be4ebb",
+    "immutablePreview": "https://agente-asistente-7adi10rft-cabscryptocontacto-6028s-projects.vercel.app",
+    "userB": {
+      "status": "PASS",
+      "passed": 14,
+      "date": "2026-09-09T08:19:46.08Z",
+      "evidence": "multichain-session-b-browser-20260909.json"
+    },
+    "userA": {
+      "status": "PASS",
+      "passed": 14,
+      "date": "2026-09-09T08:31:42.523Z",
+      "evidence": "multichain-session-a-browser-20260909.json"
+    },
+    "administrators": {
+      "status": "PASS",
+      "subjects": [
+        "admin-1",
+        "admin-2"
+      ],
+      "recordedAt": "2026-09-09T08:39:54.9122873Z",
+      "datePrecision": "recorded after observed workflow",
+      "evidence": "multichain-admin-browser-20260909.json"
+    },
+    "qaIdentityCheck": {
+      "status": "PASS",
+      "passed": 30,
+      "date": "2026-09-09T08:38:05.653Z",
+      "users": 2,
+      "uniqueWallets": 6,
+      "networkAssociations": 10,
+      "migrationJournalEntries": 22,
+      "financialRecordsAtThatCut": 0,
+      "evidence": "multichain-session-final-db-20260909.json"
+    }
+  },
+  "qualityEvidence": {
+    "local": {
+      "date": "2026-09-09",
+      "timePrecision": "08:30 UTC recorded in PR summary",
+      "codeCommit": "51f21e1f37cc003d39e57a60644864e14881c8b6",
+      "tests": 575,
+      "passed": 573,
+      "failed": 0,
+      "skipped": 2,
+      "newReceiptTests": 12,
+      "lint": "PASS",
+      "buildAndTypeScript": "PASS"
+    },
+    "externalSkips": [
+      "Avalanche MCP live smoke: AVALANCHE_MCP_LIVE=1 required",
+      "Dexalot Testnet live smoke: DEXALOT_LIVE=1 required"
+    ],
+    "logs": [
+      "receipt-acceptance-test-build-20260909.log",
+      "receipt-acceptance-lint-20260909.log",
+      "receipt-acceptance-graphify-20260909.log"
+    ],
+    "graphify": {
+      "astFiles": 433,
+      "nodes": 2939,
+      "edges": 6979,
+      "communities": 146,
+      "coverage": "partial: 22 SQL files lack tree_sitter_sql; no claim of fresh document semantics"
+    },
+    "historicalSql": {
+      "date": "2026-09-08T08:53:32Z",
+      "codeCommit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "passed": 23,
+      "failed": 0,
+      "evidence": "x402-store-sql-acceptance-strictreceipt.json",
+      "scope": "Synthetic isolated schema; not real payment acceptance"
+    }
+  },
+  "scope": {
+    "realPaymentsInThisPreviewRound": 1,
+    "newFundingOrTrustlineInPaymentRound": false,
+    "bazaarChanged": false,
+    "productionDeploymentIdLastObserved": "dpl_tYAhcpzd9uxqAYPU6869jLzt7dbG",
+    "productionEvidence": "stellar-payment-final-production-20260909.json",
+    "productionVerifiedAt": "2026-09-09T09:05:42.8056423Z",
+    "productionUnchangedAtClosure": true,
+    "reportCreation": "Local file reads and documentation edits only; no DB/network requests or application execution to assemble the report."
+  },
+  "retention": {
+    "newFictionalChatOrMemoryFixtures": false,
+    "associatedRequestMessagesPreserved": 2,
+    "reason": "Root's cleanup inspection identified the request chat as historical payment evidence linked by requestId/idempotency_key; the two associated messages are retained, not treated as disposable fixtures.",
+    "cleanupPerformedByDraftingAgent": false,
+    "source": "stellar-chat-inspection-20260909.json",
+    "completedAt": "2026-09-09T09:00:44.224Z",
+    "exactPairVerified": true,
+    "financialLinkVerified": true,
+    "writesPerformed": 0
+  },
+  "limitations": [
+    "Do not replace the original commit and timestamps of historical session/admin or SQL evidence with the new payment commit.",
+    "Observed net debit does not exclude concurrent compensating chain activity; database and Horizon reads are not an atomic cross-system snapshot.",
+    "A confirmed payment can retain delivery pending if the provider body was lost before persistence; chain evidence cannot reconstruct that body.",
+    "No real timeout, restart during sending or provider failure was induced; those cases remain supported by local and synthetic SQL tests.",
+    "Chat/memory historical evidence remains separate. Bazaar, other networks and Mainnet are outside this acceptance."
+  ],
+  "publicationScope": "This report documents acceptance of 968d780d01951bcba51d338772e88ba6fcbb39f6 (receipt code 51f21e1f37cc003d39e57a60644864e14881c8b6). A later documentation publication does not reattribute the tested payment to a newer commit.",
+  "receiptIsolation": {
+    "status": "PASS",
+    "observedAccount": "A",
+    "owner": "B",
+    "paymentId": "b6a6bb7f-1a96-46d0-8056-bfbc66204415",
+    "getHttp": 404,
+    "reconcileHttp": 404,
+    "completedAt": "2026-09-09T09:03:02.99Z",
+    "panelOwnershipRequirement": "external_required",
+    "independentOwnershipCompleted": true,
+    "bodyReadByIsolationControl": false,
+    "evidence": "stellar-real-receipt-isolation-20260909.json"
+  },
+  "finalWalletState": {
+    "date": "2026-09-09T09:04:35.921Z",
+    "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+    "users": 2,
+    "uniqueWallets": 6,
+    "networkAssociations": 10,
+    "accounts": [
+      {
+        "account": "A",
+        "canonicalWallets": 3,
+        "networkAssociations": 5,
+        "networks": [
+          "avalanche:fuji",
+          "base:sepolia",
+          "bnb:testnet",
+          "solana:devnet",
+          "stellar:testnet"
+        ],
+        "originalEvmIdentityPreserved": true
+      },
+      {
+        "account": "B",
+        "canonicalWallets": 3,
+        "networkAssociations": 5,
+        "networks": [
+          "avalanche:fuji",
+          "base:sepolia",
+          "bnb:testnet",
+          "solana:devnet",
+          "stellar:testnet"
+        ],
+        "originalEvmIdentityPreserved": true
+      }
+    ],
+    "financialRecords": {
+      "payments": 1,
+      "stellarActions": 0,
+      "faucetClaims": 0,
+      "commerceIntents": 0
+    },
+    "migrationJournalEntries": 22,
+    "identityValuesPreserved": true,
+    "evidence": "stellar-payment-final-wallets-20260909.json"
+  },
+  "resultsByPhase": [
+    {
+      "phase": "public_preview",
+      "subject": "unauthenticated",
+      "source": "receipt-acceptance-preview-health-20260909.json",
+      "date": "2026-09-09T08:44:38.329Z",
+      "completedAt": null,
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "/",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:09.371Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 200
+        },
+        {
+          "name": "/agent",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:14.051Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 200
+        },
+        {
+          "name": "/preview-acceptance",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:17.788Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 200
+        },
+        {
+          "name": "/api/agent/wallets",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:21.619Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 401
+        },
+        {
+          "name": "/api/agent/x402",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:25.765Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 401
+        },
+        {
+          "name": "/api/agent/x402?paymentId=12345678-1234-4234-8234-123456789abc",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:29.553Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 401
+        },
+        {
+          "name": "/api/admin/wallets",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:34.463Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 401
+        },
+        {
+          "name": "POST /api/agent/x402 reconcile without Privy",
+          "status": "PASS",
+          "date": "2026-09-09T08:44:38.329Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 401
+        }
+      ],
+      "passed": 8,
+      "failed": 0,
+      "balances": null,
+      "counts": null
+    },
+    {
+      "phase": "baseline",
+      "subject": "B",
+      "source": "stellar-real-payment-before-20260909.json",
+      "date": "2026-09-09T08:49:05.21Z",
+      "completedAt": "2026-09-09T08:49:06.273Z",
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada verificada antes de conectar",
+          "status": "PASS",
+          "date": "2026-09-09T08:49:05.212Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Esquema de recuperación y asociaciones disponible",
+          "status": "PASS",
+          "date": "2026-09-09T08:49:05.786Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta B y billetera Stellar identificadas sin ambigüedad",
+          "status": "PASS",
+          "date": "2026-09-09T08:49:05.786Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Lectura oficial de cuenta y saldos Testnet completada",
+          "status": "PASS",
+          "date": "2026-09-09T08:49:06.273Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 4,
+      "failed": 0,
+      "balances": {
+        "observedAt": "2026-09-09T08:49:06.273Z",
+        "exists": true,
+        "trustline": true,
+        "usdcAuthorized": true,
+        "xlm": "9999.9999800",
+        "usdc": "0.4900000",
+        "horizonStatus": 200
+      },
+      "counts": {
+        "accountPayments": 0,
+        "totalPayments": 0
+      }
+    },
+    {
+      "phase": "payment",
+      "subject": "B",
+      "source": "stellar-real-payment-after-20260909.json",
+      "date": "2026-09-09T08:53:46.027Z",
+      "completedAt": "2026-09-09T08:53:47.196Z",
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada verificada antes de conectar",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:46.029Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Esquema de recuperación y asociaciones disponible",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:46.667Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta B y billetera Stellar identificadas sin ambigüedad",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:46.667Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Lectura oficial de cuenta y saldos Testnet completada",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.195Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago pertenece a B y su billetera Stellar",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.195Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Importe positivo hasta 0.0100000 USDC y ficha oficial Testnet",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.195Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago confirmado con prueba persistida consistente y hash único",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Entrega completa conservada y vinculada por SHA-256",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Recibo presente coherente o ausencia cubierta por prueba independiente persistida",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Estado global confirmado sólo con pago y entrega comprobados",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Misma identidad Stellar y base que la referencia",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta y trustline autorizada activas antes y después",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Débito esperado coincide con el importe aprobado o con repetición sin cobro",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Débito USDC exacto igual al importe del pago",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Saldo XLM estable durante el pago patrocinado o su repetición",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Existe exactamente un nuevo pago respecto de la referencia",
+          "status": "PASS",
+          "date": "2026-09-09T08:53:47.196Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 16,
+      "failed": 0,
+      "balances": {
+        "observedAt": "2026-09-09T08:53:47.195Z",
+        "exists": true,
+        "trustline": true,
+        "usdcAuthorized": true,
+        "xlm": "9999.9999800",
+        "usdc": "0.4800000",
+        "horizonStatus": 200
+      },
+      "counts": {
+        "accountPayments": 1,
+        "totalPayments": 1
+      }
+    },
+    {
+      "phase": "replay",
+      "subject": "B",
+      "source": "stellar-real-payment-replay-20260909.json",
+      "date": "2026-09-09T08:54:45.668Z",
+      "completedAt": "2026-09-09T08:54:46.835Z",
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada verificada antes de conectar",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:45.67Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Esquema de recuperación y asociaciones disponible",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.32Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta B y billetera Stellar identificadas sin ambigüedad",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.32Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Lectura oficial de cuenta y saldos Testnet completada",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago pertenece a B y su billetera Stellar",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Importe positivo hasta 0.0100000 USDC y ficha oficial Testnet",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago confirmado con prueba persistida consistente y hash único",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Entrega completa conservada y vinculada por SHA-256",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Recibo presente coherente o ausencia cubierta por prueba independiente persistida",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Estado global confirmado sólo con pago y entrega comprobados",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Misma identidad Stellar y base que la referencia",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta y trustline autorizada activas antes y después",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Débito esperado coincide con el importe aprobado o con repetición sin cobro",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva saldo USDC sin débito adicional",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Saldo XLM estable durante el pago patrocinado o su repetición",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva cantidad de pagos",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva mismo ID, transacción y hash del cuerpo",
+          "status": "PASS",
+          "date": "2026-09-09T08:54:46.835Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 17,
+      "failed": 0,
+      "balances": {
+        "observedAt": "2026-09-09T08:54:46.835Z",
+        "exists": true,
+        "trustline": true,
+        "usdcAuthorized": true,
+        "xlm": "9999.9999800",
+        "usdc": "0.4800000",
+        "horizonStatus": 200
+      },
+      "counts": {
+        "accountPayments": 1,
+        "totalPayments": 1
+      }
+    },
+    {
+      "phase": "session_recovery",
+      "subject": "B",
+      "source": "stellar-real-payment-recovered-20260909.json",
+      "date": "2026-09-09T08:57:23.18Z",
+      "completedAt": "2026-09-09T08:57:24.352Z",
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada verificada antes de conectar",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:23.182Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Esquema de recuperación y asociaciones disponible",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:23.784Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta B y billetera Stellar identificadas sin ambigüedad",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:23.784Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Lectura oficial de cuenta y saldos Testnet completada",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago pertenece a B y su billetera Stellar",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Importe positivo hasta 0.0100000 USDC y ficha oficial Testnet",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago confirmado con prueba persistida consistente y hash único",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Entrega completa conservada y vinculada por SHA-256",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Recibo presente coherente o ausencia cubierta por prueba independiente persistida",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Estado global confirmado sólo con pago y entrega comprobados",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Misma identidad Stellar y base que la referencia",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta y trustline autorizada activas antes y después",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Débito esperado coincide con el importe aprobado o con repetición sin cobro",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva saldo USDC sin débito adicional",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Saldo XLM estable durante el pago patrocinado o su repetición",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva cantidad de pagos",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva mismo ID, transacción y hash del cuerpo",
+          "status": "PASS",
+          "date": "2026-09-09T08:57:24.352Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 17,
+      "failed": 0,
+      "balances": {
+        "observedAt": "2026-09-09T08:57:24.351Z",
+        "exists": true,
+        "trustline": true,
+        "usdcAuthorized": true,
+        "xlm": "9999.9999800",
+        "usdc": "0.4800000",
+        "horizonStatus": 200
+      },
+      "counts": {
+        "accountPayments": 1,
+        "totalPayments": 1
+      }
+    },
+    {
+      "phase": "cross_owner_receipt",
+      "subject": "A",
+      "source": "stellar-real-receipt-isolation-20260909.json",
+      "date": "2026-09-09T09:03:02.99Z",
+      "completedAt": null,
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada y versión",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:00.931Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 200
+        },
+        {
+          "name": "Identificador del pago",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:00.931Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Sesión Privy",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:00.931Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "GET de recibo ajeno",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:02.474Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 404
+        },
+        {
+          "name": "POST de reconciliación ajena",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:02.795Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 404
+        },
+        {
+          "name": "Preview estable durante la comprobación",
+          "status": "PASS",
+          "date": "2026-09-09T09:03:02.99Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+          "http": 200
+        }
+      ],
+      "passed": 6,
+      "failed": 0,
+      "balances": null,
+      "counts": null
+    },
+    {
+      "phase": "after_isolation",
+      "subject": "B",
+      "source": "stellar-real-payment-after-isolation-20260909.json",
+      "date": "2026-09-09T09:04:35.776Z",
+      "completedAt": "2026-09-09T09:04:36.945Z",
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "Preview aislada verificada antes de conectar",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.778Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Esquema de recuperación y asociaciones disponible",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.421Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta B y billetera Stellar identificadas sin ambigüedad",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.421Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Lectura oficial de cuenta y saldos Testnet completada",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.944Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago pertenece a B y su billetera Stellar",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.944Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Importe positivo hasta 0.0100000 USDC y ficha oficial Testnet",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.944Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Pago confirmado con prueba persistida consistente y hash único",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Entrega completa conservada y vinculada por SHA-256",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Recibo presente coherente o ausencia cubierta por prueba independiente persistida",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Estado global confirmado sólo con pago y entrega comprobados",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Misma identidad Stellar y base que la referencia",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Cuenta y trustline autorizada activas antes y después",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Débito esperado coincide con el importe aprobado o con repetición sin cobro",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva saldo USDC sin débito adicional",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Saldo XLM estable durante el pago patrocinado o su repetición",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva cantidad de pagos",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Repetición conserva mismo ID, transacción y hash del cuerpo",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:36.945Z",
+          "datePrecision": "Per-check timestamp from source",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 17,
+      "failed": 0,
+      "balances": {
+        "observedAt": "2026-09-09T09:04:36.944Z",
+        "exists": true,
+        "trustline": true,
+        "usdcAuthorized": true,
+        "xlm": "9999.9999800",
+        "usdc": "0.4800000",
+        "horizonStatus": 200
+      },
+      "counts": {
+        "accountPayments": 1,
+        "totalPayments": 1
+      }
+    },
+    {
+      "phase": "final_wallets",
+      "subject": "A and B",
+      "source": "stellar-payment-final-wallets-20260909.json",
+      "date": "2026-09-09T09:04:35.921Z",
+      "completedAt": null,
+      "status": "PASS",
+      "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+      "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app",
+      "checks": [
+        {
+          "name": "The isolated Preview guard passed before connection",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Exactly the two baseline users remain",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Exactly six canonical identities remain",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity id values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity userId values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity address values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity chainType values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity legacyNetwork values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Canonical identity createdAt values match the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Accounts A and B were identified unambiguously",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Ten network associations exist after both accounts login",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Every binding preserves baseline wallet ownership",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "No owner has a duplicate network binding",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Account A has exactly its expected networks",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Account A retains its original single EVM identity",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Account B has exactly its expected networks",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Account B retains its original single EVM identity",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Accounts A and B preserve different owners and EVM identities",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "actions remains zero and matches the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "faucets remains zero and matches the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "commerce_intents remains zero and matches the baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Exactly one approved payment exists after an initially empty payment baseline",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Migration journal contains exactly 22 entries",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary users equals 2",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary wallets equals 6",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary uniqueWallets equals 6",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary networkAssociations equals 10",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary completeUsers equals 2",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin summary needsAttention equals 0",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        },
+        {
+          "name": "Admin registry exposes the five enabled networks",
+          "status": "PASS",
+          "date": "2026-09-09T09:04:35.921Z",
+          "datePrecision": "Report generation timestamp; individual time unavailable",
+          "commit": "968d780d01951bcba51d338772e88ba6fcbb39f6",
+          "deployment": "https://agente-asistente-p2v0lwjat-cabscryptocontacto-6028s-projects.vercel.app"
+        }
+      ],
+      "passed": 30,
+      "failed": 0,
+      "balances": null,
+      "counts": null
+    }
+  ],
+  "pendingAcceptanceWithinThisScope": [],
+  "nextScope": "Stellar Bazaar discovery and consumption remain planned and require separate implementation and acceptance; this validated the fixed Stellar demo only."
+}

@@ -3,8 +3,9 @@ import { z } from "zod";
 import { getPrivyUserIdentity, verifyPrivyAccessToken } from "@/app/privy-stellar";
 import { listPersistedUserWallets, persistActivatedWallet } from "@/app/multichain-account";
 import { getOrCreateUserWallet } from "@/app/wallets/privy";
-import { getWalletNetwork, WALLET_NETWORKS } from "@/app/wallets/networks";
+import { getWalletNetwork, isWalletNetworkEnabled, WALLET_NETWORKS } from "@/app/wallets/networks";
 import { walletNetworkIdSchema } from "@/app/wallets/types";
+import { hasDatabase } from "@/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,10 +45,12 @@ async function authenticatedUser(request: Request) {
 export async function GET(request: Request) {
   try {
     const user = await authenticatedUser(request);
-    const wallets = await listPersistedUserWallets(user.userId);
+    const wallets = (await listPersistedUserWallets(user.userId))
+      .filter((wallet) => isWalletNetworkEnabled(wallet.network))
+      .map(({ id, walletId, address, chainType, network, status, updatedAt }) => ({ id, walletId, address, chainType, network, status, updatedAt }));
     return NextResponse.json({
       wallets,
-      networks: Object.values(WALLET_NETWORKS).map((network) => ({
+      networks: Object.keys(WALLET_NETWORKS).map(getWalletNetwork).map((network) => ({
         id: network.id,
         family: network.family,
         name: network.name,
@@ -66,6 +69,7 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   try {
     const user = await authenticatedUser(request);
+    if (!hasDatabase()) throw new Error("database_not_configured");
     const input = activationSchema.parse(await request.json());
     const network = getWalletNetwork(input.network);
     if (network.rollout === "planned") {
@@ -105,6 +109,8 @@ export async function POST(request: Request) {
         : "wallet_activation_failed";
     const status = invalidInput || code.startsWith("invalid_")
       ? 400
+      : code.includes("conflict") || code === "privy_evm_wallet_ambiguous"
+        ? 409
       : code === "privy_not_configured" || code === "database_not_configured"
         ? 503
         : 401;

@@ -1,0 +1,174 @@
+{
+  "url": "https://agente-asistente-git-f-22838e-cabscryptocontacto-6028s-projects.vercel.app",
+  "deployment": "https://agente-asistente-git-f-22838e-cabscryptocontacto-6028s-projects.vercel.app",
+  "commit": "4c9d642e10194319e06c1bc27535938e44cb2848",
+  "checks": [
+    {
+      "name": "Remote Preview health",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "Remote Preview isolation and commit",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Runtime database fingerprint and commit match the explicitly selected Preview"
+    },
+    {
+      "name": "read-only planning",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 403; received 403"
+    },
+    {
+      "name": "plan creation",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 201; received 201"
+    },
+    {
+      "name": "idempotent replay",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "REST replay identity",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Repeated request returned the same plan ID"
+    },
+    {
+      "name": "idempotency conflict",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 409; received 409"
+    },
+    {
+      "name": "owner plan read",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "cross-user plan read",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 404; received 404"
+    },
+    {
+      "name": "cross-user receipt read",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 404; received 404"
+    },
+    {
+      "name": "missing receipt",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 202; received 202"
+    },
+    {
+      "name": "MCP initialize",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "MCP initialized notification",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 202; received 202"
+    },
+    {
+      "name": "MCP tools/list",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "MCP execution boundary",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Read and planning tools available; no approval, signing or execution tool"
+    },
+    {
+      "name": "MCP list_capabilities",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "MCP scope denial transport",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "MCP read-only scope enforcement",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Planning rejected with a tool error and mcp_scope_required"
+    },
+    {
+      "name": "MCP plan_action",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 200; received 200"
+    },
+    {
+      "name": "MCP plan safety",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Plan is Testnet-only with execution disabled"
+    },
+    {
+      "name": "MCP replay identity",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Repeated request returned the same plan ID"
+    },
+    {
+      "name": "MCP actor isolation",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Independent actors received independent plan IDs"
+    },
+    {
+      "name": "MCP changed-input conflict",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Changed input rejected with gateway_idempotency_conflict"
+    },
+    {
+      "name": "revoked PAT",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 401; received 401"
+    },
+    {
+      "name": "revoked MCP PAT",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Expected HTTP 401; received 401"
+    },
+    {
+      "name": "Exact fixture cleanup",
+      "status": "PASS",
+      "durationMs": 0,
+      "detail": "Removed 3 plans, 3 tokens, 6 actor/token-specific rate buckets and 19 request-specific audit events. Shared and historical rows were not selected."
+    },
+    {
+      "name": "Privy login, session recovery and two-user persistence",
+      "status": "PENDING",
+      "durationMs": 0,
+      "detail": "Gateway actors are synthetic fixtures. Validate two exclusive Privy test identities through the application."
+    }
+  ],
+  "generatedAt": "2026-09-08T04:16:26.309Z",
+  "status": "PENDING",
+  "passed": 26,
+  "failed": 0,
+  "pending": 1
+}

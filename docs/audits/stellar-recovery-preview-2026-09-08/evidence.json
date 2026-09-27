@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-08T08:58:38.543Z",
+  "codeCommit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+  "status": "pendiente",
+  "pullRequest": "https://github.com/CaBsCrypto/carmelita/pull/28",
+  "controls": [
+    {
+      "name": "Pinned clean install",
+      "status": "aprobado",
+      "date": "2026-09-08T08:43:15.337Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "local",
+      "detail": "Node 24.14.0; npm 11.6.1; unchanged lockfile; install warnings retained separately"
+    },
+    {
+      "name": "Lint: zero errors or warnings",
+      "status": "aprobado",
+      "date": "2026-09-08T08:56:20.281Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "local",
+      "detail": "Completed consolidated quality command"
+    },
+    {
+      "name": "Tests: 563 total, 561 passed, zero failed, two explicit external skips",
+      "status": "aprobado",
+      "date": "2026-09-08T08:56:20.281Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "local",
+      "detail": "Completed consolidated quality command"
+    },
+    {
+      "name": "Full build and TypeScript",
+      "status": "aprobado",
+      "date": "2026-09-08T08:56:20.281Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "local",
+      "detail": "Completed consolidated quality command"
+    },
+    {
+      "name": "Isolated additive migration and repetition",
+      "status": "aprobado",
+      "date": "2026-09-08T08:48:17.832Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-database",
+      "detail": "22 migrations; two users; six original wallet identities; ten associations; zero payments/actions/faucet claims"
+    },
+    {
+      "name": "Exclusive schema, synthetic legacy table and migration 0021",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Two overlapping claims have one durable execution winner",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Historical claims remain unverified and migration is idempotent",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Execution claim rejects another owner and an expired approval",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Signed execution and settlement survive delivery timeout without inferring payment",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Full delivery is durable before reconciliation and the original settlement is preserved",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Mismatched authorization proof cannot confirm a received delivery",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Verified payment and intact delivered body complete exactly once",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Late failures and conflicting delivery cannot downgrade or replace verified evidence",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Verified payment without a body remains delivery-pending until its original result arrives",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "An altered persisted body cannot complete a separately verified payment",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A settlement receipt for a different transaction cannot close delivery acceptance",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Uppercase receipt and lowercase chain hash reconcile to one canonical transaction",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A failed settlement claim with the real hash cannot become a successful delivery",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A previously stored wrong-network receipt blocks completion when verification wins before the body",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A supplied receipt payer must match the frozen wallet even when the transaction hash matches",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A body with no settlement header can be recovered using independent payment proof",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "A headerless late body can finish a previously verified payment without inventing a receipt",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "All persistence operations reject cross-owner mutation",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Stale pending reconciliation cannot move the cursor of a newer scan",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Reapplying the migration preserves newly verified payment and delivery",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Database rejects invalid recovery state",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Expected SQL rejection 23514"
+    },
+    {
+      "name": "Cleanup of only this execution's verified schema",
+      "status": "aprobado",
+      "date": "2026-09-08T08:53:32.515Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-postgresql-fixtures",
+      "detail": "Synthetic fixture; no payment or signature submitted"
+    },
+    {
+      "name": "Graphify AST",
+      "status": "aprobado",
+      "date": "2026-09-08T08:55:31.249Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "local",
+      "detail": "430 files; 2914 nodes; 6938 edges; 146 communities; SQL coverage unavailable for 22 files without tree_sitter_sql"
+    },
+    {
+      "name": "Exact deployed commit and protected Preview",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "Explicit sign-out/sign-in: user A",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "Explicit sign-out/sign-in: user B",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "Visible privileged login: both administrators",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "One concretely approved Stellar Testnet payment with delivery",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "Confirmed replay with no second debit",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    },
+    {
+      "name": "Session recovery and real payment cross-user API denial",
+      "status": "pendiente",
+      "date": "2026-09-08T08:58:38.543Z",
+      "commit": "912db90115eef6ea29130b848b2f8132e7bd254a",
+      "environment": "isolated-preview-acceptance",
+      "detail": "Requires the final Preview and visible application flow"
+    }
+  ],
+  "limits": {
+    "productionChanged": false,
+    "bazaarChanged": false,
+    "realPaymentsExecuted": 0,
+    "automaticFunding": false,
+    "externalRedeliveryProven": false
+  },
+  "externalTestSkips": [
+    {
+      "name": "Avalanche MCP smoke",
+      "reason": "AVALANCHE_MCP_LIVE=1 not enabled"
+    },
+    {
+      "name": "Dexalot Testnet smoke",
+      "reason": "DEXALOT_LIVE=1 not enabled"
+    }
+  ]
+}

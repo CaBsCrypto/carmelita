@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-08T04:17:49.766Z",
+  "counts": {
+    "users": 0,
+    "wallets": 0,
+    "gateway_plans": 0,
+    "access_tokens": 0,
+    "rate_buckets": 0,
+    "audit_events": 1,
+    "x402_payments": 0,
+    "stellar_actions": 0,
+    "faucet_claims": 0,
+    "commerce_intents": 0
+  }
+}

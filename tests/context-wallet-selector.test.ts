@@ -11,10 +11,10 @@ test("Live Context mounts the compact multichain wallet selector", async () => {
   assert.match(selector, /<details className="context-wallet-selector"/);
   assert.match(selector, /aria-label=\{t\.open\}/);
   assert.match(selector, /Stellar Testnet/);
-  assert.match(selector, /Fuji · 43113/);
+  assert.match(selector, /evmNetworks\.map/);
   assert.match(selector, /Solana Devnet/);
   assert.match(selector, /filter\(Boolean\)\.length/);
-  assert.match(selector, /balances\?\.usdc\.balance/);
+  assert.match(selector, /reading\.balances\.usdc\.balance/);
 });
 
 test("formats official Fuji ERC-20 balances for the selector", async () => {

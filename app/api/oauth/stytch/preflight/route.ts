@@ -6,6 +6,7 @@ import {
 } from "@/app/stytch/connected-apps-client";
 import { readStytchConnectedAppsConfig } from "@/app/stytch/connected-apps-config";
 import { hasSameRequestOrigin } from "@/app/stytch/request-security";
+import { normalizeOAuthAuthenticationError, publicOAuthError } from "@/app/stytch/public-error";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,9 @@ function bearer(request: Request) {
 export async function POST(request: Request) {
   try {
     if (!hasSameRequestOrigin(request)) throw new Error("invalid_origin");
-    const claims = await verifyPrivyAccessToken(bearer(request));
+    const claims = await verifyPrivyAccessToken(bearer(request)).catch((error: unknown) => {
+      throw normalizeOAuthAuthenticationError(error);
+    });
     const body = (await request.json()) as { query?: unknown };
     if (typeof body.query !== "string" || body.query.length > 8_192) {
       throw new Error("oauth_authorization_request_invalid");
@@ -34,8 +37,7 @@ export async function POST(request: Request) {
       headers: { "Cache-Control": "no-store", Vary: "Authorization" },
     });
   } catch (error) {
-    const code = error instanceof Error ? error.message : "oauth_preflight_failed";
-    const status = code === "invalid_origin" ? 403 : code.startsWith("stytch_config_") ? 503 : 400;
+    const { code, status } = publicOAuthError(error, "preflight");
     return NextResponse.json({ ok: false, error: code }, { status, headers: { "Cache-Control": "no-store" } });
   }
 }

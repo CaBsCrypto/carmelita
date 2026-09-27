@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { provisionUserWallets } from "@/app/wallets/onboarding";
+import { hasDatabase } from "@/db";
 import {
   PRIVY_WALLET_ARCHITECTURE,
   getPrivyStellarReadiness,
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
 
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
+    if (!hasDatabase()) throw new Error("database_not_configured");
     const identity = await getPrivyUserIdentity(claims.user_id).catch(() => ({
       id: claims.user_id,
       email: null,
@@ -52,9 +54,11 @@ export async function POST(request: Request) {
           stellar: onboarding.stellar,
           avalanche: onboarding.avalanche.wallet,
           solana: onboarding.solana.wallet,
+          evm: onboarding.evm.wallet,
         },
         avalanche: onboarding.avalanche,
         solana: onboarding.solana,
+        evm: onboarding.evm,
         account: onboarding.account,
         activation: onboarding.activation,
         ...onboarding.agentAccount,
@@ -68,7 +72,7 @@ export async function POST(request: Request) {
       error instanceof Error ? error.message.split(":")[0] : "bootstrap_failed";
     const status = code === "privy_not_configured" || code === "database_not_configured"
       ? 503
-      : code === "wallet_ownership_conflict" || code === "wallet_identity_conflict"
+      : code.includes("conflict") || code === "privy_evm_wallet_ambiguous"
         ? 409
         : code === "privy_access_token_missing" || code === "invalid_privy_user_id"
           ? 401

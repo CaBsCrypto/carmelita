@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   AAVE_USDC_FUJI,
   AAVE_V3_FUJI_POOL,
-  USDC_EIP712_DOMAIN,
   buildUsdcPermitTypedData,
   encodeAaveSupplyWithPermit,
   encodeAaveWithdraw,

@@ -8,7 +8,7 @@
   <a href="https://agente-asistente.vercel.app"><img alt="Live" src="https://img.shields.io/badge/product-live-3fb950?style=for-the-badge&labelColor=0d1117"></a>
   <img alt="Avalanche Fuji" src="https://img.shields.io/badge/Avalanche-Fuji-E84142?style=for-the-badge&labelColor=0d1117&logo=avalanche&logoColor=white">
   <img alt="Stellar Testnet" src="https://img.shields.io/badge/Stellar-Testnet-7D00FF?style=for-the-badge&labelColor=0d1117&logo=stellar&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-126%2F126-2f81f7?style=for-the-badge&labelColor=0d1117">
+  <a href="docs/stabilization-2026-09-07.md">Local validation · September 7, 2026</a>
 </p>
 
 <p align="center">
@@ -70,7 +70,7 @@ Status meanings are shared across all project documentation:
 | Market prices | Live, read-only | CoinGecko primary (keyless), CoinMarketCap automatic fallback |
 | Market watchlist | Live, read-only | Per-user persistent watchlist over CoinGecko/CoinMarketCap |
 | Notion OAuth and search | LangGraph-routed, ready to validate | OAuth PKCE, encrypted tokens, official Notion MCP and durable workflow trail |
-| Travala hotel discovery | Live, read-only | Public Travala Travel MCP |
+| Travala hotel discovery | Acceptance pending | Public MCP returned HTTP 401 on September 7 |
 | Intent, policy and replay protection | Sandbox | Durable intent and one receipt per execution |
 | Public inbound MCP | Sandbox | Seven tools at /api/mcp |
 | Personal Agent Gateway | Validated Testnet discovery + planning | Scoped PATs, granular context/conversation opt-ins, Neon replay safety; no signing or submission |

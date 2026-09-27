@@ -10,7 +10,7 @@ import {
 } from "../app/x402/testnet-faucet";
 
 test("health distinguishes sandbox settlement from live Testnet x402", async () => {
-  const response = health();
+  const response = await health();
   const body = await response.json();
   assert.equal(body.status, "ok");
   assert.equal(body.environment, "stellar-testnet");

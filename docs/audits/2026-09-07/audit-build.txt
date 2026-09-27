@@ -1,0 +1,21 @@
+
+> agente-asistente@0.1.0 build
+> next build
+
+▲ Next.js 16.2.6 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 25.7s
+  Running TypeScript ...
+Failed to type check.
+
+./app/webmcp-registry.tsx:4:35
+Type error: Subsequent property declarations must have the same type.  Property 'modelContext' must be of type 'WebMcpModelContext | undefined', but here has type '{ registerTool: (tool: WebMcpTool, options?: { signal?: AbortSignal | undefined; } | undefined) => void; } | undefined'.
+
+  2 | import{useEffect}from"react";
+  3 | type WebMcpTool={name:string;description:string;inputSchema:Record<string,unknown>;execute:...
+> 4 | declare global{interface Document{modelContext?:{registerTool:(tool:WebMcpTool,options?:{si...
+    |                                   ^
+  5 | export default function WebMcpRegistry(){useEffect(()=>{if(!document.modelContext)return;co...
+  6 |
+Next.js build worker exited with code: 1 and signal: null
