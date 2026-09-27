@@ -11,6 +11,7 @@ import {
   stytchProtectedResourceMetadata,
   validateStytchOAuthClaims,
   verifyStytchOAuthJwt,
+  safeOAuthDiagnostic,
 } from "../app/mcp/stytch-oauth";
 import {
   assertOAuthSubjectOwnership,
@@ -24,6 +25,17 @@ const oauthEnv = {
   STYTCH_PROJECT_DOMAIN: "https://carmelita-auth.customers.stytch.com",
   STYTCH_CONNECTED_APPS_EXPECTED_AUDIENCE: "carmelita-test-client",
 };
+
+test("OAuth diagnostics emit only closed codes and never exception content", () => {
+  assert.equal(safeOAuthDiagnostic(new Error("stytch_oauth_scope_required")), "stytch_oauth_scope_required");
+  assert.equal(safeOAuthDiagnostic(Object.assign(new Error("private token and claims"), {
+    code: "ERR_JWT_CLAIM_VALIDATION_FAILED",
+  })), "ERR_JWT_CLAIM_VALIDATION_FAILED");
+  for (const error of [new Error("secret token"), new Error("stytch_oauth_scope_required: secret"),
+    { message: "stytch_oauth_scope_required", token: "secret" }, "secret", null]) {
+    assert.equal(safeOAuthDiagnostic(error), "unclassified");
+  }
+});
 
 async function signedToken(input: { issuer?: string; audience?: string; scope?: string; algorithm?: "RS256" | "HS256" } = {}) {
   const algorithm = input.algorithm ?? "RS256";

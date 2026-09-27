@@ -187,10 +187,14 @@ export async function verifyStytchOAuthAccessToken(
   token: string,
   env: RuntimeEnv = process.env,
 ) {
+  let stage = "configuration";
   try {
     const config = readStytchOAuthResourceConfig(env);
+    stage = "jwt";
     const claims = await verifyStytchOAuthJwt(token, config);
+    stage = "introspection";
     await assertStytchOAuthTokenActive(token, claims, config);
+    stage = "subject_link";
     const privyDid = await resolveOAuthSubject({
       issuer: claims.issuer,
       subject: claims.subject,
@@ -204,9 +208,26 @@ export async function verifyStytchOAuthAccessToken(
       subject: claims.subject,
       audiences: claims.audiences,
     };
-  } catch {
+  } catch (error) {
+    console.warn("oauth_verification_rejected", { stage, reason: safeOAuthDiagnostic(error) });
     throw new Error("stytch_oauth_token_invalid");
   }
+}
+
+// Closed vocabulary only: never log exceptions, claims, identifiers or tokens.
+export function safeOAuthDiagnostic(error: unknown) {
+  const allowed = new Set([
+    "ERR_JWT_EXPIRED", "ERR_JWT_CLAIM_VALIDATION_FAILED", "ERR_JWS_SIGNATURE_VERIFICATION_FAILED",
+    "ERR_JWKS_NO_MATCHING_KEY", "ERR_JWKS_TIMEOUT",
+    "stytch_oauth_issuer_invalid", "stytch_oauth_audience_invalid", "stytch_oauth_subject_invalid",
+    "stytch_oauth_token_expired", "stytch_oauth_token_not_active", "stytch_oauth_scope_invalid",
+    "stytch_oauth_scope_required", "stytch_oauth_subject_unlinked",
+    "stytch_oauth_token_inactive_or_unavailable",
+  ]);
+  if (!(error instanceof Error)) return "unclassified";
+  const code = "code" in error ? error.code : undefined;
+  if (typeof code === "string" && allowed.has(code)) return code;
+  return allowed.has(error.message) ? error.message : "unclassified";
 }
 
 // Public Connected Apps use client_id without a client secret (RFC 7662).
