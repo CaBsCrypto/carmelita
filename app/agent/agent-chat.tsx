@@ -229,7 +229,8 @@ export default function AgentChat({
   const { user } = usePrivy();
   const x402UserId = user?.id;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [liveWalletBalance, setLiveWalletBalance] = useState(walletBalance);
+  const [queriedWalletBalance, setLiveWalletBalance] = useState<string | null>(null);
+  const liveWalletBalance = queriedWalletBalance ?? walletBalance;
   const [status, setStatus] = useState<"loading" | "ready" | "sending" | "error">(
     "loading",
   );

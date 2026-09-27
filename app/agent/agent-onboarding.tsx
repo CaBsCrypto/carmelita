@@ -403,6 +403,7 @@ function PrivyAgent({
         <WalletCenter
           key={`${result.user.id}:${result.wallets.evm?.id}:${result.wallets.solana?.id}:${result.evm?.networks.map(network => network.id).join(",")}`}
           locale={locale}
+          stellarStatus={result.wallet ? (result.activation === "unknown" ? pc.unknown : result.activation === "pending" ? t.pending : t.active) : pc.failed}
           stellarAddress={result.wallet?.address ?? ""}
           stellarBalance={
             result.account?.balances.find((balance) => balance.asset === "XLM")?.balance ?? pc.unavailable
