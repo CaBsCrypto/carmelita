@@ -121,9 +121,9 @@ export default function WalletCenter({
         <article className={`${styles.card} ${styles.stellar}`}>
           <div className={styles.top}><span className={styles.family}>STELLAR</span><b className={styles.badge}>{t.active}</b></div>
           <div className={styles.mark}>S</div><h3>{t.stellar}</h3><p>{t.stellarText}</p>
-          <code className={styles.address}>{short(stellarAddress)}</code>
+          <code className={styles.address}>{stellarAddress ? short(stellarAddress) : t.notRegistered}</code>
           <div className={styles.facts}><span>{t.network}<b>Stellar Testnet</b></span><span>{t.balance}<b>{stellarBalance} XLM</b></span></div>
-          <div className={styles.actions}><button onClick={() => void copyAddress(stellarAddress)}>{copied === stellarAddress ? t.copied : t.copy}</button><a className={styles.secondary} href={`https://stellar.expert/explorer/testnet/account/${stellarAddress}`} target="_blank" rel="noreferrer">{t.explorer}</a></div>
+          {stellarAddress && <div className={styles.actions}><button onClick={() => void copyAddress(stellarAddress)}>{copied === stellarAddress ? t.copied : t.copy}</button><a className={styles.secondary} href={`https://stellar.expert/explorer/testnet/account/${stellarAddress}`} target="_blank" rel="noreferrer">{t.explorer}</a></div>}
         </article>
 
         <article className={`${styles.card} ${styles.evm}`}>
