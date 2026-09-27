@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { oauthSubjectLinks } from "@/db/schema";
+import { agentUsers, oauthSubjectLinks } from "@/db/schema";
 
 export type OAuthSubjectLinkInput = {
   issuer: string;
@@ -47,12 +47,15 @@ export function assertOAuthSubjectOwnership(
 export async function linkOAuthSubject(input: OAuthSubjectLinkInput) {
   const normalized = validateOAuthSubjectLink(input);
   const db = getDb();
-  await db.insert(oauthSubjectLinks).values({
+  // OAuth links an authenticated profile; wallet onboarding belongs to Carmelita.
+  await db.batch([db.insert(agentUsers).values({
+    id: normalized.privyDid,
+  }).onConflictDoNothing(), db.insert(oauthSubjectLinks).values({
     id: `oasl_${randomUUID()}`,
     issuer: normalized.issuer,
     subject: normalized.subject,
     privyDid: normalized.privyDid,
-  }).onConflictDoNothing();
+  }).onConflictDoNothing()]);
 
   const [record] = await db.select().from(oauthSubjectLinks).where(and(
     eq(oauthSubjectLinks.issuer, normalized.issuer),

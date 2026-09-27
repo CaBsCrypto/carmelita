@@ -44,6 +44,13 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   return {
     wallets: visible,
     walletsByNetwork,
+    walletRegistration: {
+      registered: visible.length > 0,
+      pendingActivation: visible.filter((wallet) => wallet.status === "pending"),
+      unregisteredNetworks: networks.filter((network) => !visible.some((wallet) => wallet.network === network.id)).map((network) => network.id),
+      onboardingRequired: visible.length === 0,
+      guidance: visible.length === 0 ? "Complete wallet onboarding in Carmelita. Connecting ChatGPT does not create wallets." : null,
+    },
     walletReadiness: {
       complete: missingNetworks.length === 0,
       missingNetworks,

@@ -22,6 +22,25 @@ const publicFiveWallets = [
   ...["avalanche:fuji", "bnb:testnet", "base:sepolia"].map((network) => ({ address: "0x1111111111111111111111111111111111111111", chainType: "ethereum", network, status: "active", id: "privy-canonical-evm-id", walletId: "privy-canonical-evm-id", userId: "did:privy:owner" })),
 ];
 
+test("registered pending wallets remain explicit and do not request onboarding", () => {
+  const pending = { ...publicFiveWallets[0], status: "pending" };
+  const context = buildMcpWalletContext([pending]);
+  assert.equal(context.walletsByNetwork.stellarTestnet, null);
+  assert.equal(context.walletRegistration.registered, true);
+  assert.equal(context.walletRegistration.onboardingRequired, false);
+  assert.deepEqual(context.walletRegistration.pendingActivation, [pending]);
+  assert.ok(!context.walletRegistration.unregisteredNetworks.includes("stellar:testnet"));
+});
+
+test("an account without registered wallets gets onboarding guidance without invented addresses", () => {
+  const context = buildMcpWalletContext([]);
+  assert.equal(context.walletRegistration.registered, false);
+  assert.equal(context.walletRegistration.onboardingRequired, true);
+  assert.match(context.walletRegistration.guidance!, /Carmelita/);
+  assert.deepEqual(context.walletRegistration.pendingActivation, []);
+  assert.deepEqual(context.wallets, []);
+});
+
 test("MCP wallet context names all persisted testnet wallets deterministically", () => {
   const context = buildMcpWalletContext([
     { address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", chainType: "stellar", network: "stellar:testnet", status: "active" },

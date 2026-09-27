@@ -14,7 +14,7 @@ function object(value: unknown): Json {
 }
 function list(value: unknown): unknown[] { return Array.isArray(value) ? value : reject(); }
 function host(value: unknown): string {
-  if (typeof value !== "string" || !/^[a-z0-9-]+\.vercel\.app$/.test(value)) return reject();
+  if (typeof value !== "string" || (value !== "carmelita.browns.studio" && !/^[a-z0-9-]+\.vercel\.app$/.test(value))) return reject();
   return value;
 }
 const scoped = (path: string) => `${path}${path.includes("?") ? "&" : "?"}projectId=${projectId}&teamId=${teamId}`;

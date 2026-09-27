@@ -7,7 +7,6 @@ import {
   StytchConnectedAppsClient,
 } from "@/app/stytch/connected-apps-client";
 import { hasSameRequestOrigin } from "@/app/stytch/request-security";
-import { provisionUserWallets } from "@/app/wallets/onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +31,6 @@ export async function POST(request: Request) {
     const client = new StytchConnectedAppsClient(config);
     const stytchUserId = await client.ensureUserForPrivy(identity.id, identity.email);
     if (body.consentGranted) {
-      await provisionUserWallets({
-        userId: identity.id,
-        email: identity.email,
-      });
       await linkOAuthSubject({
         issuer: config.issuer,
         subject: stytchUserId,

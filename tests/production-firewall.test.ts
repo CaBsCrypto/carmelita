@@ -47,6 +47,19 @@ test("verifies all writer hosts and excludes only runtime-verified QA", async ()
   assert.deepEqual(await verifyFirewallMaintenance(evidence, f.dependencies), { mode: "firewall", blockedHosts: 2, isolatedDeployments: 1 });
   assert.equal(f.probes.filter(p => p.endsWith("/api/agent/wallets")).length, 2);
 });
+
+test("requires the production custom domain to be covered and rejects unapproved domains", async () => {
+  const f = fixture();
+  f.aliases.push({ alias: "carmelita.browns.studio", projectId: project, deploymentId: "dpl_prod" });
+  await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
+  f.config.active.rules[0].conditionGroup[0].conditions[0].value = [...hosts, "carmelita.browns.studio"];
+  assert.equal((await verifyFirewallMaintenance(evidence, f.dependencies)).blockedHosts, 3);
+  assert.ok(f.probes.includes("https://carmelita.browns.studio/api/agent/wallets"));
+  for (const invalid of ["other.browns.studio", "carmelita.browns.studio.attacker.test", "*.browns.studio"]) {
+    f.config.active.rules[0].conditionGroup[0].conditions[0].value = [...hosts, invalid];
+    await assert.rejects(verifyFirewallMaintenance(evidence, f.dependencies));
+  }
+});
 test("rejects uncovered production, aliases, builds, QA drift and protection redirects", async () => {
   const cases: Array<(f: ReturnType<typeof fixture>) => void> = [
     f => { f.deployments.push({ uid: "dpl_new", url: "new.vercel.app", state: "READY", target: "production" }); },
