@@ -43,3 +43,19 @@ Candidato e820e06430e1cf006110116f3b23c2d471a9dbf0, deployment dpl_5FYuz7x3BWoCE
 Comparación SQL contra la referencia capturada antes de los ingresos: unchanged=true, seis billeteras y diez asociaciones (23:06:14 y 23:09:06 UTC). Sin fondos, firmas ni pagos. La recarga de la segunda cuenta aprobó la comparación con su referencia de 23:09:22 UTC. La primera cuenta conservó identidades tras recarga según UI y SQL. El cierre entre cuentas confirmó terminación administrativa y Privy.
 
 Pendiente: el control automatizado de rechazo administrativo falla con error genérico, no acredita un rechazo de rol. El ejecutor usa credentials=omit; queda por determinar si la protección de Preview impide esa solicitud. Una llamada sin token mediante Vercel CLI autorizado devuelve access_denied, pero no sustituye la aceptación autenticada. Además /admin/login presenta el formulario de contraseña: CARMELITA_ADMIN_EMAILS no está configurado efectivamente en este candidato. Debe ajustarse el ámbito de Preview y repetirse la aceptación administrativa antes de publicar. No se ha promovido producción.
+
+## Acceptance update — 2026-09-28
+
+This section supersedes the pending-status summaries above; earlier sections retain their original evidence dates.
+
+Validated code: e3568a85a13c3877247ea761ada67d09ab5ae8c8. Preview: https://agente-asistente-1njvbkkd6-cabscryptocontacto-6028s-projects.vercel.app. Branch alias remains unchanged. CI and Vercel passed. Local lint and build passed; 636 tests passed, zero failures, two existing external omissions. Graphify update completed; SQL AST coverage remains unavailable because tree_sitter_sql is missing.
+
+The production Neon connection was restricted to Production with explicit approval; QA remains separate. Both approved administrators accessed the Preview through Privy without normal onboarding. The registry remained at nine wallets/fifteen associations during those administrator checks. Closing both sessions returned the protected panel to login. The earlier administrator-check failure was resolved by retaining Preview cookies while using verifyOnly to avoid creating an administrator session.
+
+The existing complete account, the incomplete account and the additional onboarding account each passed the fourteen wallet checks on 5ed2f11. Chat returned three wallet addresses and native balances across five networks. Pending Stellar activation was explicit and no funding or financial operation was performed. The additional account completed an explicit logout and Privy login; identities matched the reference captured at 2026-09-28T02:10:07.069Z. Do not infer a globally new Privy identity solely from a new QA registration.
+
+On e3568a8, the Spanish multichain greeting and the new localized Stellar activation-pending balance response were verified in the chat. Historical balance messages remain unchanged. The fourteen checks passed at 2026-09-28T03:27:47.933Z, using the new-version reference captured at 03:27:29.893Z. This is a reload check, not another explicit login cycle. Rejection of an owner override is HTTP 400 parameter validation, not proof of arbitrary cross-owner resource access.
+
+Read-only SQL comparison at 2026-09-28T03:34:47.138Z: all original six wallets and ten associations preserved (unchanged=true); current QA inventory twelve wallets and twenty associations. Counts include legitimate subsequent registrations. Private raw UI evidence remains in ignored local work files; no credentials or wallet addresses are included here.
+
+Remaining release gates: final diff review, production configuration/identity snapshot and compatible rollback deployment, controlled promotion, and real production onboarding followed by ChatGPT comparison. No production publication or current-branch production acceptance is claimed. New registration-event wording is covered by code review; no extra wallet was created solely to test that text.
