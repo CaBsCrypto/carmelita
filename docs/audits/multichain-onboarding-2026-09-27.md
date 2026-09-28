@@ -59,3 +59,15 @@ On e3568a8, the Spanish multichain greeting and the new localized Stellar activa
 Read-only SQL comparison at 2026-09-28T03:34:47.138Z: all original six wallets and ten associations preserved (unchanged=true); current QA inventory twelve wallets and twenty associations. Counts include legitimate subsequent registrations. Private raw UI evidence remains in ignored local work files; no credentials or wallet addresses are included here.
 
 Remaining release gates: final diff review, production configuration/identity snapshot and compatible rollback deployment, controlled promotion, and real production onboarding followed by ChatGPT comparison. No production publication or current-branch production acceptance is claimed. New registration-event wording is covered by code review; no extra wallet was created solely to test that text.
+
+## Sprint 1 corrections — 2026-09-28
+
+Review found three additional resilience defects after the earlier acceptance. Canonical database SELECT failures now become wallet_persistence_unavailable, so bootstrap returns HTTP503 rather than partial HTTP200. Identity conflicts remain distinct; the failed family never creates a replacement wallet.
+
+Chat context Stellar reads now have a ten-second cancellation/deadline. Persisted wallet listing and per-network balance intents skip the ancillary Stellar context both before and after processing. Other intents retain their post-action refresh with a bounded read. Three UI paths now distinguish unavailable balance, activation pending and a real zero, including the DeFindex balance display.
+
+Regression evidence uses actual bootstrap POST, admin POST and sendAgentMessage orchestration with simulated dependencies, without external transactions. Admin verifyOnly never sets a session cookie; normal authorized exchange does; rejected identities and invalid origins do not. Existing identity tests cover expiry and membership.
+
+Integrated local result: lint passed with zero warnings; 643 tests passed, zero failed, two existing external omissions; build passed without migration. Graphify updated to 3129 nodes/7381 edges, with the existing SQL parser limitation. The earlier clean npm ci remains applicable because dependencies and lockfile are unchanged.
+
+New-candidate CI and visible Preview acceptance remain pending at this cut. Prior accepted deployment evidence is historical and is not relabeled as acceptance of these corrections. Production promotion and chat-first redesign remain separate future gates.

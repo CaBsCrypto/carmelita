@@ -164,7 +164,9 @@ async function getCanonicalWallet(userId: string, chainType: "ethereum" | "stell
   if (!hasDatabase()) throw new Error("database_not_configured");
   const wallets = await getDb().select({
     id: agentWallets.id, userId: agentWallets.userId, address: agentWallets.address, chainType: agentWallets.chainType,
-  }).from(agentWallets).where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, chainType))).limit(2);
+  }).from(agentWallets).where(and(eq(agentWallets.userId, userId), eq(agentWallets.chainType, chainType))).limit(2).catch((error: unknown) => {
+    throw new Error("wallet_persistence_unavailable", { cause: error });
+  });
   if (wallets.length > 1) throw new Error("wallet_identity_conflict");
   return wallets[0] ?? null;
 }

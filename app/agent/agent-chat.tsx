@@ -1,5 +1,6 @@
 "use client";
 
+import { chatBalanceDisplay } from "./chat-balance-display";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -559,7 +560,7 @@ export default function AgentChat({
         window.dispatchEvent(new Event("agent-memory-updated"));
       }
       if (body.wallet) {
-        setLiveWalletBalance(body.wallet.balance ?? "0");
+        setLiveWalletBalance(chatBalanceDisplay(body.wallet.balance, body.wallet.accountExists, locale));
       }
       setStatus("ready");
       if (assistantMessage.soroswapIntent) {
@@ -1121,7 +1122,7 @@ export default function AgentChat({
       const xlm = nextStatus.balances?.find(
         (balance: { asset: string; balance: string }) => balance.asset === "XLM",
       );
-      setLiveWalletBalance(xlm?.balance ?? "0");
+      setLiveWalletBalance(chatBalanceDisplay(xlm?.balance, undefined, locale));
     } catch (caught) {
       setDefindexNotice(caught instanceof Error ? caught.message : dui.statusFailed);
     } finally {
@@ -1200,7 +1201,7 @@ export default function AgentChat({
       const xlm = nextStatus.balances?.find(
         (balance: { asset: string; balance: string }) => balance.asset === "XLM",
       );
-      setLiveWalletBalance(xlm?.balance ?? "0");
+      setLiveWalletBalance(chatBalanceDisplay(xlm?.balance, undefined, locale));
     } catch (caught) {
       setDefindexNotice(
         caught instanceof Error ? caught.message : dui.executeFailed,

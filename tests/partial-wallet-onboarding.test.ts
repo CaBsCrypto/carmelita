@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { neonConfig } from "@neondatabase/serverless";
+import { getCanonicalStellarWallet } from "../app/multichain-account";
 import { provisionUserWallets, type WalletOnboardingDependencies } from "../app/wallets/onboarding";
 import { selectSolanaWallet } from "../app/wallets/privy";
 import type { UserWallet } from "../app/wallets/types";
@@ -66,4 +68,41 @@ test("Solana canonical identity survives response ordering; ambiguity fails clos
 
 test("database failures remain global errors instead of successful partial responses", async () => {
   await assert.rejects(provisionUserWallets(input, dependencies({ persistStellarAccount: async () => { throw new Error("wallet_persistence_unavailable"); } })), /wallet_persistence_unavailable/);
+});
+
+
+test("raw canonical database read failure remains a global private error before wallet creation", async () => {
+  const previousUrl = process.env.DATABASE_URL;
+  const previousFetch = neonConfig.fetchFunction;
+  process.env.DATABASE_URL = "postgresql://fixture:fixture@canonical.test/fixture";
+  const rawError = new Error("database transport failed with private provider detail");
+  let reads = 0;
+  let creationReached = false;
+  neonConfig.fetchFunction = async () => { reads++; throw rawError; };
+  try {
+    await assert.rejects(getCanonicalStellarWallet(input.userId), (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, "wallet_persistence_unavailable");
+      assert.ok(error.cause);
+      return true;
+    });
+    await assert.rejects(provisionUserWallets(input, dependencies({
+      getOrCreateStellarWallet: async () => {
+        await getCanonicalStellarWallet(input.userId);
+        creationReached = true;
+        return stellar;
+      },
+    })), (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, "wallet_persistence_unavailable");
+      assert.doesNotMatch(error.message, /private provider/);
+      return true;
+    });
+    assert.equal(creationReached, false);
+    assert.equal(reads, 2);
+  } finally {
+    neonConfig.fetchFunction = previousFetch;
+    if (previousUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = previousUrl;
+  }
 });
