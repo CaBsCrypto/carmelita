@@ -81,3 +81,13 @@ New-candidate CI and visible Preview acceptance remain pending at this cut. Prio
 - Exact rollback commit local simulation passed with synthetic existing identities and five network bindings; creation/network calls prohibited. This does not constitute a SQL or deployed rollback drill.
 - Graph updated (3129 nodes, 7381 edges); SQL extraction remains unavailable because tree_sitter_sql is missing.
 - Production promotion, SQL rollback acceptance and production login/ChatGPT acceptance remain pending. No production configuration changed.
+
+### Restricted deployment verification and SQL recovery drill — 2026-09-28
+
+The existing authenticated /admin/wallets page now includes a server-side operational diagnostic for current allowlisted Privy administrators in production. No new API was added. It verifies runtime/direct connections against expected production and QA fingerprints and SELECT current_database/current_user; only hashes, deployment identifiers and boolean checks are rendered. Public health retains its maintenance requirement.
+
+Recovery SQL acceptance passed at 2026-09-28T05:51:14.430Z against isolated QA PostgreSQL: exact f775111 generated reader/writer statements ran twice over five temporary fixture tables in a serializable transaction. Six synthetic identities, ten associations and historical fixture references remained unchanged; owner-filtered reading returned five rows and no creation events occurred. ON COMMIT DROP removed the temporary tables. This complements the exact-code mocked-Privy simulation; it is not a live Vercel rollback.
+
+The final backup remains pending: Neon reports its ten-branch limit reached. No branch was deleted. Production promotion remains gated on effective candidate verification, a final recoverable backup and production acceptance.
+
+Integrated diagnostic validation: lint zero warnings, 649 tests passed, zero failed, two external omissions, build passed. Graphify updated to 3138 nodes / 7400 edges; SQL parser limitation remains. Vercel project still has manual domain assignment and protection for production deployment URLs and all Previews.

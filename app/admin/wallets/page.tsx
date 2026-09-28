@@ -1,6 +1,7 @@
 import { requireAdminPage } from "@/app/admin/auth";
 import { buildAdminWalletRegistry, listAdminWalletRegistry } from "@/app/admin/wallets/data";
 import { hasDatabase } from "@/db";
+import { readOperationalDiagnostics } from "./operational-diagnostics";
 import WalletRegistry from "./wallet-registry";
 
 export const dynamic = "force-dynamic";
@@ -16,5 +17,9 @@ export default async function AdminWalletsPage() {
   const registry = hasDatabase()
     ? await listAdminWalletRegistry()
     : buildAdminWalletRegistry([], []);
-  return <WalletRegistry initialRegistry={registry} founderName={identity.displayName} />;
+  const diagnostics = await readOperationalDiagnostics(identity);
+  return <>
+    <WalletRegistry initialRegistry={registry} founderName={identity.displayName} />
+    {diagnostics && <details><summary>Verificación operativa de producción</summary><pre>{JSON.stringify(diagnostics, null, 2)}</pre></details>}
+  </>;
 }
