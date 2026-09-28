@@ -8,6 +8,7 @@ export type PreviewIsolation = {
 };
 
 const productionOrigins = new Set([
+  "carmelita.browns.studio",
   "carmelita-agent.vercel.app",
   "agente-asistente.vercel.app",
 ]);

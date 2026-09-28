@@ -71,3 +71,13 @@ Regression evidence uses actual bootstrap POST, admin POST and sendAgentMessage 
 Integrated local result: lint passed with zero warnings; 643 tests passed, zero failed, two existing external omissions; build passed without migration. Graphify updated to 3129 nodes/7381 edges, with the existing SQL parser limitation. The earlier clean npm ci remains applicable because dependencies and lockfile are unchanged.
 
 New-candidate CI and visible Preview acceptance remain pending at this cut. Prior accepted deployment evidence is historical and is not relabeled as acceptance of these corrections. Production promotion and chat-first redesign remain separate future gates.
+
+### Production preparation — 2026-09-28
+
+- Live production deployment metadata identifies `dpl_ERRNhWW8pVVvuJpsrckhLTf1n6Lc`, commit `f7751111fdb4f473025af34838644991a1d31e18`, READY, build `npm run build`. Project production branch is main; `autoAssignCustomDomains=false` was observed.
+- Added `carmelita.browns.studio` to Preview isolation's production-origin rejection, including URL/hostname and case/trailing-dot regression coverage. Focused tests: 15 passed.
+- Read-only database inspection at 2026-09-28T05:25:26.738Z using previously captured connections: 22 journal entries, zero pending statements, 8 wallets, 8 network associations, 8 historical payment records. Private evidence retains hashes only. No migration or data mutation occurred.
+- Effective configuration gate remains pending: Vercel env run and its read endpoint return database variable names but empty values in both env/buildEnv. Stored connections alone do not prove the deployment destination.
+- Exact rollback commit local simulation passed with synthetic existing identities and five network bindings; creation/network calls prohibited. This does not constitute a SQL or deployed rollback drill.
+- Graph updated (3129 nodes, 7381 edges); SQL extraction remains unavailable because tree_sitter_sql is missing.
+- Production promotion, SQL rollback acceptance and production login/ChatGPT acceptance remain pending. No production configuration changed.

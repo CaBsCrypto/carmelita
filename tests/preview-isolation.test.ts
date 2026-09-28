@@ -256,3 +256,13 @@ test("Production database fallback and health contract remain available without 
     assert.equal(body.payments.mainnet, "disabled");
   });
 });
+
+
+test("Preview rejects the custom production domain as origin and deployment in normalized forms", () => {
+  for (const host of ["carmelita.browns.studio", "CARMELITA.BROWNS.STUDIO", "carmelita.browns.studio.", "CARMELITA.BROWNS.STUDIO."]) {
+    assert.throws(() => assertPreviewIsolation(isolated({ CARMELITA_PREVIEW_ORIGIN: "https://" + host + "/" })), /preview_isolation_invalid_origin/);
+    for (const deployment of [host, "https://" + host, "https://" + host + "/"]) {
+      assert.throws(() => assertPreviewIsolation(isolated({ CARMELITA_PREVIEW_DEPLOYMENT: deployment })), /preview_isolation_invalid_deployment/);
+    }
+  }
+});
