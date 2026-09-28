@@ -35,3 +35,11 @@ Final local qa:local passed after the wallet-status label adjustment. Vercel dep
 Dedicated QA variables were configured exclusively for codex/multichain-onboarding and checked against the production hostname. EVM expansion is enabled for that isolated branch; Bazaar discovery is disabled. Branch alias: https://agente-asistente-git-c-574e92-cabscryptocontacto-6028s-projects.vercel.app (not a working accepted Preview yet).
 
 Requested approval to remove Preview scope from the production Neon connection while preserving Production and the separate QA integration. This project-wide connection change has NOT been applied. No database branches have been deleted, no plan upgraded and no production deployment changed.
+
+## Aceptación visible de dos cuentas — 2026-09-27 23:02–23:12 UTC
+
+Candidato e820e06430e1cf006110116f3b23c2d471a9dbf0, deployment dpl_5FYuz7x3BWoCESA15mA8PdVx4hM6. Ambas cuentas QA ingresaron por Privy en el acceso normal. Ambas mostraron tres familias registradas y cinco asociaciones; cada cuenta conserva su propia dirección EVM compartida en Fuji/BNB/Base. Las consultas de saldo EVM y Solana y los rechazos de parámetros ajenos, Mainnet y redes desconocidas aprobaron.
+
+Comparación SQL contra la referencia capturada antes de los ingresos: unchanged=true, seis billeteras y diez asociaciones (23:06:14 y 23:09:06 UTC). Sin fondos, firmas ni pagos. La recarga de la segunda cuenta aprobó la comparación con su referencia de 23:09:22 UTC. La primera cuenta conservó identidades tras recarga según UI y SQL. El cierre entre cuentas confirmó terminación administrativa y Privy.
+
+Pendiente: el control automatizado de rechazo administrativo falla con error genérico, no acredita un rechazo de rol. El ejecutor usa credentials=omit; queda por determinar si la protección de Preview impide esa solicitud. Una llamada sin token mediante Vercel CLI autorizado devuelve access_denied, pero no sustituye la aceptación autenticada. Además /admin/login presenta el formulario de contraseña: CARMELITA_ADMIN_EMAILS no está configurado efectivamente en este candidato. Debe ajustarse el ámbito de Preview y repetirse la aceptación administrativa antes de publicar. No se ha promovido producción.

@@ -1,3 +1,4 @@
+import { requestsRegisteredWallets, registeredWalletsReply } from "./agent-chat-wallets";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/db";
@@ -432,6 +433,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const language = detectAgentLanguage(content);
   const local = (english: string, portuguese: string) =>
     language === "pt" ? portuguese : english;
+  const walletRead = requestsRegisteredWallets(content);
   const setupIntent = parseTestnetSetupIntent(content);
   const avalancheIntent = parseAvalancheChatIntent(content);
   const avalancheCapabilitiesIntent = parseAvalancheCapabilitiesIntent(content);
@@ -498,7 +500,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const deterministicDefindex = parseDefindexIntent(content);
   const deterministicConnection = findRequestedConnection(content);
   const hasDeterministicIntent = Boolean(
-    vaultCommand ||
+    walletRead || vaultCommand ||
       unblckIntent ||
       setupIntent ||
       avalancheIntent ||
@@ -526,7 +528,9 @@ export async function sendAgentMessage(userId: string, content: string) {
   }
 
   let reply: AgentChatReply;
-  if (vaultCommand?.action === "list") {
+  if (walletRead) {
+    reply = registeredWalletsReply(userId, await listPersistedUserWallets(userId), language);
+  } else if (vaultCommand?.action === "list") {
     const vault = await listAgentVault(userId);
     const active = [
       ...vault.knowledge.filter((item) => item.status === "active"),
@@ -1404,3 +1408,4 @@ export async function recentConversationSummary(userId: string) {
     .orderBy(desc(agentConversations.updatedAt))
     .limit(10);
 }
+
