@@ -14,6 +14,9 @@ export async function POST(request: Request) {
     headers: { "Cache-Control": "no-store" },
   });
   // Reverify the token and the current allowlist on every protected request.
-  response.cookies.set("aa_admin_privy", token, { ...adminCookieOptions(), maxAge: 3600 });
+  if (new URL(request.url).searchParams.get("verifyOnly") !== "true") {
+    response.cookies.set("aa_admin_privy", token, { ...adminCookieOptions(), maxAge: 3600 });
+  }
   return response;
 }
+

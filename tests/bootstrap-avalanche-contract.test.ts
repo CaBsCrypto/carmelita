@@ -7,7 +7,7 @@ test("first-party bootstrap provisions Fuji additively and retains Stellar", asy
   assert.match(source, /verifyPrivyAccessToken/);
   assert.match(source, /sameOrigin/);
   assert.match(source, /provisionUserWallets/);
-  assert.match(source, /wallets:\s*\{[\s\S]*stellar:\s*onboarding\.stellar,[\s\S]*avalanche:\s*onboarding\.avalanche\.wallet/);
+  assert.match(source, /wallets:\s*\{[\s\S]*stellar:\s*onboarding\.stellar,[\s\S]*avalanche:\s*onboarding\.avalanche\?\.wallet/);
   assert.match(source, /wallet:\s*onboarding\.stellar,[\s\S]*wallets:/);
   assert.doesNotMatch(source, /rawSign|signTypedData|sendTransaction|fundWallet|faucet/i);
 });

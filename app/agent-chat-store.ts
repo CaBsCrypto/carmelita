@@ -1,3 +1,5 @@
+import { readChatNativeBalance } from "./agent-chat-balances";
+import { requestsRegisteredWallets, registeredWalletsReply, requestsWalletBalances, walletBalancesReply } from "./agent-chat-wallets";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/db";
@@ -136,13 +138,23 @@ function conversationId(userId: string) {
   return "conv_" + createHash("sha256").update(userId).digest("hex").slice(0, 32);
 }
 
-export async function walletContext(userId: string, listWallets = listPersistedUserWallets, getAccount = getStellarTestnetAccount) {
+export async function walletContext(userId: string, listWallets = listPersistedUserWallets, getAccount = getStellarTestnetAccount, timeoutMs = 10_000) {
   const wallet = (await listWallets(userId)).find((candidate) =>
     candidate.userId === userId && candidate.network === "stellar:testnet" && candidate.chainType === "stellar"
     && (candidate.status === "active" || candidate.status === "pending"),
   );
   if (!wallet) return null;
-  const account = await getAccount(wallet.address).catch(() => null);
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<null>((resolve) => {
+    timer = setTimeout(() => { controller.abort(); resolve(null); }, timeoutMs);
+  });
+  let account: Awaited<ReturnType<typeof getStellarTestnetAccount>> | null;
+  try {
+    account = await Promise.race([getAccount(wallet.address, controller.signal).catch(() => null), deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
   const xlm = account?.balances.find((balance) => balance.asset === "XLM");
   const usdc = account?.balances.find(
     (balance) =>
@@ -188,7 +200,7 @@ async function ensureConversation(userId: string) {
       userId,
       role: "assistant",
       content:
-        "Your Privy identity and personal Stellar wallet are ready. You control Testnet onboarding from this chat: ask for your wallet, request Testnet XLM, activate the exact USDC trustline and then prepare a DeFindex action.",
+        "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval.",
       metadata: {
         actions: [
           { label: "Show my wallet", message: "Show my wallet" },
@@ -396,6 +408,12 @@ async function buildTestnetSetupReply(
     ? { content: copy.usdcFunded(wallet.usdcBalance), actions: [{ label: copy.depositUsdc, message: prompts.depositUsdc }] }
     : { content: copy.usdcBlocked, actions: [{ label: copy.depositXlm, message: prompts.depositXlm }, { label: copy.status, message: prompts.status }] };
 }
+export async function chatWalletContext(userId: string, content: string, readContext = walletContext) {
+  // Persisted-wallet listing and per-network balance reads have their own data sources.
+  if (requestsRegisteredWallets(content) || requestsWalletBalances(content)) return null;
+  return readContext(userId);
+}
+
 export async function sendAgentMessage(userId: string, content: string) {
   const db = getDb();
   const id = await ensureConversation(userId);
@@ -412,7 +430,7 @@ export async function sendAgentMessage(userId: string, content: string) {
 
   await db.insert(agentMessages).values(userMessage);
   const [wallet, activeConnections, relevantMemory] = await Promise.all([
-    walletContext(userId),
+    chatWalletContext(userId, content),
     db
       .select({ provider: agentExternalConnections.provider })
       .from(agentExternalConnections)
@@ -432,6 +450,8 @@ export async function sendAgentMessage(userId: string, content: string) {
   const language = detectAgentLanguage(content);
   const local = (english: string, portuguese: string) =>
     language === "pt" ? portuguese : english;
+  const balanceRead = requestsWalletBalances(content);
+  const walletRead = requestsRegisteredWallets(content);
   const setupIntent = parseTestnetSetupIntent(content);
   const avalancheIntent = parseAvalancheChatIntent(content);
   const avalancheCapabilitiesIntent = parseAvalancheCapabilitiesIntent(content);
@@ -498,7 +518,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const deterministicDefindex = parseDefindexIntent(content);
   const deterministicConnection = findRequestedConnection(content);
   const hasDeterministicIntent = Boolean(
-    vaultCommand ||
+    balanceRead || walletRead || vaultCommand ||
       unblckIntent ||
       setupIntent ||
       avalancheIntent ||
@@ -526,7 +546,11 @@ export async function sendAgentMessage(userId: string, content: string) {
   }
 
   let reply: AgentChatReply;
-  if (vaultCommand?.action === "list") {
+  if (balanceRead) {
+    reply = await walletBalancesReply(userId, await listPersistedUserWallets(userId), language, readChatNativeBalance);
+  } else if (walletRead) {
+    reply = registeredWalletsReply(userId, await listPersistedUserWallets(userId), language);
+  } else if (vaultCommand?.action === "list") {
     const vault = await listAgentVault(userId);
     const active = [
       ...vault.knowledge.filter((item) => item.status === "active"),
@@ -1387,7 +1411,7 @@ export async function sendAgentMessage(userId: string, content: string) {
     conversationId: id,
     userMessage: publicMessage(userMessage),
     assistantMessage: publicMessage(assistantMessage),
-    wallet: await walletContext(userId),
+    wallet: await chatWalletContext(userId, content),
   };
 }
 
@@ -1404,3 +1428,5 @@ export async function recentConversationSummary(userId: string) {
     .orderBy(desc(agentConversations.updatedAt))
     .limit(10);
 }
+
+

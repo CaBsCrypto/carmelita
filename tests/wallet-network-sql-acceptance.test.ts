@@ -52,10 +52,10 @@ test("concurrency evidence requires distinct database transactions with overlapp
   assert.throws(() => walletSqlConcurrencyEvidence([first, []]), /evidence_missing/);
 });
 
-test("SQL runner batches all nine fixtures separately, checks expected SQLSTATEs and waits for both concurrent transactions before exact cleanup", async () => {
+test("SQL runner batches all fixtures separately, checks expected SQLSTATEs and waits for both concurrent transactions before exact cleanup", async () => {
   const fixtures = await buildWalletNetworkSqlFixtures();
   const concurrency = await buildWalletNetworkConcurrencyFixture();
-  assert.equal(fixtures.length, 9);
+  assert.equal(fixtures.length, 10);
   const calls: WalletPersistenceStatement[][] = [];
   let fixtureIndex = 0;
   let concurrentStarted = 0;
@@ -96,12 +96,12 @@ test("SQL runner batches all nine fixtures separately, checks expected SQLSTATEs
   };
   const report = await runWalletNetworkSqlAcceptance({ execute: true, env }, dependencies);
   assert.equal(report.status, "PASS");
-  assert.equal(report.passed, 13);
+  assert.equal(report.passed, fixtures.length + 4);
   assert.equal(report.failed, 0);
   assert.equal(concurrentStarted, 2);
-  assert.equal(calls.length, 14);
+  assert.equal(calls.length, fixtures.length + 5);
   assert.doesNotMatch(JSON.stringify(report), /postgres|fixture@|sensitive-driver-message|did:privy:|fixture-evm-a/);
-  const setup = calls[9];
+  const setup = calls[fixtures.length];
   assert.match(setup[0].text, /fixture_schema_absent/);
   assert.equal(setup[1].text, `CREATE SCHEMA "${schema}"`);
   assert.ok(setup[2].text.includes(`carmelita-wallet-sql-acceptance:${schema}`));
@@ -134,3 +134,4 @@ test("an unexpected SQL error cannot masquerade as expected rejection and cleanu
   assert.doesNotMatch(JSON.stringify(report), /postgres|fixture@|connection failed/);
   assert.equal(sanitizedWalletSqlError({ code: env.CARMELITA_PREVIEW_DATABASE_URL }), "wallet_sql_request_failed");
 });
+

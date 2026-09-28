@@ -134,7 +134,7 @@ export async function runWalletAcceptance(options: Options & { bootstrap?: boole
       return { detail: "Solicitud rechazada antes de elegir una dirección o proveedor alternativos.", http: response.status };
     });
     await check("Cuenta de prueba sin permiso administrativo", async () => {
-      const response = await request("/api/admin/privy-session", { method: "POST", credentials: "omit" });
+      const response = await request("/api/admin/privy-session?verifyOnly=true", { method: "POST", credentials: "same-origin" });
       if (response.status !== 403) throw new WalletAcceptanceFailure(`Se esperaba rechazo HTTP 403 para una cuenta no administradora; se recibió ${response.status}. No se aceptó ninguna cookie administrativa.`);
       const body = await response.json();
       if (body.error !== "access_denied") throw new WalletAcceptanceFailure("El HTTP 403 no demuestra rechazo del rol administrativo: la respuesta no fue access_denied.");
@@ -144,3 +144,4 @@ export async function runWalletAcceptance(options: Options & { bootstrap?: boole
   signal.throwIfAborted();
   return { date: new Date().toISOString(), mode: "wallets", operation: bootstrap ? "bootstrap" : "read", target, checks, status: walletReportStatus(checks), snapshot };
 }
+

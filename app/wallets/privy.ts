@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { Wallet } from "@privy-io/node";
 import { StrKey } from "@stellar/stellar-sdk";
 import { getPrivyClient } from "@/app/privy-client";
-import { getCanonicalEvmWallet, getCanonicalStellarWallet } from "@/app/multichain-account";
+import { getCanonicalEvmWallet, getCanonicalStellarWallet, getCanonicalSolanaWallet } from "@/app/multichain-account";
 import {
   PRIVY_CHAIN_TYPE_BY_FAMILY,
   type UserWallet,
@@ -46,7 +46,7 @@ async function listUserWallets(userId: string, family: WalletFamily) {
   });
   const wallets: Wallet[] = [];
   for await (const wallet of page) {
-    if ((family === "evm" || family === "stellar") && (!wallet.id || wallet.chain_type !== chainType || !isValidWalletAddress(family, wallet.address))) {
+    if ((!wallet.id || wallet.chain_type !== chainType || !isValidWalletAddress(family, wallet.address))) {
       throw new Error("privy_invalid_wallet_response");
     }
     if (wallet.chain_type === chainType && isValidWalletAddress(family, wallet.address)) wallets.push(wallet);
@@ -73,6 +73,17 @@ export function selectStellarWallet(
   }
   // Even a deterministic external ID cannot settle two legacy identities.
   if (candidates.length > 1) throw new Error("privy_stellar_wallet_ambiguous");
+  return candidates[0];
+}
+
+export function selectSolanaWallet(candidates: PrivyWalletCandidate[], input: { userId: string; canonical: CanonicalEvmIdentity | null }) {
+  if (candidates.some(wallet => !wallet.id || wallet.chain_type !== "solana" || !isValidWalletAddress("solana", wallet.address ?? ""))) throw new Error("privy_invalid_wallet_response");
+  if (input.canonical) {
+    const matches = candidates.filter(wallet => wallet.id === input.canonical!.id);
+    if (input.canonical.userId !== input.userId || input.canonical.chainType !== "solana" || matches.length !== 1 || matches[0].address !== input.canonical.address) throw new Error("wallet_identity_conflict");
+    return matches[0];
+  }
+  if (candidates.length > 1) throw new Error("privy_solana_wallet_ambiguous");
   return candidates[0];
 }
 
@@ -112,6 +123,7 @@ function normalizeUserWallet(
 
 export async function getOrCreateUserWallet(userId: string, family: WalletFamily, dependencies?: {
   canonicalEvmWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
+  canonicalSolanaWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
   canonicalStellarWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
 }) {
   if (!userId.startsWith("did:privy:")) throw new Error("invalid_privy_user_id");
@@ -120,7 +132,8 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
   const externalId = getPrivyUserWalletExternalId(userId, family);
   const canonical = family === "evm"
     ? await (dependencies?.canonicalEvmWallet ?? getCanonicalEvmWallet)(userId)
-    : family === "stellar" ? await (dependencies?.canonicalStellarWallet ?? getCanonicalStellarWallet)(userId) : null;
+    : family === "stellar" ? await (dependencies?.canonicalStellarWallet ?? getCanonicalStellarWallet)(userId)
+    : await (dependencies?.canonicalSolanaWallet ?? getCanonicalSolanaWallet)(userId);
   const current = await listUserWallets(userId, family);
   // Older Carmelita versions used a different external_id for Stellar.
   // Reuse a valid wallet already owned by this Privy user instead of creating
@@ -128,7 +141,7 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
   const select = (wallets: PrivyWalletCandidate[]) => family === "evm"
     ? selectEvmWallet(wallets, { userId, externalId, canonical })
     : family === "stellar" ? selectStellarWallet(wallets, { userId, canonical })
-    : findExactPrivyWallet(wallets, externalId) ?? wallets[0];
+    : selectSolanaWallet(wallets, { userId, canonical });
   const existing = select(current);
   if (existing?.id && existing.address) return normalizeUserWallet(existing as { id: string; address: string; chain_type: string }, family, false);
 

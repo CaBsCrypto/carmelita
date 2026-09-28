@@ -77,7 +77,12 @@ export async function buildWalletNetworkSqlFixtures(): Promise<WalletNetworkSqlF
   await setPersistedWalletNetworkStatus({ userId: userA, walletId: "fixture-evm-a", network: "bnb:testnet", status: "pending" }, {
     transaction: async (statements) => { statusStatements = statements; },
   });
+  const stellarIdentity: PersistWalletNetworksInput = { userId: userB, email: null, wallet: { id: "fixture-stellar-b", address: "fixture-stellar-address-b", family: "stellar", chainType: "stellar", owner: "user", created: false }, networks: ["stellar:testnet"], status: "pending", preserveExistingStatus: true };
   return [{
+    name: "unknown Stellar activation preserves active identity and binding",
+    statements: [...migrated, ...buildWalletPersistenceStatements(stellarIdentity),
+      statement(`SELECT 1 / CASE WHEN (SELECT status FROM agent_wallets WHERE id = 'fixture-stellar-b') = 'active' AND (SELECT status FROM agent_wallet_networks WHERE wallet_id = 'fixture-stellar-b' AND network = 'stellar:testnet') = 'active' THEN 1 ELSE 0 END AS active_preserved`)],
+  }, {
     name: "backfill, five networks per user, retry, casing preservation and frozen receipt identity",
     statements: [...migrated,
       ...buildWalletPersistenceStatements(input()),

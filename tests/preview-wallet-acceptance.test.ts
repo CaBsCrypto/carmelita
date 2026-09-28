@@ -20,8 +20,8 @@ function fixtureFetch(calls: { path: string; options?: RequestInit }[], override
     assert.equal(new Headers(options?.headers).get("authorization"), "Bearer fixture-token");
     if (path === "/api/agent/wallets") return Response.json(list);
     if (path === "/api/agent/bootstrap") return Response.json({ user: { id: userId }, wallets: { evm: { id: "evm-id", address: evmAddress }, avalanche: { id: "evm-id", address: evmAddress } }, evm: { fundsMoved: false, signingRequired: false }, avalanche: { fundsMoved: false, signingRequired: false }, solana: { fundsMoved: false, signingRequired: false } });
-    if (path === "/api/admin/privy-session") {
-      assert.equal(options?.credentials, "omit", "acceptance must not establish an admin cookie");
+    if (path === "/api/admin/privy-session?verifyOnly=true") {
+      assert.equal(options?.credentials, "same-origin", "acceptance retains Vercel session; verifyOnly prevents admin cookie creation");
       return Response.json({ error: "access_denied" }, { status: 403 });
     }
     if (path === "/api/agent/wallets/solana") return Response.json({ network: "solana:devnet", address: "SOLANA", balance: "0 SOL", nativeAsset: "SOL" });
@@ -41,7 +41,7 @@ test("wallet-only acceptance reads five associations, checks EVM overrides and n
   assert.equal(report.target?.deployment, health.deployment.url);
   assert.ok(report.checks.filter((check) => check.name.startsWith("Rechazo de")).every((check) => check.http === 400));
   assert.ok(calls.every((call) => !/chat|memory|fund|faucet|trustline|payment|bootstrap/.test(call.path)));
-  assert.deepEqual(calls.filter((call) => call.options?.method === "POST").map((call) => call.path), ["/api/admin/privy-session"]);
+  assert.deepEqual(calls.filter((call) => call.options?.method === "POST").map((call) => call.path), ["/api/admin/privy-session?verifyOnly=true"]);
   assert.doesNotMatch(JSON.stringify(report), /fixture-token/);
 });
 
@@ -92,6 +92,7 @@ test("reload evidence is scoped to one account, commit and deployment and remain
 });
 
 test("an origin rejection cannot pass the administrative role check", async () => {
-  const report = await runWalletAcceptance({ token: "fixture-token", userId, signal: new AbortController().signal, fetcher: fixtureFetch([], (path) => path === "/api/admin/privy-session" ? Response.json({ error: "invalid_origin" }, { status: 403 }) : undefined) });
+  const report = await runWalletAcceptance({ token: "fixture-token", userId, signal: new AbortController().signal, fetcher: fixtureFetch([], (path) => path === "/api/admin/privy-session?verifyOnly=true" ? Response.json({ error: "invalid_origin" }, { status: 403 }) : undefined) });
   assert.equal(report.checks.find((check) => check.name === "Cuenta de prueba sin permiso administrativo")?.status, "FAIL");
 });
+

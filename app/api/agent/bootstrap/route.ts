@@ -52,9 +52,9 @@ export async function POST(request: Request) {
         wallet: onboarding.stellar,
         wallets: {
           stellar: onboarding.stellar,
-          avalanche: onboarding.avalanche.wallet,
-          solana: onboarding.solana.wallet,
-          evm: onboarding.evm.wallet,
+          avalanche: onboarding.avalanche?.wallet ?? null,
+          solana: onboarding.solana?.wallet ?? null,
+          evm: onboarding.evm?.wallet ?? null,
         },
         avalanche: onboarding.avalanche,
         solana: onboarding.solana,
@@ -62,6 +62,9 @@ export async function POST(request: Request) {
         account: onboarding.account,
         activation: onboarding.activation,
         ...onboarding.agentAccount,
+        persistence: onboarding.persistence,
+        preparation: onboarding.preparation,
+        reads: onboarding.reads,
         readiness: getPrivyStellarReadiness(),
         walletArchitecture: PRIVY_WALLET_ARCHITECTURE,
       },
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const code =
       error instanceof Error ? error.message.split(":")[0] : "bootstrap_failed";
-    const status = code === "privy_not_configured" || code === "database_not_configured"
+    const status = code === "privy_not_configured" || code === "database_not_configured" || code === "wallet_persistence_unavailable"
       ? 503
       : code.includes("conflict") || code === "privy_evm_wallet_ambiguous"
         ? 409

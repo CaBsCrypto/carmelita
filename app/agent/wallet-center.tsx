@@ -10,10 +10,10 @@ const copy = {
   en: {
     eyebrow: "YOUR WALLET SYSTEM", title: "One identity. Three wallet families.",
     intro: "Each family has its own address. EVM networks reuse one address while keeping balances and transactions separate.",
-    stellar: "Stellar", stellarText: "Your active wallet for XLM, DeFindex, Soroswap and Stellar x402.",
+    stellar: "Stellar", stellarText: "Your registered wallet for XLM, DeFindex, Soroswap and Stellar x402.",
     evm: "EVM", evmText: "One Privy wallet, one address for every enabled EVM test network.",
     solana: "Solana", solanaText: "Your Solana Devnet address and balance. Each additional operation has its own acceptance checks.",
-    active: "ACTIVE", available: "AVAILABLE", network: "Network",
+    active: "REGISTERED", available: "AVAILABLE", network: "Network",
     balance: "Balance", provider: "Provider", activate: "Activate Fuji",
     activating: "Activating...", refresh: "Refresh", faucet: "Get Test AVAX", solanaFaucet: "Get 1 SOL Devnet",
     fundingSolana: "Funding SOL...", explorer: "Explorer", copy: "Copy", copied: "Copied",
@@ -23,10 +23,10 @@ const copy = {
   es: {
     eyebrow: "TU SISTEMA DE WALLETS", title: "Una identidad. Tres familias de wallet.",
     intro: "Cada familia tiene su propia dirección. Las redes EVM reutilizan una dirección, pero mantienen saldos y transacciones separados.",
-    stellar: "Stellar", stellarText: "Tu wallet activa para XLM, DeFindex, Soroswap y x402 en Stellar.",
+    stellar: "Stellar", stellarText: "Tu wallet registrada para XLM, DeFindex, Soroswap y x402 en Stellar.",
     evm: "EVM", evmText: "Una wallet Privy, una dirección para cada red EVM de prueba habilitada.",
     solana: "Solana", solanaText: "Tu dirección y saldo de Solana Devnet. Cada operación adicional tiene sus propias pruebas de aceptación.",
-    active: "ACTIVA", available: "DISPONIBLE", network: "Red",
+    active: "REGISTRADA", available: "DISPONIBLE", network: "Red",
     balance: "Saldo", provider: "Proveedor", activate: "Activar Fuji",
     activating: "Activando...", refresh: "Actualizar", faucet: "Obtener AVAX Testnet", solanaFaucet: "Obtener 1 SOL Devnet",
     fundingSolana: "Fondeando SOL...", explorer: "Explorador", copy: "Copiar", copied: "Copiada",
@@ -36,10 +36,10 @@ const copy = {
   pt: {
     eyebrow: "SEU SISTEMA DE WALLETS", title: "Uma identidade. Três famílias de wallet.",
     intro: "Cada família tem seu próprio endereço. Redes EVM reutilizam um endereço, mantendo saldos e transações separados.",
-    stellar: "Stellar", stellarText: "Sua wallet ativa para XLM, DeFindex, Soroswap e x402 na Stellar.",
+    stellar: "Stellar", stellarText: "Sua wallet registrada para XLM, DeFindex, Soroswap e x402 na Stellar.",
     evm: "EVM", evmText: "Uma wallet Privy, um endereço para cada rede EVM de teste habilitada.",
     solana: "Solana", solanaText: "Seu endereço e saldo na Solana Devnet. Cada operação adicional tem suas próprias verificações de aceitação.",
-    active: "ATIVA", available: "DISPONÍVEL", network: "Rede",
+    active: "REGISTRADA", available: "DISPONÍVEL", network: "Rede",
     balance: "Saldo", provider: "Provedor", activate: "Ativar Fuji",
     activating: "Ativando...", refresh: "Atualizar", faucet: "Obter AVAX Testnet", solanaFaucet: "Obter 1 SOL Devnet",
     fundingSolana: "Fondeando SOL...", explorer: "Explorador", copy: "Copiar", copied: "Copiada",
@@ -56,11 +56,13 @@ export default function WalletCenter({
   locale,
   stellarAddress,
   stellarBalance,
+  stellarStatus,
   getAccessToken,
 }: {
   locale: Locale;
   stellarAddress: string;
   stellarBalance: string;
+  stellarStatus: string;
   getAccessToken: () => Promise<string | null>;
 }) {
   const t = copy[locale];
@@ -119,11 +121,11 @@ export default function WalletCenter({
       {(failed || action.owner === owner && action.failed) && <p className={styles.error} role="alert">{failed ? t.failed : t.actionFailed}</p>}
       <div className={styles.grid}>
         <article className={`${styles.card} ${styles.stellar}`}>
-          <div className={styles.top}><span className={styles.family}>STELLAR</span><b className={styles.badge}>{t.active}</b></div>
+          <div className={styles.top}><span className={styles.family}>STELLAR</span><b className={styles.badge}>{stellarStatus}</b></div>
           <div className={styles.mark}>S</div><h3>{t.stellar}</h3><p>{t.stellarText}</p>
-          <code className={styles.address}>{short(stellarAddress)}</code>
+          <code className={styles.address}>{stellarAddress ? short(stellarAddress) : t.notRegistered}</code>
           <div className={styles.facts}><span>{t.network}<b>Stellar Testnet</b></span><span>{t.balance}<b>{stellarBalance} XLM</b></span></div>
-          <div className={styles.actions}><button onClick={() => void copyAddress(stellarAddress)}>{copied === stellarAddress ? t.copied : t.copy}</button><a className={styles.secondary} href={`https://stellar.expert/explorer/testnet/account/${stellarAddress}`} target="_blank" rel="noreferrer">{t.explorer}</a></div>
+          {stellarAddress && <div className={styles.actions}><button onClick={() => void copyAddress(stellarAddress)}>{copied === stellarAddress ? t.copied : t.copy}</button><a className={styles.secondary} href={`https://stellar.expert/explorer/testnet/account/${stellarAddress}`} target="_blank" rel="noreferrer">{t.explorer}</a></div>}
         </article>
 
         <article className={`${styles.card} ${styles.evm}`}>

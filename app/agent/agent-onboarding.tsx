@@ -83,19 +83,26 @@ type BootstrapWallet = {
   owner: "user";
 };
 
+const preparationCopy = {
+ en: { partial: "Some wallets still need preparation. You can continue using Carmelita.", retry: "Retry preparation", ready: "Registered", failed: "Preparation unavailable", conflict: "Identity conflict — review required", unknown: "Activation not checked", unavailable: "Balance unavailable" },
+ es: { partial: "Falta preparar algunas wallets. Puedes seguir usando Carmelita.", retry: "Reintentar preparación", ready: "Registrada", failed: "Preparación no disponible", conflict: "Conflicto de identidad — requiere revisión", unknown: "Activación sin comprobar", unavailable: "Saldo no disponible" },
+ pt: { partial: "Algumas wallets ainda precisam de preparação. Você pode continuar usando Carmelita.", retry: "Tentar preparação novamente", ready: "Registrada", failed: "Preparação indisponível", conflict: "Conflito de identidade — revisão necessária", unknown: "Ativação não verificada", unavailable: "Saldo indisponível" },
+};
+
 type BootstrapResult = {
+  preparation: Record<"stellar" | "evm" | "solana", { status: "ready" | "failed" | "conflict"; error: string | null; retryable: boolean }>;
   user: { id: string; email: string | null };
-  profile: { id: string; email: string | null; status: string };
-  persistence: { configured: boolean; provider: string };
-  history: { id: string; type: string; summary: string; createdAt: string }[];
-  wallet: BootstrapWallet;
+  profile?: { id: string; email: string | null; status: string };
+  persistence?: { configured: boolean; provider: string };
+  history?: { id: string; type: string; summary: string; createdAt: string }[];
+  wallet: BootstrapWallet | null;
   wallets: {
-    stellar: BootstrapWallet;
-    avalanche: BootstrapWallet;
-    evm: BootstrapWallet;
-    solana: BootstrapWallet;
+    stellar: BootstrapWallet | null;
+    avalanche: BootstrapWallet | null;
+    evm: BootstrapWallet | null;
+    solana: BootstrapWallet | null;
   };
-  evm: { wallet: BootstrapWallet; networks: { id: string; name: string; explorerUrl: string }[]; fundsMoved: false; signingRequired: false };
+  evm: { wallet: BootstrapWallet | null; networks: { id: string; name: string; explorerUrl: string }[]; fundsMoved: false; signingRequired: false } | null;
   solana: { network: { id: string; name: string; explorerUrl: string } };
   avalanche: {
     network: { id: "avalanche:fuji"; name: string; explorerUrl: string };
@@ -111,8 +118,8 @@ type BootstrapResult = {
     exists: boolean;
     sequence: string | null;
     balances: { asset: string; balance: string }[];
-  };
-  activation: "active" | "activated" | "pending";
+  } | null;
+  activation: "active" | "activated" | "pending" | "unknown";
 };
 
 
@@ -183,6 +190,7 @@ function PrivyAgent({
   autoLogin: boolean;
 }) {
   const t = onboardingUi[locale];
+  const pc = preparationCopy[locale];
   const { ready, authenticated, user, login, getAccessToken } = usePrivy();
   const session = useSessionClose();
   const userId = user?.id;
@@ -349,7 +357,7 @@ function PrivyAgent({
         <div>
           <p className="eyebrow">{t.workspace}</p>
           <h1>{status === "ready" ? t.ready : t.creating}</h1>
-          <p>{result?.profile.email ?? user?.email?.address ?? t.authenticated}</p>
+          <p>{result?.profile?.email ?? user?.email?.address ?? t.authenticated}</p>
         </div>
         <button className="agent-signout" disabled={session.closing} onClick={() => void signOut()}>{session.closing ? sessionCloseCopy[locale].closing : t.signout}</button>
       </header>
@@ -372,13 +380,18 @@ function PrivyAgent({
 
       {result && result.user.id === user?.id && (
         <>
+        <section aria-live="polite" className="agent-bootstrap-error">
+          {Object.values(result.preparation).some(item => item.status !== "ready") && <strong>{pc.partial}</strong>}
+          {Object.entries(result.preparation).map(([family, item]) => <p key={family}>{family.toUpperCase()}: {pc[item.status]}</p>)}
+          {(Object.values(result.preparation).some(item => item.retryable) || result.activation === "unknown") && <button disabled={status === "creating"} onClick={() => void bootstrap(true)}>{pc.retry}</button>}
+        </section>
         <AgentChat
           key={result.user.id}
-          email={result.profile.email ?? user?.email?.address ?? "Privy account"}
-          walletAddress={result.wallet.address}
+          email={result.profile?.email ?? user?.email?.address ?? "Privy account"}
+          walletAddress={result.wallet?.address ?? ""}
           walletBalance={
-            result.account.balances.find((balance) => balance.asset === "XLM")?.balance ??
-            "0"
+            result.account?.balances.find((balance) => balance.asset === "XLM")?.balance ??
+            pc.unavailable
           }
           getAccessToken={getAccessToken}
         />
@@ -388,11 +401,12 @@ function PrivyAgent({
         <AgentConnectedApps locale={locale} getAccessToken={getAccessToken} />
 
         <WalletCenter
-          key={result.user.id}
+          key={`${result.user.id}:${result.wallets.evm?.id}:${result.wallets.solana?.id}:${result.evm?.networks.map(network => network.id).join(",")}`}
           locale={locale}
-          stellarAddress={result.wallet.address}
+          stellarStatus={result.wallet ? (result.activation === "unknown" ? pc.unknown : result.activation === "pending" ? t.pending : t.active) : pc.failed}
+          stellarAddress={result.wallet?.address ?? ""}
           stellarBalance={
-            result.account.balances.find((balance) => balance.asset === "XLM")?.balance ?? "0"
+            result.account?.balances.find((balance) => balance.asset === "XLM")?.balance ?? pc.unavailable
           }
           getAccessToken={getAccessToken}
         />
@@ -400,40 +414,40 @@ function PrivyAgent({
 
 
         <div className="agent-wallet-grid">
-          <article className="agent-wallet-card">
-            <header><span>{t.stellarWallet}</span><b>{result.activation === "pending" ? t.pending : t.active}</b></header>
+          {result.wallet && <article className="agent-wallet-card">
+            <header><span>{t.stellarWallet}</span><b>{result.activation === "unknown" ? pc.unknown : result.activation === "pending" ? t.pending : t.active}</b></header>
             <div className="agent-wallet-mark">S</div>
             <h2>{shortAddress(result.wallet.address)}</h2><code>{result.wallet.address}</code>
             <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Stellar Testnet</dd></div>
               <div><dt>{t.created}</dt><dd>{result.wallet.created ? t.justNow : t.existing}</dd></div></dl>
-          </article>
-          <article className="agent-wallet-card">
-            <header><span>{t.evmWallet}</span><b>{t.active}</b></header>
+          </article>}
+          {result.wallets.evm && result.evm && <article className="agent-wallet-card">
+            <header><span>{t.evmWallet}</span><b>{pc.ready}</b></header>
             <div className="agent-wallet-mark">0x</div>
             <h2>{shortAddress(result.wallets.evm.address)}</h2><code>{result.wallets.evm.address}</code>
             <p>{t.shared}</p>
             <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div>
               <div><dt>{t.created}</dt><dd>{result.wallets.evm.created ? t.justNow : t.existing}</dd></div></dl>
-            {result.evm.networks.map((network) => <a key={network.id} href={`${network.explorerUrl}/address/${result.wallets.evm.address}`} target="_blank" rel="noreferrer">{network.name} · {t.explorer}</a>)}
-          </article>
-          <article className="agent-wallet-card">
-            <header><span>{t.solanaWallet}</span><b>{t.active}</b></header>
+            {result.evm.networks.map((network) => <a key={network.id} href={`${network.explorerUrl}/address/${result.wallets.evm!.address}`} target="_blank" rel="noreferrer">{network.name} · {t.explorer}</a>)}
+          </article>}
+          {result.wallets.solana && <article className="agent-wallet-card">
+            <header><span>{t.solanaWallet}</span><b>{pc.ready}</b></header>
             <div className="agent-wallet-mark">◎</div>
             <h2>{shortAddress(result.wallets.solana.address)}</h2><code>{result.wallets.solana.address}</code>
             <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Solana Devnet</dd></div>
               <div><dt>{t.created}</dt><dd>{result.wallets.solana.created ? t.justNow : t.existing}</dd></div></dl>
             <a href={`https://explorer.solana.com/address/${result.wallets.solana.address}?cluster=devnet`} target="_blank" rel="noreferrer">{t.explorer}</a>
-          </article>          <div className="agent-ready-panel">
-            <p className="eyebrow">AUTOMATIC BOOTSTRAP COMPLETE</p>
-            <h2>Your agent now has a wallet identity.</h2>
+          </article>}          <div className="agent-ready-panel">
+            <p className="eyebrow">{Object.values(result.preparation).every(item => item.status === "ready") ? t.ready : pc.partial}</p>
+            <h2>{t.workspace}</h2>
             <p>
               Future actions can prepare intents and request scoped authorization
               from this wallet. Login alone never authorizes a payment.
             </p>
             <div className="agent-balances">
-              {(result.account.balances.length
+              {(result.account?.balances.length
                 ? result.account.balances
-                : [{ asset: "XLM", balance: "Activation pending" }]
+                : [{ asset: "XLM", balance: result.account ? t.pending : pc.unavailable }]
               ).map((balance) => (
                 <span key={balance.asset}><b>{balance.asset}</b>{balance.balance}</span>
               ))}
@@ -447,16 +461,16 @@ function PrivyAgent({
             <p className="eyebrow">ACCOUNT</p>
             <h2>Your identity follows every authorized action.</h2>
             <dl>
-              <div><dt>Email</dt><dd>{result.profile.email ?? "Privy account"}</dd></div>
-              <div><dt>Account status</dt><dd>{result.profile.status}</dd></div>
-              <div><dt>Data store</dt><dd>{result.persistence.configured ? "Neon connected" : "Local mode"}</dd></div>
-              <div><dt>User ID</dt><dd>{result.profile.id.slice(0, 22) + "..."}</dd></div>
+              <div><dt>Email</dt><dd>{result.profile?.email ?? "Privy account"}</dd></div>
+              <div><dt>Account status</dt><dd>{result.profile?.status ?? "active"}</dd></div>
+              <div><dt>Data store</dt><dd>{result.persistence?.configured ? "Neon connected" : "—"}</dd></div>
+              <div><dt>User ID</dt><dd>{(result.profile?.id ?? result.user.id).slice(0, 22) + "..."}</dd></div>
             </dl>
           </article>
           <article>
             <p className="eyebrow">RECENT HISTORY</p>
             <h2>Activity saved to your account.</h2>
-            {result.history.length ? (
+            {result.history?.length ? (
               <ol>
                 {result.history.map((event) => (
                   <li key={event.id}>
@@ -467,7 +481,7 @@ function PrivyAgent({
               </ol>
             ) : (
               <p className="agent-empty-history">
-                {result.persistence.configured
+                {result.persistence?.configured
                   ? "Your first account activity will appear here."
                   : "Connect Neon to persist account history across sessions."}
               </p>

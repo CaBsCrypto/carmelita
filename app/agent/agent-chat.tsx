@@ -1,5 +1,6 @@
 "use client";
 
+import { chatBalanceDisplay } from "./chat-balance-display";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -21,9 +22,9 @@ import {
 
 
 const chatUi = {
-  en: { agent: "Carmelita", controlled: "Stellar Testnet · policy-controlled", memory: "NEON MEMORY ON", loading: "Loading your conversation...", thinking: "Checking capabilities and safety boundaries", placeholder: "Ask Carmelita to search Notion, check a connection or prepare an action...", send: "Send", boundary: "The agent can prepare actions. Payments and irreversible operations always require scoped authorization.", context: "LIVE CONTEXT", contextTitle: "Knows you. Acts for you.", identity: "Identity", balance: "Balance", network: "Network", verify: "Verify wallet on-chain", capabilities: "LIVE CAPABILITIES", readOnly: "read only", help: "PERSONAL HELP", notionConnect: "Connect Notion", notionSearch: "Search Notion", firstSearch: "Run first search", price: "XLM price", watchlist: "Watchlist", proof: "Testnet proof", connections: "Connections", notionConnectPrompt: "Connect me to Notion", notionSearchPrompt: "Search my Notion workspace for pending project tasks", pricePrompt: "What is the current XLM price on CoinMarketCap?", watchlistPrompt: "Show my crypto watchlist", proofPrompt: "Start my DeFindex Testnet proof", travalaPrompt: "Connect me to Travala", connectionsPrompt: "What can I connect to?" },
-  es: { agent: "Carmelita", controlled: "Stellar Testnet · controlado por políticas", memory: "MEMORIA NEON ACTIVA", loading: "Cargando tu conversación...", thinking: "Revisando capacidades y límites de seguridad", placeholder: "Pide a Carmelita buscar en Notion, revisar una conexión o preparar una acción...", send: "Enviar", boundary: "El agente puede preparar acciones. Pagos y operaciones irreversibles siempre requieren autorización específica.", context: "CONTEXTO EN VIVO", contextTitle: "Te conoce. Actúa por ti.", identity: "Identidad", balance: "Saldo", network: "Red", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ACTIVAS", readOnly: "solo lectura", help: "AYUDA PERSONAL", notionConnect: "Conectar Notion", notionSearch: "Buscar en Notion", firstSearch: "Primera búsqueda", price: "Precio XLM", watchlist: "Watchlist", proof: "Prueba Testnet", connections: "Conexiones", notionConnectPrompt: "Conéctame con Notion", notionSearchPrompt: "Busca en mi Notion las tareas pendientes", pricePrompt: "¿Cuál es el precio actual de XLM en CoinMarketCap?", watchlistPrompt: "Muéstrame mi watchlist de criptomonedas", proofPrompt: "Inicia mi prueba DeFindex en Testnet", travalaPrompt: "Conéctame con Travala", connectionsPrompt: "¿Qué puedo conectar?" },
-  pt: { agent: "Carmelita", controlled: "Stellar Testnet · controlado por políticas", memory: "MEMÓRIA NEON ATIVA", loading: "Carregando sua conversa...", thinking: "Verificando capacidades e limites de segurança", placeholder: "Peça à Carmelita para pesquisar no Notion, verificar uma conexão ou preparar uma ação...", send: "Enviar", boundary: "O agente pode preparar ações. Pagamentos e operações irreversíveis sempre exigem autorização específica.", context: "CONTEXTO AO VIVO", contextTitle: "Conhece você. Age por você.", identity: "Identidade", balance: "Saldo", network: "Rede", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ATIVAS", readOnly: "somente leitura", help: "AJUDA PESSOAL", notionConnect: "Conectar Notion", notionSearch: "Pesquisar no Notion", firstSearch: "Primeira pesquisa", price: "Preço do XLM", watchlist: "Watchlist", proof: "Prova Testnet", connections: "Conexões", notionConnectPrompt: "Conecte-me ao Notion", notionSearchPrompt: "Pesquise no meu Notion as tarefas pendentes", pricePrompt: "Qual é o preço atual do XLM no CoinMarketCap?", watchlistPrompt: "Mostre minha watchlist de criptomoedas", proofPrompt: "Inicie minha prova DeFindex na Testnet", travalaPrompt: "Conecte-me à Travala", connectionsPrompt: "O que posso conectar?" },
+  en: { agent: "Carmelita", controlled: "Multichain Testnet · policy-controlled", memory: "NEON MEMORY ON", loading: "Loading your conversation...", thinking: "Checking capabilities and safety boundaries", placeholder: "Ask Carmelita to search Notion, check a connection or prepare an action...", send: "Send", boundary: "The agent can prepare actions. Payments and irreversible operations always require scoped authorization.", context: "LIVE CONTEXT", contextTitle: "Knows you. Acts for you.", identity: "Identity", balance: "Balance", network: "Network", verify: "Verify wallet on-chain", capabilities: "LIVE CAPABILITIES", readOnly: "read only", help: "PERSONAL HELP", notionConnect: "Connect Notion", notionSearch: "Search Notion", firstSearch: "Run first search", price: "XLM price", watchlist: "Watchlist", proof: "Testnet proof", connections: "Connections", notionConnectPrompt: "Connect me to Notion", notionSearchPrompt: "Search my Notion workspace for pending project tasks", pricePrompt: "What is the current XLM price on CoinMarketCap?", watchlistPrompt: "Show my crypto watchlist", proofPrompt: "Start my DeFindex Testnet proof", travalaPrompt: "Connect me to Travala", connectionsPrompt: "What can I connect to?" },
+  es: { agent: "Carmelita", controlled: "Multichain Testnet · controlado por políticas", memory: "MEMORIA NEON ACTIVA", loading: "Cargando tu conversación...", thinking: "Revisando capacidades y límites de seguridad", placeholder: "Pide a Carmelita buscar en Notion, revisar una conexión o preparar una acción...", send: "Enviar", boundary: "El agente puede preparar acciones. Pagos y operaciones irreversibles siempre requieren autorización específica.", context: "CONTEXTO EN VIVO", contextTitle: "Te conoce. Actúa por ti.", identity: "Identidad", balance: "Saldo", network: "Red", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ACTIVAS", readOnly: "solo lectura", help: "AYUDA PERSONAL", notionConnect: "Conectar Notion", notionSearch: "Buscar en Notion", firstSearch: "Primera búsqueda", price: "Precio XLM", watchlist: "Watchlist", proof: "Prueba Testnet", connections: "Conexiones", notionConnectPrompt: "Conéctame con Notion", notionSearchPrompt: "Busca en mi Notion las tareas pendientes", pricePrompt: "¿Cuál es el precio actual de XLM en CoinMarketCap?", watchlistPrompt: "Muéstrame mi watchlist de criptomonedas", proofPrompt: "Inicia mi prueba DeFindex en Testnet", travalaPrompt: "Conéctame con Travala", connectionsPrompt: "¿Qué puedo conectar?" },
+  pt: { agent: "Carmelita", controlled: "Multichain Testnet · controlado por políticas", memory: "MEMÓRIA NEON ATIVA", loading: "Carregando sua conversa...", thinking: "Verificando capacidades e limites de segurança", placeholder: "Peça à Carmelita para pesquisar no Notion, verificar uma conexão ou preparar uma ação...", send: "Enviar", boundary: "O agente pode preparar ações. Pagamentos e operações irreversíveis sempre exigem autorização específica.", context: "CONTEXTO AO VIVO", contextTitle: "Conhece você. Age por você.", identity: "Identidade", balance: "Saldo", network: "Rede", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ATIVAS", readOnly: "somente leitura", help: "AJUDA PESSOAL", notionConnect: "Conectar Notion", notionSearch: "Pesquisar no Notion", firstSearch: "Primeira pesquisa", price: "Preço do XLM", watchlist: "Watchlist", proof: "Prova Testnet", connections: "Conexões", notionConnectPrompt: "Conecte-me ao Notion", notionSearchPrompt: "Pesquise no meu Notion as tarefas pendentes", pricePrompt: "Qual é o preço atual do XLM no CoinMarketCap?", watchlistPrompt: "Mostre minha watchlist de criptomoedas", proofPrompt: "Inicie minha prova DeFindex na Testnet", travalaPrompt: "Conecte-me à Travala", connectionsPrompt: "O que posso conectar?" },
 };
 
 const defindexUi = {
@@ -229,7 +230,8 @@ export default function AgentChat({
   const { user } = usePrivy();
   const x402UserId = user?.id;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [liveWalletBalance, setLiveWalletBalance] = useState(walletBalance);
+  const [queriedWalletBalance, setLiveWalletBalance] = useState<string | null>(null);
+  const liveWalletBalance = queriedWalletBalance ?? walletBalance;
   const [status, setStatus] = useState<"loading" | "ready" | "sending" | "error">(
     "loading",
   );
@@ -558,7 +560,7 @@ export default function AgentChat({
         window.dispatchEvent(new Event("agent-memory-updated"));
       }
       if (body.wallet) {
-        setLiveWalletBalance(body.wallet.balance ?? "0");
+        setLiveWalletBalance(chatBalanceDisplay(body.wallet.balance, body.wallet.accountExists, locale));
       }
       setStatus("ready");
       if (assistantMessage.soroswapIntent) {
@@ -1120,7 +1122,7 @@ export default function AgentChat({
       const xlm = nextStatus.balances?.find(
         (balance: { asset: string; balance: string }) => balance.asset === "XLM",
       );
-      setLiveWalletBalance(xlm?.balance ?? "0");
+      setLiveWalletBalance(chatBalanceDisplay(xlm?.balance, undefined, locale));
     } catch (caught) {
       setDefindexNotice(caught instanceof Error ? caught.message : dui.statusFailed);
     } finally {
@@ -1199,7 +1201,7 @@ export default function AgentChat({
       const xlm = nextStatus.balances?.find(
         (balance: { asset: string; balance: string }) => balance.asset === "XLM",
       );
-      setLiveWalletBalance(xlm?.balance ?? "0");
+      setLiveWalletBalance(chatBalanceDisplay(xlm?.balance, undefined, locale));
     } catch (caught) {
       setDefindexNotice(
         caught instanceof Error ? caught.message : dui.executeFailed,
@@ -1289,7 +1291,7 @@ export default function AgentChat({
                   </span>
                 )}
                 <div className="agent-message-copy">
-                  <MessageText content={message.content} />
+                  <MessageText content={message.role === "assistant" && (message.content === "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval." || message.content === "Your Privy identity and personal Stellar wallet are ready. You control Testnet onboarding from this chat: ask for your wallet, request Testnet XLM, activate the exact USDC trustline and then prepare a DeFindex action.") ? { en: "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval.", es: "Bienvenido a Carmelita. Consulta aquí tus billeteras registradas de Stellar, EVM y Solana y sus saldos en redes de prueba. El registro no implica activación en blockchain. Las acciones financieras requieren aprobación por separado.", pt: "Bem-vindo à Carmelita. Consulte suas carteiras registradas de Stellar, EVM e Solana e os saldos nas redes de teste. O registro não significa ativação na blockchain. Ações financeiras exigem aprovação separada." }[locale] : message.content} />
                 </div>
                 {message.memoryContext?.items.length ? (
                   <details className="agent-memory-context">

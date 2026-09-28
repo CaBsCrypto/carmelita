@@ -23,7 +23,7 @@ test("persists all requested networks in one transaction without changing the si
   assert.equal(wallet.address, input.wallet.address);
   assert.equal(transactions.length, 1);
   const [, canonical, bindings] = transactions[0];
-  assert.deepEqual(bindings.parameters, [input.wallet.id, input.userId, "active", input.networks]);
+  assert.deepEqual(bindings.parameters, [input.wallet.id, input.userId, "active", input.networks, false]);
   const update = canonical.text.split("ON CONFLICT (id) DO UPDATE SET")[1].split("WHERE")[0];
   assert.doesNotMatch(update, /(?:^|,)\s*(id|user_id|address|chain_type|network)\s*=/);
   assert.equal(canonical.parameters[4], "avalanche:fuji");
@@ -72,7 +72,7 @@ test("database conflicts reject without retrying or reporting successful persist
   }
   const uncertain = new Error("connection interrupted after commit may have happened");
   let calls = 0;
-  await assert.rejects(persistWalletNetworks(input, { transaction: async () => { calls += 1; throw uncertain; } }), (error) => error === uncertain);
+  await assert.rejects(persistWalletNetworks(input, { transaction: async () => { calls += 1; throw uncertain; } }), (error) => error instanceof Error && error.message === "wallet_persistence_unavailable" && error.cause === uncertain);
   assert.equal(calls, 1);
 });
 

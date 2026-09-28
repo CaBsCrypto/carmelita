@@ -3,14 +3,14 @@ import { createHash } from "node:crypto";
 type Environment = Record<string, string | undefined>;
 type DatabaseIdentity = { database_name: string; role_name: string };
 
-/** Read-only operational probe; callers must keep it restricted to maintenance. */
-export async function verifyProductionDatabase(
+/** Shared read-only connection verification. Callers must authenticate operational access. */
+export async function verifyProductionDatabaseConnections(
   runtimeValue: string | undefined,
   env: Environment,
   query: (url: string) => Promise<DatabaseIdentity[]>,
 ) {
   try {
-    if (env.VERCEL_ENV !== "production" || env.CARMELITA_MAINTENANCE_ENABLED !== "true" ||
+    if (env.VERCEL_ENV !== "production" ||
       Object.keys(env).some(key => key.startsWith("CARMELITA_PREVIEW_") && env[key] !== undefined)) throw new Error();
     const parse = (value: string | undefined) => {
       const url = new URL(value ?? "");
@@ -39,4 +39,14 @@ export async function verifyProductionDatabase(
   } catch {
     throw new Error("production_database_not_verified");
   }
+}
+
+/** Public health probe remains restricted to maintenance. */
+export async function verifyProductionDatabase(
+  runtimeValue: string | undefined,
+  env: Environment,
+  query: (url: string) => Promise<DatabaseIdentity[]>,
+) {
+  if (env.CARMELITA_MAINTENANCE_ENABLED !== "true") throw new Error("production_database_not_verified");
+  return verifyProductionDatabaseConnections(runtimeValue, env, query);
 }
