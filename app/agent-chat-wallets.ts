@@ -35,13 +35,13 @@ export function requestsWalletBalances(message: string) {
 }
 
 export async function walletBalancesReply(userId: string, rows: Row[], language: AgentLanguage,
-  read: (network: string, address: string) => Promise<string>): Promise<AgentChatReply> {
+  read: (network: string, address: string) => Promise<string | null>): Promise<AgentChatReply> {
   const own = rows.filter(row => row.userId === userId && isWalletNetworkEnabled(row.network));
   const title = { es: "Saldos nativos consultados", en: "Native balances checked", pt: "Saldos nativos consultados" }[language];
   const unavailable = { es: "Saldo no disponible", en: "Balance unavailable", pt: "Saldo indisponível" }[language];
   const lines = await Promise.all(own.map(async row => {
     let balance: string;
-    try { balance = await read(row.network, row.address); } catch { balance = unavailable; }
+    try { balance = (await read(row.network, row.address)) ?? { es: "Registrada, pendiente de activación", en: "Registered, activation pending", pt: "Registrada, ativação pendente" }[language]; } catch { balance = unavailable; }
     return `${getWalletNetwork(row.network).name}: ${balance}`;
   }));
   return { content: own.length ? [`**${title}**`, new Date().toISOString(), ...lines].join("\n\n") : registeredWalletsReply(userId, rows, language).content, actions: [] };

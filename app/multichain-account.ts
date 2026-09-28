@@ -116,7 +116,7 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
         VALUES ($1, $2, 'wallet.created', $3, $4::jsonb) ON CONFLICT (id) DO NOTHING`,
       parameters: [
         walletCreatedActivityId(input.wallet.id, network), input.userId,
-        `${input.wallet.family.toUpperCase()} wallet activated on ${network}`,
+        `${input.wallet.family.toUpperCase()} wallet registered on ${network}`,
         JSON.stringify({ walletId: input.wallet.id, address: input.wallet.address, family: input.wallet.family,
           chainType: input.wallet.chainType, network, provider: "privy" }),
       ],

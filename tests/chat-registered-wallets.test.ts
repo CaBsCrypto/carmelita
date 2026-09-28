@@ -47,3 +47,14 @@ test('Solana malformed RPC balances cannot appear as zero', async () => {
   }
   assert.equal((await getSolanaDevnetBalance(address,async()=>Response.json({result:{value:0}}))).sol,0);
 });
+
+
+test('unactivated Stellar is localized without fabricated balance or repeated network', async () => {
+  const { walletBalancesReply } = await import('../app/agent-chat-wallets');
+  for (const [language, expected] of [['es','Registrada, pendiente de activación'],['en','Registered, activation pending'],['pt','Registrada, ativação pendente']] as const) {
+    const reply = await walletBalancesReply('a', [{id:'s',userId:'a',address:'s',network:'stellar:testnet',status:'pending'}], language, async () => null);
+    assert.ok(reply.content.includes(`Stellar Testnet: ${expected}`));
+    assert.doesNotMatch(reply.content,/0 XLM|Stellar Testnet: Stellar/);
+    assert.deepEqual(reply.actions, []);
+  }
+});

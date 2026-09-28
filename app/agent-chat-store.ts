@@ -190,7 +190,7 @@ async function ensureConversation(userId: string) {
       userId,
       role: "assistant",
       content:
-        "Your Privy identity and personal Stellar wallet are ready. You control Testnet onboarding from this chat: ask for your wallet, request Testnet XLM, activate the exact USDC trustline and then prepare a DeFindex action.",
+        "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval.",
       metadata: {
         actions: [
           { label: "Show my wallet", message: "Show my wallet" },
