@@ -27,3 +27,22 @@ export function registeredWalletsReply(userId: string, rows: Row[], language: Ag
     }), copy.note,
   ].join("\n\n") : copy.empty, actions: [] };
 }
+
+export function requestsWalletBalances(message: string) {
+  const text = message.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return /\b(saldos?|balances?)\b/.test(text)
+    && !/\b(send|transfer|swap|bridge|deposit|envia|enviar|transfiere|depositar|comprar|pagar|fund|activate|activa)\b/.test(text);
+}
+
+export async function walletBalancesReply(userId: string, rows: Row[], language: AgentLanguage,
+  read: (network: string, address: string) => Promise<string>): Promise<AgentChatReply> {
+  const own = rows.filter(row => row.userId === userId && isWalletNetworkEnabled(row.network));
+  const title = { es: "Saldos nativos consultados", en: "Native balances checked", pt: "Saldos nativos consultados" }[language];
+  const unavailable = { es: "Saldo no disponible", en: "Balance unavailable", pt: "Saldo indisponível" }[language];
+  const lines = await Promise.all(own.map(async row => {
+    let balance: string;
+    try { balance = await read(row.network, row.address); } catch { balance = unavailable; }
+    return `${getWalletNetwork(row.network).name}: ${balance}`;
+  }));
+  return { content: own.length ? [`**${title}**`, new Date().toISOString(), ...lines].join("\n\n") : registeredWalletsReply(userId, rows, language).content, actions: [] };
+}

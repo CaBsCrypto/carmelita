@@ -1,4 +1,5 @@
-import { requestsRegisteredWallets, registeredWalletsReply } from "./agent-chat-wallets";
+import { readChatNativeBalance } from "./agent-chat-balances";
+import { requestsRegisteredWallets, registeredWalletsReply, requestsWalletBalances, walletBalancesReply } from "./agent-chat-wallets";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/db";
@@ -433,6 +434,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const language = detectAgentLanguage(content);
   const local = (english: string, portuguese: string) =>
     language === "pt" ? portuguese : english;
+  const balanceRead = requestsWalletBalances(content);
   const walletRead = requestsRegisteredWallets(content);
   const setupIntent = parseTestnetSetupIntent(content);
   const avalancheIntent = parseAvalancheChatIntent(content);
@@ -500,7 +502,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const deterministicDefindex = parseDefindexIntent(content);
   const deterministicConnection = findRequestedConnection(content);
   const hasDeterministicIntent = Boolean(
-    walletRead || vaultCommand ||
+    balanceRead || walletRead || vaultCommand ||
       unblckIntent ||
       setupIntent ||
       avalancheIntent ||
@@ -528,7 +530,9 @@ export async function sendAgentMessage(userId: string, content: string) {
   }
 
   let reply: AgentChatReply;
-  if (walletRead) {
+  if (balanceRead) {
+    reply = await walletBalancesReply(userId, await listPersistedUserWallets(userId), language, readChatNativeBalance);
+  } else if (walletRead) {
     reply = registeredWalletsReply(userId, await listPersistedUserWallets(userId), language);
   } else if (vaultCommand?.action === "list") {
     const vault = await listAgentVault(userId);
@@ -1408,4 +1412,5 @@ export async function recentConversationSummary(userId: string) {
     .orderBy(desc(agentConversations.updatedAt))
     .limit(10);
 }
+
 

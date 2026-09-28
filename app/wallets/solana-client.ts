@@ -38,7 +38,8 @@ export async function getSolanaDevnetBalance(
     throw new Error(`solana_rpc_error:${json.error.message || json.error.code}`);
   }
 
-  const lamports = Number(json.result?.value ?? 0);
+  const lamports = json.result?.value;
+  if (!Number.isSafeInteger(lamports) || lamports < 0) throw new Error("solana_rpc_invalid_balance");
   const sol = lamports / LAMPORTS_PER_SOL;
   const formatted = `${sol.toFixed(4)} SOL`;
 
@@ -87,3 +88,4 @@ export async function requestSolanaDevnetAirdrop(
     formatted: `${solAmount} SOL`,
   };
 }
+
