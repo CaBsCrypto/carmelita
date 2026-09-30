@@ -197,6 +197,10 @@ type ChatMessage = {
 };
 
 
+function isWelcomeGreeting(message: {role: string; content: string}) {
+  return message.role === "assistant" && (message.content === "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval." || message.content === "Your Privy identity and personal Stellar wallet are ready. You control Testnet onboarding from this chat: ask for your wallet, request Testnet XLM, activate the exact USDC trustline and then prepare a DeFindex action.");
+}
+
 export default function AgentChat({
   walletBalance,
   getAccessToken,
@@ -1312,7 +1316,7 @@ export default function AgentChat({
                   </span>
                 )}
                 <div className="agent-message-copy">
-                  <MessageText content={message.role === "assistant" && (message.content === "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval." || message.content === "Your Privy identity and personal Stellar wallet are ready. You control Testnet onboarding from this chat: ask for your wallet, request Testnet XLM, activate the exact USDC trustline and then prepare a DeFindex action.") ? { en: "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval.", es: "Bienvenido a Carmelita. Consulta aquí tus billeteras registradas de Stellar, EVM y Solana y sus saldos en redes de prueba. El registro no implica activación en blockchain. Las acciones financieras requieren aprobación por separado.", pt: "Bem-vindo à Carmelita. Consulte suas carteiras registradas de Stellar, EVM e Solana e os saldos nas redes de teste. O registro não significa ativação na blockchain. Ações financeiras exigem aprovação separada." }[locale] : message.content} />
+                  <MessageText content={isWelcomeGreeting(message) ? { en: "Welcome to Carmelita. Check your registered Stellar, EVM and Solana wallets and their test network balances here. Registration does not mean on-chain activation. Financial actions require separate approval.", es: "Bienvenido a Carmelita. Consulta aquí tus billeteras registradas de Stellar, EVM y Solana y sus saldos en redes de prueba. El registro no implica activación en blockchain. Las acciones financieras requieren aprobación por separado.", pt: "Bem-vindo à Carmelita. Consulte suas carteiras registradas de Stellar, EVM e Solana e os saldos nas redes de teste. O registro não significa ativação na blockchain. Ações financeiras exigem aprovação separada." }[locale] : message.content} />
                 </div>
                 {message.memoryContext?.items.length ? (
                   <details className="agent-memory-context">
@@ -1345,7 +1349,7 @@ export default function AgentChat({
                     </ul>
                   </details>
                 )}
-                {message.actions?.length ? (
+                {message.actions?.length && !isWelcomeGreeting(message) ? (
                   <div className="agent-message-actions">
                     {message.actions.map((action) =>
                       action.walletAction?.type === "cctp.bridge" ? (
