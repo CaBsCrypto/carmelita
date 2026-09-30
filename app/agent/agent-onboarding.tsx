@@ -372,7 +372,8 @@ function PrivyAgent({
         {panel === "functions" && <div className="workspace-functions">
           <p>{w.exampleNote}</p><h3>{w.consultations}</h3>
           <article><h4>{w.wallets}</h4><p>{w.registryNote}</p><button onClick={() => suggest(w.walletPrompt)}>{w.fill}</button></article>
-          <article><h4>{w.price}</h4><p>{w.marketNote}</p><button onClick={() => suggest(w.pricePrompt)}>{w.fill}</button></article>
+          <article><h4>{w.price}</h4><p>{w.marketNote}</p><p>{w.marketScope}</p><button onClick={() => suggest(w.multiPricePrompt)}>{w.fill}</button></article>
+          <article><h4>{w.chainComparison}</h4><p>DefiLlama · TVL</p><button onClick={() => suggest(w.chainPrompt)}>{w.fill}</button></article>
           <article><h4>{w.capabilities}</h4><button onClick={() => suggest(w.capabilitiesPrompt)}>{w.fill}</button></article>
           <h3>{w.connections}</h3><p>{w.chatgptNote}</p><p>{w.notionNote}</p><button onClick={() => setPanel("account")}>{w.connections}</button>
           <article><h4>Travala</h4><p>{w.travelNote}</p><button onClick={() => setPanel("travel")}>{w.travel}</button></article>
@@ -388,7 +389,7 @@ function PrivyAgent({
           <button onClick={() => setPanel("developers")}>{w.developers}</button><Link href="/guide">{w.guide}</Link>
         </div>}
         {panel === "developers" && <div className="workspace-developers"><p>{w.developerNote}</p>
-          <h3>{w.commands}</h3>{[w.walletPrompt, w.pricePrompt, w.capabilitiesPrompt].map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
+          <h3>{w.commands}</h3>{[w.walletPrompt, w.multiPricePrompt, w.chainPrompt, "coingecko:usd-coin", w.capabilitiesPrompt].map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
           <details><summary>{w.diagnostics}</summary><WebMcpInspector locale={locale} getAccessToken={getAccessToken} /></details>
           <details><summary>{w.credentials}</summary><AgentExternalAccess key={userId} locale={locale} getAccessToken={getAccessToken} /></details>
           {status === "error" && <details><summary>{w.help}</summary><p>{error}</p></details>}

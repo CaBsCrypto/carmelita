@@ -38,6 +38,8 @@ export type GatewayCapability = {
   status: GatewayCapabilityStatus;
   operation: GatewayOperation;
   network: GatewayNetwork;
+  dataScope?: "mainnet_market_data";
+  readTools?: readonly string[];
   approval: "none" | "privy_single" | "privy_dual" | "user_confirmation";
   requiresApproval: boolean;
   requirements: readonly string[];

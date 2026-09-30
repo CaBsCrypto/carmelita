@@ -22,7 +22,7 @@ Last reviewed: **August 11, 2026**.
 | `/api/agent/bootstrap` | POST | Idempotently create/fetch the user's Privy Stellar and EVM wallets, register Stellar Testnet + Avalanche Fuji, and persist the agent account without moving funds | Same-origin + Privy bearer |
 | `/api/oauth/stytch/preflight` | POST | Validate a chat OAuth request and show the requested scopes | Same-origin + Privy bearer |
 | `/api/oauth/stytch/authorize` | POST | After explicit consent, provision the same dual-wallet portfolio, bind Stytch subject to the Privy DID and continue OAuth | Same-origin + Privy bearer |
-| `/api/agent/chat` | GET, POST | Read the durable conversation / send a message to the agent | Same-origin + Privy bearer |
+| `/api/agent/chat` | GET, POST | Read the durable conversation / send a message with optional `locale` (`en`, `es`, `pt`), including Mainnet market queries | Same-origin + Privy bearer |
 | `/api/agent/memory` | GET, POST, PATCH, DELETE | Personal Execution Vault memory CRUD | Same-origin + Privy bearer |
 | `/api/agent/autopilot` | GET, POST | Read / update Testnet Autopilot state | Same-origin + Privy bearer |
 | `/api/agent/infrastructure` | GET | Readiness snapshot (Soroswap, LangGraph, UNBLCK, OpenZeppelin, MPP, 8004) | Public (status) |
@@ -38,7 +38,7 @@ Last reviewed: **August 11, 2026**.
 | `/api/telegram/webhook` | POST | Telegram bot webhook → routes messages into the agent | Shared secret header `x-telegram-bot-api-secret-token` |
 | `/api/telegram/mini/session` | POST | Verify a Mini App `initData` HMAC, report link status | Telegram `initData` HMAC (bot-token signed) |
 | `/api/mcp` | GET, POST, DELETE | Public sandbox MCP server (§2) | Public sandbox |
-| `/api/mcp/agent` | GET, POST, DELETE | Testnet discovery-and-planning MCP server (section 2) | Scoped PAT or first-party Privy bearer → MCP `AuthInfo` |
+| `/api/mcp/agent` | GET, POST, DELETE | Personal discovery/planning and read-only Mainnet market tools (see [market-data.md](market-data.md)) | Existing user OAuth/PAT/Privy principal and tool-specific scopes |
 | `/api/mcp/provider` | GET, POST, DELETE | Service-provider MCP server (§2) | Scoped provider bearer |
 | `/.well-known/mcp` | GET | Self-describes the three MCP surfaces | Public |
 | `/api/admin/*` | varies | Admin session, provider key issuance, Stellar lab, waitlist ops | Admin identity (cookie or SSO allowlist) |
@@ -89,7 +89,7 @@ Scoped provider token (DB-verified); subject `provider`.
 | --- | --- | --- | --- | --- |
 | **Notion** | `app/connectors/notion-oauth.ts`, `notion-mcp.ts` | `mcp.notion.com/mcp` | OAuth 2.1 (dynamic registration + PKCE); per-user tokens AES-256-GCM encrypted, auto-refresh | Read-only workspace search |
 | **CoinGecko** (primary) | `app/connectors/coingecko.ts` | `api.coingecko.com/api/v3/coins/markets` | Keyless (optional demo key `x-cg-demo-api-key`) | Read-only quotes |
-| **CoinMarketCap** (fallback) | `app/connectors/coinmarketcap.ts` | `pro-api.coinmarketcap.com/trial-pro-api` | Keyless trial | Read-only quotes; `getMarketQuote()` tries CoinGecko first, falls back here. Owns the watchlist table |
+| **CoinMarketCap** (fallback) | `app/connectors/coinmarketcap.ts` | `pro-api.coinmarketcap.com/public-api` | Keyless public | Identity-preserving, ID-based read-only quotes; owns the existing canonical-symbol watchlist table |
 | **Travala** (hotels only) | `app/travala.ts` | `travel-mcp.travala.com/mcp` | Keyless | Read-only `travala_search_hotel` (the MCP exposes no flights) |
 | **UNBLCK** | `app/connectors/unblck.ts`, `unblck-connection.ts` | `UNBLCK_API_BASE_URL` (default `www.unblck.cl/api/agent/v1`) | Partner key `Authorization: Bearer` + `X-Channel` / `X-Channel-User-Id`; gated by `UNBLCK_API_ENABLED` | Read + write: link/unlink channel, hub state, **book**, **cancel** |
 | **DeFindex** | `app/connectors/defindex.ts` | Soroban + Horizon Testnet; pinned vault/asset contract IDs | Keyless on-chain; signed client-side via Privy | Read (simulated) vault state; prepare unsigned deposit/trustline XDR; submit client-signed XDR |

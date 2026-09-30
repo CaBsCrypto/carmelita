@@ -8,6 +8,7 @@ export type AgentLanguage = "en" | "es" | "pt";
 export type AgentChatAction = {
   label: string;
   message?: string;
+  draftOnly?: boolean;
   href?: string;
   connect?: string;
   walletAction?: {

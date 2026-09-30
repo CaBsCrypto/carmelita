@@ -63,6 +63,7 @@ type ReceiptData = {
 type ChatAction = {
   label: string;
   message?: string;
+  draftOnly?: boolean;
   href?: string;
   connect?: string;
   walletAction?: AvalancheWalletAction | AvalancheX402WalletAction | CctpBridgeWalletAction;
@@ -302,9 +303,9 @@ export default function AgentChat({
   const [hasNewMessages, setHasNewMessages] = useState(false);
 
   const suggestions = {
-    en: [{ label: "My wallets", text: "Show my registered wallets" }, { label: "Check a price", text: "What is the current XLM price?" }, { label: "What can I do?", text: "What can I do with Carmelita?" }],
-    es: [{ label: "Mis billeteras", text: "Muestra mis billeteras registradas" }, { label: "Consultar un precio", text: "¿Cuál es el precio actual de XLM?" }, { label: "Qué puedo hacer", text: "¿Qué puedo hacer con Carmelita?" }],
-    pt: [{ label: "Minhas carteiras", text: "Mostre minhas carteiras registradas" }, { label: "Consultar um preço", text: "Qual é o preço atual do XLM?" }, { label: "O que posso fazer?", text: "O que posso fazer com Carmelita?" }],
+    en: [{ label: "My wallets", text: "Show my registered wallets" }, { label: "Check a price", text: "Query the price of SOL, AVAX and BNB and include the source and date." }, { label: "What can I do?", text: "What can I do with Carmelita?" }],
+    es: [{ label: "Mis billeteras", text: "Muestra mis billeteras registradas" }, { label: "Consultar un precio", text: "Consulta el precio de SOL, AVAX y BNB e indica la fuente y la fecha." }, { label: "Qué puedo hacer", text: "¿Qué puedo hacer con Carmelita?" }],
+    pt: [{ label: "Minhas carteiras", text: "Mostre minhas carteiras registradas" }, { label: "Consultar um preço", text: "Consulte o preço de SOL, AVAX e BNB e indique a fonte e a data." }, { label: "O que posso fazer?", text: "O que posso fazer com Carmelita?" }],
   }[locale];
 
   function suggestDraft(text: string) {
@@ -570,7 +571,7 @@ export default function AgentChat({
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, locale }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Message failed");
@@ -1417,7 +1418,14 @@ export default function AgentChat({
                           key={action.label}
                           type="button"
                           disabled={status === "sending"}
-                          onClick={() => void sendMessage(action.message ?? action.label)}
+                          onClick={() => {
+                            if (action.draftOnly) {
+                              setDraft(action.message ?? action.label);
+                              composerRef.current?.focus();
+                            } else {
+                              void sendMessage(action.message ?? action.label);
+                            }
+                          }}
                         >
                           {action.label}
                         </button>

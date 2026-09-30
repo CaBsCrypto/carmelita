@@ -12,13 +12,14 @@ test("extracts common asset names and symbols", () => {
   assert.equal(extractMarketSymbol("Add Avalanche to my watchlist"), "AVAX");
 });
 
-test("loads and normalizes a CoinMarketCap keyless quote", async () => {
+test("loads and normalizes a CoinMarketCap public quote by verified ID", async () => {
   const fetcher: typeof fetch = async (input) => {
     const url = String(input);
     assert.ok(
-      url.includes("trial-pro-api/v3/cryptocurrency/quotes/latest"),
+      url.includes("public-api/v3/cryptocurrency/quotes/latest"),
     );
-    assert.match(url, /symbol=XLM/);
+    assert.match(url, /id=512/);
+    assert.ok(!url.includes("symbol="));
     return new Response(
       JSON.stringify({
         data: [
@@ -27,7 +28,7 @@ test("loads and normalizes a CoinMarketCap keyless quote", async () => {
             name: "Stellar",
             symbol: "XLM",
             cmc_rank: 13,
-            last_updated: "2026-07-14T07:29:00.000Z",
+            last_updated: new Date().toISOString(),
             quote: [
               {
                 symbol: "USD",
@@ -36,7 +37,7 @@ test("loads and normalizes a CoinMarketCap keyless quote", async () => {
                 percent_change_24h: -2.55,
                 percent_change_7d: -8.63,
                 market_cap: 6122689488,
-                last_updated: "2026-07-14T07:29:05.000Z",
+                last_updated: new Date().toISOString(),
               },
             ],
           },
@@ -58,8 +59,8 @@ test("loads and normalizes a CoinMarketCap keyless quote", async () => {
 });
 
 test("does not present an absent CoinMarketCap asset as a quote", async () => {
-  const fetcher: typeof fetch = async () =>
-    new Response(JSON.stringify({ data: [], status: { error_code: "0" } }), {
+  const fetcher: typeof fetch = async input =>
+    new Response(JSON.stringify({ data: String(input).includes("/info") ? {} : [], status: { error_code: "0" } }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
