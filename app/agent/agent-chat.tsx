@@ -1,6 +1,7 @@
 "use client";
 
 import { chatBalanceDisplay } from "./chat-balance-display";
+import { MessageText } from "./message-text";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -195,19 +196,6 @@ type ChatMessage = {
 
 };
 
-function MessageText({ content }: { content: string }) {
-  return (
-    <>
-      {content.split("\n").map((line, lineIndex) => (
-        <p key={lineIndex}>
-          {line.split("**").map((part, partIndex) =>
-            partIndex % 2 ? <strong key={partIndex}>{part}</strong> : part,
-          )}
-        </p>
-      ))}
-    </>
-  );
-}
 
 export default function AgentChat({
   email,

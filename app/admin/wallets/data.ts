@@ -4,6 +4,7 @@ import { agentUsers, agentWallets, agentWalletNetworks } from "@/db/schema";
 import { enabledWalletNetworks, WALLET_NETWORKS } from "@/app/wallets/networks";
 import { isValidWalletAddress } from "@/app/wallets/privy";
 import type { WalletNetworkId } from "@/app/wallets/types";
+import { walletExplorerUrl } from "@/app/wallets/explorer";
 
 export const REQUIRED_ADMIN_WALLET_NETWORKS = [
   "stellar:testnet",
@@ -71,16 +72,6 @@ function validWallet(wallet: WalletRow) {
 
 function identityKey(wallet: WalletRow) {
   return wallet.id ?? `${wallet.chainType}:${wallet.chainType === "ethereum" ? wallet.address.toLowerCase() : wallet.address}`;
-}
-
-function walletExplorerUrl(networkId: string, address: string) {
-  const network = WALLET_NETWORKS[networkId as WalletNetworkId];
-  if (!network) return null;
-  if (network.family === "stellar") return `${network.explorerUrl}/account/${address}`;
-  if (network.family === "evm") return `${network.explorerUrl}/address/${address}`;
-  const url = new URL(network.explorerUrl);
-  url.pathname = `/address/${address}`;
-  return url.toString();
 }
 
 export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[], enabledNetworks = enabledWalletNetworks()) {

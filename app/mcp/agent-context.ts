@@ -6,6 +6,7 @@ import {
 } from "@/db/schema";
 import { listPersistedUserWallets } from "@/app/multichain-account";
 import { enabledWalletNetworks } from "@/app/wallets/networks";
+import { walletExplorerUrl } from "@/app/wallets/explorer";
 import { PRIVY_CHAIN_TYPE_BY_FAMILY, type WalletNetworkId } from "@/app/wallets/types";
 
 type PublicWallet = {
@@ -22,7 +23,7 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   // Project fields explicitly: persisted rows also carry private provider IDs.
   const ordered = wallets.filter((wallet) => networks.some((network) =>
     wallet.network === network.id && wallet.chainType === PRIVY_CHAIN_TYPE_BY_FAMILY[network.family],
-  )).map(({ address, chainType, network, status }) => ({ address, chainType, network, status })).sort((left, right) =>
+  )).map(({ address, chainType, network, status }) => ({ address, chainType, network, status, explorerUrl: walletExplorerUrl(network, address) })).sort((left, right) =>
     left.network.localeCompare(right.network) || left.address.localeCompare(right.address),
   );
   const activeNetworks = new Set(

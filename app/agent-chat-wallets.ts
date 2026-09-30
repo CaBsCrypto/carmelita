@@ -1,5 +1,6 @@
 import { getWalletNetwork, isWalletNetworkEnabled } from "./wallets/networks";
 import type { AgentChatReply, AgentLanguage } from "./agent-chat-logic";
+import { walletExplorerUrl } from "./wallets/explorer";
 
 export function requestsRegisteredWallets(message: string) {
   const text = message.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -16,15 +17,17 @@ export function registeredWalletsReply(userId: string, rows: Row[], language: Ag
     pt: { title: "Suas carteiras registradas", registered: "registrada", pending: "registrada, ativação pendente", empty: "Não há carteiras registradas para esta conta. Complete o acesso normal na Carmelita.", note: "As redes EVM compartilham endereço; os saldos são separados. Esta consulta não atualiza saldos nem prepara operações." },
   }[language];
   const own = rows.filter(row => row.userId === userId && isWalletNetworkEnabled(row.network));
-  const groups = new Map<string, Row[]>();
-  for (const row of own) groups.set(row.id, [...(groups.get(row.id) ?? []), row]);
+  const headers = { es: "Red | Dirección | Estado | Explorador", en: "Network | Address | State | Explorer", pt: "Rede | Endereço | Estado | Explorador" }[language];
+  const linkLabel = { es: "Ver en explorador", en: "View on explorer", pt: "Ver no explorador" }[language];
+  const unavailable = { es: "Consulta no disponible", en: "Information unavailable", pt: "Consulta indisponível" }[language];
+  const safeCell = (value: string) => value.replace(/[|\r\n]/g, " ");
   return { content: own.length ? [
     `**${copy.title}**`,
-    ...[...groups.values()].map(group => {
-      const first = group[0];
-      const family = getWalletNetwork(first.network).family.toUpperCase();
-      return `**${family}**\n${first.address}\n${group.map(row => `${getWalletNetwork(row.network).name}: ${row.status === "pending" ? copy.pending : copy.registered}`).join("\n")}`;
-    }), copy.note,
+    [`| ${headers} |`, "| --- | --- | --- | --- |", ...own.map(row => {
+      const url = walletExplorerUrl(row.network, row.address);
+      const state = row.status === "pending" ? copy.pending : ["active", "registered"].includes(row.status) ? copy.registered : unavailable;
+      return `| ${getWalletNetwork(row.network).name} | ${safeCell(row.address)} | ${state} | ${url ? `[${linkLabel}](${url})` : "—"} |`;
+    })].join("\n"), copy.note,
   ].join("\n\n") : copy.empty, actions: [] };
 }
 
