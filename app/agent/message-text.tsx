@@ -44,9 +44,9 @@ export function messageBlocks(content: string): MessageBlock[] {
 export function MessageText({ content }: { content: string }) {
   return messageBlocks(content).map((block, index) => block.kind === "paragraph" ? <p key={index} style={{ overflowWrap: "anywhere", maxWidth: "100%" }}><InlineText text={block.text} /></p> : (
     <div key={index} role="region" aria-label={block.headers.join(" · ")} tabIndex={0} style={{ overflowX: "auto", maxWidth: "100%" }}>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: block.headers.length >= 4 ? `${block.headers.length * 8}rem` : undefined }}>
         <thead><tr>{block.headers.map((header, cell) => <th key={cell} scope="col" style={{ textAlign: "left", padding: "0.5rem" }}><InlineText text={header} /></th>)}</tr></thead>
-        <tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((text, cell) => <td key={cell} style={{ padding: "0.5rem", verticalAlign: "top", overflowWrap: "anywhere", minWidth: /^(?:direcci[oó]n|address|endere[cç]o)$/i.test(block.headers[cell]) ? "12rem" : undefined }}><InlineText text={text} /></td>)}</tr>)}</tbody>
+        <tbody>{block.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((text, cell) => <td key={cell} style={{ padding: "0.5rem", verticalAlign: "top", overflowWrap: "anywhere", minWidth: /^(?:direcci[oó]n|address|endere[cç]o)$/i.test(block.headers[cell]) ? "12rem" : undefined, whiteSpace: /^(?:TVL\b|Chain TVL\b|Capitalizaci[oó]n\b|Capitaliza[cç][aã]o\b|Token market cap\b|Market cap\b)/i.test(block.headers[cell]) ? "nowrap" : undefined }}><InlineText text={text} /></td>)}</tr>)}</tbody>
       </table>
     </div>
   ));

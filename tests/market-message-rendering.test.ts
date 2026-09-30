@@ -55,5 +55,11 @@ test("five-column market tables preserve dynamic accessible names and linked cha
   assert.match(html, /href="https:\/\/defillama\.com\/chain\/Base"/);
   assert.match(html, />Base ↗<\/a>/);
   assert.match(html, /overflow-x:auto;max-width:100%/);
+  assert.match(html, /<table style="[^"]*min-width:40rem/);
+  assert.match(html, /<td style="[^"]*white-space:nowrap/);
   assert.doesNotMatch(html, /min-width:12rem/);
+  const walletHtml = renderToStaticMarkup(createElement(MessageText, { content: "| Red | Dirección | Estado | Explorador |\n|---|---|---|---|\n| Stellar | GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA | Pendiente | Ver |" }));
+  assert.match(walletHtml, /<table style="[^"]*min-width:32rem/);
+  assert.match(walletHtml, /<td style="[^"]*min-width:12rem/);
+  assert.match(walletHtml, /overflow-x:auto;max-width:100%/);
 });
