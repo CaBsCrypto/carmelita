@@ -21,11 +21,15 @@ The renderer escapes HTML, restricts clickable links to HTTPS explorer hosts, pr
 - Clean dependency install: passed with pinned npm 11.6.1. Existing dependency audit notices were not auto-fixed.
 - Full suite: 655 tests, 653 passed, zero failures, two external omissions (official MCP smoke and Dexalot Testnet smoke, opt-in).
 - Production build: passed. No migrations executed.
-- Lint: passed before final import-only cleanup; final run recorded in PR evidence.
+- Lint: passed with zero warnings, including final import cleanup.
 - Tests cover all five exact destinations, invalid addresses, owned pending registration, foreign-row exclusion, ES/EN/PT tables, five expanded rows, shared EVM address with distinct links, unsafe links and escaped HTML.
 - Browser fixture: passed in the internal browser, 390 × 844 viewport. Table scrolls inside its region without document overflow; Tab focuses the region and then its explorer link. All three languages inspected. Fixture uses fictitious identities and no authentication or database.
 - Graphify update attempted, blocked by launcher referencing missing Python 3.12. Graph is not claimed current.
 
 ## Release gate
 
-Preview acceptance and an actual comparison of Carmelita/ChatGPT results with this version are pending. No production promotion has occurred. CI, isolated Preview configuration and the manual promotion must be verified before release. Existing worker branch remains separate.
+PR: https://github.com/CaBsCrypto/carmelita/pull/33. Feature commit: `c5c9f53`.
+
+Vercel built Preview `dpl_EoQcUf3yrbFvLBCCpnk3Rkunq6MD`, https://agente-asistente-i948fthuk-cabscryptocontacto-6028s-projects.vercel.app, with alias https://agente-asistente-git-c-11520c-cabscryptocontacto-6028s-projects.vercel.app. This is build evidence, not authenticated acceptance. Vercel reports no branch-specific environment variables for the new branch; isolation is not accredited. No login or database writes were performed against this Preview.
+
+Preview acceptance and an actual comparison of Carmelita/ChatGPT results with this version are pending. No production promotion has occurred. CI, isolated Preview configuration and manual promotion must be verified before release. Existing worker branch remains separate. Automatic approval review blocked reading the prior QA configuration file; specific authorization to reuse only QA configuration has been requested.
