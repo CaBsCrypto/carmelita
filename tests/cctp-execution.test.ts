@@ -265,10 +265,11 @@ function validAttestedMessage() {
 function assertValidMessage(overrides: Partial<{
   amountAtomic: string;
   hookData: string;
+  message: `0x${string}`;
 }> = {}) {
   const current = plan();
   return assertCctpAttestedMessage({
-    message: validAttestedMessage(),
+    message: overrides.message ?? validAttestedMessage(),
     amountAtomic: overrides.amountAtomic ?? current.amountAtomic,
     sourceAddress: EVM,
     mintRecipient: current.safety.mintRecipient,
@@ -298,4 +299,16 @@ test("attested CCTP message rejects a different destination hook before mint", (
     () => assertValidMessage({ hookData: `0x${"00".repeat(32)}` }),
     /cctp_attested_message_hook_data_mismatch/,
   );
+});
+
+test("attestation from another domain cannot unlock the existing Fuji executor", () => {
+  const bytes = Buffer.from(validAttestedMessage().slice(2), "hex");
+  bytes.writeUInt32BE(6, 4);
+  assert.throws(() => assertValidMessage({ message: `0x${bytes.toString("hex")}` }), /source_domain_mismatch/);
+});
+
+test("same-amount attestation with a substituted asset is rejected before mint", () => {
+  const bytes = Buffer.from(validAttestedMessage().slice(2), "hex");
+  bytes.fill(0, 148 + 4, 148 + 36);
+  assert.throws(() => assertValidMessage({ message: `0x${bytes.toString("hex")}` }), /burn_token_mismatch/);
 });

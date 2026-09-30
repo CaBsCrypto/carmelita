@@ -6,11 +6,13 @@ import {
 } from "@/app/connectors/circle-cctp";
 import { getCctpFujiToStellarContext } from "@/app/connectors/circle-cctp-context";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
+import { listBridgeRoutes } from "@/app/cctp/routes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const requestSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("routes") }).strict(),
   z.object({ action: z.literal("readiness") }).strict(),
   z.object({ action: z.literal("fees") }).strict(),
   z.object({
@@ -51,6 +53,11 @@ export async function POST(request: Request) {
       );
     }
     const input = parsed.data;
+    if (input.action === "routes") {
+      return NextResponse.json({ routes: listBridgeRoutes(), fundsMoved: false, transactionPrepared: false }, {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
     if (input.action === "fees") {
       return NextResponse.json(await getCctpFujiToStellarFees(), {
         headers: { "Cache-Control": "no-store" },

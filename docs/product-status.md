@@ -30,6 +30,7 @@ Reviewed September 14, 2026. The [Stellar acceptance](STELLAR-PAYMENT-ACCEPTANCE
 | Waitlist and connections | Implemented, acceptance pending | Validate persistence and export independently |
 | Model-backed planner | Implemented, acceptance pending | Opt-in, plan-only; evaluate configured model and free-language behavior |
 | Avalanche Fuji, Solana Devnet and CCTP | Experimental | Local contracts tested; each flow requires independent on-chain acceptance |
+| Bidirectional Stellar bridge route catalogue | Preparation only | [September 29 route research](sprints/stellar-bridge-route-preparation.md): eight descriptors; USDC routes documented, new executors and on-chain acceptance pending. BNB blocked; USDT0 Testnet unverified. No additional financial execution enabled |
 | WebMCP | Experimental | Shared registration, lifecycle and error handling; browser compatibility acceptance remains pending; no direct faucet tool |
 | Commerce demo | Experimental | Simulated settlement is explicitly distinct from real fulfillment |
 | Autopilot | Experimental | Policy-only baseline; no ready delegated signer |
