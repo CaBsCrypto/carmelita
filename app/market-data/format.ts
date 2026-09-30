@@ -59,10 +59,11 @@ export function formatChainComparison(data: ChainComparison, locale: MarketLocal
   lines.push(`${t.coverage}: ${data.quotedChains} · ${t.failed}: ${data.unavailableChains}`);
   if (data.failures.length) lines.push(`${t.failed}: ${data.failures.map(failure => safe(failure.chain)).join(", ")}`);
   if (data.rows.length) {
-    lines.push(`| ${t.chain} | ${t.tvl} | ${t.token} | ${t.cap} | ${t.gas} |`, "|---|---:|---|---:|---|");
+    const table = [`| ${t.chain} | ${t.tvl} | ${t.token} | ${t.cap} | ${t.gas} |`, "|---|---:|---|---:|---|"];
     for (const row of data.rows) {
-      lines.push(`| ${link(row.name, row.tvlSourceUrl)} | ${money(row.tvl, locale)} | ${row.associatedToken ? safe(row.associatedToken.symbol) : t.nativeMissing} | ${money(row.marketCap, locale)} | ${safe(row.gasTokenId || t.missing)} |`);
+      table.push(`| ${link(row.name, row.tvlSourceUrl)} | ${money(row.tvl, locale)} | ${row.associatedToken ? safe(row.associatedToken.symbol) : t.nativeMissing} | ${money(row.marketCap, locale)} | ${safe(row.gasTokenId || t.missing)} |`);
     }
+    lines.push(table.join("\n"));
     for (const row of data.rows) {
       if (row.marketSource) lines.push(`${safe(row.name)} · ${t.source}: ${link(row.marketSource.source, row.marketSource.sourceUrl)} · ${t.updated}: ${row.marketSource.updatedAt || t.missing} · ${t.fetched}: ${row.marketSource.fetchedAt} · ${row.marketSource.fromCache ? t.cached : t.fresh}${row.quoteStatus === "stale" ? " · " + t.stale : ""}`);
       else if (row.quoteStatus !== "no_associated_token") lines.push(`${safe(row.name)}: ${t.unavailable}`);

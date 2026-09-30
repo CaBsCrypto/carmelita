@@ -13,8 +13,8 @@ function cacheFor(options: MarketOptions) {
   return cache;
 }
 
-/** Raw provider catalogs exceed the Vercel Data Cache item limit. Keep these
- * bounded catalogs in process; their compact public search results use Data Cache. */
+/** Bounded process copies coalesce provider reads and assemble catalog shards;
+ * the public cache below shares metadata across deployment instances. */
 export async function processMarketCache<T>(
   key: string, ttlSeconds: number, loader: () => Promise<T>, options: MarketOptions = {},
 ): Promise<{ value: T; fromCache: boolean }> {

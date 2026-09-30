@@ -19,6 +19,7 @@ test("Base shows no associated token cap and TVL does not invent an update time"
   assert.match(result, /Sin token asociado/); assert.match(result, /No disponible/);
   assert.match(result, /ethereum/); assert.match(result, /no informa fecha/);
   assert.match(result, /métricas distintas/);
+  assert.match(result, /\| Token de gas \|\n\|---\|---:\|---\|---:\|---\|\n\|/);
   const partial = formatChainComparison({ ...data, status: "partial", unavailableChains: 1,
     failures: [{ chain: "Arbitrum", status: "unavailable", error: "market_rate_limited" }] }, "es");
   assert.match(partial, /Resultado parcial/);
