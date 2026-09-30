@@ -16,7 +16,7 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
         const token = await getAccessToken();
         controller.signal.throwIfAborted();
         if (!token) throw new Error("authentication_required");
-        const response = await fetch("/api/agent/wallets", {headers: {Authorization: "Bearer " + token}, cache: "no-store", signal: controller.signal});
+        const response = await fetch("/api/agent/wallets", {headers: {Authorization: "Bearer " + token}, cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)])});
         if (!response.ok) throw new Error("registry_unavailable");
         const body = await response.json() as {wallets: WalletRow[]; networks: WalletNetworkView[]};
         controller.signal.throwIfAborted();

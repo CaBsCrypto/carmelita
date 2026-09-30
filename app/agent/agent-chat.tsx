@@ -324,6 +324,7 @@ export default function AgentChat({
     let active = true;
 
     async function loadConversation() {
+      if (!readyForQueries) return;
       try {
         const token = await getAccessToken();
         if (!token) throw new Error("Authentication token unavailable");
@@ -373,7 +374,7 @@ export default function AgentChat({
     return () => {
       active = false;
     };
-  }, [getAccessToken]);
+  }, [getAccessToken, readyForQueries]);
   useEffect(() => {
     const controller = new AbortController();
     x402Session.current = controller;

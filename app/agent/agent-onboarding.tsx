@@ -232,7 +232,7 @@ function PrivyAgent({
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/bootstrap", {
         method: "POST",
-        signal: controller.signal,
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -305,6 +305,7 @@ function PrivyAgent({
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/travel/search", {
         method: "POST",
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
