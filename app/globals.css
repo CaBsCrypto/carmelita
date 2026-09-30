@@ -469,6 +469,7 @@
 .workspace-header nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px}
 .workspace-header button,.workspace-button,.agent-panel button{min-height:44px;border:1px solid #b8c1b8;background:#fff;color:#153f32;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
 .workspace-header button:hover,.agent-panel button:hover{background:#edf2ee}
+.workspace-header .language-toggle button.active,.agent-panel .language-toggle button.active{background:#153f32;color:#fff;border-color:#153f32}
 .agent-page button:focus-visible,.agent-panel :focus-visible{outline:3px solid #235b48;outline-offset:3px}
 .workspace-notice{flex-shrink:0;display:flex;align-items:center;gap:12px;margin:0;padding:8px 12px;border-radius:8px;background:#edf2ee;color:#153f32;font-size:13px;line-height:1.4}
 .workspace-warning{background:#fff1d7;color:#674400}
@@ -518,7 +519,7 @@
 .visitor-chat a{display:block;margin:20px;color:#153f32}
 @media(max-width:600px){
  .agent-chat-first,.agent-visitor{width:calc(100% - 16px);padding-top:8px;gap:6px}
- .agent-chat-first>.workspace-header{gap:6px;flex-wrap:wrap;min-height:48px}
+ .agent-chat-first>.workspace-header,.agent-visitor>.workspace-header{gap:6px;flex-wrap:wrap;min-height:48px}
  .workspace-header .brand{font-size:15px}.workspace-header .brand-lockup{max-width:120px}
  .workspace-header nav{gap:3px}.workspace-header nav button{padding:8px;font-size:12px}
  .workspace-testnet{font-size:11px;padding:4px}
