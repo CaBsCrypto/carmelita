@@ -458,3 +458,77 @@
 .context-wallet-menu { position: relative; top: auto; right: auto; width: 100%; box-sizing: border-box; margin-top: 8px; }
 .context-wallet-menu > header { flex-wrap: wrap; }
 .context-wallet-network { min-width: 0; overflow-wrap: anywhere; }
+
+/* Chat workspace: secondary content lives in modal panels. */
+.agent-page{min-height:100dvh;background:#faf9f6}
+.agent-chat-first{height:100dvh;padding:12px 0 max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;min-width:0}
+.agent-chat-first>.workspace-header,.agent-visitor>.workspace-header{display:flex;flex-direction:row;align-items:center;gap:12px;margin:0;min-height:48px;flex-shrink:0}
+.workspace-header .brand{min-width:0;font-size:18px}
+.workspace-header .brand-lockup{max-width:160px}
+.workspace-testnet{font-size:12px;background:#e5eee8;color:#153f32;border-radius:6px;padding:5px 8px}
+.workspace-header nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px}
+.workspace-header button,.workspace-button,.agent-panel button{min-height:44px;border:1px solid #b8c1b8;background:#fff;color:#153f32;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
+.workspace-header button:hover,.agent-panel button:hover{background:#edf2ee}
+.agent-page button:focus-visible,.agent-panel :focus-visible{outline:3px solid #235b48;outline-offset:3px}
+.workspace-notice{flex-shrink:0;display:flex;align-items:center;gap:12px;margin:0;padding:8px 12px;border-radius:8px;background:#edf2ee;color:#153f32;font-size:13px;line-height:1.4}
+.workspace-warning{background:#fff1d7;color:#674400}
+.workspace-notice button{min-height:44px;background:#fff;border:1px solid currentColor;border-radius:8px;color:inherit;padding:8px}
+.agent-chat-first .agent-chat-layout{display:flex;flex-direction:column;flex:1;min-height:0;margin:0;gap:0}
+.agent-chat-first .agent-chat-panel{height:auto;max-height:none;min-height:0;flex:1;border:1px solid #d6dcd5;border-radius:18px;box-shadow:none;background:#fff}
+.agent-chat-first .agent-chat-panel>header{padding:10px 16px;background:#fff;flex-shrink:0}
+.agent-chat-first .agent-chat-panel>header small{font-size:12px}
+.agent-chat-first .agent-chat-memory{display:none}
+.agent-chat-first .agent-chat-thread{background:#fff;padding:20px 16px;min-height:0}
+.agent-chat-first .agent-chat-loading{min-height:0;height:100%;font-size:14px}
+.agent-chat-first .agent-message-copy{box-shadow:none;font-size:14px}
+.agent-chat-first .agent-chat-composer{margin:8px 12px;border-color:#9ba99f;box-shadow:none}
+.agent-chat-first .agent-chat-composer textarea{font-size:16px;min-height:44px;max-height:120px}
+.agent-chat-first .agent-chat-composer button{min-height:44px;min-width:44px;background:#153f32;color:#fff}
+.agent-chat-first .agent-chat-boundary{font-size:11px;line-height:1.4;padding:0 14px 8px}
+.agent-chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px;flex-shrink:0}
+.agent-chat-suggestions button{min-height:44px;padding:8px 12px;border:1px solid #bdc8bf;border-radius:10px;background:#f8faf8;color:#153f32;font:inherit;font-size:13px;cursor:pointer}
+.agent-panel{width:min(760px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #c7d1c8;border-radius:18px;background:#fff;color:#20211e;box-shadow:0 20px 70px #122e2440;overflow:auto;overscroll-behavior:contain}
+.agent-panel::backdrop{background:#122e2473}
+.agent-panel-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-bottom:1px solid #d6dcd5;background:#fff}
+.agent-panel-header h2{margin:0;font-size:22px}
+.agent-panel-content{padding:20px;overflow-wrap:anywhere;line-height:1.5}
+.agent-panel-content h3{font-size:18px;margin:20px 0 10px}
+.agent-panel-content h4{font-size:16px;margin:0}
+.agent-panel-content p{font-size:14px;color:#535b54}
+.agent-panel-content a{color:#154f3b}
+.agent-panel-content details{padding:12px 0;border-top:1px solid #d6dcd5}
+.agent-panel-content summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650}
+.agent-panel-content code{white-space:normal;overflow-wrap:anywhere;font-size:13px}
+.agent-panel-content input,.agent-panel-content select{max-width:100%;min-width:0;font-size:16px;min-height:44px}
+.workspace-functions article,.registry-network-list article{padding:16px;border:1px solid #d6dcd5;border-radius:12px;margin:12px 0}
+.workspace-functions>button,.workspace-account>button,.workspace-developers>button{margin:8px 8px 8px 0}
+.workspace-account>details>section,.workspace-developers>details>section{max-width:100%;margin:0}
+.registry-network-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.registry-network-list article{margin:0;min-width:0}
+.registry-network-list h3{margin:0 0 12px}
+.registry-network-list dl{margin:0}.registry-network-list dt{font-size:12px;color:#535b54}.registry-network-list dd{margin:4px 0 12px}
+.registry-wallets>.workspace-button{margin-top:16px}
+.registry-balances p{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}
+.agent-panel .agent-travel{padding:0;margin:0;border:0;box-shadow:none}
+.agent-panel .agent-travel form{grid-template-columns:1fr 1fr}
+.agent-visitor{height:100dvh;padding:12px 0;display:flex;flex-direction:column}
+.visitor-chat{margin:auto;text-align:center;max-width:480px;padding:24px}
+.visitor-chat h1{font-size:clamp(28px,5vw,40px);letter-spacing:-.03em}
+.visitor-chat p{color:#535b54;line-height:1.6}
+.visitor-chat a{display:block;margin:20px;color:#153f32}
+@media(max-width:600px){
+ .agent-chat-first,.agent-visitor{width:calc(100% - 16px);padding-top:8px;gap:6px}
+ .agent-chat-first>.workspace-header{gap:6px;flex-wrap:wrap;min-height:48px}
+ .workspace-header .brand{font-size:15px}.workspace-header .brand-lockup{max-width:120px}
+ .workspace-header nav{gap:3px}.workspace-header nav button{padding:8px;font-size:12px}
+ .workspace-testnet{font-size:11px;padding:4px}
+ .agent-chat-first .agent-chat-panel{border-radius:12px}
+ .agent-chat-first .agent-chat-panel>header{padding:8px 12px}
+ .agent-chat-first .agent-chat-thread{padding:14px 10px}
+ .agent-chat-first .agent-chat-boundary{font-size:10px}
+ .agent-chat-suggestions{gap:4px;padding:4px 8px}.agent-chat-suggestions button{font-size:12px;padding:8px}
+ .agent-panel-content{padding:14px}.agent-panel-header{padding:10px 14px}
+ .registry-network-list{grid-template-columns:1fr}
+ .agent-panel .agent-travel form{grid-template-columns:1fr}
+}
+@media(max-width:360px){.workspace-header nav{width:100%;justify-content:flex-end}.agent-chat-first>.workspace-header{row-gap:2px}.workspace-header nav button{flex:1}.agent-chat-suggestions button{flex:1;font-size:11px;padding:6px}.workspace-notice{font-size:12px}}

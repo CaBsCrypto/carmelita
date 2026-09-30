@@ -18,12 +18,13 @@ test("Wallet Center exposes Fuji and Solana Devnet active cards and diagnostics"
   assert.match(source, /t\.unavailable/);
 });
 
-test("Wallet Center is mounted after authenticated onboarding", async () => {
+test("chat workspace exposes one read-only wallet panel under demand", async () => {
   const source = await readFile(
     new URL("../app/agent/agent-onboarding.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(source, /import WalletCenter from "\.\/wallet-center"/);
-  assert.match(source, /<WalletCenter/);
+  assert.match(source, /import RegistryWalletPanel from "\.\/registry-wallet-panel"/);
+  assert.match(source, /panel === "wallets" && <RegistryWalletPanel/);
+  assert.doesNotMatch(source, /<WalletCenter|agent-wallet-grid/);
   assert.match(source, /getAccessToken=\{getAccessToken\}/);
 });

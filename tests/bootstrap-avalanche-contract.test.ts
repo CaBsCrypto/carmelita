@@ -26,12 +26,12 @@ test("onboarding is metadata-only and MCP context exposes persisted networks", a
   assert.doesNotMatch(context, /privateKey|secret|balance/);
 });
 
-test("onboarding UI renders one EVM wallet with enabled networks while retaining Stellar", async () => {
+test("onboarding keeps wallet preparation separate from the read-only registry panel", async () => {
   const source = await readFile(new URL("../app/agent/agent-onboarding.tsx", import.meta.url), "utf8");
   assert.match(source, /wallets:\s*\{/);
-  assert.match(source, /result\.wallets\.evm\.address/);
-  assert.match(source, /EVM WALLET/);
-  assert.match(source, /result\.evm\.networks\.map/);
-  assert.match(source, /result\.wallet\.address/);
+  assert.match(source, /RegistryWalletPanel/);
+  assert.match(source, /panel === "wallets"/);
+  assert.match(source, /current\?\.wallet/);
+  assert.doesNotMatch(source, /agent-wallet-grid|<WalletCenter/);
   assert.doesNotMatch(source, /fundWallet|rawSign|sendTransaction/);
 });

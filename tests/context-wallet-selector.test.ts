@@ -4,10 +4,10 @@ import test from "node:test";
 import { getErc20Balance } from "../app/wallets/evm-rpc";
 import { getWalletNetwork } from "../app/wallets/networks";
 
-test("Live Context mounts the compact multichain wallet selector", async () => {
+test("chat avoids a duplicate wallet selector while retaining the legacy component", async () => {
   const chat = await readFile(new URL("../app/agent/agent-chat.tsx", import.meta.url), "utf8");
   const selector = await readFile(new URL("../app/agent/context-wallet-selector.tsx", import.meta.url), "utf8");
-  assert.match(chat, /<ContextWalletSelector/);
+  assert.doesNotMatch(chat, /<ContextWalletSelector/);
   assert.match(selector, /<details className="context-wallet-selector"/);
   assert.match(selector, /aria-label=\{t\.open\}/);
   assert.match(selector, /Stellar Testnet/);

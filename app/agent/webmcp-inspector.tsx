@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Locale } from "@/app/language-toggle";
 import {
   detectWebMcpStatus,
@@ -38,19 +38,19 @@ const copy = {
   },
 };
 
-export default function WebMcpInspector({
-  locale,
-  getAccessToken,
-}: {
+type WebMcpProps = {
   locale: Locale;
   getAccessToken: () => Promise<string | null>;
-}) {
-  const t = copy[locale];
+};
+
+const WebMcpContext = createContext<{
+  status: WebMcpStatus;
+  refresh: () => void;
+} | null>(null);
+
+export function WebMcpProvider({ getAccessToken, children }: WebMcpProps & { children: ReactNode }) {
   const [status, setStatus] = useState<WebMcpStatus>(() => detectWebMcpStatus());
-
   const [registrationVersion, setRegistrationVersion] = useState(0);
-  function syncRegistration() { setRegistrationVersion(value => value + 1); }
-
   useEffect(() => {
     const controller = new AbortController();
     void registerCarmelitaWebMcpTools(getAccessToken, controller.signal).then(nextStatus => {
@@ -58,6 +58,14 @@ export default function WebMcpInspector({
     });
     return () => controller.abort();
   }, [getAccessToken, registrationVersion]);
+
+  return <WebMcpContext.Provider value={{ status, refresh: () => setRegistrationVersion(value => value + 1) }}>{children}</WebMcpContext.Provider>;
+}
+
+export default function WebMcpInspector({ locale }: WebMcpProps) {
+  const t = copy[locale];
+  const registration = useContext(WebMcpContext);
+  const status = registration?.status ?? detectWebMcpStatus();
   return (
     <aside className="webmcp-inspector-card" style={{
       border: "1px solid rgba(255, 255, 255, 0.12)",
@@ -117,7 +125,8 @@ export default function WebMcpInspector({
       </div>
 
       <button
-        onClick={() => void syncRegistration()}
+        onClick={() => registration?.refresh()}
+        disabled={!registration}
         style={{
           marginTop: "12px",
           fontSize: "12px",
