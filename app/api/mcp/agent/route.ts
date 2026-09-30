@@ -43,7 +43,7 @@ function getHandler() {
         {
           title: "Get personal agent context",
           description:
-            "Read the authenticated user's profile, wallet metadata, connections and authority boundary.",
+            "Read the authenticated user's profile, wallet metadata, connections and authority boundary. When listing wallets, present Network | Address | Registration state | Explorer as a table using only the returned explorerUrl links. Pending registration does not prove on-chain activation; never invent links or balances.",
           annotations: {
             readOnlyHint: true,
             destructiveHint: false,

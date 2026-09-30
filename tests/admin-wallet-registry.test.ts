@@ -36,7 +36,7 @@ test("wallet registry identifies complete and incomplete Privy users", () => {
   assert.equal(registry.users[0]?.complete, true);
   assert.equal(registry.users[0]?.registeredComplete, true);
   assert.deepEqual(registry.users[1]?.missingNetworks, ["avalanche:fuji", "solana:devnet"]);
-  assert.match(registry.users[0]?.wallets[0]?.explorerUrl ?? "", /subnets-test\.avax\.network/);
+  assert.match(registry.users[0]?.wallets[0]?.explorerUrl ?? "", /explorer-test\.avax\.network/);
   assert.match(registry.users[0]?.wallets[2]?.explorerUrl ?? "", /stellar\.expert/);
 });
 

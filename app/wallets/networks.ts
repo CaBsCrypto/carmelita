@@ -42,7 +42,7 @@ export const WALLET_NETWORKS: Record<WalletNetworkId, WalletNetwork> = {
     id: "avalanche:fuji", family: "evm", name: "Avalanche Fuji",
     nativeAsset: "AVAX", testnet: true,
     rpcUrl: "https://api.avax-test.network/ext/bc/C/rpc",
-    explorerUrl: "https://subnets-test.avax.network/c-chain", chainId: 43113,
+    explorerUrl: "https://explorer-test.avax.network/c-chain", chainId: 43113,
     faucetUrl: "https://core.app/tools/testnet-faucet/?subnet=c&token=c",
     testUsdcAddress: "0x5425890298aed601595a70AB815c96711a31Bc65",
     rollout: "experimental",

@@ -28,7 +28,7 @@ test("registered pending wallets remain explicit and do not request onboarding",
   assert.equal(context.walletsByNetwork.stellarTestnet, null);
   assert.equal(context.walletRegistration.registered, true);
   assert.equal(context.walletRegistration.onboardingRequired, false);
-  assert.deepEqual(context.walletRegistration.pendingActivation, [pending]);
+  assert.deepEqual(context.walletRegistration.pendingActivation, [{ ...pending, explorerUrl: `https://stellar.expert/explorer/testnet/account/${pending.address}` }]);
   assert.ok(!context.walletRegistration.unregisteredNetworks.includes("stellar:testnet"));
 });
 
@@ -83,7 +83,7 @@ test("MCP projects one canonical EVM address into three enabled networks without
     assert.deepEqual(context.walletReadiness.missingNetworks, []);
     assert.equal(context.wallets.length, 5);
     for (const name of ["avalancheFuji", "bnbTestnet", "baseSepolia"] as const) assert.equal(context.walletsByNetwork[name]?.address, publicFiveWallets[2].address);
-    for (const wallet of context.wallets) assert.deepEqual(Object.keys(wallet).sort(), ["address", "chainType", "network", "status"]);
+    for (const wallet of context.wallets) assert.deepEqual(Object.keys(wallet).sort(), ["address", "chainType", "explorerUrl", "network", "status"]);
     assert.doesNotMatch(JSON.stringify(context), /privy-canonical|did:privy:|walletId|userId/);
   });
 });

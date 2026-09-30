@@ -20,7 +20,7 @@ test("onboarding is metadata-only and MCP context exposes persisted networks", a
   assert.match(onboarding, /signingRequired:\s*false/);
   assert.doesNotMatch(onboarding, /rawSign|signTypedData|sendTransaction|faucet/i);
   assert.match(context, /listPersistedUserWallets\(userId\)/);
-  assert.match(context, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status \}\)\)/);
+  assert.match(context, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status, explorerUrl: walletExplorerUrl\(network, address\) \}\)\)/);
   assert.doesNotMatch(context, /\.from\(agentWallets\)/);
   assert.match(context, /paymentSigning:\s*"not_enabled"/);
   assert.doesNotMatch(context, /privateKey|secret|balance/);
