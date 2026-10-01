@@ -5,9 +5,9 @@ import type { Locale } from "../language-toggle";
 
 type ConnectedApp = { id: string; name: string; description?: string; clientType: string; scopes: string[] };
 const copy = {
-  en: { eyebrow: "OAUTH CONNECTIONS", title: "Chats connected to Carmelita", empty: "No OAuth chats connected yet.", revoke: "Revoke access", confirm: "Revoke this chat's access? Its active and refresh tokens will stop working.", error: "Could not load connected chats." },
-  es: { eyebrow: "CONEXIONES OAUTH", title: "Chats conectados a Carmelita", empty: "Todavia no hay chats OAuth conectados.", revoke: "Revocar acceso", confirm: "¿Revocar el acceso de este chat? Sus tokens activos y de renovacion dejaran de funcionar.", error: "No se pudieron cargar los chats conectados." },
-  pt: { eyebrow: "CONEXOES OAUTH", title: "Chats conectados a Carmelita", empty: "Ainda nao ha chats OAuth conectados.", revoke: "Revogar acesso", confirm: "Revogar o acesso deste chat? Os tokens ativos e de atualizacao deixarao de funcionar.", error: "Nao foi possivel carregar os chats conectados." },
+  en: { eyebrow: "OAUTH CONNECTIONS", title: "Chats connected to Carmelita", empty: "No OAuth chats connected yet.", permissions: "Detailed permissions", revoke: "Revoke access", confirm: "Revoke this chat's access? Its active and refresh tokens will stop working.", error: "Could not load connected chats." },
+  es: { eyebrow: "CONEXIONES OAUTH", title: "Chats conectados a Carmelita", empty: "Todavía no hay chats OAuth conectados.", permissions: "Permisos detallados", revoke: "Revocar acceso", confirm: "¿Revocar el acceso de este chat? Sus tokens activos y de renovación dejarán de funcionar.", error: "No se pudieron cargar los chats conectados." },
+  pt: { eyebrow: "CONEXÕES OAUTH", title: "Chats conectados à Carmelita", empty: "Ainda não há chats OAuth conectados.", permissions: "Permissões detalhadas", revoke: "Revogar acesso", confirm: "Revogar o acesso deste chat? Seus tokens ativos e de atualização deixarão de funcionar.", error: "Não foi possível carregar os chats conectados." },
 } satisfies Record<Locale, Record<string, string>>;
 
 export default function AgentConnectedApps({ locale, getAccessToken }: { locale: Locale; getAccessToken: () => Promise<string | null> }) {
@@ -43,5 +43,5 @@ export default function AgentConnectedApps({ locale, getAccessToken }: { locale:
     } catch { setError(t.error); } finally { setBusyId(null); }
   }
   if (available !== true) return null;
-  return <section className="oauth-connected-apps"><header><p className="eyebrow">{t.eyebrow}</p><h3>{t.title}</h3></header>{apps.length === 0 ? <p>{t.empty}</p> : <div className="oauth-connected-app-list">{apps.map((app) => <article key={app.id}><div><strong>{app.name}</strong>{app.description && <p>{app.description}</p>}<small>{app.scopes.join(" · ")}</small></div><button type="button" disabled={busyId === app.id} onClick={() => void revoke(app)}>{t.revoke}</button></article>)}</div>}{error && <p className="agent-external-error">{error}</p>}</section>;
+  return <section className="oauth-connected-apps"><header><p className="eyebrow">{t.eyebrow}</p><h3>{t.title}</h3></header>{apps.length === 0 ? <p>{t.empty}</p> : <div className="oauth-connected-app-list">{apps.map((app) => <article key={app.id}><div><strong>{app.name}</strong>{app.description && <p>{app.description}</p>}<details><summary>{t.permissions}</summary><small>{app.scopes.join(" · ")}</small></details></div><button type="button" disabled={busyId === app.id} onClick={() => void revoke(app)}>{t.revoke}</button></article>)}</div>}{error && <p className="agent-external-error">{error}</p>}</section>;
 }

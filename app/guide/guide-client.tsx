@@ -2,242 +2,115 @@
 
 import Link from "next/link";
 import BrandLockup from "../brand-lockup";
-import { useState } from "react";
 import LanguageToggle, { useLocale } from "../language-toggle";
 
-const copy = {
-  en: {
-    nav: "New user guide",
-    back: "Product",
-    agent: "Open my agent",
-    eyebrow: "START HERE",
-    title: "Your first safe action with Carmelita, from chat.",
-    lede:
-      "Create your account, understand your wallet and complete the Stellar Testnet path without touching a DeFi console.",
-    badges: ["5-minute setup", "No real money", "English · Español · Português"],
-    before: "Before you begin",
-    beforeTitle: "Testnet is a practice environment.",
-    beforeText:
-      "Privy creates one user-owned Stellar wallet for each account. Testnet XLM has no real value, Mainnet is disabled and your private key never reaches Carmelita.",
-    beforeItems: [
-      "Use a new email if you want to observe the complete wallet activation flow.",
-      "An existing wallet will keep its address and current on-chain state.",
-      "Chat can prepare sensitive actions, but Privy must approve every trustline or deposit.",
-    ],
-    journey: "YOUR FIRST JOURNEY",
-    journeyTitle: "Six messages. One observable state machine.",
-    journeyText:
-      "Send these messages one at a time. The agent reads Stellar after every step and recommends only the next valid action.",
-    steps: [
-      ["01", "Sign in", "Open the agent and continue with Google or email. Privy creates your identity and user-owned Stellar address.", ""],
-      ["02", "Ask for your wallet", "The agent returns your address, XLM account status, exact USDC trustline status and compatible USDC balance.", "Show my wallet"],
-      ["03", "Request Testnet XLM", "If the account does not exist, Friendbot creates it and supplies fake Testnet XLM. Existing accounts are not funded twice.", "Fund my wallet with Testnet XLM"],
-      ["04", "Check XLM", "XLM is Stellar's native asset. It does not need a separate trustline; the agent reports whether the account is active.", "Activate XLM"],
-      ["05", "Prepare USDC", "The agent prepares the exact DeFindex-compatible USDC trustline. Review it and confirm with Privy only if every field is correct.", "Activate USDC"],
-      ["06", "Prepare the proof", "The agent builds and simulates a 1 XLM DeFindex transaction. Privy confirmation is required before submission.", "Deposit 1 XLM into DeFindex on Testnet"],
-    ],
-    copy: "Copy",
-    copied: "Copied",
-    outcomesEyebrow: "WHAT REQUIRES APPROVAL",
-    outcomesTitle: "Conversation is not unlimited authority.",
-    outcomes: [
-      ["Show wallet and balances", "No signature", "Read-only"],
-      ["Request Friendbot Testnet XLM", "No wallet signature", "User-requested Testnet funding"],
-      ["Create the USDC trustline", "Privy confirmation", "On-chain ChangeTrust"],
-      ["Deposit into DeFindex", "Privy confirmation", "On-chain Soroban transaction"],
-      ["Spend real funds", "Unavailable", "Mainnet disabled"],
-    ],
-    safety: "SAFETY CHECKLIST",
-    safetyTitle: "Confirm the details, not the conversation.",
-    safetyItems: [
-      "Network must say Stellar Testnet.",
-      "Check the wallet address, asset, amount and destination.",
-      "Never share a seed phrase or private key; the product will not ask for one.",
-      "Close the review if anything differs from what you requested.",
-      "Use the explorer receipt as proof that a Testnet transaction settled.",
-    ],
-    problemsEyebrow: "COMMON QUESTIONS",
-    problemsTitle: "If something looks different, start here.",
-    problems: [
-      ["Why did the agent not add more XLM?", "Your account already exists. The agent avoids another Friendbot request and reports the current balance."],
-      ["Why does Activate XLM not open a transaction?", "XLM is native to Stellar, so there is no XLM trustline transaction."],
-      ["Why is my USDC balance still zero?", "The trustline only allows the wallet to receive the exact asset. A compatible distributor is still required."],
-      ["Why can I not deposit USDC?", "The public vault requires one exact USDC issuer. Carmelita will not substitute another token with the same code."],
-      ["What if Testnet resets?", "Sign in again, ask for your wallet and request Testnet XLM. The agent recomputes the state from Stellar."],
-      ["What if a review expires?", "Ask the agent to prepare the action again. Never approve an old or unexpected transaction."],
-    ],
-    next: "READY TO TRY",
-    nextTitle: "Keep this guide open and talk to your agent.",
-    nextText:
-      "For the YC proof, use a new account and record the journey from wallet lookup to an explorer-verifiable 1 XLM DeFindex receipt.",
-    nextPrimary: "Open my agent",
-    nextSecondary: "Developer documentation",
-    footer: "Testnet only · Non-custodial · Explicit approval",
-  },
-  es: {
-    nav: "Guía para nuevos usuarios",
-    back: "Producto",
-    agent: "Abrir mi agente",
-    eyebrow: "COMIENZA AQUÍ",
-    title: "Tu primera acción segura con Carmelita, completamente desde el chat.",
-    lede:
-      "Crea tu cuenta, entiende tu wallet y completa el recorrido de Stellar Testnet sin operar una consola DeFi.",
-    badges: ["Configuración en 5 minutos", "Sin dinero real", "English · Español · Português"],
-    before: "Antes de comenzar",
-    beforeTitle: "Testnet es un entorno de práctica.",
-    beforeText:
-      "Privy crea una wallet Stellar propiedad del usuario para cada cuenta. El XLM de Testnet no tiene valor real, Mainnet está desactivada y tu clave privada nunca llega a Carmelita.",
-    beforeItems: [
-      "Usa un email nuevo si quieres observar el flujo completo de activación.",
-      "Una wallet existente conserva su dirección y su estado on-chain actual.",
-      "El chat puede preparar acciones sensibles, pero Privy debe aprobar cada trustline o depósito.",
-    ],
-    journey: "TU PRIMER RECORRIDO",
-    journeyTitle: "Seis mensajes. Una máquina de estados observable.",
-    journeyText:
-      "Envía estos mensajes uno por uno. El agente consulta Stellar después de cada paso y recomienda solamente la siguiente acción válida.",
-    steps: [
-      ["01", "Ingresa", "Abre el agente y continúa con Google o email. Privy crea tu identidad y dirección Stellar propiedad del usuario.", ""],
-      ["02", "Pide tu wallet", "El agente muestra tu dirección, estado XLM, trustline USDC exacta y saldo USDC compatible.", "Dame mi wallet"],
-      ["03", "Solicita XLM Testnet", "Si la cuenta no existe, Friendbot la crea y entrega XLM ficticio. Las cuentas existentes no se recargan dos veces.", "Recarga mi wallet con XLM de Testnet"],
-      ["04", "Revisa XLM", "XLM es el activo nativo de Stellar. No necesita una trustline separada; el agente informa si la cuenta está activa.", "Activa XLM"],
-      ["05", "Prepara USDC", "El agente prepara la trustline USDC exacta compatible con DeFindex. Revísala y confirma con Privy solamente si todos los campos son correctos.", "Activa USDC"],
-      ["06", "Prepara la prueba", "El agente construye y simula una transacción de 1 XLM en DeFindex. Privy debe confirmarla antes de enviarla.", "Deposita 1 XLM en DeFindex Testnet"],
-    ],
-    copy: "Copiar",
-    copied: "Copiado",
-    outcomesEyebrow: "QUÉ REQUIERE APROBACIÓN",
-    outcomesTitle: "La conversación no entrega autoridad ilimitada.",
-    outcomes: [
-      ["Mostrar wallet y saldos", "Sin firma", "Solo lectura"],
-      ["Solicitar XLM a Friendbot", "Sin firma de wallet", "Recarga Testnet solicitada por el usuario"],
-      ["Crear trustline USDC", "Confirmación Privy", "ChangeTrust on-chain"],
-      ["Depositar en DeFindex", "Confirmación Privy", "Transacción Soroban on-chain"],
-      ["Gastar fondos reales", "No disponible", "Mainnet desactivada"],
-    ],
-    safety: "CHECKLIST DE SEGURIDAD",
-    safetyTitle: "Confirma los detalles, no la conversación.",
-    safetyItems: [
-      "La red debe indicar Stellar Testnet.",
-      "Revisa dirección, activo, monto y destino.",
-      "Nunca compartas seed phrase o clave privada; el producto no las solicitará.",
-      "Cierra la revisión si algo difiere de lo que pediste.",
-      "Usa el recibo del explorer como evidencia de la transacción Testnet.",
-    ],
-    problemsEyebrow: "PREGUNTAS COMUNES",
-    problemsTitle: "Si algo se ve diferente, comienza aquí.",
-    problems: [
-      ["¿Por qué el agente no agregó más XLM?", "Tu cuenta ya existe. El agente evita otra solicitud a Friendbot y muestra el saldo actual."],
-      ["¿Por qué Activa XLM no abre una transacción?", "XLM es nativo de Stellar, por lo que no existe una transacción de trustline XLM."],
-      ["¿Por qué mi saldo USDC sigue en cero?", "La trustline solamente permite recibir el activo exacto. Todavía se necesita un distribuidor compatible."],
-      ["¿Por qué no puedo depositar USDC?", "El vault público requiere un issuer USDC exacto. Carmelita no sustituirá otro token con el mismo código."],
-      ["¿Qué ocurre si Testnet se reinicia?", "Ingresa nuevamente, pide tu wallet y solicita XLM Testnet. El agente recalcula el estado desde Stellar."],
-      ["¿Qué hago si la revisión expiró?", "Pide al agente preparar la acción nuevamente. Nunca apruebes una transacción antigua o inesperada."],
-    ],
-    next: "LISTO PARA PROBAR",
-    nextTitle: "Mantén esta guía abierta y conversa con tu agente.",
-    nextText:
-      "Para la prueba de YC, usa una cuenta nueva y graba el recorrido desde la wallet hasta un recibo verificable de 1 XLM en DeFindex.",
-    nextPrimary: "Abrir mi agente",
-    nextSecondary: "Documentación para developers",
-    footer: "Solo Testnet · No custodial · Aprobación explícita",
-  },
-  pt: {
-    nav: "Guia para novos usuários",
-    back: "Produto",
-    agent: "Abrir meu agente",
-    eyebrow: "COMECE AQUI",
-    title: "Sua primeira ação segura com Carmelita, totalmente pelo chat.",
-    lede:
-      "Crie sua conta, entenda sua wallet e conclua o percurso da Stellar Testnet sem operar um console DeFi.",
-    badges: ["Configuração em 5 minutos", "Sem dinheiro real", "English · Español · Português"],
-    before: "Antes de começar",
-    beforeTitle: "A Testnet é um ambiente de prática.",
-    beforeText:
-      "A Privy cria uma wallet Stellar do usuário para cada conta. O XLM da Testnet não tem valor real, a Mainnet está desativada e sua chave privada nunca chega à Carmelita.",
-    beforeItems: [
-      "Use um novo email para observar o fluxo completo de ativação.",
-      "Uma wallet existente mantém seu endereço e estado on-chain atual.",
-      "O chat pode preparar ações sensíveis, mas a Privy deve aprovar cada trustline ou depósito.",
-    ],
-    journey: "SEU PRIMEIRO PERCURSO",
-    journeyTitle: "Seis mensagens. Uma máquina de estados observável.",
-    journeyText:
-      "Envie as mensagens uma por uma. O agente consulta a Stellar após cada etapa e recomenda somente a próxima ação válida.",
-    steps: [
-      ["01", "Entre", "Abra o agente e continue com Google ou email. A Privy cria sua identidade e endereço Stellar do usuário.", ""],
-      ["02", "Peça sua wallet", "O agente mostra seu endereço, status XLM, trustline USDC exata e saldo USDC compatível.", "Mostre minha wallet"],
-      ["03", "Solicite XLM da Testnet", "Se a conta não existir, a Friendbot cria e fornece XLM fictício. Contas existentes não são financiadas duas vezes.", "Recarregue minha wallet com XLM da Testnet"],
-      ["04", "Verifique XLM", "XLM é o ativo nativo da Stellar. Não precisa de trustline separada; o agente informa se a conta está ativa.", "Ative XLM"],
-      ["05", "Prepare USDC", "O agente prepara a trustline USDC exata compatível com a DeFindex. Revise e confirme com a Privy somente se todos os campos estiverem corretos.", "Ative USDC"],
-      ["06", "Prepare a prova", "O agente constrói e simula uma transação de 1 XLM na DeFindex. A Privy deve confirmar antes do envio.", "Deposite 1 XLM na DeFindex Testnet"],
-    ],
-    copy: "Copiar",
-    copied: "Copiado",
-    outcomesEyebrow: "O QUE EXIGE APROVAÇÃO",
-    outcomesTitle: "A conversa não concede autoridade ilimitada.",
-    outcomes: [
-      ["Mostrar wallet e saldos", "Sem assinatura", "Somente leitura"],
-      ["Solicitar XLM à Friendbot", "Sem assinatura da wallet", "Financiamento Testnet solicitado"],
-      ["Criar trustline USDC", "Confirmação Privy", "ChangeTrust on-chain"],
-      ["Depositar na DeFindex", "Confirmação Privy", "Transação Soroban on-chain"],
-      ["Gastar fundos reais", "Indisponível", "Mainnet desativada"],
-    ],
-    safety: "CHECKLIST DE SEGURANÇA",
-    safetyTitle: "Confirme os detalhes, não a conversa.",
-    safetyItems: [
-      "A rede deve indicar Stellar Testnet.",
-      "Verifique endereço, ativo, valor e destino.",
-      "Nunca compartilhe seed phrase ou chave privada; o produto não solicitará.",
-      "Feche a revisão se algo for diferente do pedido.",
-      "Use o recibo do explorer como prova da transação Testnet.",
-    ],
-    problemsEyebrow: "PERGUNTAS COMUNS",
-    problemsTitle: "Se algo parecer diferente, comece aqui.",
-    problems: [
-      ["Por que o agente não adicionou mais XLM?", "Sua conta já existe. O agente evita outra solicitação à Friendbot e mostra o saldo atual."],
-      ["Por que Ative XLM não abre uma transação?", "XLM é nativo da Stellar, portanto não existe transação de trustline XLM."],
-      ["Por que meu saldo USDC continua zero?", "A trustline apenas permite receber o ativo exato. Ainda é necessário um distribuidor compatível."],
-      ["Por que não posso depositar USDC?", "O vault público exige um issuer USDC exato. Carmelita não substituirá outro token com o mesmo código."],
-      ["O que acontece se a Testnet reiniciar?", "Entre novamente, peça sua wallet e solicite XLM da Testnet. O agente recalcula o estado na Stellar."],
-      ["O que fazer se a revisão expirar?", "Peça ao agente para preparar a ação novamente. Nunca aprove uma transação antiga ou inesperada."],
-    ],
-    next: "PRONTO PARA TESTAR",
-    nextTitle: "Mantenha este guia aberto e converse com seu agente.",
-    nextText:
-      "Para a prova da YC, use uma nova conta e grave o percurso da wallet até um recibo verificável de 1 XLM na DeFindex.",
-    nextPrimary: "Abrir meu agente",
-    nextSecondary: "Documentação para developers",
-    footer: "Somente Testnet · Não custodial · Aprovação explícita",
-  },
+const commands = {
+  wallets: "/consulta personal.wallets {}",
+  market: '/consulta offchain.market.quote {"assets":[{"query":"SOL"},{"query":"AVAX"},{"query":"BNB"}]}',
+  functions: "/consulta offchain.capabilities.list {}",
 };
 
-function Command({
-  value,
-  copyLabel,
-  copiedLabel,
-}: {
-  value: string;
-  copyLabel: string;
-  copiedLabel: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  async function copyCommand() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
-  }
-
-  return (
-    <div className="guide-command">
-      <code>{value}</code>
-      <button type="button" onClick={() => void copyCommand()}>
-        {copied ? copiedLabel : copyLabel}
-      </button>
-    </div>
-  );
-}
+const copy = {
+  es: {
+    back: "Inicio", agent: "Abrir chat", eyebrow: "COMIENZA AQUÍ",
+    title: "Conoce Carmelita desde el chat.",
+    lede: "Ingresa con Privy, consulta tus billeteras de prueba y explora el mercado.",
+    badges: ["Billeteras Testnet", "Precios Mainnet", "Español · English · Português"],
+    before: "Tu primer recorrido", beforeTitle: "Ingresa y haz una consulta.",
+    beforeText: "Privy proporciona tu identidad. Carmelita carga o prepara tus registros de billeteras Stellar, EVM y Solana; una cuenta existente conserva sus direcciones.",
+    beforeItems: ["La preparación completa incluye tres familias y cinco redes.", "Las tres redes EVM comparten dirección y tienen exploradores distintos.", "El registro, el saldo y la activación en la red son datos distintos."],
+    journey: "PASO A PASO", journeyTitle: "Ingresa. Consulta. Explora.",
+    journeyText: "Los ejemplos sólo rellenan el compositor. Revisa la consulta y envíala cuando quieras.",
+    steps: [
+      ["01", "Ingresa con Privy", "Abre el chat, elige un método de acceso disponible y espera a que carguen tus registros de billeteras.", ""],
+      ["02", "Consulta tus billeteras", "Consulta red, dirección, estado del registro y explorador de tus cinco redes Testnet.", commands.wallets],
+      ["03", "Consulta un precio", "Prueba SOL, AVAX y BNB. Las respuestas muestran la fuente y la fecha de los datos de mercado Mainnet.", commands.market],
+      ["04", "Descubre funciones", "Abre Funciones o consulta el catálogo. La implementación, tu conexión y la disponibilidad del proveedor se muestran por separado.", commands.functions],
+    ],
+    draft: "Abrir como borrador", command: "Ver comando",
+    help: "PREGUNTAS COMUNES", helpTitle: "Si algo falta",
+    questions: [
+      ["¿Qué hago si la preparación queda parcial?", "Conserva la misma cuenta y revisa el aviso en Billeteras. Algunas redes pueden no estar listas todavía; no necesitas crear otra identidad."],
+      ["¿Tener una dirección significa que tengo saldo?", "No. El estado del registro describe la preparación en Carmelita. El saldo y la activación en la red se consultan por separado. No necesitas financiar la billetera para este recorrido."],
+      ["¿Qué pasa si una consulta no está disponible?", "La respuesta debe indicar la fuente, la conexión o el dato que falta. Una función en el catálogo no garantiza que su proveedor esté operativo en ese momento."],
+      ["¿Por qué los precios dicen Mainnet?", "Los precios y el TVL son datos públicos de mercado Mainnet. Tus billeteras siguen en Testnet y sus fondos de prueba no se valoran automáticamente."],
+    ],
+    chatgpt: "ChatGPT es opcional",
+    chatgptText: "Puedes completar este recorrido en Carmelita. Si tienes acceso al complemento, autoriza la misma cuenta por el flujo visible y revisa sus permisos. El acceso desde otra cuenta independiente de ChatGPT sigue pendiente de validación.",
+    chatgptHelp: "Si la conexión no termina, continúa en Carmelita y registra el paso que falló sin compartir códigos, tokens ni credenciales.",
+    advanced: "Documentación avanzada",
+    advancedText: "La financiación de Testnet, las trustlines y los depósitos tienen requisitos propios y quedan fuera de esta primera prueba de registro y consultas.",
+    developers: "Comandos y documentación para desarrolladores",
+    financeDocs: "Consultar documentación técnica de DeFindex Testnet",
+    footer: "Registro y consultas · Billeteras Testnet",
+  },
+  en: {
+    back: "Home", agent: "Open chat", eyebrow: "START HERE",
+    title: "Get to know Carmelita through chat.",
+    lede: "Sign in with Privy, view your test wallets and explore the market.",
+    badges: ["Testnet wallets", "Mainnet prices", "English · Español · Português"],
+    before: "Your first visit", beforeTitle: "Sign in and ask a question.",
+    beforeText: "Privy provides your identity. Carmelita loads or prepares your Stellar, EVM and Solana wallet records; an existing account keeps its addresses.",
+    beforeItems: ["Complete preparation includes three wallet families and five networks.", "The three EVM networks share an address and use different explorers.", "Registration, balance and on-chain activation are separate facts."],
+    journey: "STEP BY STEP", journeyTitle: "Sign in. Ask. Explore.",
+    journeyText: "Examples only fill the composer. Review the query and send it when ready.",
+    steps: [
+      ["01", "Sign in with Privy", "Open chat, choose an available sign-in method and wait for your wallet records to load.", ""],
+      ["02", "View your wallets", "Check the network, address, registration status and explorer for your five Testnet networks.", commands.wallets],
+      ["03", "Check a price", "Try SOL, AVAX and BNB. Responses show the source and date of Mainnet market data.", commands.market],
+      ["04", "Discover features", "Open Features or query the catalog. Implementation, your connection and provider availability are reported separately.", commands.functions],
+    ],
+    draft: "Open as draft", command: "View command",
+    help: "COMMON QUESTIONS", helpTitle: "If something is missing",
+    questions: [
+      ["What if preparation is only partial?", "Keep the same account and check the notice in Wallets. Some networks may not be ready yet; you do not need to create another identity."],
+      ["Does having an address mean I have funds?", "No. Registration status describes preparation in Carmelita. Balance and on-chain activation are checked separately. You do not need to fund a wallet for this visit."],
+      ["What if a query is unavailable?", "The response should identify the missing source, connection or data. A catalog entry does not guarantee that its provider is operating at that moment."],
+      ["Why do prices say Mainnet?", "Prices and TVL are public Mainnet market data. Your wallets remain on Testnet and test funds are not automatically valued."],
+    ],
+    chatgpt: "ChatGPT is optional",
+    chatgptText: "You can complete this visit in Carmelita. If you have access to the connector, authorize the same account through the visible flow and review its permissions. Access from another independent ChatGPT account is still awaiting validation.",
+    chatgptHelp: "If connecting does not finish, continue in Carmelita and note the step that failed without sharing codes, tokens or credentials.",
+    advanced: "Advanced documentation",
+    advancedText: "Testnet funding, trustlines and deposits have their own requirements and are outside this first registration and query test.",
+    developers: "Commands and developer documentation",
+    financeDocs: "Read the DeFindex Testnet technical documentation",
+    footer: "Registration and queries · Testnet wallets",
+  },
+  pt: {
+    back: "Início", agent: "Abrir chat", eyebrow: "COMECE AQUI",
+    title: "Conheça a Carmelita pelo chat.",
+    lede: "Entre com Privy, consulte suas carteiras de teste e explore o mercado.",
+    badges: ["Carteiras Testnet", "Preços Mainnet", "Português · Español · English"],
+    before: "Seu primeiro percurso", beforeTitle: "Entre e faça uma consulta.",
+    beforeText: "Privy fornece sua identidade. Carmelita carrega ou prepara seus registros de carteiras Stellar, EVM e Solana; uma conta existente mantém seus endereços.",
+    beforeItems: ["A preparação completa inclui três famílias e cinco redes.", "As três redes EVM compartilham o endereço e têm exploradores diferentes.", "Registro, saldo e ativação na rede são dados distintos."],
+    journey: "PASSO A PASSO", journeyTitle: "Entre. Consulte. Explore.",
+    journeyText: "Os exemplos apenas preenchem o compositor. Revise a consulta e envie quando desejar.",
+    steps: [
+      ["01", "Entre com Privy", "Abra o chat, escolha um método de acesso disponível e aguarde seus registros de carteiras carregarem.", ""],
+      ["02", "Consulte suas carteiras", "Confira rede, endereço, estado do registro e explorador das suas cinco redes Testnet.", commands.wallets],
+      ["03", "Consulte um preço", "Experimente SOL, AVAX e BNB. As respostas mostram a fonte e a data dos dados de mercado Mainnet.", commands.market],
+      ["04", "Descubra funções", "Abra Funções ou consulte o catálogo. A implementação, sua conexão e a disponibilidade do provedor são apresentadas separadamente.", commands.functions],
+    ],
+    draft: "Abrir como rascunho", command: "Ver comando",
+    help: "PERGUNTAS COMUNS", helpTitle: "Se algo estiver faltando",
+    questions: [
+      ["E se a preparação estiver parcial?", "Mantenha a mesma conta e confira o aviso em Carteiras. Algumas redes podem não estar prontas ainda; não é necessário criar outra identidade."],
+      ["Ter um endereço significa que tenho saldo?", "Não. O estado do registro descreve a preparação na Carmelita. Saldo e ativação na rede são consultados separadamente. Não é necessário financiar a carteira para este percurso."],
+      ["E se uma consulta estiver indisponível?", "A resposta deve indicar a fonte, conexão ou dado que falta. Uma função no catálogo não garante que seu provedor esteja operando naquele momento."],
+      ["Por que os preços dizem Mainnet?", "Preços e TVL são dados públicos de mercado Mainnet. Suas carteiras continuam em Testnet e os fundos de teste não são avaliados automaticamente."],
+    ],
+    chatgpt: "ChatGPT é opcional",
+    chatgptText: "Você pode completar este percurso na Carmelita. Se tiver acesso ao complemento, autorize a mesma conta pelo fluxo visível e confira suas permissões. O acesso por outra conta independente do ChatGPT ainda aguarda validação.",
+    chatgptHelp: "Se a conexão não terminar, continue na Carmelita e registre a etapa que falhou sem compartilhar códigos, tokens ou credenciais.",
+    advanced: "Documentação avançada",
+    advancedText: "Financiamento de Testnet, trustlines e depósitos têm requisitos próprios e ficam fora desta primeira prova de registro e consultas.",
+    developers: "Comandos e documentação para desenvolvedores",
+    financeDocs: "Consultar a documentação técnica de DeFindex Testnet",
+    footer: "Registro e consultas · Carteiras Testnet",
+  },
+};
 
 export default function GuideClient() {
   const { locale, setLocale } = useLocale();
@@ -246,118 +119,59 @@ export default function GuideClient() {
   return (
     <main className="guide-page">
       <nav className="guide-nav shell">
-        <Link className="brand" href="/">
-          <BrandLockup />
-        </Link>
+        <Link className="brand" href="/"><BrandLockup /></Link>
         <div>
           <Link href="/">{t.back}</Link>
           <LanguageToggle locale={locale} onChange={setLocale} compact />
-          <Link className="guide-nav-agent" href="/agent">
-            {t.agent}
-          </Link>
+          <Link className="guide-nav-agent" href="/agent">{t.agent}</Link>
         </div>
       </nav>
-
       <header className="guide-hero shell">
         <div>
           <p className="eyebrow">{t.eyebrow}</p>
           <h1>{t.title}</h1>
           <p className="lede">{t.lede}</p>
-          <div className="guide-badges">
-            {t.badges.map((badge) => <span key={badge}>{badge}</span>)}
-          </div>
+          <div className="guide-badges">{t.badges.map(badge => <span key={badge}>{badge}</span>)}</div>
         </div>
         <aside>
-          <span>{t.before}</span>
-          <h2>{t.beforeTitle}</h2>
-          <p>{t.beforeText}</p>
-          <ul>
-            {t.beforeItems.map((item) => <li key={item}>{item}</li>)}
-          </ul>
+          <span>{t.before}</span><h2>{t.beforeTitle}</h2><p>{t.beforeText}</p>
+          <ul>{t.beforeItems.map(item => <li key={item}>{item}</li>)}</ul>
         </aside>
       </header>
-
       <section className="guide-journey shell">
         <div className="guide-heading">
-          <p className="eyebrow">{t.journey}</p>
-          <h2>{t.journeyTitle}</h2>
-          <p>{t.journeyText}</p>
+          <p className="eyebrow">{t.journey}</p><h2>{t.journeyTitle}</h2><p>{t.journeyText}</p>
         </div>
         <ol>
           {t.steps.map(([number, title, description, command]) => (
             <li key={number}>
               <span>{number}</span>
               <div>
-                <h3>{title}</h3>
-                <p>{description}</p>
-                {command && (
-                  <Command
-                    value={command}
-                    copyLabel={t.copy}
-                    copiedLabel={t.copied}
-                  />
-                )}
+                <h3>{title}</h3><p>{description}</p>
+                {command && <>
+                  <p><Link href={"/agent?draft=" + encodeURIComponent(command)}>{t.draft}</Link></p>
+                  <details><summary>{t.command}</summary><div className="guide-command"><code>{command}</code></div></details>
+                </>}
               </div>
             </li>
           ))}
         </ol>
       </section>
-
-      <section className="guide-authority">
-        <div className="shell">
-          <div className="guide-heading">
-            <p className="eyebrow">{t.outcomesEyebrow}</p>
-            <h2>{t.outcomesTitle}</h2>
-          </div>
-          <div className="guide-table" role="table">
-            {t.outcomes.map(([action, approval, result]) => (
-              <div role="row" key={action}>
-                <strong role="cell">{action}</strong>
-                <span role="cell">{approval}</span>
-                <small role="cell">{result}</small>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="guide-faq guide-help shell">
+        <div className="guide-heading"><p className="eyebrow">{t.help}</p><h2>{t.helpTitle}</h2></div>
+        {t.questions.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+        <details id="chatgpt">
+          <summary>{t.chatgpt}</summary><p>{t.chatgptText}</p><p>{t.chatgptHelp}</p>
+          <p><Link href="/agent">{t.agent}</Link></p>
+        </details>
+        <details>
+          <summary>{t.advanced}</summary><p>{t.advancedText}</p>
+          <p><Link href="/developers#quickstart">{t.developers}</Link></p>
+          <p><a href="https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md" target="_blank" rel="noreferrer">{t.financeDocs} ↗</a></p>
+        </details>
       </section>
-
-      <section className="guide-safety shell">
-        <div>
-          <p className="eyebrow">{t.safety}</p>
-          <h2>{t.safetyTitle}</h2>
-          <ul>
-            {t.safetyItems.map((item) => <li key={item}>{item}</li>)}
-          </ul>
-        </div>
-        <div>
-          <p className="eyebrow">{t.problemsEyebrow}</p>
-          <h2>{t.problemsTitle}</h2>
-          <div className="guide-faq">
-            {t.problems.map(([question, answer]) => (
-              <details key={question}>
-                <summary>{question}</summary>
-                <p>{answer}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="guide-next shell">
-        <div>
-          <p className="eyebrow">{t.next}</p>
-          <h2>{t.nextTitle}</h2>
-          <p>{t.nextText}</p>
-        </div>
-        <div>
-          <Link href="/agent">{t.nextPrimary}</Link>
-          <Link href="/developers">{t.nextSecondary}</Link>
-        </div>
-      </section>
-
       <footer className="guide-footer shell">
-        <Link className="brand" href="/"><BrandLockup /></Link>
-        <span>{t.footer}</span>
+        <Link className="brand" href="/"><BrandLockup /></Link><span>{t.footer}</span><Link href="/agent">{t.agent}</Link>
       </footer>
     </main>
   );

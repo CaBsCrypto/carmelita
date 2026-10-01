@@ -6,24 +6,24 @@ import Providers from "./providers";
 import { isEvmExpansionEnabled } from "./wallets/networks";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://agente-asistente.vercel.app"),
-  title: "Carmelita | Knows you. Acts for you.",
+  metadataBase: new URL("https://carmelita.browns.studio"),
+  title: "Carmelita | Wallets and market, in one conversation",
   description:
-    "Carmelita is a trilingual, non-custodial agent that knows your context and acts within your rules.",
+    "Ask about your Testnet wallets, token prices and network TVL in English, Spanish or Portuguese.",
   openGraph: {
-    title: "Carmelita | Knows you. Acts for you.",
+    title: "Carmelita | Wallets and market, in one conversation",
     description:
-      "Carmelita turns requests into controlled actions through policy, explicit authority and durable receipts.",
-    url: "https://agente-asistente.vercel.app",
+      "Check Testnet wallets and Mainnet market data with Carmelita.",
+    url: "https://carmelita.browns.studio",
     siteName: "Carmelita",
     images: [{ url: "/og.png", width: 1536, height: 1024, alt: "Carmelita action flow" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Carmelita | Knows you. Acts for you.",
+    title: "Carmelita | Wallets and market, in one conversation",
     description:
-      "Carmelita knows you, acts for you and keeps every sensitive action under your control.",
+      "Check Testnet wallets and Mainnet market data with Carmelita.",
     images: ["/og.png"],
   },
 };
