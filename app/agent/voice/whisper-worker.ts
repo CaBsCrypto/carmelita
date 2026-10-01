@@ -1,4 +1,5 @@
 import { env, pipeline, type AutomaticSpeechRecognitionPipeline } from "@huggingface/transformers";
+import {isSpeechLanguage, whisperLanguages, type SpeechLanguage} from "./speech-language";
 
 env.allowLocalModels = false;
 env.useBrowserCache = true;
@@ -7,9 +8,9 @@ env.backends.onnx.wasm!.numThreads = 1;
 env.backends.onnx.wasm!.wasmPaths = new URL("./", self.location.href).href;
 let transcriber: Promise<AutomaticSpeechRecognitionPipeline> | undefined;
 let active = false;
-self.onmessage = async (event: MessageEvent<{id: string; audio: Float32Array; locale: "es" | "en" | "pt"}>) => {
-  const {id, audio, locale} = event.data;
-  if (active || !(audio instanceof Float32Array) || !audio.length || audio.length > 16000 * 121 || !["es", "en", "pt"].includes(locale)) {
+self.onmessage = async (event: MessageEvent<{id: string; audio: Float32Array; language: SpeechLanguage}>) => {
+  const {id, audio, language} = event.data;
+  if (active || !(audio instanceof Float32Array) || !audio.length || audio.length > 16000 * 121 || !isSpeechLanguage(language)) {
     self.postMessage({id, kind: "error"}); return;
   }
   active = true;
@@ -22,7 +23,7 @@ self.onmessage = async (event: MessageEvent<{id: string; audio: Float32Array; lo
     });
     const model = await transcriber;
     self.postMessage({id, kind: "transcribing"});
-    const output = await model(audio, {language: {es: "spanish", en: "english", pt: "portuguese"}[locale], task: "transcribe", chunk_length_s: 30, stride_length_s: 5});
+    const output = await model(audio, {language: whisperLanguages[language], task: "transcribe", chunk_length_s: 30, stride_length_s: 5});
     const result = Array.isArray(output) ? output[0] : output;
     const text = result.text.trim();
     self.postMessage({id, kind: text ? "complete" : "empty", text});

@@ -1,4 +1,4 @@
-import type { Locale } from "../../language-toggle";
+import {isSpeechLanguage, type SpeechLanguage} from "./speech-language";
 import { sessionAbortable } from "../session-request";
 import { MAX_VOICE_BYTES, MAX_VOICE_SECONDS } from "./draft-store";
 
@@ -7,8 +7,9 @@ export class LocalTranscriber {
   private worker?: Worker;
   private cancelPending?: () => void;
   constructor(private factory = () => new Worker("/voice/whisper-worker.js", {type: "module"})) {}
-  async transcribe(audio: Float32Array, locale: Locale, signal: AbortSignal, progress: (event: VoiceProgress) => void): Promise<string> {
+  async transcribe(audio: Float32Array, language: SpeechLanguage, signal: AbortSignal, progress: (event: VoiceProgress) => void): Promise<string> {
     signal.throwIfAborted();
+    if (!isSpeechLanguage(language)) throw new Error("voice_language_required");
     if (this.cancelPending) throw new Error("voice_busy");
     this.worker ??= this.factory();
     const worker = this.worker;
@@ -33,7 +34,7 @@ export class LocalTranscriber {
         else if (data.kind === "transcribing") progress({kind: "transcribing"});
         else if (data.kind === "progress" && typeof data.file === "string" && Number.isFinite(data.loaded) && Number.isFinite(data.total)) progress({kind: "progress", file: data.file, loaded: Math.max(0, data.loaded), total: Math.max(0, data.total)});
       };
-      try { worker.postMessage({id, audio, locale}, [audio.buffer]); }
+      try { worker.postMessage({id, audio, language}, [audio.buffer]); }
       catch { finish(new Error("voice_transcription_failed")); }
     });
   }

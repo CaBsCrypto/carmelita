@@ -7,6 +7,7 @@ import {createVoiceStore, voiceBlob, type VoiceDraft, type VoiceStore} from "./d
 import {VoiceRecorder} from "./recorder";
 import {decodeVoice, LocalTranscriber} from "./local-transcription";
 import {voiceCopy} from "./copy";
+import {isSpeechLanguage, type SpeechLanguage} from "./speech-language";
 
 type Stage = "idle" | "asking" | "recording" | "saving" | "ready" | "loading" | "transcribing";
 const unavailable = async () => { throw new Error("voice_storage_unavailable"); };
@@ -23,6 +24,8 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
   const [draft, setDraft] = useState<VoiceDraft | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>();
   const [text, setText] = useState("");
+  const [speechLanguage, setSpeechLanguage] = useState<SpeechLanguage | null>(null);
+  const [textLanguage, setTextLanguage] = useState<SpeechLanguage | null>(null);
   const [error, setError] = useState<keyof typeof t | null>(null);
   const [storageWarning, setStorageWarning] = useState(false);
   const [recovered, setRecovered] = useState(false);
@@ -45,6 +48,8 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
       .then(saved => {
         if (!saved || controller.signal.aborted) return;
         setDraft({...saved, interrupted: saved.interrupted || !saved.completed}); setText(saved.transcript ?? "");
+        const language = isSpeechLanguage(saved.speechLanguage) ? saved.speechLanguage : null;
+        setSpeechLanguage(language); setTextLanguage(language);
         setStage("ready"); setRecovered(true); setExpanded(true);
       }).catch(() => { if (!controller.signal.aborted) setStorageWarning(true); })
       .finally(() => {
@@ -82,7 +87,7 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     try {
       await current.start(saved => {
         if (lifetime.current.signal.aborted || recorder.current !== current) return;
-        setDraft(saved); setStage("ready"); setText(""); setExpanded(true);
+        setDraft(saved); setStage("ready"); setText(""); setTextLanguage(null); setExpanded(true);
       });
       if (!lifetime.current.signal.aborted && recorder.current === current) setStage("recording");
     } catch {
@@ -96,7 +101,7 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     else job.current?.abort();
   }
   async function transcribe() {
-    if (!draft || busy || !supported) return;
+    if (!draft || busy || !supported || !speechLanguage) return;
     const controller = new AbortController(); job.current = controller;
     const signal = AbortSignal.any([lifetime.current.signal, controller.signal, AbortSignal.timeout(240000)]);
     setStage("loading"); setError(null); setDownloadedMb(0); setInserted(false);
@@ -106,13 +111,13 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
       let power = 0; for (const sample of audio) power += sample * sample;
       if (Math.sqrt(power / audio.length) < 0.001) throw new Error("voice_empty");
       transcriber.current ??= new LocalTranscriber();
-      const result = await transcriber.current.transcribe(audio, locale, signal, progress => {
+      const result = await transcriber.current.transcribe(audio, speechLanguage, signal, progress => {
         if (signal.aborted) return;
         if (progress.kind === "transcribing") setStage("transcribing");
         else { downloads.set(progress.file, progress.loaded); setDownloadedMb([...downloads.values()].reduce((sum, bytes) => sum + bytes, 0) / 1000000); }
       });
-      signal.throwIfAborted(); setText(result); setStage("ready");
-      try { await sessionAbortable(() => store.current.transcript(userId, draft.id, result), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
+      signal.throwIfAborted(); setText(result); setTextLanguage(speechLanguage); setStage("ready");
+      try { await sessionAbortable(() => store.current.transcript(userId, draft.id, result, speechLanguage), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
       catch { if (!lifetime.current.signal.aborted) setStorageWarning(true); }
     } catch (caught) {
       if (lifetime.current.signal.aborted) return;
@@ -126,13 +131,13 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     try { await sessionAbortable(() => store.current.remove(userId, draft.id), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
     catch { if (!lifetime.current.signal.aborted) { setStorageWarning(true); return; } }
     if (lifetime.current.signal.aborted) return;
-    transcriber.current?.dispose(); setDraft(null); setText(""); setError(null); setStage("idle"); setExpanded(false);
+    transcriber.current?.dispose(); setDraft(null); setText(""); setTextLanguage(null); setError(null); setStage("idle"); setExpanded(false);
   }
   function useText() {
-    if (!text.trim() || busy) return;
+    if (!text.trim() || busy || !speechLanguage || textLanguage !== speechLanguage) return;
     if (!onInsert(text)) { setError("tooLong"); return; }
     setInserted(true); setError(null);
-    if (draft) void sessionAbortable(() => store.current.transcript(userId, draft.id, text), AbortSignal.timeout(4000)).catch(() => { if (!lifetime.current.signal.aborted) setStorageWarning(true); });
+    if (draft) void sessionAbortable(() => store.current.transcript(userId, draft.id, text, speechLanguage), AbortSignal.timeout(4000)).catch(() => { if (!lifetime.current.signal.aborted) setStorageWarning(true); });
   }
   const label = stage === "recording" ? t.stop : stage === "asking" ? t.cancel : draft ? t.saved : t.record;
   return <>
@@ -142,6 +147,9 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
       {stage === "recording" ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0014 0v-2M12 19v3M8 22h8" fill="none" stroke="currentColor" strokeWidth="2"/></svg>}
     </button>
     {container && expanded && createPortal(<section className="voice-panel" aria-label={t.microphone}>
+      <label>{t.language}<select value={speechLanguage ?? ""} disabled={busy} onChange={event => {setSpeechLanguage(isSpeechLanguage(event.target.value) ? event.target.value : null); setInserted(false);}}>
+        <option value="">{t.chooseLanguage}</option><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option>
+      </select></label><small>{t.languageNote}</small>
       {stage === "asking" && <p role="status">{t.asking}</p>}
       {stage === "recording" && <p role="status">{t.recording} · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} · {t.limit}</p>}
       {stage === "saving" && <p role="status">{t.saving}</p>}
@@ -150,12 +158,12 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
         {stage === "loading" && <p role="status">{t.downloading}… {downloadedMb.toFixed(1)} MB</p>}
         {stage === "transcribing" && <p role="status">{t.processing}</p>}
         <div className="voice-actions">
-          {busy ? <button type="button" onClick={cancel}>{t.cancel}</button> : <button type="button" disabled={!supported} onClick={() => void transcribe()}>{error ? t.retry : t.transcribe}</button>}
+          {busy ? <button type="button" onClick={cancel}>{t.cancel}</button> : <button type="button" disabled={!supported || !speechLanguage} onClick={() => void transcribe()}>{error ? t.retry : t.transcribe}</button>}
           {audioUrl && <a href={audioUrl} download={`carmelita-voice.${draft.mime.includes("mp4") ? "m4a" : "webm"}`}>{t.download}</a>}
           <button type="button" disabled={busy} onClick={() => void discard()}>{t.discard}</button>
         </div>
         {text && <><label>{t.text}<textarea value={text} maxLength={12000} onChange={event => {setText(event.target.value); setInserted(false);}}/></label>
-          <small>{t.review}</small><button type="button" disabled={busy || !text.trim() || inserted} onClick={useText}>{t.use}</button></>}
+          <small>{t.review}</small>{textLanguage !== speechLanguage || !speechLanguage ? <p role="status">{t.reTranscribe}</p> : null}<button type="button" disabled={busy || !text.trim() || inserted || !speechLanguage || textLanguage !== speechLanguage} onClick={useText}>{t.use}</button></>}
         {inserted && <p role="status">{t.inserted}</p>}
       </>}
       {storageWarning && <p role="alert">{t.storage}</p>}{error && <p role="alert">{t[error]}</p>}

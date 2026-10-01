@@ -26,8 +26,18 @@ a transcription API or included in a chat request.
 
 Transformers.js 3.8.1 loads multilingual `onnx-community/whisper-tiny`, revision
 `ff4177021cc41f7db950912b73ea4fdf7d01d8e7`, with q8 weights. WASM inference runs
-in a dedicated worker using one thread. Locale selects Spanish, English or
-Portuguese. The WASM-only ONNX build avoids GPU-specific runtime assets.
+in a dedicated worker using one thread. The user explicitly selects the spoken
+language (Spanish, English or Portuguese), independently of the interface locale.
+Transcribe remains disabled until a language is selected; the worker rejects
+missing/unsupported languages instead of silently falling back. No automatic
+language detection is promised. The WASM-only ONNX build avoids GPU-specific assets.
+
+Successful transcripts retain their spoken-language metadata in the local draft.
+Reload restores it, and changing the interface language does not change it.
+Selecting another audio language blocks insertion of the previous transcript until
+the original language is restored or transcription succeeds again. Legacy audio
+and text without metadata remain recoverable but require choosing a language and
+retranscribing before insertion. No storage schema migration is required.
 
 The model is downloaded from Hugging Face only after Transcribe is selected;
 the initial engine/model transfer is roughly 60 MB. Public model weights use
@@ -44,12 +54,16 @@ regenerating these files and checking real browser inference again.
 Unit coverage exercises chunk ordering, final-chunk saving, quota failure,
 owner separation, stale writers, expiration, cancellation of late permission,
 interrupted recovery, duration limits, worker cancellation/retry, warm reuse and
-draft length preservation. A local fixture uses real chat/voice components,
+draft length preservation, explicit spoken-language validation and legacy recovery.
+A local fixture uses real chat/voice components,
 fake identities/APIs and Windows-generated Spanish speech; it does not use a
-personal microphone or database.
+personal microphone or database. The Spanish fixture must transcribe correctly
+with the interface set to Portuguese; verify reload and interface-language
+switching preserve the spoken selection, and insertion makes no chat POST.
 
 Before publishing, verify on a real phone: grant microphone permission, record
-10 seconds, stop, play back, transcribe, edit, use text, manually send, recover
+10 seconds in Spanish with the interface in Portuguese, stop, play back, select
+Español as audio language, transcribe, edit, use text, manually send, recover
 after reload, cancel/retry and check the keyboard/composer. Also test denied
 permission and first-download failure. This feature does not approve the
 outstanding ChatGPT, OAuth-expiry or independent-onboarding acceptance gates.

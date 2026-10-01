@@ -3,14 +3,14 @@ export const MAX_VOICE_BYTES = 3 * 1024 * 1024;
 export const VOICE_RECOVERY_MS = 24 * 60 * 60 * 1000;
 export type VoiceDraft = {
   owner: string; id: string; startedAt: number; mime: string; chunks: Blob[];
-  completed: boolean; interrupted: boolean; transcript?: string;
+  completed: boolean; interrupted: boolean; transcript?: string; speechLanguage?: SpeechLanguage;
 };
 export interface VoiceStore {
   read(owner: string): Promise<VoiceDraft | null>;
   begin(draft: VoiceDraft): Promise<void>;
   append(owner: string, id: string, chunk: Blob): Promise<void>;
   finish(owner: string, id: string, interrupted: boolean): Promise<void>;
-  transcript(owner: string, id: string, text: string): Promise<void>;
+  transcript(owner: string, id: string, text: string, language?: SpeechLanguage): Promise<void>;
   remove(owner: string, id: string): Promise<void>;
 }
 
@@ -56,7 +56,7 @@ export function createVoiceStore(factory: IDBFactory, now = Date.now): VoiceStor
     begin: draft => access(draft.owner, (_, store) => { store.put(draft); }),
     append: (owner, id, chunk) => update(owner, id, draft => { draft.chunks.push(chunk); }),
     finish: (owner, id, interrupted) => update(owner, id, draft => { draft.completed = true; draft.interrupted = interrupted; }),
-    transcript: (owner, id, text) => update(owner, id, draft => { draft.transcript = text; }),
+    transcript: (owner, id, text, language) => update(owner, id, draft => { draft.transcript = text; draft.speechLanguage = language; }),
     remove: (owner, id) => access(owner, (draft, store) => { if (draft?.id === id && draft.owner === owner) store.delete(owner); }),
   };
 }
@@ -66,3 +66,4 @@ export function appendVoiceText(draft: string, transcript: string): string | nul
   const result = [draft.trimEnd(), transcript.trim()].filter(Boolean).join("\n");
   return result.length <= 2000 ? result : null;
 }
+import type {SpeechLanguage} from "./speech-language";
