@@ -15,6 +15,7 @@ import AgentConnectedApps from "./agent-connected-apps";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 import { sessionCloseCopy, useSessionClose } from "../use-session-close";
+import { sessionAbortable } from "./session-request";
 
 const onboardingUi = {
   en: {
@@ -221,30 +222,30 @@ function PrivyAgent({
     if (!userId || (!force && bootstrappedFor.current === userId)) return;
     bootstrapRequest.current?.abort();
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]);
     bootstrapRequest.current = controller;
     bootstrappedFor.current = userId;
     setStatus("creating");
     setError(null);
 
     try {
-      const token = await getAccessToken();
-      controller.signal.throwIfAborted();
+      const token = await sessionAbortable(getAccessToken, signal);
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/bootstrap", {
         method: "POST",
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
+        signal,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
       });
-      const body = await response.json();
+      const body = await sessionAbortable(() => response.json(), signal);
       if (!response.ok) throw new Error(body.error ?? "Wallet bootstrap failed");
       // The wallet may have just been created by the Privy server SDK. Refresh
       // the browser identity so extended-chain signing can discover it without
       // forcing the user through a sign-out/sign-in cycle.
-      await refreshUser();
-      controller.signal.throwIfAborted();
+      await sessionAbortable(refreshUser, signal);
+      signal.throwIfAborted();
       if (body.user?.id !== userId) throw new Error("wallet_response_mismatch");
       setResult(body);
       setStatus("ready");
@@ -297,15 +298,17 @@ function PrivyAgent({
     const form = new FormData(event.currentTarget);
     setTravelStatus("searching");
     setTravelError(null);
+    setTravelResult(null);
     travelRequest.current?.abort();
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]);
     travelRequest.current = controller;
     try {
-      const token = await getAccessToken();
+      const token = await sessionAbortable(getAccessToken, signal);
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/travel/search", {
         method: "POST",
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
+        signal,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -318,9 +321,9 @@ function PrivyAgent({
           maxPrice: Number(form.get("maxPrice") ?? 0) || undefined,
         }),
       });
-      const body = await response.json();
+      const body = await sessionAbortable(() => response.json(), signal);
       if (!response.ok) throw new Error(body.error ?? "Travel search failed");
-      controller.signal.throwIfAborted();
+      signal.throwIfAborted();
       setTravelResult(body);
       setTravelStatus("idle");
     } catch (caught) {
