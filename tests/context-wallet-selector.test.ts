@@ -25,7 +25,7 @@ test("formats official Fuji ERC-20 balances for the selector", async () => {
     assert.equal(request.method, "eth_call");
     assert.equal(request.params[0].to, token);
     assert.equal(request.params[0].data, `0x70a08231${wallet.slice(2).padStart(64, "0")}`);
-    return Response.json({ jsonrpc: "2.0", id: 1, result: "0x1312d00" });
+    return Response.json({ jsonrpc: "2.0", id: 1, result: `0x${"1312d00".padStart(64, "0")}` });
   };
   const result = await getErc20Balance(getWalletNetwork("avalanche:fuji"), token, wallet, 6, fetcher);
   assert.equal(result.balance, "20");

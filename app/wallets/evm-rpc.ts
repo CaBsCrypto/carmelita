@@ -120,6 +120,10 @@ export async function getErc20Balance(
     [{ to: tokenAddress, data: `0x${balanceOfSelector}${encodedWallet}` }, "latest"],
     fetcher,
   );
+  // balanceOf returns one ABI uint256 word, not a JSON-RPC quantity or coerced primitive.
+  if (typeof result !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(result)) {
+    throw new Error("evm_rpc_invalid_erc20_balance");
+  }
   const atomic = BigInt(result);
   return {
     tokenAddress,
