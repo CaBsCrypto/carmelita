@@ -454,6 +454,16 @@
 
 /* Keep wallet addresses and the selector inside narrow chat panels. */
 .agent-chat-layout > *, .agent-message > div { min-width: 0; }
+
+/* Documentation stays outside the chat; advanced material is disclosed on demand. */
+.guide-help { padding-block: 24px 48px; }
+.guide-help > p { max-width: 760px; color: var(--muted); line-height: 1.65; }
+.guide-help details, .developer-disclosure { margin-top: 20px; border-block: 1px solid var(--line); }
+.guide-help summary, .developer-disclosure > summary { min-height: 48px; padding: 14px 0; color: var(--forest); font-weight: 650; cursor: pointer; }
+.guide-help summary:focus-visible, .developer-disclosure > summary:focus-visible { outline: 3px solid var(--coral-dark); outline-offset: 4px; }
+.guide-help details > :not(summary), .developer-disclosure > :not(summary) { margin-block: 18px; }
+.query-examples code, .developer-disclosure code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.query-examples > *, .developer-disclosure > * { min-width: 0; max-width: 100%; }
 .agent-message-copy { box-sizing: border-box; max-width: 100%; overflow-wrap: anywhere; }
 .context-wallet-menu { position: relative; top: auto; right: auto; width: 100%; box-sizing: border-box; margin-top: 8px; }
 .context-wallet-menu > header { flex-wrap: wrap; }
