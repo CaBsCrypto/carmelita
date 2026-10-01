@@ -10,6 +10,7 @@ const groupRoots = {
   ecosystem: "app/queries/ecosystem.ts",
   discovery: "app/queries/discovery.ts",
   metadata: "app/queries/metadata.ts",
+  commerce: "app/queries/commerce.ts",
 } as const;
 const commonRoots = ["app/queries/types.ts", "app/queries/adapters.ts", "app/queries/chat.ts",
   "app/api/agent/queries/route.ts", "app/api/agent/chat/route.ts", "app/api/mcp/agent/route.ts"];
@@ -18,7 +19,7 @@ const commonRoots = ["app/queries/types.ts", "app/queries/adapters.ts", "app/que
 function executionSource(sourcePath: string, original: string, metadata: boolean) {
   let source = original.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
   if (sourcePath === "app/queries/registry.ts" && !metadata) {
-    source = source.replace(/^import .*from "\.\/(?:market|personal|ecosystem|discovery|metadata|acceptance)";\n/gm, "")
+    source = source.replace(/^import .*from "\.\/(?:market|personal|ecosystem|discovery|metadata|commerce|acceptance)";\n/gm, "")
       .replace(/export const readQueryDefinitions: readonly QueryDefinition\[\] = \[[\s\S]*?\];/, "export const readQueryDefinitions: readonly QueryDefinition[] = [];");
     const discoveryStart = source.indexOf("/** Static coverage");
     if (discoveryStart >= 0) source = source.slice(0, discoveryStart);

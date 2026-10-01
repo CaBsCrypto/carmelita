@@ -11,8 +11,8 @@ import {
 } from "@/app/domain";
 import {
   getPublishedServiceOffer,
-  listPublishedServiceOffers,
 } from "@/app/services/provider-store";
+import { getCommerceCatalogOffer, legacyCatalogOffer, searchCommerceCatalog } from "@/app/commerce-catalog-read";
 import { getDb, hasDatabase } from "@/db";
 import {
   auditEvents,
@@ -116,13 +116,10 @@ export const backend = {
   mode: () => (hasDatabase() ? "postgres" : "memory"),
 
   async searchOffers(query = "", kind?: Kind) {
-    const builtIn = commerce.searchOffers(query, kind);
-    if (!hasDatabase()) return builtIn;
-    const providerOffers = await listPublishedServiceOffers(query, kind);
-    return [...builtIn, ...providerOffers];
+    return (await searchCommerceCatalog({ query, kind })).offers.map(legacyCatalogOffer);
   },
 
-  getOffer: resolveOffer,
+  getOffer: async (id: string) => legacyCatalogOffer((await getCommerceCatalogOffer(id)).offer),
 
   async createIntent(input: {
     offerId: string;

@@ -26,6 +26,11 @@ export function parseChatReadRequest(message: string): ChatReadRequest | null {
     } catch { return { invalid: "invalid_read_query" }; }
   }
   const text = normalize(message).replace(/^[¿¡\s]+/, "");
+  // Only explicit catalog reads: a request to buy/book/prepare must stay outside this path.
+  if (/^(?:busca|buscar|muestra|mostrar|search|find|show|pesquise|procure|mostre)\s+(?:las?\s+|os?\s+)?(?:ofertas|offers|servicios publicados|published services|servicos publicados)(?:\s+(.+))?[?!.\s]*$/.test(text)) {
+    const query = message.trim().replace(/^[¿¡\s]+/, "").replace(/^(?:busca|buscar|muestra|mostrar|search|find|show|pesquise|procure|mostre)\s+(?:las?\s+|os?\s+)?(?:ofertas|offers|servicios publicados|published services|servi[cç]os publicados)\s*/i, "").replace(/[?!.]+$/, "").trim();
+    return { id: "commerce.catalog.search", input: query ? { query } : {} };
+  }
   if (/^(?:que (?:puedo|podemos) hacer|what can (?:i|we) do|o que posso fazer|funciones disponibles|available (?:features|queries)|consultas disponibles)[?!.\s]*$/.test(text)) return { id: "offchain.capabilities.list", input: {} };
   if (parseAvalancheCapabilitiesIntent(message)) return { id: "avalanche.capabilities.list", input: {} };
   if (parseVaultCommand(message)?.action === "list") return { id: "personal.memory", input: {} };

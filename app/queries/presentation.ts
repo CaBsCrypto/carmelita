@@ -28,6 +28,23 @@ export function presentCommonRead(id: string, value: unknown, locale: QueryLocal
     return [`**${t.queries}**`, groups[locale].map(label => `- ${label}`).join("\n"), t.pending,
       `${t.command} [${t.developers}](/developers).`].join("\n\n");
   }
+  if (id === "personal.conversation" && Array.isArray(data.messages)) {
+    // The chat already contains the history. Do not persist another full copy of it
+    // inside its own reply, especially earlier history replies with nested content.
+    const recent = data.messages.slice(-5).map(record).filter(row => row !== null);
+    const history = {
+      es: { title: "Historial de conversación", empty: "No hay mensajes anteriores.", recent: "Vista breve de los últimos", returned: "mensajes devueltos", user: "Usuario", assistant: "Carmelita" },
+      en: { title: "Conversation history", empty: "No earlier messages.", recent: "Brief view of the latest", returned: "returned messages", user: "User", assistant: "Carmelita" },
+      pt: { title: "Histórico da conversa", empty: "Nenhuma mensagem anterior.", recent: "Resumo dos últimos", returned: "mensagens retornadas", user: "Usuário", assistant: "Carmelita" },
+    }[locale];
+    return [`**${history.title}**`, recent.length ? `${history.recent} ${recent.length} / ${data.messages.length} ${history.returned}.` : history.empty,
+      ...recent.map(row => {
+        const content = cell(row.content, t.unavailable).replace(/[`*_<>{}\[\]\\]/g, "");
+        const preview = content.length > 200 ? `${content.slice(0, 200)}…` : content;
+        return `${row.role === "user" ? history.user : history.assistant} · ${cell(row.createdAt, t.unavailable)}: ${preview}`;
+      }),
+    ].join("\n\n");
+  }
   if (id === "personal.watchlist" && Array.isArray(data.items)) {
     const symbols = data.items.map(item => cell(record(item)?.symbol, t.unavailable));
     const quotes = record(data.quotes);

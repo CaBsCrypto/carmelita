@@ -3,11 +3,12 @@ import { personalQueries } from "./personal";
 import { ecosystemQueries } from "./ecosystem";
 import { discoveryQueries } from "./discovery";
 import { metadataQueries } from "./metadata";
+import { commerceQueries } from "./commerce";
 import { executeQueryDefinition, type QueryDefinition, type QueryLocale, type QueryPrincipal } from "./types";
 import { evaluateQueryAcceptance } from "./acceptance";
 
 export const readQueryDefinitions: readonly QueryDefinition[] = [
-  ...marketQueries, ...personalQueries, ...ecosystemQueries, ...discoveryQueries, ...metadataQueries,
+  ...marketQueries, ...personalQueries, ...ecosystemQueries, ...discoveryQueries, ...metadataQueries, ...commerceQueries,
 ];
 
 export function getReadQuery(id: string, definitions = readQueryDefinitions) {

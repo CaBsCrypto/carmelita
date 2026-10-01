@@ -14,6 +14,7 @@ import { personalQueries } from "../app/queries/personal";
 import { ecosystemQueries } from "../app/queries/ecosystem";
 import { discoveryQueries } from "../app/queries/discovery";
 import { metadataQueries } from "../app/queries/metadata";
+import { commerceQueries } from "../app/queries/commerce";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const quote = readQueryDefinitions.find(query => query.id === "offchain.market.quote")!;
@@ -124,7 +125,7 @@ test("CI gate rejects unknown queries, duplicate evidence, private identities an
 
 test("CI checks current execution fingerprints and the exact grouping of all registered query definitions", () => {
   for (const [group, queries] of Object.entries({ market: marketQueries, personal: personalQueries,
-    ecosystem: ecosystemQueries, discovery: discoveryQueries, metadata: metadataQueries })) {
+    ecosystem: ecosystemQueries, discovery: discoveryQueries, metadata: metadataQueries, commerce: commerceQueries })) {
     for (const query of queries) {
       assert.equal(queryAcceptanceGroup(query.id), group, query.id);
       assert.match(queryContractFingerprint(query), /^[a-f0-9]{64}$/);
@@ -136,4 +137,8 @@ test("CI checks current execution fingerprints and the exact grouping of all reg
   assert.ok(actual.sources.personal?.includes("app/queries/personal-store.ts"));
   assert.ok(!actual.sources.market?.includes("app/queries/personal-store.ts"), "history-only changes must not fabricate a change in the market execution");
   assert.ok(actual.sources.metadata?.includes("app/queries/acceptance.ts"));
+  assert.ok(actual.sources.commerce?.includes("app/queries/commerce.ts"));
+  assert.ok(actual.sources.commerce?.includes("app/commerce-catalog-read.ts"));
+  assert.ok(actual.sources.commerce?.includes("app/services/public-offer-read-store.ts"));
+  assert.ok(!actual.sources.market?.includes("app/queries/commerce.ts"), "a separate catalog query must not silently become part of market execution");
 });

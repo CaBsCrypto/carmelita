@@ -30,6 +30,8 @@ function inputFor(id: string): Record<string, unknown> {
     case "offchain.travala.hotel_search": return { location: "Santiago", checkIn: "2099-01-01", checkOut: "2099-01-03", guests: 1 };
     case "stellar.soroswap.quote": return { assetIn: "XLM", assetOut: "USDC", amount: "1" };
     case "offchain.capabilities.get": return { capabilityId: "stellar.wallet.status" };
+    case "commerce.catalog.search": return { query: "pass", kind: "reservation" };
+    case "commerce.catalog.detail": return { offerId: "innovation-day-pass" };
     default: return {};
   }
 }
@@ -232,7 +234,7 @@ test("both adapters bound stalled providers and cancel completed-query timers", 
 });
 
 test("shared query modules cannot call onboarding, schema preparation or financial writers", async () => {
-  for (const sourceName of ["market", "personal", "personal-store", "ecosystem", "ecosystem-venue", "discovery", "metadata"]) {
+  for (const sourceName of ["market", "personal", "personal-store", "ecosystem", "ecosystem-venue", "discovery", "metadata", "commerce"]) {
     const source = await readFile(new URL(`../app/queries/${sourceName}.ts`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /\b(?:provisionUserWallets|getOrCreateUserWallet|persistActivatedWallet|setPersistedWalletNetworkStatus|ensureConversation|ensureAgentVaultSchema|ensureDefindexSchema|prepareDefindexDeposit|prepareUsdcTrustline|buildSoroswapSwap|sendSoroswapSwap|fundStellarTestnetWallet|startNotionOAuth|createGatewayPlan)\s*\(/, sourceName);
     assert.doesNotMatch(source, /\.\s*(?:insert|delete)\s*\(|(?:\bdb|getDb\(\))\s*\.\s*update\s*\(|\bCREATE\s+(?:TABLE|INDEX)\b/i, sourceName);
@@ -248,6 +250,7 @@ test("MCP registration and web discovery bind to shared contracts instead of sep
   ]);
   assert.match(mcp, /for\s*\(const query of readQueryDefinitions\)/);
   assert.match(mcp, /inputSchema: query\.inputSchema,/);
+  assert.match(mcp, /annotations:\s*\{\s*readOnlyHint:\s*true,\s*destructiveHint:\s*false,\s*idempotentHint:\s*true/);
   assert.doesNotMatch(mcp, /inputSchema: query\.inputSchema\.shape/);
   assert.match(mcp, /executeMcpReadQuery\(query\.id, input, extra\.authInfo\)/);
   assert.match(discovery, /readQueries:\s*listReadQueries\(\)/);

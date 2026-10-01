@@ -74,6 +74,7 @@ export function queryContractFingerprint(query: QueryDefinition) {
 
 /** Groups deliberately invalidate conservatively when any shared dependency changes. */
 export function queryAcceptanceGroup(id: string): keyof typeof runtimeJson.groups {
+  if (id.startsWith("commerce.")) return "commerce";
   if (["offchain.market.search", "offchain.market.quote", "offchain.defillama.chains"].includes(id)) return "market";
   if (id.startsWith("personal.")) return "personal";
   if (["offchain.capabilities.list", "offchain.capabilities.get", "avalanche.capabilities.list", "avalanche.docs.tools"].includes(id)) return "metadata";
