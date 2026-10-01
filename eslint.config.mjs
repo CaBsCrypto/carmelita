@@ -9,6 +9,7 @@ const eslintConfig = defineConfig([
   globalIgnores(["stellar-bazaar-x402/**",
     "work/**",
     "outputs/**",
+    "public/voice/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

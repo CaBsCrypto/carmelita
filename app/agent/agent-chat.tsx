@@ -3,6 +3,8 @@
 import { chatBalanceDisplay } from "./chat-balance-display";
 import { MessageText } from "./message-text";
 import { sessionAbortable } from "./session-request";
+import VoiceInput from "./voice/voice-input";
+import { appendVoiceText } from "./voice/draft-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -249,6 +251,8 @@ export default function AgentChat({
   const requestLocale = useRef(locale);
   useEffect(() => { requestLocale.current = locale; }, [locale]);
   const [draft, setDraft] = useState("");
+  const [voiceContainer, setVoiceContainer] = useState<HTMLDivElement | null>(null);
+  const [voiceBusy, setVoiceBusy] = useState(false);
   const [connections, setConnections] = useState<ExternalConnection[]>([]);
   const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
   const [connectionPopup, setConnectionPopup] = useState<{
@@ -568,7 +572,7 @@ export default function AgentChat({
 
   async function sendMessage(content: string) {
     const message = content.trim();
-    if (!message || status === "sending" || status === "loading" || !readyForQueries || conversationError) return;
+    if (!message || voiceBusy || status === "sending" || status === "loading" || !readyForQueries || conversationError) return;
     const sessionSignal = chatSession.current.signal;
     const signal = AbortSignal.any([sessionSignal, AbortSignal.timeout(30000)]);
 
@@ -1957,7 +1961,8 @@ export default function AgentChat({
           {suggestions.map((suggestion) => <button key={suggestion.label} type="button" onClick={() => suggestDraft(suggestion.text)}>{suggestion.label}</button>)}
         </div>}
 
-        <form className="agent-chat-composer" onSubmit={submit}>
+        <div ref={setVoiceContainer} className="voice-panel-container" />
+        <form className={`agent-chat-composer${x402UserId ? " has-voice" : ""}`} onSubmit={submit}>
           <textarea
             aria-label={locale === "es" ? "Mensaje para Carmelita" : locale === "pt" ? "Mensagem para Carmelita" : "Message Carmelita"}
             ref={composerRef}
@@ -1977,7 +1982,10 @@ export default function AgentChat({
             rows={1}
             maxLength={2000}
           />
-          <button disabled={!draft.trim() || status === "sending" || status === "loading" || !readyForQueries || conversationError}>{ui.send}</button>
+          {x402UserId && <VoiceInput userId={x402UserId} locale={locale} container={voiceContainer}
+            disabled={status === "sending" || status === "loading" || !readyForQueries || conversationError} onBusyChange={setVoiceBusy}
+            onInsert={text => {const merged = appendVoiceText(draft, text); if (merged === null) return false; setDraft(merged); composerRef.current?.focus(); return true;}}/>}
+          <button disabled={!draft.trim() || voiceBusy || status === "sending" || status === "loading" || !readyForQueries || conversationError}>{ui.send}</button>
         </form>
         <small className="agent-chat-boundary">
           {ui.boundary}
