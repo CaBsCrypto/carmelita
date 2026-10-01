@@ -7,6 +7,9 @@ import { readStytchConnectedAppsConfig } from "../app/stytch/connected-apps-conf
 import { DEFAULT_AUTOPILOT_CONFIG } from "../app/agent-autopilot";
 import { AVALANCHE_X402 } from "../app/x402-avalanche/config";
 import { agentContinuationUrl } from "../app/queries/links";
+import { executeMcpReadQuery, executeWebReadQuery } from "../app/queries/adapters";
+import { executeChatRead, parseChatReadRequest } from "../app/queries/chat";
+import { getReadQuery } from "../app/queries/registry";
 
 const date = new Date("2026-10-01T07:00:00Z");
 const own = "did:privy:owner-a";
@@ -90,6 +93,139 @@ test("owner selectors are rejected before reads; personal IDs only come from aut
   }
   assert.ok(calls.filter((call) => call.owner).every((call) => call.owner === own));
   assert.ok(!calls.some((call) => call.operation.includes("0x111111")));
+});
+
+test("conversation default and explicit full preserve the complete eighty-message DTO without mutation", async () => {
+  const conversation = { conversationId: "private-conversation-id", messages: Array.from({ length: 80 }, (_, i) => ({
+    id: `private-message-${i}`, role: i % 2 ? "assistant" as const : "user" as const,
+    content: `Español português 😀 ${i}\n  spaces remain`, createdAt: new Date(date.getTime() + i * 1000).toISOString(),
+    memoryUpdated: false, actions: [{ label: "existing action" }],
+  })) };
+  const before = structuredClone(conversation);
+  const { definitions } = fixture({ conversation: async userId => { assert.equal(userId, own); return conversation; } });
+  const query = definitions.find(item => item.id === "personal.conversation")!;
+  for (const input of [{}, { view: "full" }]) {
+    const web = await executeWebReadQuery(query.id, input, own, "es", definitions);
+    const mcp = await executeMcpReadQuery(query.toolName, input, { token: "fixture", clientId: "fixture", scopes: ["agent:conversation"], extra: { subjectType: "user", userId: own } }, definitions);
+    assert.deepEqual(web, before);
+    assert.deepEqual(mcp, before);
+    assert.strictEqual(web, conversation);
+    assert.strictEqual(mcp, conversation);
+  }
+  assert.deepEqual(conversation, before);
+});
+
+test("conversation summary returns only five Unicode-safe previews and explicit read-window coverage in both channels", async () => {
+  const content = "Español português\n" + "😀".repeat(220) + "private-content-suffix";
+  const conversation = { conversationId: "private-conversation-id", messages: Array.from({ length: 80 }, (_, i) => ({
+    id: `private-message-${i}`, role: i % 2 ? "assistant" as const : "user" as const,
+    content: i === 79 ? content : `message-${i}`, createdAt: new Date(date.getTime() + i * 1000).toISOString(),
+    actions: [{ label: "metadata-not-needed" }], memoryUpdated: true,
+  })) };
+  const before = structuredClone(conversation);
+  const { definitions } = fixture({ conversation: async userId => { assert.equal(userId, own); return conversation; } });
+  const query = definitions.find(item => item.id === "personal.conversation")!;
+  const web = await executeWebReadQuery(query.id, { view: "summary" }, own, "es", definitions) as {
+    view: string; messagePreviews: Array<{ role: string; createdAt: string; preview: string; contentTruncated: boolean }>;
+    coverage: Record<string, unknown>;
+  };
+  const mcp = await executeMcpReadQuery(query.toolName, { view: "summary" }, { token: "fixture", clientId: "fixture", scopes: ["agent:conversation"], extra: { subjectType: "user", userId: own } }, definitions);
+  assert.deepEqual(mcp, web);
+  assert.equal(web.view, "summary");
+  assert.equal(web.messagePreviews.length, 5);
+  assert.deepEqual(web.messagePreviews.slice(0, 4).map(message => message.preview), ["message-75", "message-76", "message-77", "message-78"]);
+  assert.deepEqual(web.messagePreviews.map(message => message.createdAt), conversation.messages.slice(-5).map(message => message.createdAt));
+  for (const message of web.messagePreviews) {
+    assert.deepEqual(Object.keys(message).sort(), ["contentTruncated", "createdAt", "preview", "role"]);
+    assert.ok(Array.from(message.preview).length <= 200);
+  }
+  const last = web.messagePreviews.at(-1)!;
+  assert.equal(last.preview, Array.from(content).slice(0, 200).join(""));
+  assert.match(last.preview, /Español português\n/);
+  assert.ok(last.preview.endsWith("😀"));
+  assert.equal(last.contentTruncated, true);
+  assert.equal(web.messagePreviews[0].contentTruncated, false);
+  assert.deepEqual(web.coverage, { readLimit: 80, messagesRead: 80, messagesReturned: 5, messagesOmittedFromReadWindow: 75,
+    previewMaxCodePoints: 200, previewContentTruncated: true, olderMessagesOutsideReadWindow: "not_counted" });
+  assert.doesNotMatch(JSON.stringify(web), /private-conversation-id|private-message-|private-content-suffix|metadata-not-needed|message-74/);
+  assert.deepEqual(conversation, before);
+});
+
+test("empty and short conversation summary do not invent messages, hidden metadata or total history counts", async () => {
+  for (const conversation of [
+    { conversationId: null, messages: [] },
+    { conversationId: "private-id", messages: [{ id: "private-message", role: "user" as const, content: "short\nexact", createdAt: date.toISOString() }] },
+  ]) {
+    const { definitions } = fixture({ conversation: async () => conversation });
+    const query = definitions.find(item => item.id === "personal.conversation")!;
+    const full = await executeQueryDefinition(query, {}, { userId: own, scopes: ["agent:conversation"] });
+    assert.deepEqual(full, conversation);
+    const summary = await executeQueryDefinition(query, { view: "summary" }, { userId: own, scopes: ["agent:conversation"] }) as {
+      messagePreviews: Array<{ preview: string; contentTruncated: boolean }>; coverage: Record<string, unknown>;
+    };
+    assert.equal(summary.messagePreviews.length, conversation.messages.length);
+    assert.equal(summary.coverage.messagesRead, conversation.messages.length);
+    assert.equal(summary.coverage.messagesReturned, conversation.messages.length);
+    assert.equal(summary.coverage.messagesOmittedFromReadWindow, 0);
+    assert.equal(summary.coverage.previewContentTruncated, false);
+    assert.equal(summary.coverage.olderMessagesOutsideReadWindow, "not_counted");
+    if (conversation.messages.length) assert.equal(summary.messagePreviews[0].preview, "short\nexact");
+  }
+});
+
+test("both conversation views retain scope and owner isolation before reads and reject invalid parameters", async () => {
+  let reads = 0;
+  const { definitions } = fixture({ conversation: async userId => { reads++; assert.equal(userId, own); return { conversationId: null, messages: [] }; } });
+  const query = definitions.find(item => item.id === "personal.conversation")!;
+  assert.equal(query.toolName, "get_agent_conversation");
+  assert.equal(query.scope, "agent:conversation");
+  const auth = { token: "fixture", clientId: "fixture", scopes: ["agent:conversation"], extra: { subjectType: "user", userId: own } };
+  for (const view of ["full", "summary"]) {
+    await assert.rejects(executeQueryDefinition(query, { view }, undefined), /authorization_required/);
+    await assert.rejects(executeQueryDefinition(query, { view }, { userId: own, scopes: ["agent:read"] }), /insufficient_scope/);
+    await assert.rejects(async () => executeMcpReadQuery(query.toolName, { view }, undefined, definitions), /mcp_principal_required/);
+    await assert.rejects(async () => executeMcpReadQuery(query.toolName, { view }, { ...auth, scopes: ["agent:read"] }, definitions), /mcp_scope_required/);
+    for (const selector of [{ userId: foreign }, { ownerId: foreign }, { address }]) {
+      await assert.rejects(executeWebReadQuery(query.id, { view, ...selector }, own, "es", definitions));
+      await assert.rejects(async () => executeMcpReadQuery(query.toolName, { view, ...selector }, auth, definitions));
+    }
+  }
+  for (const input of [{ view: "unexpected" }, { view: null }, { view: "summary", limit: 80 }]) {
+    await assert.rejects(executeQueryDefinition(query, input, { userId: own, scopes: ["agent:conversation"] }));
+  }
+  assert.equal(reads, 0);
+  await executeQueryDefinition(query, { view: "summary" }, { userId: own, scopes: ["agent:conversation"] });
+  assert.equal(reads, 1);
+});
+
+test("explicit summary chat uses the generic structured presentation with coverage, keeping legacy full previews", async () => {
+  const conversation = { conversationId: "private-id", messages: Array.from({ length: 80 }, (_, i) => ({
+    id: `private-${i}`, role: "user" as const, content: `message-${i}`, createdAt: date.toISOString(),
+  })) };
+  const { definitions } = fixture({ conversation: async userId => { assert.equal(userId, own); return conversation; } });
+  const fixtureQuery = definitions.find(item => item.id === "personal.conversation")!;
+  const registered = getReadQuery("personal.conversation");
+  const execute = registered.execute;
+  registered.execute = fixtureQuery.execute;
+  try {
+    for (const locale of ["es", "en", "pt"] as const) {
+      const request = parseChatReadRequest('/query get_agent_conversation {"view":"summary"}')!;
+      assert.deepEqual(request, { id: "get_agent_conversation", input: { view: "summary" } });
+      const reply = await executeChatRead(request, own, locale);
+      const json = reply.content.match(/```json\n([\s\S]+)\n```/)?.[1];
+      assert.ok(json);
+      const summary = JSON.parse(json);
+      assert.equal(summary.view, "summary");
+      assert.equal(summary.coverage.messagesRead, 80);
+      assert.equal(summary.coverage.messagesReturned, 5);
+      assert.equal(summary.messagePreviews[4].preview, "message-79");
+      assert.deepEqual(reply.actions, []);
+      assert.doesNotMatch(reply.content, /private-id|private-79|message-74/);
+      const full = await executeChatRead({ id: "personal.conversation", input: {} }, own, locale);
+      assert.match(full.content, /5 \/ 80/);
+      assert.doesNotMatch(full.content, /```json|private-id/);
+    }
+  } finally { registered.execute = execute; }
 });
 
 test("registered wallets project safe metadata, preserve pending state and never perform RPC reads", async () => {

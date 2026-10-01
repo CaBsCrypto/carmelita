@@ -101,6 +101,20 @@ export async function readOwnWalletRegistry(userId: string, listWallets: typeof 
   return { rows, context: buildMcpWalletContext(rows) };
 }
 
+function conversationSummary(conversation: Awaited<ReturnType<typeof readAgentConversation>>) {
+  const messagePreviews = conversation.messages.slice(-5).map(message => {
+    const characters = Array.from(message.content);
+    return { role: message.role, createdAt: message.createdAt,
+      preview: characters.slice(0, 200).join(""), contentTruncated: characters.length > 200 };
+  });
+  return { view: "summary" as const, messagePreviews, coverage: {
+    readLimit: 80, messagesRead: conversation.messages.length, messagesReturned: messagePreviews.length,
+    messagesOmittedFromReadWindow: conversation.messages.length - messagePreviews.length,
+    previewMaxCodePoints: 200, previewContentTruncated: messagePreviews.some(message => message.contentTruncated),
+    olderMessagesOutsideReadWindow: "not_counted" as const,
+  } };
+}
+
 export function createPersonalQueries(dependencies: PersonalQueryDependencies = defaultDependencies) {
   const queriedAt = () => new Date(dependencies.now()).toISOString();
   const ownWallets = async (userId: string) => (await readOwnWalletRegistry(userId, dependencies.wallets)).context;
@@ -113,9 +127,12 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
     }),
     defineQuery({
       id: "personal.conversation", toolName: "get_agent_conversation", title: "Get agent conversation",
-      description: "Read the authenticated user's existing durable conversation. An absent conversation is empty; this read never creates a conversation or an account.",
-      inputSchema: z.object({}).strict(), scope: "agent:conversation", dataScope: "personal_conversation",
-      execute: (_, { userId }) => dependencies.conversation(userId),
+      description: "Read the authenticated user's existing durable conversation. Prefer view='summary' in ChatGPT: at most five chronological previews of up to 200 Unicode code points, with explicit read-window coverage and content truncation. The default view='full' (including {}) preserves the complete latest-80-message DTO. An absent conversation is empty; this read never creates a conversation or an account.",
+      inputSchema: z.object({ view: z.enum(["full", "summary"]).default("full") }).strict(), scope: "agent:conversation", dataScope: "personal_conversation",
+      execute: async ({ view }, { userId }) => {
+        const conversation = await dependencies.conversation(userId);
+        return view === "summary" ? conversationSummary(conversation) : conversation;
+      },
     }),
     defineQuery({
       id: "personal.wallets", toolName: "read_personal_wallets", title: "Read registered wallets",

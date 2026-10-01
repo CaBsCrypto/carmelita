@@ -103,7 +103,8 @@ test("sensitive personal MCP tools require explicit scopes and UI opt-in", async
     const definition = readQueryDefinitions.find(query => query.toolName === toolName);
     assert.ok(definition, toolName);
     assert.equal(definition.scope, scope);
-    assert.deepEqual(Object.keys(definition.inputSchema.shape), []);
+    assert.deepEqual(Object.keys(definition.inputSchema.shape), toolName === "get_agent_conversation" ? ["view"] : []);
+    assert.deepEqual(definition.inputSchema.parse({}), toolName === "get_agent_conversation" ? { view: "full" } : {});
     let ownerReads = 0;
     const fixture = { ...definition, execute: async (_input: unknown, context: { userId: string }) => { ownerReads++; return { owner: context.userId }; } };
     const auth = { token: "fixture-not-a-credential", clientId: "fixture", scopes: [scope], extra: { subjectType: "user", userId: "authorized-owner" } };
