@@ -19,7 +19,7 @@ export default function WorkspaceAvailability({ locale, getAccessToken }: { loca
   useEffect(() => {
     const controller = new AbortController();
     void readWorkspaceQuery<{ capabilities: GatewayCapability[] }>("offchain.capabilities.list", getAccessToken, locale, controller.signal)
-      .then(result => { if (!controller.signal.aborted) setCapabilities(result.capabilities); })
+      .then(result => { if (!controller.signal.aborted) { setCapabilities(result.capabilities); setError(false); } })
       .catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => controller.abort();
   }, [getAccessToken, locale]);
