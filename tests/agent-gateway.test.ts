@@ -17,7 +17,9 @@ test("gateway exposes a versioned, honest multichain Testnet catalog", () => {
   assert.ok(capabilities.some((item) => item.network === "avalanche:fuji"));
   assert.ok(capabilities.some((item) => item.network === "offchain:testnet"));
   assert.ok(capabilities.every((item) => item.version === "2026-08-03"));
-  assert.ok(capabilities.every((item) => item.execution.exposedByGateway === false));
+  assert.deepEqual(capabilities.filter(item => item.execution.exposedByGateway).map(item => item.id).sort(),
+    ["offchain.defillama.chains", "offchain.market.quote"]);
+  assert.ok(capabilities.filter(item => item.operation !== "read").every(item => !item.execution.exposedByGateway));
   assert.equal(
     capabilities.find((item) => item.id === "stellar.soroswap.swap")?.status,
     "planned",

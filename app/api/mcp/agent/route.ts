@@ -8,6 +8,10 @@ import { avalancheCapabilityIdSchema, listAvalancheCapabilities, planAvalancheCa
 import { searchAvaxSkills } from "@/app/connectors/avaxskills";
 import { getAgentConversation } from "@/app/agent-chat-store";
 import { getAgentMcpContext } from "@/app/mcp/agent-context";
+import { compareChains } from "@/app/market-data/defillama";
+import { executeMarketRead } from "@/app/market-data/access";
+import { getMarketQuotes, searchMarketAssets } from "@/app/market-data/service";
+import { chainComparisonInputSchema, marketQuotesInputSchema, marketSearchInputSchema } from "@/app/market-data/types";
 import {
   authenticateMcp,
   requireMcpSubject,
@@ -38,6 +42,54 @@ let handler: ReturnType<typeof createMcpHandler> | null = null;
 function getHandler() {
   return (handler ??= createMcpHandler(
     (server) => {
+      server.registerTool(
+        "search_market_assets",
+        {
+          title: "Search market assets",
+          description: "Resolve a name, ticker, provider ID or Mainnet network and token address against market catalogs. Return candidates when a ticker is ambiguous; never select the first or largest asset automatically. No wallet is created or valued.",
+          inputSchema: marketSearchInputSchema.shape,
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+        },
+        async (input, extra) => {
+          try {
+            return ok(await executeMarketRead(extra.authInfo, async () => {
+              const parsed = marketSearchInputSchema.parse(input);
+              return searchMarketAssets(parsed.asset, parsed.limit);
+            }));
+          } catch (error) { return fail(error); }
+        },
+      );
+      server.registerTool(
+        "get_market_quotes",
+        {
+          title: "Get fresh market quotes",
+          description: "Read USD market data for 1 to 10 assets. Preserve returned asset identities, sources, timestamps, cache and per-asset status. Ask for a returned candidate ID when ambiguous. Stale data is not a current price; null is unavailable, not zero. These are Mainnet market data and never value Testnet wallet balances.",
+          inputSchema: marketQuotesInputSchema.shape,
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+        },
+        async (input, extra) => {
+          try {
+            return ok(await executeMarketRead(extra.authInfo, async () => {
+              const parsed = marketQuotesInputSchema.parse(input);
+              return getMarketQuotes(parsed.assets);
+            }));
+          } catch (error) { return fail(error); }
+        },
+      );
+      server.registerTool(
+        "compare_chains",
+        {
+          title: "Compare chain TVL and associated token market cap",
+          description: "Compare Mainnet chain TVL from DefiLlama and global market cap of each chain's associated token. Default sort is TVL; 10 rows by default, 20 maximum. TVL is not market cap. Associated and gas tokens can differ; never assign ETH's global capitalization to Base. Respect unavailable, stale and partial results; TVL has a fetched timestamp, not a fabricated update timestamp.",
+          inputSchema: chainComparisonInputSchema.shape,
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+        },
+        async (input, extra) => {
+          try {
+            return ok(await executeMarketRead(extra.authInfo, () => compareChains(chainComparisonInputSchema.parse(input))));
+          } catch (error) { return fail(error); }
+        },
+      );
       server.registerTool(
         "get_agent_context",
         {
