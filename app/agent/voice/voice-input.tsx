@@ -8,6 +8,8 @@ import {VoiceRecorder} from "./recorder";
 import {decodeVoice, LocalTranscriber} from "./local-transcription";
 import {voiceCopy} from "./copy";
 import {isSpeechLanguage, type SpeechLanguage} from "./speech-language";
+import {isVoiceModel, type VoiceModel} from "./transcription-model";
+import {prepareTranscriptionAudio} from "./prepare-audio";
 
 type Stage = "idle" | "asking" | "recording" | "saving" | "ready" | "loading" | "transcribing";
 const unavailable = async () => { throw new Error("voice_storage_unavailable"); };
@@ -26,6 +28,9 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
   const [text, setText] = useState("");
   const [speechLanguage, setSpeechLanguage] = useState<SpeechLanguage | null>(null);
   const [textLanguage, setTextLanguage] = useState<SpeechLanguage | null>(null);
+  const [model, setModel] = useState<VoiceModel>("base");
+  const [textModel, setTextModel] = useState<VoiceModel | null>(null);
+  const [transcriptValid, setTranscriptValid] = useState(false);
   const [error, setError] = useState<keyof typeof t | null>(null);
   const [storageWarning, setStorageWarning] = useState(false);
   const [recovered, setRecovered] = useState(false);
@@ -50,6 +55,8 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
         setDraft({...saved, interrupted: saved.interrupted || !saved.completed}); setText(saved.transcript ?? "");
         const language = isSpeechLanguage(saved.speechLanguage) ? saved.speechLanguage : null;
         setSpeechLanguage(language); setTextLanguage(language);
+        const savedModel = isVoiceModel(saved.transcriptModel) ? saved.transcriptModel : null;
+        setModel(savedModel ?? "base"); setTextModel(savedModel); setTranscriptValid(Boolean(language && savedModel && saved.transcript));
         setStage("ready"); setRecovered(true); setExpanded(true);
       }).catch(() => { if (!controller.signal.aborted) setStorageWarning(true); })
       .finally(() => {
@@ -87,7 +94,7 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     try {
       await current.start(saved => {
         if (lifetime.current.signal.aborted || recorder.current !== current) return;
-        setDraft(saved); setStage("ready"); setText(""); setTextLanguage(null); setExpanded(true);
+        setDraft(saved); setStage("ready"); setText(""); setTextLanguage(null); setTextModel(null); setTranscriptValid(false); setExpanded(true);
       });
       if (!lifetime.current.signal.aborted && recorder.current === current) setStage("recording");
     } catch {
@@ -104,20 +111,22 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     if (!draft || busy || !supported || !speechLanguage) return;
     const controller = new AbortController(); job.current = controller;
     const signal = AbortSignal.any([lifetime.current.signal, controller.signal, AbortSignal.timeout(240000)]);
-    setStage("loading"); setError(null); setDownloadedMb(0); setInserted(false);
+    setStage("loading"); setError(null); setDownloadedMb(0); setInserted(false); setTranscriptValid(false);
     const downloads = new Map<string, number>();
     try {
-      const audio = await decodeVoice(voiceBlob(draft), signal);
-      let power = 0; for (const sample of audio) power += sample * sample;
-      if (Math.sqrt(power / audio.length) < 0.001) throw new Error("voice_empty");
+      // Preserve old text, but do not recover it as the result of this retry.
+      try { await sessionAbortable(() => store.current.transcript(userId, draft.id, text), AbortSignal.any([signal, AbortSignal.timeout(4000)])); }
+      catch { if (!lifetime.current.signal.aborted) setStorageWarning(true); }
+      signal.throwIfAborted();
+      const audio = prepareTranscriptionAudio(await decodeVoice(voiceBlob(draft), signal));
       transcriber.current ??= new LocalTranscriber();
       const result = await transcriber.current.transcribe(audio, speechLanguage, signal, progress => {
         if (signal.aborted) return;
         if (progress.kind === "transcribing") setStage("transcribing");
         else { downloads.set(progress.file, progress.loaded); setDownloadedMb([...downloads.values()].reduce((sum, bytes) => sum + bytes, 0) / 1000000); }
-      });
-      signal.throwIfAborted(); setText(result); setTextLanguage(speechLanguage); setStage("ready");
-      try { await sessionAbortable(() => store.current.transcript(userId, draft.id, result, speechLanguage), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
+      }, model);
+      signal.throwIfAborted(); setText(result); setTextLanguage(speechLanguage); setTextModel(model); setTranscriptValid(true); setStage("ready");
+      try { await sessionAbortable(() => store.current.transcript(userId, draft.id, result, speechLanguage, model), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
       catch { if (!lifetime.current.signal.aborted) setStorageWarning(true); }
     } catch (caught) {
       if (lifetime.current.signal.aborted) return;
@@ -131,13 +140,13 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
     try { await sessionAbortable(() => store.current.remove(userId, draft.id), AbortSignal.any([lifetime.current.signal, AbortSignal.timeout(4000)])); }
     catch { if (!lifetime.current.signal.aborted) { setStorageWarning(true); return; } }
     if (lifetime.current.signal.aborted) return;
-    transcriber.current?.dispose(); setDraft(null); setText(""); setTextLanguage(null); setError(null); setStage("idle"); setExpanded(false);
+    transcriber.current?.dispose(); setDraft(null); setText(""); setTextLanguage(null); setTextModel(null); setTranscriptValid(false); setError(null); setStage("idle"); setExpanded(false);
   }
   function useText() {
-    if (!text.trim() || busy || !speechLanguage || textLanguage !== speechLanguage) return;
+    if (!text.trim() || busy || !speechLanguage || textLanguage !== speechLanguage || textModel !== model || !transcriptValid) return;
     if (!onInsert(text)) { setError("tooLong"); return; }
     setInserted(true); setError(null);
-    if (draft) void sessionAbortable(() => store.current.transcript(userId, draft.id, text, speechLanguage), AbortSignal.timeout(4000)).catch(() => { if (!lifetime.current.signal.aborted) setStorageWarning(true); });
+    if (draft) void sessionAbortable(() => store.current.transcript(userId, draft.id, text, speechLanguage, model), AbortSignal.timeout(4000)).catch(() => { if (!lifetime.current.signal.aborted) setStorageWarning(true); });
   }
   const label = stage === "recording" ? t.stop : stage === "asking" ? t.cancel : draft ? t.saved : t.record;
   return <>
@@ -150,6 +159,9 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
       <label>{t.language}<select value={speechLanguage ?? ""} disabled={busy} onChange={event => {setSpeechLanguage(isSpeechLanguage(event.target.value) ? event.target.value : null); setInserted(false);}}>
         <option value="">{t.chooseLanguage}</option><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option>
       </select></label><small>{t.languageNote}</small>
+      <label>{t.model}<select value={model} disabled={busy} onChange={event => {if (isVoiceModel(event.target.value)) setModel(event.target.value); setInserted(false);}}>
+        <option value="base">{t.baseModel}</option><option value="tiny">{t.tinyModel}</option>
+      </select></label><small>{t.modelNote}</small>
       {stage === "asking" && <p role="status">{t.asking}</p>}
       {stage === "recording" && <p role="status">{t.recording} · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} · {t.limit}</p>}
       {stage === "saving" && <p role="status">{t.saving}</p>}
@@ -163,7 +175,7 @@ export default function VoiceInput({userId, locale, container, disabled, onInser
           <button type="button" disabled={busy} onClick={() => void discard()}>{t.discard}</button>
         </div>
         {text && <><label>{t.text}<textarea value={text} maxLength={12000} onChange={event => {setText(event.target.value); setInserted(false);}}/></label>
-          <small>{t.review}</small>{textLanguage !== speechLanguage || !speechLanguage ? <p role="status">{t.reTranscribe}</p> : null}<button type="button" disabled={busy || !text.trim() || inserted || !speechLanguage || textLanguage !== speechLanguage} onClick={useText}>{t.use}</button></>}
+          <small>{t.review}</small>{textLanguage !== speechLanguage || !speechLanguage || textModel !== model || !transcriptValid ? <p role="status">{t.reTranscribe}</p> : null}<button type="button" disabled={busy || !text.trim() || inserted || !speechLanguage || textLanguage !== speechLanguage || textModel !== model || !transcriptValid} onClick={useText}>{t.use}</button></>}
         {inserted && <p role="status">{t.inserted}</p>}
       </>}
       {storageWarning && <p role="alert">{t.storage}</p>}{error && <p role="alert">{t[error]}</p>}

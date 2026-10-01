@@ -1,17 +1,23 @@
 import {isSpeechLanguage, type SpeechLanguage} from "./speech-language";
 import { sessionAbortable } from "../session-request";
 import { MAX_VOICE_BYTES, MAX_VOICE_SECONDS } from "./draft-store";
+import {isVoiceModel, type VoiceModel} from "./transcription-model";
 
 export type VoiceProgress = {kind: "progress"; file: string; loaded: number; total: number} | {kind: "transcribing"};
 export class LocalTranscriber {
   private worker?: Worker;
+  private workerModel?: VoiceModel;
   private cancelPending?: () => void;
-  constructor(private factory = () => new Worker("/voice/whisper-worker.js", {type: "module"})) {}
-  async transcribe(audio: Float32Array, language: SpeechLanguage, signal: AbortSignal, progress: (event: VoiceProgress) => void): Promise<string> {
+  // Version the message protocol so a cached Tiny-only worker cannot handle Base.
+  constructor(private factory = () => new Worker("/voice/whisper-worker.js?v=2", {type: "module"})) {}
+  async transcribe(audio: Float32Array, language: SpeechLanguage, signal: AbortSignal, progress: (event: VoiceProgress) => void, model: VoiceModel = "tiny"): Promise<string> {
     signal.throwIfAborted();
     if (!isSpeechLanguage(language)) throw new Error("voice_language_required");
+    if (!isVoiceModel(model)) throw new Error("voice_model_required");
     if (this.cancelPending) throw new Error("voice_busy");
+    if (this.worker && this.workerModel !== model) { this.worker.terminate(); this.worker = undefined; }
     this.worker ??= this.factory();
+    this.workerModel = model;
     const worker = this.worker;
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
@@ -34,7 +40,7 @@ export class LocalTranscriber {
         else if (data.kind === "transcribing") progress({kind: "transcribing"});
         else if (data.kind === "progress" && typeof data.file === "string" && Number.isFinite(data.loaded) && Number.isFinite(data.total)) progress({kind: "progress", file: data.file, loaded: Math.max(0, data.loaded), total: Math.max(0, data.total)});
       };
-      try { worker.postMessage({id, audio, language}, [audio.buffer]); }
+      try { worker.postMessage({id, audio, language, model}, [audio.buffer]); }
       catch { finish(new Error("voice_transcription_failed")); }
     });
   }
