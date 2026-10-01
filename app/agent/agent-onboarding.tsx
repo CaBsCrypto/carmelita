@@ -1,12 +1,15 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { usePrivy, useUser } from "@privy-io/react-auth";
 import AgentChat from "./agent-chat";
 import AgentMemoryVault from "./agent-memory-vault";
-import WalletCenter from "./wallet-center";
-import WebMcpInspector from "./webmcp-inspector";
+import RegistryWalletPanel from "./registry-wallet-panel";
+import AgentPanel from "./agent-panel";
+import { workspaceCopy } from "./workspace-copy";
+import { LanguageControl } from "../language-toggle";
+import BrandLockup from "../brand-lockup";
+import Link from "next/link";
+import WebMcpInspector, { WebMcpProvider } from "./webmcp-inspector";
 import AgentExternalAccess from "./agent-external-access";
 import AgentConnectedApps from "./agent-connected-apps";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -145,9 +148,6 @@ type TravelSearchResult = {
   hotels: TravelHotel[];
 };
 
-function shortAddress(address: string) {
-  return address.slice(0, 12) + "..." + address.slice(-10);
-}
 
 export default function AgentOnboarding({
   configured,
@@ -158,7 +158,12 @@ export default function AgentOnboarding({
 }) {
   const { locale } = useLocale();
   if (!configured) return <PrivySetupRequired />;
-  return <PrivyAgent locale={locale} autoLogin={autoLogin} />;
+  return <PrivySession locale={locale} autoLogin={autoLogin} />;
+}
+
+function PrivySession({locale, autoLogin}: {locale: Locale; autoLogin: boolean}) {
+  const {user, authenticated} = usePrivy();
+  return <PrivyAgent key={authenticated ? user?.id : "visitor"} locale={locale} autoLogin={autoLogin} />;
 }
 
 function PrivySetupRequired() {
@@ -191,6 +196,12 @@ function PrivyAgent({
 }) {
   const t = onboardingUi[locale];
   const pc = preparationCopy[locale];
+  const w = workspaceCopy[locale];
+  const [panel, setPanel] = useState<"wallets" | "functions" | "account" | "developers" | "travel" | null>(null);
+  const [draftSuggestion, setDraftSuggestion] = useState<{id: number; text: string}>();
+  const [connectionsContainer, setConnectionsContainer] = useState<HTMLElement | null>(null);
+  const suggestionId = useRef(0);
+  function suggest(text: string) { setPanel(null); setDraftSuggestion({id: ++suggestionId.current, text}); }
   const { ready, authenticated, user, login, getAccessToken } = usePrivy();
   const session = useSessionClose();
   const userId = user?.id;
@@ -201,7 +212,7 @@ function PrivyAgent({
   const [travelResult, setTravelResult] = useState<TravelSearchResult | null>(null);
   const [travelStatus, setTravelStatus] = useState<"idle" | "searching" | "error">("idle");
   const [travelError, setTravelError] = useState<string | null>(null);
-  const [selectedHotel, setSelectedHotel] = useState<TravelHotel | null>(null);
+  const travelRequest = useRef<AbortController | null>(null);
   const bootstrappedFor = useRef<string | null>(null);
   const loginStarted = useRef(false);
   const bootstrapRequest = useRef<AbortController | null>(null);
@@ -221,7 +232,7 @@ function PrivyAgent({
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/bootstrap", {
         method: "POST",
-        signal: controller.signal,
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -286,12 +297,15 @@ function PrivyAgent({
     const form = new FormData(event.currentTarget);
     setTravelStatus("searching");
     setTravelError(null);
-    setSelectedHotel(null);
+    travelRequest.current?.abort();
+    const controller = new AbortController();
+    travelRequest.current = controller;
     try {
       const token = await getAccessToken();
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/travel/search", {
         method: "POST",
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -306,9 +320,11 @@ function PrivyAgent({
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Travel search failed");
+      controller.signal.throwIfAborted();
       setTravelResult(body);
       setTravelStatus("idle");
     } catch (caught) {
+      if (controller.signal.aborted) return;
       setTravelError(caught instanceof Error ? caught.message : "Travel search failed");
       setTravelStatus("error");
     }
@@ -324,254 +340,69 @@ function PrivyAgent({
   }
 
   if (!authenticated) {
-    return (
-      <section className="agent-entry shell">
-        <div>
-          <p className="eyebrow">{t.entryEyebrow}</p>
-          <h1>{t.entryTitle}</h1>
-          <p>
-            {t.entryText}
-          </p>
-          <button className="agent-primary" disabled={session.closing || session.state === "failed"} onClick={() => login()}>
-            {t.create}
-          </button>
-          <small>{t.boundary}</small>
-          {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
-        </div>
-        <aside className="agent-onboarding-preview">
-          <header><span>{t.onboarding}</span><b>TESTNET</b></header>
-          <ol>
-            <li><b>01</b><span>{t.steps[0]}</span></li>
-            <li><b>02</b><span>{t.steps[1]}</span></li>
-            <li><b>03</b><span>{t.steps[2]}</span></li>
-            <li><b>04</b><span>{t.steps[3]}</span></li>
-          </ol>
-        </aside>
-      </section>
-    );
+    return <section className="agent-visitor shell">
+      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /></header>
+      <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
+      {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
+    </section>;
   }
-
-  return (
-    <section className="agent-workspace shell">
-      <header>
-        <div>
-          <p className="eyebrow">{t.workspace}</p>
-          <h1>{status === "ready" ? t.ready : t.creating}</h1>
-          <p>{result?.profile?.email ?? user?.email?.address ?? t.authenticated}</p>
-        </div>
-        <button className="agent-signout" disabled={session.closing} onClick={() => void signOut()}>{session.closing ? sessionCloseCopy[locale].closing : t.signout}</button>
+  const current = result?.user.id === userId ? result : null;
+  const stellar = current?.wallet ?? null;
+  const partial = current && Object.values(current.preparation).some(item => item.status !== "ready");
+  return <WebMcpProvider key={userId} locale={locale} getAccessToken={getAccessToken}>
+    <section className="agent-workspace agent-chat-first shell">
+      <header className="workspace-header">
+        <Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span>
+        <nav aria-label={w.functions}>
+          <button onClick={() => setPanel("functions")}>{w.functions}</button>
+          <button onClick={() => setPanel("wallets")}>{w.wallets}</button>
+          <button onClick={() => setPanel("account")}>{w.account}</button>
+        </nav>
       </header>
-      {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed}</p>}
-
-      {status === "creating" && (
-        <div className="agent-provisioning">
-          <i />
-          <div><strong>{t.provisioning}</strong><span>{t.pipeline}</span></div>
-        </div>
-      )}
-
-      {status === "error" && (
-        <div className="agent-bootstrap-error">
-          <strong>{t.error}</strong>
-          <span>{error}</span>
-          <button onClick={() => bootstrap(true)}>{t.retry}</button>
-        </div>
-      )}
-
-      {result && result.user.id === user?.id && (
-        <>
-        <section aria-live="polite" className="agent-bootstrap-error">
-          {Object.values(result.preparation).some(item => item.status !== "ready") && <strong>{pc.partial}</strong>}
-          {Object.entries(result.preparation).map(([family, item]) => <p key={family}>{family.toUpperCase()}: {pc[item.status]}</p>)}
-          {(Object.values(result.preparation).some(item => item.retryable) || result.activation === "unknown") && <button disabled={status === "creating"} onClick={() => void bootstrap(true)}>{pc.retry}</button>}
-        </section>
-        <AgentChat
-          key={result.user.id}
-          email={result.profile?.email ?? user?.email?.address ?? "Privy account"}
-          walletAddress={result.wallet?.address ?? ""}
-          walletBalance={
-            result.account?.balances.find((balance) => balance.asset === "XLM")?.balance ??
-            pc.unavailable
-          }
-          getAccessToken={getAccessToken}
-        />
-        <AgentMemoryVault getAccessToken={getAccessToken} />
-
-        <AgentExternalAccess locale={locale} getAccessToken={getAccessToken} />
-        <AgentConnectedApps locale={locale} getAccessToken={getAccessToken} />
-
-        <WalletCenter
-          key={`${result.user.id}:${result.wallets.evm?.id}:${result.wallets.solana?.id}:${result.evm?.networks.map(network => network.id).join(",")}`}
-          locale={locale}
-          stellarStatus={result.wallet ? (result.activation === "unknown" ? pc.unknown : result.activation === "pending" ? t.pending : t.active) : pc.failed}
-          stellarAddress={result.wallet?.address ?? ""}
-          stellarBalance={
-            result.account?.balances.find((balance) => balance.asset === "XLM")?.balance ?? pc.unavailable
-          }
-          getAccessToken={getAccessToken}
-        />
-        <WebMcpInspector locale={locale} getAccessToken={getAccessToken} />
-
-
-        <div className="agent-wallet-grid">
-          {result.wallet && <article className="agent-wallet-card">
-            <header><span>{t.stellarWallet}</span><b>{result.activation === "unknown" ? pc.unknown : result.activation === "pending" ? t.pending : t.active}</b></header>
-            <div className="agent-wallet-mark">S</div>
-            <h2>{shortAddress(result.wallet.address)}</h2><code>{result.wallet.address}</code>
-            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Stellar Testnet</dd></div>
-              <div><dt>{t.created}</dt><dd>{result.wallet.created ? t.justNow : t.existing}</dd></div></dl>
-          </article>}
-          {result.wallets.evm && result.evm && <article className="agent-wallet-card">
-            <header><span>{t.evmWallet}</span><b>{pc.ready}</b></header>
-            <div className="agent-wallet-mark">0x</div>
-            <h2>{shortAddress(result.wallets.evm.address)}</h2><code>{result.wallets.evm.address}</code>
-            <p>{t.shared}</p>
-            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div>
-              <div><dt>{t.created}</dt><dd>{result.wallets.evm.created ? t.justNow : t.existing}</dd></div></dl>
-            {result.evm.networks.map((network) => <a key={network.id} href={`${network.explorerUrl}/address/${result.wallets.evm!.address}`} target="_blank" rel="noreferrer">{network.name} · {t.explorer}</a>)}
-          </article>}
-          {result.wallets.solana && <article className="agent-wallet-card">
-            <header><span>{t.solanaWallet}</span><b>{pc.ready}</b></header>
-            <div className="agent-wallet-mark">◎</div>
-            <h2>{shortAddress(result.wallets.solana.address)}</h2><code>{result.wallets.solana.address}</code>
-            <dl><div><dt>{t.ownership}</dt><dd>{t.owned}</dd></div><div><dt>{t.network}</dt><dd>Solana Devnet</dd></div>
-              <div><dt>{t.created}</dt><dd>{result.wallets.solana.created ? t.justNow : t.existing}</dd></div></dl>
-            <a href={`https://explorer.solana.com/address/${result.wallets.solana.address}?cluster=devnet`} target="_blank" rel="noreferrer">{t.explorer}</a>
-          </article>}          <div className="agent-ready-panel">
-            <p className="eyebrow">{Object.values(result.preparation).every(item => item.status === "ready") ? t.ready : pc.partial}</p>
-            <h2>{t.workspace}</h2>
-            <p>
-              Future actions can prepare intents and request scoped authorization
-              from this wallet. Login alone never authorizes a payment.
-            </p>
-            <div className="agent-balances">
-              {(result.account?.balances.length
-                ? result.account.balances
-                : [{ asset: "XLM", balance: result.account ? t.pending : pc.unavailable }]
-              ).map((balance) => (
-                <span key={balance.asset}><b>{balance.asset}</b>{balance.balance}</span>
-              ))}
-            </div>
-            <a href="/demo">Continue to the action console</a>
-          </div>
-        </div>
-
-        <section className="agent-account-overview">
-          <article>
-            <p className="eyebrow">ACCOUNT</p>
-            <h2>Your identity follows every authorized action.</h2>
-            <dl>
-              <div><dt>Email</dt><dd>{result.profile?.email ?? "Privy account"}</dd></div>
-              <div><dt>Account status</dt><dd>{result.profile?.status ?? "active"}</dd></div>
-              <div><dt>Data store</dt><dd>{result.persistence?.configured ? "Neon connected" : "—"}</dd></div>
-              <div><dt>User ID</dt><dd>{(result.profile?.id ?? result.user.id).slice(0, 22) + "..."}</dd></div>
-            </dl>
-          </article>
-          <article>
-            <p className="eyebrow">RECENT HISTORY</p>
-            <h2>Activity saved to your account.</h2>
-            {result.history?.length ? (
-              <ol>
-                {result.history.map((event) => (
-                  <li key={event.id}>
-                    <span>{event.summary}</span>
-                    <time>{new Date(event.createdAt).toLocaleString()}</time>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="agent-empty-history">
-                {result.persistence?.configured
-                  ? "Your first account activity will appear here."
-                  : "Connect Neon to persist account history across sessions."}
-              </p>
-            )}
-          </article>
-        </section>
-
-        <section className="agent-travel">
-          <header>
-            <div>
-              <p className="eyebrow">LIVE TRAVALA SEARCH</p>
-              <h2>Ask your agent to find a place to stay.</h2>
-              <p>Real hotel inventory and prices. Search only: booking and payment remain disabled.</p>
-            </div>
-            <span>READ-ONLY MCP</span>
-          </header>
-
-          <form onSubmit={searchTravel}>
-            <label>Where<input name="location" placeholder="Santiago, Chile" required minLength={2} /></label>
-            <label>Check-in<input name="checkIn" type="date" required /></label>
-            <label>Check-out<input name="checkOut" type="date" required /></label>
-            <label>
-              Guests
-              <select name="guests" defaultValue="2">
-                {[1, 2, 3, 4, 5, 6].map((count) => (
-                  <option key={count} value={count}>{count}</option>
-                ))}
-              </select>
-            </label>
-            <label>Max USD/night<input name="maxPrice" type="number" min="1" max="10000" placeholder="200" /></label>
-            <button disabled={travelStatus === "searching"}>
-              {travelStatus === "searching" ? "Searching Travala..." : "Search hotels"}
-            </button>
-          </form>
-
-          {travelError && <p className="agent-travel-error">{travelError}</p>}
-
-          {travelResult && (
-            <>
-              <div className="agent-travel-summary">
-                <strong>{travelResult.hotels.length} live options found</strong>
-                <span>Prices can change until a booking is confirmed.</span>
-              </div>
-              <div className="agent-hotel-list">
-                {travelResult.hotels.map((hotel) => (
-                  <article key={hotel.packageId} className={selectedHotel?.packageId === hotel.packageId ? "selected" : ""}>
-                    {hotel.thumbnail ? (
-                      <img src={hotel.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="agent-hotel-placeholder">TRAVALA</div>
-                    )}
-                    <div>
-                      <small>{hotel.star ? hotel.star + "-STAR HOTEL" : "HOTEL"}</small>
-                      <h3>{hotel.name}</h3>
-                      <p>{hotel.address ?? hotel.refundability ?? "Live Travala inventory"}</p>
-                      <div className="agent-hotel-meta">
-                        {hotel.rating != null && <span>Rating <b>{hotel.rating}</b></span>}
-                        {hotel.refundability && <span>{hotel.refundability}</span>}
-                        {hotel.mealType && <span>{hotel.mealType.replaceAll("_", " ")}</span>}
-                      </div>
-                    </div>
-                    <footer>
-                      <strong>{"$" + hotel.totalPriceUSD.toFixed(2)}</strong>
-                      <small>{"$" + hotel.pricePerNightUSD.toFixed(2)} / night</small>
-                      <button type="button" onClick={() => setSelectedHotel(hotel)}>
-                        {selectedHotel?.packageId === hotel.packageId ? "Selected" : "Select"}
-                      </button>
-                    </footer>
-                  </article>
-                ))}
-              </div>
-            </>
-          )}
-
-          {selectedHotel && (
-            <aside className="agent-travel-selection">
-              <div>
-                <p className="eyebrow">PREPARED FOR REVIEW</p>
-                <h3>{selectedHotel.name}</h3>
-                <p>{selectedHotel.cancellationPolicyString ?? "Review final conditions before booking."}</p>
-              </div>
-              <div>
-                <strong>{"$" + selectedHotel.totalPriceUSD.toFixed(2)} USD</strong>
-                <span>Booking disabled in the Stellar MVP</span>
-              </div>
-            </aside>
-          )}
-        </section>
-        </>
-      )}
+      {session.state === "failed" && <p role="alert" className="workspace-notice">{sessionCloseCopy[locale].failed}</p>}
+      {status === "creating" && <p role="status" className="workspace-notice">{w.preparing}</p>}
+      {status === "error" && <div role="alert" className="workspace-notice workspace-warning"><span>{w.failed}</span><button onClick={() => void bootstrap(true)}>{w.retry}</button></div>}
+      {partial && status !== "creating" && <div role="status" className="workspace-notice workspace-warning"><span>{w.partial}</span>{Object.values(current.preparation).some(item => item.retryable) && <button onClick={() => void bootstrap(true)}>{w.retry}</button>}</div>}
+      <AgentChat key={userId} email={current?.profile?.email ?? user?.email?.address ?? t.authenticated}
+        walletAddress={stellar?.address ?? ""} walletBalance={current?.account?.balances.find(balance => balance.asset === "XLM")?.balance ?? pc.unavailable}
+        getAccessToken={getAccessToken} draftSuggestion={draftSuggestion} readyForQueries={Boolean(current)} onNavigateToChat={() => setPanel(null)}
+        showConnections={panel === "account"} connectionsContainer={connectionsContainer} />
+      {panel && <AgentPanel title={w[panel === "travel" ? "travel" : panel]} closeLabel={w.close} onClose={() => setPanel(null)}>
+        {panel === "wallets" && <RegistryWalletPanel key={userId} locale={locale} getAccessToken={getAccessToken} onQueryBalances={() => suggest(locale === "es" ? "Consulta los saldos de mis cinco redes sin realizar operaciones." : locale === "pt" ? "Consulte os saldos das minhas cinco redes sem realizar operações." : "Query balances on my five networks without performing operations.")} />}
+        {panel === "functions" && <div className="workspace-functions">
+          <p>{w.exampleNote}</p><h3>{w.consultations}</h3>
+          <article><h4>{w.wallets}</h4><p>{w.registryNote}</p><button onClick={() => suggest(w.walletPrompt)}>{w.fill}</button></article>
+          <article><h4>{w.price}</h4><p>{w.marketNote}</p><button onClick={() => suggest(w.pricePrompt)}>{w.fill}</button></article>
+          <article><h4>{w.capabilities}</h4><button onClick={() => suggest(w.capabilitiesPrompt)}>{w.fill}</button></article>
+          <h3>{w.connections}</h3><p>{w.chatgptNote}</p><p>{w.notionNote}</p><button onClick={() => setPanel("account")}>{w.connections}</button>
+          <article><h4>Travala</h4><p>{w.travelNote}</p><button onClick={() => setPanel("travel")}>{w.travel}</button></article>
+          <details><summary>{w.advanced}</summary><p>{w.advancedNote}</p><button onClick={() => suggest(w.capabilitiesPrompt)}>{w.capabilities}</button></details>
+          <button onClick={() => setPanel("developers")}>{w.developers}</button><Link href="/guide">{w.guide}</Link>
+        </div>}
+        {panel === "account" && <div className="workspace-account">
+          <LanguageControl /><h3>{w.identity}</h3><p>{current?.profile?.email ?? user?.email?.address ?? t.authenticated}</p>
+          <button disabled={session.closing} onClick={() => void signOut()}>{session.closing ? sessionCloseCopy[locale].closing : w.signout}</button>
+          <details><summary>{w.connections}</summary><AgentConnectedApps key={userId} locale={locale} getAccessToken={getAccessToken} /><div ref={setConnectionsContainer} id="agent-account-connections" /></details>
+          <details><summary>{w.memory}</summary><AgentMemoryVault key={userId} getAccessToken={getAccessToken} /></details>
+          <details><summary>{w.activity}</summary>{current?.history?.length ? <ol>{current.history.map(event => <li key={event.id}><p>{event.summary}</p><time>{new Date(event.createdAt).toLocaleString(locale)}</time></li>)}</ol> : <p>{w.empty}</p>}</details>
+          <button onClick={() => setPanel("developers")}>{w.developers}</button><Link href="/guide">{w.guide}</Link>
+        </div>}
+        {panel === "developers" && <div className="workspace-developers"><p>{w.developerNote}</p>
+          <h3>{w.commands}</h3>{[w.walletPrompt, w.pricePrompt, w.capabilitiesPrompt].map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
+          <details><summary>{w.diagnostics}</summary><WebMcpInspector locale={locale} getAccessToken={getAccessToken} /></details>
+          <details><summary>{w.credentials}</summary><AgentExternalAccess key={userId} locale={locale} getAccessToken={getAccessToken} /></details>
+          {status === "error" && <details><summary>{w.help}</summary><p>{error}</p></details>}
+        </div>}
+        {panel === "travel" && <section className="agent-travel"><p>{w.travelNote}</p><form onSubmit={searchTravel}>
+          <label>{w.where}<input name="location" placeholder="Santiago, Chile" required minLength={2} /></label>
+          <label>{w.checkIn}<input name="checkIn" type="date" required /></label><label>{w.checkOut}<input name="checkOut" type="date" required /></label>
+          <label>{w.guests}<select name="guests" defaultValue="2">{[1,2,3,4,5,6].map(count => <option key={count} value={count}>{count}</option>)}</select></label>
+          <label>{w.maxPrice}<input name="maxPrice" type="number" min="1" max="10000" placeholder="200" /></label>
+          <button disabled={travelStatus === "searching"}>{travelStatus === "searching" ? w.searching : w.search}</button>
+        </form>{travelError && <p role="alert">{w.travelError}</p>}
+          {travelResult && <div aria-live="polite"><p>{travelResult.hotels.length} {w.options}</p>{travelResult.hotels.map(hotel => <article key={hotel.packageId}><h3>{hotel.name}</h3><p>{hotel.address}</p><p>USD {hotel.totalPriceUSD.toFixed(2)} · USD {hotel.pricePerNightUSD.toFixed(2)} / {w.night}</p></article>)}</div>}
+        </section>}
+      </AgentPanel>}
     </section>
-  );
+  </WebMcpProvider>;
 }

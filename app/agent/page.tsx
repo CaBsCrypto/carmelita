@@ -1,7 +1,5 @@
-import Link from "next/link";
-import BrandLockup from "../brand-lockup";
 import AgentOnboarding from "./agent-onboarding";
-import { LanguageControl } from "../language-toggle";
+
 
 export const dynamic = "force-dynamic";
 
@@ -25,17 +23,6 @@ export default async function AgentPage({
 
   return (
     <main className="agent-page">
-      <nav className="demo-nav shell">
-        <Link className="brand" href="/">
-          <BrandLockup />
-        </Link>
-        <div>
-          <span>PRIVY · MULTICHAIN</span>
-          <LanguageControl compact />
-          <Link href="/guide">Guide</Link>
-          <Link href="/demo">Demo</Link>
-        </div>
-      </nav>
       <AgentOnboarding configured={configured} autoLogin={autoLogin} />
     </main>
   );
