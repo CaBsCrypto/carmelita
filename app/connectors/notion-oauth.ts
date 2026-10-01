@@ -294,8 +294,24 @@ export async function listUserConnections(userId: string) {
     .from(agentExternalConnections)
     .where(eq(agentExternalConnections.userId, userId));
 }
-export async function getNotionAccessToken(userId: string) {
-  const db = getDb();
+function preservesNotionScopes(previous: readonly string[], refreshedScope: unknown) {
+  // An omitted OAuth scope denotes the original grant. An explicit empty or
+  // changed grant must go through visible reconnection, never silent refresh.
+  if (refreshedScope === undefined) return true;
+  if (typeof refreshedScope !== "string" || !refreshedScope.trim()) return false;
+  const refreshed = refreshedScope.trim().split(/\s+/);
+  const validScope = /^[\x21\x23-\x5b\x5d-\x7e]+$/;
+  if (previous.some(scope => !validScope.test(scope)) || refreshed.some(scope => !validScope.test(scope))) return false;
+  const original = new Set(previous);
+  const renewed = new Set(refreshed);
+  return original.size === renewed.size && [...renewed].every(scope => original.has(scope));
+}
+
+export async function getNotionAccessToken(
+  userId: string,
+  dependencies: { db?: ReturnType<typeof getDb>; fetcher?: typeof fetch } = {},
+) {
+  const db = dependencies.db ?? getDb();
   const rows = await db
     .select()
     .from(agentExternalConnections)
@@ -348,7 +364,7 @@ export async function getNotionAccessToken(userId: string) {
     );
   }
 
-  const response = await fetch(tokenEndpoint, {
+  const response = await (dependencies.fetcher ?? fetch)(tokenEndpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -367,6 +383,13 @@ export async function getNotionAccessToken(userId: string) {
 
   const refreshed = (await response.json()) as TokenResponse;
   if (!refreshed.access_token) throw new Error("notion_refresh_failed");
+  if (!preservesNotionScopes(connection.scopes, refreshed.scope)) {
+    await db
+      .update(agentExternalConnections)
+      .set({ status: "reauth_required", updatedAt: new Date() })
+      .where(eq(agentExternalConnections.id, connection.id));
+    throw new Error("notion_reauth_required");
+  }
   const tokenExpiresAt = refreshed.expires_in
     ? new Date(Date.now() + refreshed.expires_in * 1000)
     : null;
@@ -380,9 +403,7 @@ export async function getNotionAccessToken(userId: string) {
         ? encryptConnectorSecret(refreshed.refresh_token)
         : connection.refreshTokenEncrypted,
       tokenExpiresAt,
-      scopes: refreshed.scope
-        ? refreshed.scope.split(" ").filter(Boolean)
-        : connection.scopes,
+      scopes: connection.scopes,
       updatedAt: new Date(),
     })
     .where(eq(agentExternalConnections.id, connection.id));
