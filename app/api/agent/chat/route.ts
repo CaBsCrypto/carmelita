@@ -5,12 +5,14 @@ import {
   sendAgentMessage,
 } from "@/app/agent-chat-store";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
+import { marketLocaleSchema } from "@/app/market-data/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const messageSchema = z.object({
   message: z.string().trim().min(1).max(2000),
+  locale: marketLocaleSchema.optional(),
 });
 
 function sameOrigin(request: Request) {
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
   try {
     const userId = await authenticatedUser(request);
     const input = messageSchema.parse(await request.json());
-    const result = await sendAgentMessage(userId, input.message);
+    const result = await sendAgentMessage(userId, input.message, input.locale);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });

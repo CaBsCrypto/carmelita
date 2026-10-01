@@ -4,6 +4,7 @@ import type { Locale } from "../language-toggle";
 import type { WalletRow, WalletNetworkView } from "./wallet-readings";
 import { registryNetworkRows } from "./registry-wallet-model";
 import { workspaceCopy } from "./workspace-copy";
+import { sessionAbortable } from "./session-request";
 
 export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBalances }: { locale: Locale; getAccessToken: () => Promise<string | null>; onQueryBalances: () => void }) {
   const t = workspaceCopy[locale];
@@ -11,15 +12,15 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]);
     async function load() {
       try {
-        const token = await getAccessToken();
-        controller.signal.throwIfAborted();
+        const token = await sessionAbortable(getAccessToken, signal);
         if (!token) throw new Error("authentication_required");
-        const response = await fetch("/api/agent/wallets", {headers: {Authorization: "Bearer " + token}, cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)])});
+        const response = await fetch("/api/agent/wallets", {headers: {Authorization: "Bearer " + token}, cache: "no-store", signal});
         if (!response.ok) throw new Error("registry_unavailable");
-        const body = await response.json() as {wallets: WalletRow[]; networks: WalletNetworkView[]};
-        controller.signal.throwIfAborted();
+        const body = await sessionAbortable(() => response.json(), signal) as {wallets: WalletRow[]; networks: WalletNetworkView[]};
+        signal.throwIfAborted();
         setState({rows: registryNetworkRows(body.wallets, body.networks), status: "ready"});
       } catch {
         if (!controller.signal.aborted) setState({rows: [], status: "error"});

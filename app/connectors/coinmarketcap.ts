@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { agentMarketWatchlist } from "@/db/schema";
-
-const CMC_TRIAL_BASE =
-  "https://pro-api.coinmarketcap.com/trial-pro-api";
+import { canonicalAssetForQuery, getVerifiedCmcProviderQuote } from "@/app/market-data/service";
+import { toLegacyMarketQuote } from "@/app/connectors/coingecko";
 
 const names: Record<string, string> = {
   bitcoin: "BTC",
@@ -31,32 +30,6 @@ const names: Record<string, string> = {
   doge: "DOGE",
 };
 
-type CmcQuote = {
-  id: number;
-  name: string;
-  symbol: string;
-  cmc_rank: number | null;
-  last_updated: string;
-  quote: Array<{
-    symbol: string;
-    price: number;
-    volume_24h: number | null;
-    percent_change_24h: number | null;
-    percent_change_7d: number | null;
-    market_cap: number | null;
-    last_updated: string;
-  }>;
-};
-
-type CmcResponse = {
-  data?: CmcQuote[];
-  status?: {
-    error_code?: string | number;
-    error_message?: string;
-    timestamp?: string;
-  };
-};
-
 export type MarketQuote = {
   id: number | string;
   name: string;
@@ -69,7 +42,7 @@ export type MarketQuote = {
   marketCap: number | null;
   volume24h: number | null;
   updatedAt: string;
-  source: "CoinMarketCap" | "CoinGecko";
+  source: "CoinMarketCap" | "CoinGecko" | "DefiLlama";
   access: string;
 };
 
@@ -97,57 +70,15 @@ export async function getCoinMarketCapQuote(
     throw new Error("cmc_symbol_invalid");
   }
 
-  const url = new URL(
-    CMC_TRIAL_BASE + "/v3/cryptocurrency/quotes/latest",
-  );
-  url.searchParams.set("symbol", normalizedSymbol);
-  url.searchParams.set("convert", "USD");
-
-  const response = await fetcher(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "agent-assistant/0.1.0",
-    },
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    if (response.status === 429) throw new Error("cmc_rate_limited");
-    throw new Error("cmc_request_failed");
-  }
-
-  const body = (await response.json()) as CmcResponse;
-  if (
-    body.status?.error_code &&
-    String(body.status.error_code) !== "0"
-  ) {
-    throw new Error("cmc_api_error");
-  }
-  const asset = body.data?.[0];
-  const usd = asset?.quote.find((quote) => quote.symbol === "USD");
-  if (!asset || !usd || !Number.isFinite(usd.price)) {
-    throw new Error("cmc_asset_not_found");
-  }
-
-  return {
-    id: asset.id,
-    name: asset.name,
-    symbol: asset.symbol,
-    currency: "USD",
-    price: usd.price,
-    rank: asset.cmc_rank,
-    change24h: usd.percent_change_24h,
-    change7d: usd.percent_change_7d,
-    marketCap: usd.market_cap,
-    volume24h: usd.volume_24h,
-    updatedAt: usd.last_updated || asset.last_updated,
-    source: "CoinMarketCap",
-    access: "keyless-trial",
-  };
+  const { asset, quote } = await getVerifiedCmcProviderQuote(normalizedSymbol, fetcher);
+  return toLegacyMarketQuote(asset, quote);
 }
 
 export async function addToMarketWatchlist(userId: string, symbol: string) {
+  const canonicalAsset = canonicalAssetForQuery(symbol);
+  if (!canonicalAsset) throw new Error("market_watchlist_symbol_unsupported");
   const db = getDb();
-  const normalizedSymbol = symbol.toUpperCase();
+  const normalizedSymbol = canonicalAsset.symbol;
   await db
     .insert(agentMarketWatchlist)
     .values({

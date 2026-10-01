@@ -15,6 +15,7 @@ import AgentConnectedApps from "./agent-connected-apps";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 import { sessionCloseCopy, useSessionClose } from "../use-session-close";
+import { sessionAbortable } from "./session-request";
 
 const onboardingUi = {
   en: {
@@ -221,30 +222,30 @@ function PrivyAgent({
     if (!userId || (!force && bootstrappedFor.current === userId)) return;
     bootstrapRequest.current?.abort();
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]);
     bootstrapRequest.current = controller;
     bootstrappedFor.current = userId;
     setStatus("creating");
     setError(null);
 
     try {
-      const token = await getAccessToken();
-      controller.signal.throwIfAborted();
+      const token = await sessionAbortable(getAccessToken, signal);
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/bootstrap", {
         method: "POST",
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
+        signal,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
       });
-      const body = await response.json();
+      const body = await sessionAbortable(() => response.json(), signal);
       if (!response.ok) throw new Error(body.error ?? "Wallet bootstrap failed");
       // The wallet may have just been created by the Privy server SDK. Refresh
       // the browser identity so extended-chain signing can discover it without
       // forcing the user through a sign-out/sign-in cycle.
-      await refreshUser();
-      controller.signal.throwIfAborted();
+      await sessionAbortable(refreshUser, signal);
+      signal.throwIfAborted();
       if (body.user?.id !== userId) throw new Error("wallet_response_mismatch");
       setResult(body);
       setStatus("ready");
@@ -297,15 +298,17 @@ function PrivyAgent({
     const form = new FormData(event.currentTarget);
     setTravelStatus("searching");
     setTravelError(null);
+    setTravelResult(null);
     travelRequest.current?.abort();
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]);
     travelRequest.current = controller;
     try {
-      const token = await getAccessToken();
+      const token = await sessionAbortable(getAccessToken, signal);
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/travel/search", {
         method: "POST",
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
+        signal,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -318,9 +321,9 @@ function PrivyAgent({
           maxPrice: Number(form.get("maxPrice") ?? 0) || undefined,
         }),
       });
-      const body = await response.json();
+      const body = await sessionAbortable(() => response.json(), signal);
       if (!response.ok) throw new Error(body.error ?? "Travel search failed");
-      controller.signal.throwIfAborted();
+      signal.throwIfAborted();
       setTravelResult(body);
       setTravelStatus("idle");
     } catch (caught) {
@@ -372,7 +375,8 @@ function PrivyAgent({
         {panel === "functions" && <div className="workspace-functions">
           <p>{w.exampleNote}</p><h3>{w.consultations}</h3>
           <article><h4>{w.wallets}</h4><p>{w.registryNote}</p><button onClick={() => suggest(w.walletPrompt)}>{w.fill}</button></article>
-          <article><h4>{w.price}</h4><p>{w.marketNote}</p><button onClick={() => suggest(w.pricePrompt)}>{w.fill}</button></article>
+          <article><h4>{w.price}</h4><p>{w.marketNote}</p><p>{w.marketScope}</p><button onClick={() => suggest(w.multiPricePrompt)}>{w.fill}</button></article>
+          <article><h4>{w.chainComparison}</h4><p>DefiLlama · TVL</p><button onClick={() => suggest(w.chainPrompt)}>{w.fill}</button></article>
           <article><h4>{w.capabilities}</h4><button onClick={() => suggest(w.capabilitiesPrompt)}>{w.fill}</button></article>
           <h3>{w.connections}</h3><p>{w.chatgptNote}</p><p>{w.notionNote}</p><button onClick={() => setPanel("account")}>{w.connections}</button>
           <article><h4>Travala</h4><p>{w.travelNote}</p><button onClick={() => setPanel("travel")}>{w.travel}</button></article>
@@ -388,7 +392,7 @@ function PrivyAgent({
           <button onClick={() => setPanel("developers")}>{w.developers}</button><Link href="/guide">{w.guide}</Link>
         </div>}
         {panel === "developers" && <div className="workspace-developers"><p>{w.developerNote}</p>
-          <h3>{w.commands}</h3>{[w.walletPrompt, w.pricePrompt, w.capabilitiesPrompt].map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
+          <h3>{w.commands}</h3>{[w.walletPrompt, w.multiPricePrompt, w.chainPrompt, "coingecko:usd-coin", w.capabilitiesPrompt].map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
           <details><summary>{w.diagnostics}</summary><WebMcpInspector locale={locale} getAccessToken={getAccessToken} /></details>
           <details><summary>{w.credentials}</summary><AgentExternalAccess key={userId} locale={locale} getAccessToken={getAccessToken} /></details>
           {status === "error" && <details><summary>{w.help}</summary><p>{error}</p></details>}

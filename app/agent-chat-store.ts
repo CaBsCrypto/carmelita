@@ -36,11 +36,13 @@ import {
 } from "@/app/agent-memory-store";
 import {
   addToMarketWatchlist,
-  extractMarketSymbol,
-  formatMarketQuote,
   listMarketWatchlist,
 } from "@/app/connectors/coinmarketcap";
-import { getMarketQuote } from "@/app/connectors/coingecko";
+import { canonicalWatchlistSymbol, parseMarketIntent } from "@/app/market-data/intents";
+import { getMarketQuotes } from "@/app/market-data/service";
+import { compareChains } from "@/app/market-data/defillama";
+import { formatMarketQuotes, formatChainComparison } from "@/app/market-data/format";
+import type { MarketLocale } from "@/app/market-data/types";
 import {
   getAgentPlannerReadiness,
   planAgentRequest,
@@ -92,6 +94,7 @@ export type StoredAgentMessage = {
   actions?: {
     label: string;
     message?: string;
+    draftOnly?: boolean;
     href?: string;
     connect?: string;
     walletAction?: {
@@ -410,11 +413,12 @@ async function buildTestnetSetupReply(
 }
 export async function chatWalletContext(userId: string, content: string, readContext = walletContext) {
   // Persisted-wallet listing and per-network balance reads have their own data sources.
-  if (requestsRegisteredWallets(content) || requestsWalletBalances(content)) return null;
+  if (requestsRegisteredWallets(content) || requestsWalletBalances(content) || parseMarketIntent(content)
+    || /\b(?:watchlist|lista de seguimiento|lista de acompanhamento)\b/i.test(content)) return null;
   return readContext(userId);
 }
 
-export async function sendAgentMessage(userId: string, content: string) {
+export async function sendAgentMessage(userId: string, content: string, locale?: MarketLocale) {
   const db = getDb();
   const id = await ensureConversation(userId);
   const now = new Date();
@@ -447,7 +451,7 @@ export async function sendAgentMessage(userId: string, content: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  const language = detectAgentLanguage(content);
+  const language = locale ?? detectAgentLanguage(content);
   const local = (english: string, portuguese: string) =>
     language === "pt" ? portuguese : english;
   const balanceRead = requestsWalletBalances(content);
@@ -463,9 +467,9 @@ export async function sendAgentMessage(userId: string, content: string) {
   const vaultCommand = parseVaultCommand(content);
   const unblckIntent = parseUnblckChatIntent(content);
 
-  const marketSymbol = extractMarketSymbol(content);
+  const marketIntent = parseMarketIntent(content);
+  const marketSymbol = canonicalWatchlistSymbol(content);
   const requestsWatchlistAdd =
-    Boolean(marketSymbol) &&
     ["add", "agrega", "agregar", "suma", "follow", "seguir", "adicione", "adicionar", "coloque", "acompanhar"].some((term) =>
       normalizedContent.includes(term),
     ) &&
@@ -477,20 +481,11 @@ export async function sendAgentMessage(userId: string, content: string) {
     ["show", "list", "muestra", "mostrar", "ver", "mostre", "listar"].some((term) =>
       normalizedContent.includes(term),
     );
-  const requestsMarketQuote =
-    Boolean(marketSymbol) &&
-    [
-      "price",
-      "precio",
-      "preco",
-      "cotacao",
-      "quote",
-      "cotiza",
-      "market cap",
-      "coinmarketcap",
-      "coin market cap",
-      "cmc",
-    ].some((term) => normalizedContent.includes(term));
+  const watchlistCopy = {
+    es: { show: "Mostrar watchlist", showPrompt: "Muéstrame mi watchlist de criptomonedas", other: "Consultar otro activo", otherPrompt: "Consulta el precio de BTC e indica la fuente y la fecha.", retry: "Probar XLM", addXlm: "Añadir XLM", addXlmPrompt: "Agrega XLM a mi watchlist", addBtc: "Añadir BTC", addBtcPrompt: "Agrega BTC a mi watchlist", addOther: "Añadir otro activo", addOtherPrompt: "Agrega ETH a mi watchlist", refresh: "Actualizar" },
+    en: { show: "Show watchlist", showPrompt: "Show my crypto watchlist", other: "Check another asset", otherPrompt: "Query the price of BTC and include the source and date.", retry: "Try XLM", addXlm: "Add XLM", addXlmPrompt: "Add XLM to my watchlist", addBtc: "Add BTC", addBtcPrompt: "Add BTC to my watchlist", addOther: "Add another asset", addOtherPrompt: "Add ETH to my watchlist", refresh: "Refresh" },
+    pt: { show: "Mostrar watchlist", showPrompt: "Mostre minha watchlist de criptomoedas", other: "Consultar outro ativo", otherPrompt: "Consulte o preço de BTC e indique a fonte e a data.", retry: "Tentar XLM", addXlm: "Adicionar XLM", addXlmPrompt: "Adicione XLM à minha watchlist", addBtc: "Adicionar BTC", addBtcPrompt: "Adicione BTC à minha watchlist", addOther: "Adicionar outro ativo", addOtherPrompt: "Adicione ETH à minha watchlist", refresh: "Atualizar" },
+  }[language];
 
   const requestsNotionSearch =
     connectedProviders.includes("notion") &&
@@ -530,7 +525,7 @@ export async function sendAgentMessage(userId: string, content: string) {
       requestsNotionSearch ||
       requestsWatchlistAdd ||
       requestsWatchlist ||
-      requestsMarketQuote ||
+      marketIntent ||
       deterministicDefindex ||
       deterministicConnection ||
       normalizedContent.includes("x402"),
@@ -550,6 +545,33 @@ export async function sendAgentMessage(userId: string, content: string) {
     reply = await walletBalancesReply(userId, await listPersistedUserWallets(userId), language, readChatNativeBalance);
   } else if (walletRead) {
     reply = registeredWalletsReply(userId, await listPersistedUserWallets(userId), language);
+  } else if (marketIntent) {
+    const copy = {
+      es: { unavailable: "Los datos de mercado no están disponibles en este momento. Puedes reintentar la consulta.", assets: "Consulta hasta 10 activos por mensaje. Divide la lista para consultar todos.", chains: "La comparación admite hasta 20 redes. Indica un número entre 1 y 20.", network: "Indica la red Mainnet junto al contrato o mint para identificar el activo exacto.", required: "Indica el nombre, ticker, ID CoinGecko/CMC o la red y dirección del activo.", clarify: "¿Quieres comparar el TVL de esa red o consultar un token específico? Base no tiene token propio; su TVL no es la capitalización global de ETH.", choice: "Usar", tvl: "Comparar TVL", tvlPrompt: "Compara el TVL de las redes", price: "Consultar SOL, AVAX y BNB", pricePrompt: "Consulta el precio de SOL, AVAX y BNB e indica la fuente y la fecha." },
+      en: { unavailable: "Market data is unavailable right now. You can retry the query.", assets: "Query up to 10 assets per message. Split the list to query them all.", chains: "Chain comparisons support up to 20 networks. Choose a number from 1 to 20.", network: "Include the Mainnet network with the contract or mint to identify the exact asset.", required: "Provide the asset name, ticker, CoinGecko/CMC ID or network and address.", clarify: "Would you like to compare this network's TVL or query a specific token? Base has no native token; its TVL is not ETH's global market capitalization.", choice: "Use", tvl: "Compare TVL", tvlPrompt: "Compare the TVL of networks", price: "Query SOL, AVAX and BNB", pricePrompt: "Query the price of SOL, AVAX and BNB and include the source and date." },
+      pt: { unavailable: "Os dados de mercado não estão disponíveis agora. Você pode tentar a consulta novamente.", assets: "Consulte até 10 ativos por mensagem. Divida a lista para consultar todos.", chains: "A comparação aceita até 20 redes. Informe um número entre 1 e 20.", network: "Informe a rede Mainnet junto ao contrato ou mint para identificar o ativo exato.", required: "Informe o nome, ticker, ID CoinGecko/CMC ou a rede e endereço do ativo.", clarify: "Deseja comparar o TVL dessa rede ou consultar um token específico? Base não tem token próprio; seu TVL não é a capitalização global do ETH.", choice: "Usar", tvl: "Comparar TVL", tvlPrompt: "Compare o TVL das redes", price: "Consultar SOL, AVAX e BNB", pricePrompt: "Consulte o preço de SOL, AVAX e BNB e indique a fonte e a data." },
+    }[language];
+    try {
+      if (marketIntent.kind === "quotes") {
+        const data = await getMarketQuotes(marketIntent.assets);
+        reply = { content: formatMarketQuotes(data, language), actions: data.results.flatMap(result =>
+          (result.candidates ?? []).flatMap(asset => {
+            const assetId = asset.coingeckoId ? `coingecko:${asset.coingeckoId}` : asset.cmcId ? `cmc:${asset.cmcId}` : null;
+            if (!assetId) return [];
+            return [{ label: `${copy.choice} ${asset.name} (${asset.symbol}) · ${assetId}${asset.network ? ` · ${asset.network}` : ""}`, message: `${language === "es" ? "Precio" : language === "pt" ? "Preço" : "Price"} ${assetId}${result.request.network ? ` ${language === "es" ? "en" : language === "pt" ? "na" : "on"} ${result.request.network}` : ""}`, draftOnly: true }];
+          }),
+        ) };
+      } else if (marketIntent.kind === "chains") {
+        reply = { content: formatChainComparison(await compareChains({ ...marketIntent.input, locale: language }), language), actions: [] };
+      } else {
+        const reason = marketIntent.kind === "clarify" ? copy.clarify : { too_many_assets: copy.assets, too_many_chains: copy.chains, network_required: copy.network, asset_required: copy.required,
+          testnet_market: { es: "Estas fuentes ofrecen datos de mercado Mainnet. No se asigna un precio a fondos Testnet o Devnet. Consulta el token Mainnet por nombre o ticker, o solicita el saldo de tu red de prueba por separado.", en: "These sources provide Mainnet market data. Testnet and Devnet funds are not priced. Query the Mainnet token by name or ticker, or request your test-network balance separately.", pt: "Estas fontes oferecem dados de mercado Mainnet. Fundos Testnet e Devnet não recebem um preço. Consulte o token Mainnet por nome ou ticker, ou solicite o saldo da rede de teste separadamente." }[language],
+        }[marketIntent.reason];
+        reply = { content: reason, actions: [{ label: copy.tvl, message: copy.tvlPrompt, draftOnly: true }, { label: copy.price, message: copy.pricePrompt, draftOnly: true }] };
+      }
+    } catch {
+      reply = { content: copy.unavailable, actions: [{ label: copy.price, message: copy.pricePrompt, draftOnly: true }] };
+    }
   } else if (vaultCommand?.action === "list") {
     const vault = await listAgentVault(userId);
     const active = [
@@ -1063,32 +1085,43 @@ export async function sendAgentMessage(userId: string, content: string) {
             ],
       };
     }
+  } else if (requestsWatchlistAdd && !marketSymbol) {
+    reply = {
+      content: {
+        es: "La watchlist guarda un único ticker canónico por entrada. Puedes añadir BTC, ETH, XLM, SOL, AVAX, BNB, USDC, USDT, XRP, ADA o DOGE. Para otros activos o contratos utiliza una consulta de mercado con su identidad exacta; no se añadió ninguna entrada.",
+        en: "The watchlist stores one canonical ticker per entry. You can add BTC, ETH, XLM, SOL, AVAX, BNB, USDC, USDT, XRP, ADA or DOGE. Query other assets or contracts by their exact market identity; no entry was added.",
+        pt: "A watchlist guarda um ticker canônico por entrada. Você pode adicionar BTC, ETH, XLM, SOL, AVAX, BNB, USDC, USDT, XRP, ADA ou DOGE. Consulte outros ativos ou contratos com sua identidade de mercado exata; nenhuma entrada foi adicionada.",
+      }[language],
+      actions: [],
+    };
   } else if (requestsWatchlistAdd && marketSymbol) {
     try {
-      const quote = await getMarketQuote(marketSymbol);
-      await addToMarketWatchlist(userId, quote.symbol);
+      const data = await getMarketQuotes([{ query: marketSymbol }]);
+      const result = data.results[0];
+      if (result?.status !== "ok" || !result.asset || result.asset.symbol !== marketSymbol || !result.quote || result.quote.price === null) throw new Error("market_watchlist_quote_unavailable");
+      await addToMarketWatchlist(userId, result.asset.symbol);
       reply = {
         content: [
-          quote.symbol + local(" is now on your persistent CoinMarketCap watchlist.", " agora está na sua watchlist persistente do CoinMarketCap."),
-          formatMarketQuote(quote, language),
+          { es: `${result.asset.symbol} se añadió a tu watchlist persistente.`, en: `${result.asset.symbol} is now on your persistent watchlist.`, pt: `${result.asset.symbol} agora está na sua watchlist persistente.` }[language],
+          formatMarketQuotes(data, language),
         ].join("\n\n"),
         connection: {
-          name: "CoinGecko",
+          name: result.quote.source,
           stage: "Read-only connected" as const,
           priority: "P0" as const,
         },
         actions: [
-          { label: local("Show watchlist", "Mostrar watchlist"), message: language === "pt" ? "Mostre minha watchlist de criptomoedas" : "Show my crypto watchlist" },
+          { label: watchlistCopy.show, message: watchlistCopy.showPrompt },
           {
-            label: local("Check another asset", "Ver outro ativo"),
-            message: language === "pt" ? "Qual é o preço atual do BTC no CoinMarketCap?" : "What is the current BTC price on CoinMarketCap?",
+            label: watchlistCopy.other,
+            message: watchlistCopy.otherPrompt,
           },
         ],
       };
     } catch {
       reply = {
         content:
-          local("CoinMarketCap could not validate that asset, so I did not add anything to your watchlist.", "O CoinMarketCap não conseguiu validar esse ativo, então nada foi adicionado à sua watchlist."),
+          { es: "No se pudo validar ese activo. No se añadió ninguna entrada a la watchlist.", en: "The asset could not be validated. No entry was added to your watchlist.", pt: "Não foi possível validar esse ativo. Nenhuma entrada foi adicionada à watchlist." }[language],
         connection: {
           name: "CoinGecko",
           stage: "Read-only connected" as const,
@@ -1096,8 +1129,8 @@ export async function sendAgentMessage(userId: string, content: string) {
         },
         actions: [
           {
-            label: local("Try XLM", "Tentar XLM"),
-            message: language === "pt" ? "Adicione XLM à minha watchlist do CoinMarketCap" : "Add XLM to my CoinMarketCap watchlist",
+            label: watchlistCopy.retry,
+            message: watchlistCopy.addXlmPrompt,
           },
         ],
       };
@@ -1107,7 +1140,7 @@ export async function sendAgentMessage(userId: string, content: string) {
     if (!watchlist.length) {
       reply = {
         content:
-          local("Your CoinMarketCap watchlist is empty. Add an asset to begin tracking real market data.", "Sua watchlist do CoinMarketCap está vazia. Adicione um ativo para acompanhar dados reais de mercado."),
+          { es: "Tu watchlist está vacía. Añade un ticker canónico para consultar datos de mercado Mainnet.", en: "Your watchlist is empty. Add a canonical ticker to query Mainnet market data.", pt: "Sua watchlist está vazia. Adicione um ticker canônico para consultar dados de mercado Mainnet." }[language],
         connection: {
           name: "CoinGecko",
           stage: "Read-only connected" as const,
@@ -1115,108 +1148,30 @@ export async function sendAgentMessage(userId: string, content: string) {
         },
         actions: [
           {
-            label: local("Add XLM", "Adicionar XLM"),
-            message: language === "pt" ? "Adicione XLM à minha watchlist do CoinMarketCap" : "Add XLM to my CoinMarketCap watchlist",
+            label: watchlistCopy.addXlm,
+            message: watchlistCopy.addXlmPrompt,
           },
           {
-            label: local("Add BTC", "Adicionar BTC"),
-            message: language === "pt" ? "Adicione BTC à minha watchlist do CoinMarketCap" : "Add BTC to my CoinMarketCap watchlist",
+            label: watchlistCopy.addBtc,
+            message: watchlistCopy.addBtcPrompt,
           },
         ],
       };
     } else {
-      const results = await Promise.allSettled(
-        watchlist.slice(0, 8).map((item) =>
-          getMarketQuote(item.symbol),
-        ),
-      );
-      const rows = results
-        .filter(
-          (result): result is PromiseFulfilledResult<
-            Awaited<ReturnType<typeof getMarketQuote>>
-          > => result.status === "fulfilled",
-        )
-        .map((result) => {
-          const quote = result.value;
-          const change =
-            quote.change24h === null
-              ? "n/a"
-              : (quote.change24h >= 0 ? "+" : "") +
-                quote.change24h.toFixed(2) +
-                "%";
-          return (
-            "**" +
-            quote.symbol +
-            "** $" +
-            quote.price.toLocaleString("en-US", {
-              maximumFractionDigits: quote.price < 1 ? 6 : 2,
-            }) +
-            " | 24h " +
-            change
-          );
-        });
+      const data = await getMarketQuotes(watchlist.slice(0, 8).map(item => ({ query: item.symbol })));
       reply = {
         content: [
-          local("**Your CoinMarketCap watchlist**", "**Sua watchlist do CoinMarketCap**"),
-          rows.join("\n") || local("Live quotes are temporarily unavailable.", "As cotações ao vivo estão temporariamente indisponíveis."),
-          local("Read-only market data. No trading action was performed.", "Dados de mercado somente para leitura. Nenhuma operação foi executada."),
+          { es: "**Tu watchlist**", en: "**Your watchlist**", pt: "**Sua watchlist**" }[language],
+          formatMarketQuotes(data, language),
         ].join("\n\n"),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
         actions: [
           {
-            label: local("Add another asset", "Adicionar outro ativo"),
-            message: language === "pt" ? "Adicione ETH à minha watchlist do CoinMarketCap" : "Add ETH to my CoinMarketCap watchlist",
+            label: watchlistCopy.addOther,
+            message: watchlistCopy.addOtherPrompt,
           },
           {
-            label: local("Refresh", "Atualizar"),
-            message: language === "pt" ? "Mostre minha watchlist de criptomoedas" : "Show my crypto watchlist",
-          },
-        ],
-      };
-    }
-  } else if (requestsMarketQuote && marketSymbol) {
-    try {
-      const quote = await getMarketQuote(marketSymbol);
-      reply = {
-        content: formatMarketQuote(quote, language),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Add to watchlist", "Adicionar à watchlist"),
-            message:
-              language === "pt" ? "Adicione " + quote.symbol + " à minha watchlist do CoinMarketCap" : "Add " + quote.symbol + " to my CoinMarketCap watchlist",
-          },
-          {
-            label: local("Check BTC", "Ver BTC"),
-            message: language === "pt" ? "Qual é o preço atual do BTC no CoinMarketCap?" : "What is the current BTC price on CoinMarketCap?",
-          },
-        ],
-      };
-    } catch (error) {
-      const code =
-        error instanceof Error ? error.message : "cmc_request_failed";
-      reply = {
-        content:
-          code === "cmc_rate_limited"
-            ? local("CoinMarketCap's keyless trial is temporarily rate-limited. No cached price was presented as live.", "O trial sem chave do CoinMarketCap está temporariamente limitado. Nenhum preço em cache foi apresentado como ao vivo.")
-            : local("CoinMarketCap could not return a verified quote for that asset.", "O CoinMarketCap não conseguiu retornar uma cotação verificada para esse ativo."),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Retry XLM", "Tentar XLM novamente"),
-            message: language === "pt" ? "Qual é o preço atual do XLM no CoinMarketCap?" : "What is the current XLM price on CoinMarketCap?",
+            label: watchlistCopy.refresh,
+            message: watchlistCopy.showPrompt,
           },
         ],
       };

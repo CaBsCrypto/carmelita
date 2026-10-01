@@ -2,6 +2,7 @@
 
 import { chatBalanceDisplay } from "./chat-balance-display";
 import { MessageText } from "./message-text";
+import { sessionAbortable } from "./session-request";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -26,6 +27,11 @@ const chatUi = {
   en: { agent: "Carmelita", controlled: "Testnet · Queries", memory: "NEON MEMORY ON", loading: "Loading your conversation...", thinking: "Checking capabilities and safety boundaries", placeholder: "Ask about your wallets, prices or available functions…", send: "Send", boundary: "The agent can prepare actions. Payments and irreversible operations always require scoped authorization.", context: "LIVE CONTEXT", contextTitle: "Knows you. Acts for you.", identity: "Identity", balance: "Balance", network: "Network", verify: "Verify wallet on-chain", capabilities: "LIVE CAPABILITIES", readOnly: "read only", help: "PERSONAL HELP", notionConnect: "Connect Notion", notionSearch: "Search Notion", firstSearch: "Run first search", price: "XLM price", watchlist: "Watchlist", proof: "Testnet proof", connections: "Connections", notionConnectPrompt: "Connect me to Notion", notionSearchPrompt: "Search my Notion workspace for pending project tasks", pricePrompt: "What is the current XLM price?", watchlistPrompt: "Show my crypto watchlist", proofPrompt: "Start my DeFindex Testnet proof", travalaPrompt: "Connect me to Travala", connectionsPrompt: "What can I connect to?" },
   es: { agent: "Carmelita", controlled: "Testnet · Consultas", memory: "MEMORIA NEON ACTIVA", loading: "Cargando tu conversación...", thinking: "Revisando capacidades y límites de seguridad", placeholder: "Pregunta por tus billeteras, precios o funciones…", send: "Enviar", boundary: "El agente puede preparar acciones. Pagos y operaciones irreversibles siempre requieren autorización específica.", context: "CONTEXTO EN VIVO", contextTitle: "Te conoce. Actúa por ti.", identity: "Identidad", balance: "Saldo", network: "Red", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ACTIVAS", readOnly: "solo lectura", help: "AYUDA PERSONAL", notionConnect: "Conectar Notion", notionSearch: "Buscar en Notion", firstSearch: "Primera búsqueda", price: "Precio XLM", watchlist: "Watchlist", proof: "Prueba Testnet", connections: "Conexiones", notionConnectPrompt: "Conéctame con Notion", notionSearchPrompt: "Busca en mi Notion las tareas pendientes", pricePrompt: "¿Cuál es el precio actual de XLM?", watchlistPrompt: "Muéstrame mi watchlist de criptomonedas", proofPrompt: "Inicia mi prueba DeFindex en Testnet", travalaPrompt: "Conéctame con Travala", connectionsPrompt: "¿Qué puedo conectar?" },
   pt: { agent: "Carmelita", controlled: "Testnet · Consultas", memory: "MEMÓRIA NEON ATIVA", loading: "Carregando sua conversa...", thinking: "Verificando capacidades e limites de segurança", placeholder: "Pergunte sobre suas carteiras, preços ou funções…", send: "Enviar", boundary: "O agente pode preparar ações. Pagamentos e operações irreversíveis sempre exigem autorização específica.", context: "CONTEXTO AO VIVO", contextTitle: "Conhece você. Age por você.", identity: "Identidade", balance: "Saldo", network: "Rede", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ATIVAS", readOnly: "somente leitura", help: "AJUDA PESSOAL", notionConnect: "Conectar Notion", notionSearch: "Pesquisar no Notion", firstSearch: "Primeira pesquisa", price: "Preço do XLM", watchlist: "Watchlist", proof: "Prova Testnet", connections: "Conexões", notionConnectPrompt: "Conecte-me ao Notion", notionSearchPrompt: "Pesquise no meu Notion as tarefas pendentes", pricePrompt: "Qual é o preço atual do XLM?", watchlistPrompt: "Mostre minha watchlist de criptomoedas", proofPrompt: "Inicie minha prova DeFindex na Testnet", travalaPrompt: "Conecte-me à Travala", connectionsPrompt: "O que posso conectar?" },
+};
+const requestUi = {
+  es: { load: "No pudimos cargar tu conversación.", send: "No pudimos completar la consulta.", timeout: "La consulta tardó demasiado. Puedes reintentar.", retry: "Reintentar carga" },
+  en: { load: "We could not load your conversation.", send: "We could not complete the query.", timeout: "The query took too long. You can retry.", retry: "Retry loading" },
+  pt: { load: "Não foi possível carregar sua conversa.", send: "Não foi possível concluir a consulta.", timeout: "A consulta demorou demais. Você pode tentar novamente.", retry: "Tentar carregar novamente" },
 };
 
 const defindexUi = {
@@ -63,6 +69,7 @@ type ReceiptData = {
 type ChatAction = {
   label: string;
   message?: string;
+  draftOnly?: boolean;
   href?: string;
   connect?: string;
   walletAction?: AvalancheWalletAction | AvalancheX402WalletAction | CctpBridgeWalletAction;
@@ -236,6 +243,11 @@ export default function AgentChat({
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [conversationError, setConversationError] = useState(false);
+  const [conversationAttempt, setConversationAttempt] = useState(0);
+  const chatSession = useRef(new AbortController());
+  const requestLocale = useRef(locale);
+  useEffect(() => { requestLocale.current = locale; }, [locale]);
   const [draft, setDraft] = useState("");
   const [connections, setConnections] = useState<ExternalConnection[]>([]);
   const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
@@ -302,9 +314,9 @@ export default function AgentChat({
   const [hasNewMessages, setHasNewMessages] = useState(false);
 
   const suggestions = {
-    en: [{ label: "My wallets", text: "Show my registered wallets" }, { label: "Check a price", text: "What is the current XLM price?" }, { label: "What can I do?", text: "What can I do with Carmelita?" }],
-    es: [{ label: "Mis billeteras", text: "Muestra mis billeteras registradas" }, { label: "Consultar un precio", text: "¿Cuál es el precio actual de XLM?" }, { label: "Qué puedo hacer", text: "¿Qué puedo hacer con Carmelita?" }],
-    pt: [{ label: "Minhas carteiras", text: "Mostre minhas carteiras registradas" }, { label: "Consultar um preço", text: "Qual é o preço atual do XLM?" }, { label: "O que posso fazer?", text: "O que posso fazer com Carmelita?" }],
+    en: [{ label: "My wallets", text: "Show my registered wallets" }, { label: "Check a price", text: "Query the price of SOL, AVAX and BNB and include the source and date." }, { label: "What can I do?", text: "What can I do with Carmelita?" }],
+    es: [{ label: "Mis billeteras", text: "Muestra mis billeteras registradas" }, { label: "Consultar un precio", text: "Consulta el precio de SOL, AVAX y BNB e indica la fuente y la fecha." }, { label: "Qué puedo hacer", text: "¿Qué puedo hacer con Carmelita?" }],
+    pt: [{ label: "Minhas carteiras", text: "Mostre minhas carteiras registradas" }, { label: "Consultar um preço", text: "Consulte o preço de SOL, AVAX e BNB e indique a fonte e a data." }, { label: "O que posso fazer?", text: "O que posso fazer com Carmelita?" }],
   }[locale];
 
   function suggestDraft(text: string) {
@@ -325,25 +337,35 @@ export default function AgentChat({
 
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
+    chatSession.current = controller;
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]);
 
     async function loadConversation() {
       if (!readyForQueries) return;
       try {
-        const token = await getAccessToken();
+        const token = await sessionAbortable(getAccessToken, signal);
         if (!token) throw new Error("Authentication token unavailable");
         const response = await fetch("/api/agent/chat", {
+          signal,
           headers: { Authorization: "Bearer " + token },
           cache: "no-store",
         });
-        const body = await response.json();
+        const body = await sessionAbortable(() => response.json(), signal);
         if (!response.ok) throw new Error(body.error ?? "Conversation unavailable");
         const connectionsResponse = await fetch("/api/connections", {
+          signal,
           headers: { Authorization: "Bearer " + token },
           cache: "no-store",
         });
-        const connectionsBody = await connectionsResponse.json();
-        if (active) {
+        const connectionsBody = await sessionAbortable(() => connectionsResponse.json(), signal);
+        signal.throwIfAborted();
+        if (!controller.signal.aborted) {
           const params = new URLSearchParams(window.location.search);
           const freshSession = params.get("fresh") === "1";
           setMessages(freshSession ? [] : body.messages);
@@ -365,10 +387,12 @@ export default function AgentChat({
             window.history.replaceState({}, "", "/agent");
           }
           setStatus("ready");
+          setConversationError(false);
         }
       } catch (caught) {
-        if (active) {
-          setError(caught instanceof Error ? caught.message : "Conversation unavailable");
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error && caught.name === "TimeoutError" ? requestUi[requestLocale.current].timeout : requestUi[requestLocale.current].load);
+          setConversationError(true);
           setStatus("error");
         }
       }
@@ -376,9 +400,9 @@ export default function AgentChat({
 
     void loadConversation();
     return () => {
-      active = false;
+      controller.abort();
     };
-  }, [getAccessToken, readyForQueries]);
+  }, [getAccessToken, readyForQueries, conversationAttempt]);
   useEffect(() => {
     const controller = new AbortController();
     x402Session.current = controller;
@@ -544,7 +568,9 @@ export default function AgentChat({
 
   async function sendMessage(content: string) {
     const message = content.trim();
-    if (!message || status === "sending" || status === "loading" || !readyForQueries) return;
+    if (!message || status === "sending" || status === "loading" || !readyForQueries || conversationError) return;
+    const sessionSignal = chatSession.current.signal;
+    const signal = AbortSignal.any([sessionSignal, AbortSignal.timeout(30000)]);
 
     const optimisticId = "pending-" + (messages.length + 1);
     setMessages((current) => [
@@ -562,18 +588,20 @@ export default function AgentChat({
     setError(null);
 
     try {
-      const token = await getAccessToken();
+      const token = await sessionAbortable(getAccessToken, signal);
       if (!token) throw new Error("Authentication token unavailable");
       const response = await fetch("/api/agent/chat", {
+        signal,
         method: "POST",
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, locale }),
       });
-      const body = await response.json();
+      const body = await sessionAbortable(() => response.json(), signal);
       if (!response.ok) throw new Error(body.error ?? "Message failed");
+      signal.throwIfAborted();
       const assistantMessage = body.assistantMessage as ChatMessage;
       setMessages((current) => [
         ...current.filter((item) => item.id !== optimisticId),
@@ -614,8 +642,9 @@ export default function AgentChat({
         void loadDefindex();
       }
     } catch (caught) {
+      if (sessionSignal.aborted) return;
       setMessages((current) => current.filter((item) => item.id !== optimisticId));
-      setError(caught instanceof Error ? caught.message : "Message failed");
+      setError(caught instanceof Error && caught.name === "TimeoutError" ? requestUi[locale].timeout : requestUi[locale].send);
       setDraft(message);
       setStatus("error");
     }
@@ -1289,7 +1318,7 @@ export default function AgentChat({
           ref={threadRef}
           onScroll={handleThreadScroll}
         >
-          {status === "loading" && (
+          {status === "loading" && readyForQueries && (
             <div className="agent-chat-loading">
               <i />
               <span>{ui.loading}</span>
@@ -1417,7 +1446,14 @@ export default function AgentChat({
                           key={action.label}
                           type="button"
                           disabled={status === "sending"}
-                          onClick={() => void sendMessage(action.message ?? action.label)}
+                          onClick={() => {
+                            if (action.draftOnly) {
+                              setDraft(action.message ?? action.label);
+                              composerRef.current?.focus();
+                            } else {
+                              void sendMessage(action.message ?? action.label);
+                            }
+                          }}
                         >
                           {action.label}
                         </button>
@@ -1915,7 +1951,7 @@ export default function AgentChat({
             {x402Notice && <p className="defindex-agent-notice">{xrecovery.notices[x402Notice as keyof typeof xrecovery.notices] ?? xrecovery.notices.unavailable}</p>}
           </section>
         )}
-        {error && <p className="agent-chat-error">{error}. {locale === "es" ? "Tu borrador se conservó." : locale === "pt" ? "Seu rascunho foi preservado." : "Your draft was preserved."}</p>}
+        {error && <div className="agent-chat-error" role="alert"><p>{error} {locale === "es" ? "Tu borrador se conservó." : locale === "pt" ? "Seu rascunho foi preservado." : "Your draft was preserved."}</p>{conversationError && <button type="button" onClick={() => {setError(null); setStatus("loading"); setConversationAttempt(value => value + 1);}}>{requestUi[locale].retry}</button>}</div>}
 
         {!messages.some((message) => message.role === "user") && <div className="agent-chat-suggestions" aria-label={locale === "es" ? "Sugerencias" : locale === "pt" ? "Sugestões" : "Suggestions"}>
           {suggestions.map((suggestion) => <button key={suggestion.label} type="button" onClick={() => suggestDraft(suggestion.text)}>{suggestion.label}</button>)}
@@ -1941,7 +1977,7 @@ export default function AgentChat({
             rows={1}
             maxLength={2000}
           />
-          <button disabled={!draft.trim() || status === "sending" || status === "loading" || !readyForQueries}>{ui.send}</button>
+          <button disabled={!draft.trim() || status === "sending" || status === "loading" || !readyForQueries || conversationError}>{ui.send}</button>
         </form>
         <small className="agent-chat-boundary">
           {ui.boundary}
