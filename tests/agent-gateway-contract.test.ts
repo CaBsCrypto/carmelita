@@ -14,7 +14,12 @@ test("gateway capability contract is explicit and Testnet-only", () => {
     assert.ok(capability.status);
     assert.match(capability.network, /testnet|fuji/);
     assert.equal(capability.network.toLowerCase().includes("mainnet"), false);
-    assert.equal(capability.execution.exposedByGateway, false);
+    assert.equal(capability.execution.exposedByGateway, Boolean(capability.readTools?.length));
+    if (capability.execution.exposedByGateway) {
+      assert.equal(capability.operation, "read");
+      assert.equal(capability.dataScope, "mainnet_market_data");
+      assert.deepEqual(capability.requirements, ["agent:read"]);
+    }
     assert.equal(
       capability.requiresApproval,
       capability.approval !== "none",

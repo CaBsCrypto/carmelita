@@ -5,7 +5,7 @@ export function GET(request: Request) {
   return NextResponse.json({
     name: "agent-assistant MCP gateway",
     description:
-      "MCP gateway for a public sandbox, personal Testnet discovery and planning, and service-provider catalogs.",
+      "MCP gateway for a public sandbox, personal Testnet discovery and planning, read-only Mainnet market data, and service-provider catalogs.",
     transport: "streamable-http",
     surfaces: {
       sandbox: {
@@ -19,7 +19,8 @@ export function GET(request: Request) {
         authentication: "Privy bearer bridge or scoped carmelita_user_ personal token",
         scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
         purpose:
-          "Read authenticated context and conversation, discover capabilities and create non-executable Testnet plans.",
+          "Read authenticated context and conversation, discover capabilities, query Mainnet market prices and chain TVL, and create non-executable Testnet plans.",
+        marketReadTools: ["search_market_assets", "get_market_quotes", "compare_chains"],
       },
       serviceProvider: {
         endpoint: origin + "/api/mcp/provider",
@@ -39,7 +40,7 @@ export function GET(request: Request) {
     outboundConnectors: {
       description:
         "The personal agent also consumes external MCP servers and APIs after user consent.",
-      current: ["Notion MCP", "Travala MCP", "CoinMarketCap API"],
+      current: ["Notion MCP", "Travala MCP", "CoinGecko API", "CoinMarketCap Public API", "DefiLlama API"],
     },
     security: {
       custody: false,
