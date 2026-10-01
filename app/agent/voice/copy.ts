@@ -15,4 +15,3 @@ export const voiceCopy = {
     storage: "Não foi possível salvar o áudio localmente. Baixe-o antes de fechar esta aba.", denied: "Microfone indisponível. Verifique a permissão do navegador e tente novamente.", failed: "Não foi possível transcrever. O áudio é preservado para tentar novamente ou baixar.", slow: "A transcrição demorou demais. Tente um áudio mais curto; o original é preservado.", empty: "Não detectamos fala clara. Ouça a gravação antes de tentar novamente.", size: "O áudio ultrapassa 2 minutos ou 3 MB. Você pode baixá-lo.", unsupported: "Este navegador não permite gravar e transcrever aqui. Você pode usar o ditado do teclado.", limit: "Máximo 2 minutos", microphone: "Microfone", player: "Revisar áudio gravado",
   },
 };
-
