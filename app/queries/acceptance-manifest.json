@@ -1,4 +1,545 @@
 {
   "schemaVersion": 1,
-  "entries": []
+  "entries": [
+    {
+      "queryId": "offchain.market.search",
+      "contractFingerprint": "7fa87cd51715e6d3b3ca9fb82de545ea385e4254237928757ce1024ee09989d4",
+      "runtimeFingerprint": "5491140c74534e9e10f6f0d517ee5324bd38273736a3137c74df5567d79aa55b",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_offchain_market_search",
+          "sha256": "712cdf5b789eb7cb8c32dc9cba8b6c8f1dac3ef2fd766a3ab7c73d0889a4c8f8"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_offchain_market_search",
+          "sha256": "df10087d256c918d49bd2ea21b7960bf94374ff4bfd87098f0f28415670c076f"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.market.quote",
+      "contractFingerprint": "20ee9055764b935db618c917328718e705cbfb9fb4801021e3f576c9604ff428",
+      "runtimeFingerprint": "5491140c74534e9e10f6f0d517ee5324bd38273736a3137c74df5567d79aa55b",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_offchain_market_quote",
+          "sha256": "70bd597336ecf7ee07045e6c1fcd4333974e5b6ed98d3a9e5c090c603aefdad0"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_offchain_market_quote",
+          "sha256": "e1caeb1a0eeae414d499be75b16e71a096c1b151ae656a43bf29f652062eb7a8"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.defillama.chains",
+      "contractFingerprint": "49682334258a2876edad2cd08b0e4866fe6d7064810b109749983898b827ce9f",
+      "runtimeFingerprint": "5491140c74534e9e10f6f0d517ee5324bd38273736a3137c74df5567d79aa55b",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_offchain_defillama_chains",
+          "sha256": "1b631ae44efa85a830fa5d487568580b2a345276642ce06d55de6eef64745b2a"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_offchain_defillama_chains",
+          "sha256": "daaa2b4ddbbad4951caf4142d2561c3fcd582fcb3374f04a48d595c3c90d735e"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.docs.search",
+      "contractFingerprint": "a865cbd4eb6d22b1cfd6001d8898dbce44f1694c8bde5ef8af0e70fc9740113b",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_docs_search",
+          "sha256": "5aa2ff25dfb73ccee74e5396ba6d0fd367389434426fe7f0b556b80ef627faa8"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_docs_search",
+          "sha256": "6478962750492293430e87a79ccd69266b1a841ed750ba1159f19b38abc98b79"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.skills.search",
+      "contractFingerprint": "03e07db59742bc01b88b3ad8a3fe6070d1d0a108ae6633d6dcd72b9e6b67fdc6",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_skills_search",
+          "sha256": "4f1959fd05278672f4bf777b6fd2207678b3f458557cf588334681d4c1aaeaf7"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_skills_search",
+          "sha256": "fdb5cdb285f554703b0b095c0e1cc0856ac88f1c6e8a0a32f1117c0c9a0fe078"
+        }
+      }
+    },
+    {
+      "queryId": "dexalot.markets.list",
+      "contractFingerprint": "f674c6ffb6c7d8662ee614fa3b8cf38155f2c58bd793271c3066f54b49fd177e",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_dexalot_markets_list",
+          "sha256": "db72a00c0a24273bd9066e913be658ebaf020ed255df2d69cd91a67138b30c30"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_dexalot_markets_list",
+          "sha256": "fac139fcce6dc87e8c32a71a74ab2d5a604a4ac0180382058c9ca18d8115833f"
+        }
+      }
+    },
+    {
+      "queryId": "dexalot.quote.read",
+      "contractFingerprint": "432c5dee0bd7072245905ba74ada1a4ace29feca4998394c2ba78d150a673cc3",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_dexalot_quote_read",
+          "sha256": "4adfa2c23a60b969f30076c23035c466ff4e517bf6f68cb17c0421d7dd4cd839"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_dexalot_quote_read",
+          "sha256": "2da3b6b08be99d74889aa0c25e7285ae2649169dd81b504408a668b24fa59d93"
+        }
+      }
+    },
+    {
+      "queryId": "predictions.sector.read",
+      "contractFingerprint": "cc7c15eb807d1b88462916ad594537947a108a0351300a99f971adfcbd6885ab",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_predictions_sector_read",
+          "sha256": "6b30af1a79be6cdf945eaf485e3ca95f59c9ffae5c0a36257a24b1c6edc592d1"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_predictions_sector_read",
+          "sha256": "2652f490174b28a224e797b025778963b7ab5d48902f3cf8beccdac486db877a"
+        }
+      }
+    },
+    {
+      "queryId": "predictions.markets.read",
+      "contractFingerprint": "b67048e42726844e639200d978e6a315bf61a089096595e781211e8277d30e07",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_predictions_markets_read",
+          "sha256": "fa313e1d8a4ed41fbbc7c35947af45f0a36ce623fb2b70f82ee413af984955a1"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_predictions_markets_read",
+          "sha256": "d1b8eaa3def5902dbfc2e76e652e691bb1f42aaf54f41cc27cf4fc4d11027ddd"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.aave.market.read",
+      "contractFingerprint": "594778ac0740be4dbb0dffff3b6101123112b328066f9e204d43e29af3c7a0ec",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_aave_market_read",
+          "sha256": "8bcccdd31981da83d652e13505041ae14c1f8b31976ed187480b19c412969cc8"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_aave_market_read",
+          "sha256": "006800e096a001bc2e0f0cc6c0fd4c4b377af1e9e0ecc5bbcb90dfaeeb107612"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.aave.position.read",
+      "contractFingerprint": "0cad45ea4209a25b174a828977dcf77dbc8d349d40bc7d4b1575123dbb533c71",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_aave_position_read",
+          "sha256": "aa859437939b920d0cd8d58e8dd180f574a91c21e11be9ae06377640289c8eb6"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_aave_position_read",
+          "sha256": "f32adfc1036c9eea4bce473169bbf019c7d6eaa4d927dbb36ac3a842c498254c"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.nft.collection_read",
+      "contractFingerprint": "6309ffaa45da360fff09a802518ab0deec67812ed167296cad9da989d12f66dd",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_nft_collection_read",
+          "sha256": "28fa106a7f093cd46571eecad6d8804acdbdbc0993bdb1387f6ea47eee99536f"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_nft_collection_read",
+          "sha256": "bf995a0c8f6f9fee431eb349de6bac1b5363886ec09769099ab8a39c1f0dd3d4"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.nft.holder_distribution",
+      "contractFingerprint": "c2b0ca98a4e9f094912ff8ed0b8b99abf727fddd5eb419a7f7820d9e8a33ecfb",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_nft_holder_distribution",
+          "sha256": "0e28738dd3626706e4db22d40ebc059d2185f13803bef75e502ec1d09f119c21"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_nft_holder_distribution",
+          "sha256": "6ab61bfd8b723d1111ea507c88ad713ae530b40f9fd601cd4e430a6bd276aea0"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.nft.provenance_read",
+      "contractFingerprint": "ae6b9f4a1dc43997198f09f9189c44c682eb5387e07bd2bbea935c4e455263b7",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_nft_provenance_read",
+          "sha256": "7a760fedd3130895aaf2313d740138713ce888ee2fdfd23fc67f87d8018d0a12"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_nft_provenance_read",
+          "sha256": "84ac14afe57c7eb2c8a2fdf1ce8e1b5064b41afae98b11f4d2bce7b703361279"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.nft.venue_status",
+      "contractFingerprint": "167d0efba95a4d0ecda1e781674948a59204718f79d3c31980a78169080f941b",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_avalanche_nft_venue_status",
+          "sha256": "d1a1e8e5b0ae49870861f1d2092ef0101b9bb54640f7b8411a17f724fc7b96f8"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_avalanche_nft_venue_status",
+          "sha256": "b2e67c9b1df657d854a18d5eb0c331baaa9210cce2c0c92283f98e08b5449408"
+        }
+      }
+    },
+    {
+      "queryId": "defillama.yields.read",
+      "contractFingerprint": "c0237bc16d54f5e60e33cb31a148b8d56a0ed0e4e53939444ae58082f9744d70",
+      "runtimeFingerprint": "97266a1aec8dc8a2476625ada8d65615f9de1a33e57382dd1e92d72e1d6d970e",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_defillama_yields_read",
+          "sha256": "258e5bf9613063417b7b8d83fedfe5ee6e7d09b596cf250a6b663530734ef41d"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_defillama_yields_read",
+          "sha256": "10203d61bfe9eda7de8458ed483f6343b704a73a93019a0198925bfd0f773d1d"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.mpp.catalog",
+      "contractFingerprint": "860a8bbbe656f77f5b8840ef37d25e5eb2294fcdae8511b87c9645636d1c3c25",
+      "runtimeFingerprint": "f4e62b81046692bfdc0d90ef528984e5b1bdd5b5467a1798bd7d95c9aacaaacd",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_offchain_mpp_catalog",
+          "sha256": "d3dd3bb66055a33a40745fdeb561c1557447c81637a0e6608fde996bb3457c3f"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_offchain_mpp_catalog",
+          "sha256": "c516fa9dd7521022277856c87b513410b791b82dbd4d5399c352a333b4fa455d"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.infrastructure.status",
+      "contractFingerprint": "9476ceb5cc7543a6c90d680376323657129b8846f964ac1d92552317c9105fc8",
+      "runtimeFingerprint": "f4e62b81046692bfdc0d90ef528984e5b1bdd5b5467a1798bd7d95c9aacaaacd",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_offchain_infrastructure_status",
+          "sha256": "23c3de1dff09bdc68a533d56c1c3a9a5ddb7fb7ab01d9c47e7faf8f7cf7316fd"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_offchain_infrastructure_status",
+          "sha256": "7f45c2ee136838768e75d74d5c4efeae71b63b86bd77f999d77140906869c157"
+        }
+      }
+    },
+    {
+      "queryId": "stellar.defindex.position.read",
+      "contractFingerprint": "53807c8b37230cb53cda9d549b160ca1d0ead1ddd02edb9459cd373e2f16f076",
+      "runtimeFingerprint": "f4e62b81046692bfdc0d90ef528984e5b1bdd5b5467a1798bd7d95c9aacaaacd",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_stellar_defindex_position_read",
+          "sha256": "03d77d6362fd370bd14df49599586921e32433e0d573d6c449360b0f0fdab26c"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_stellar_defindex_position_read",
+          "sha256": "9c09f464693f493881d4833ad1082d661a179b0dbeb7a020010d0e5f9eb90534"
+        }
+      }
+    },
+    {
+      "queryId": "circle.cctp.fees.read",
+      "contractFingerprint": "b75d49c06fbc9d95b7f72abaa790d03db520a5647c844ad416f0e4b75ec354c3",
+      "runtimeFingerprint": "f4e62b81046692bfdc0d90ef528984e5b1bdd5b5467a1798bd7d95c9aacaaacd",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_circle_cctp_fees_read",
+          "sha256": "60a87b7b6bd602d05b1d0e8a585e3b1e52dbe3e1e45297538e31317d79ef63a2"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_circle_cctp_fees_read",
+          "sha256": "9f35e074dbaacc776f3aaa428017cf4366f199dff266dc9583746aee8c29e223"
+        }
+      }
+    },
+    {
+      "queryId": "circle.cctp.readiness.read",
+      "contractFingerprint": "be9ef6a3bc6722fb6b7dc68115fd6d7d9cde1abc8e6d14309d2fd76c30b196f6",
+      "runtimeFingerprint": "f4e62b81046692bfdc0d90ef528984e5b1bdd5b5467a1798bd7d95c9aacaaacd",
+      "channels": {
+        "carmelita": {
+          "id": "real_3c_web_circle_cctp_readiness_read",
+          "sha256": "02c8d114c14cab0e80efb0544d2b341529c4d061e1e2e750b2d612644e97f77d"
+        },
+        "chatgpt": {
+          "id": "real_3c_gpt_circle_cctp_readiness_read",
+          "sha256": "b8f8ab4df12095d26f0f64ee9651a2948b0103e61da5a098458180f9acd6a9bd"
+        }
+      }
+    },
+    {
+      "queryId": "personal.context",
+      "contractFingerprint": "4163091511aecc8051e106646a99be69a395a9d36c605ed01e33d507a197c8f5",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_context",
+          "sha256": "3089b8f35feda6cdf735145aed9542c5f33e42e91cf0ba2780274ab0a5a8b269"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_context",
+          "sha256": "17b60b7b007a159a6067eb5f38b2c799e66d3d0aada5c4ddd3ad19a513d88f30"
+        }
+      }
+    },
+    {
+      "queryId": "personal.wallets",
+      "contractFingerprint": "4079a367a15f06925e97b46d585d8284943b984fcb09acfed7709424cac87d62",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_wallets",
+          "sha256": "e47a4185a792d9b197febd1139d93e07062ac7ecc31039ef7b9520b963403d65"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_wallets",
+          "sha256": "ce480d74a81d714c020e69ac22ec8cf2787b482a143528b8d5dc988776044fc0"
+        }
+      }
+    },
+    {
+      "queryId": "personal.wallets.balances",
+      "contractFingerprint": "1e6052de2da66fef087c4bd1da76475ef5715b97a59a125cc0f405e81ee2ad0b",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_wallets_balances",
+          "sha256": "4853508cb98a0fec0fdbb50c4f18380623aeca2303a93002635c9f18a6c8f290"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_wallets_balances",
+          "sha256": "20623a19a6c03d4b8922da391dcc5d598dbe7f57e341992ffc3a9d9b1fce369d"
+        }
+      }
+    },
+    {
+      "queryId": "personal.wallets.status",
+      "contractFingerprint": "4e2f5faddc84ebe524c5b4de3352eaecc50b5febf5eea04202ab52d329d88388",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_wallets_status",
+          "sha256": "ad58cc166eb3685bfd795d08e627c8e08dfc1ef389cdb747f0a062ec36bf8513"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_wallets_status",
+          "sha256": "2df09b506269588a825c12bfbad41ce76a5abf1cb3cf07433acacae2393e9421"
+        }
+      }
+    },
+    {
+      "queryId": "personal.conversation",
+      "contractFingerprint": "bb5835e42e0ce3607e5d31e47e89a53b7bdfb92539994bf5dabb2618417e9492",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_conversation",
+          "sha256": "3092f8ba6de4894597bf2b6131b6aa6e3c4f5108f529f71d709e2680db3be7ac"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_conversation",
+          "sha256": "cb02001d0b53bdc80563935a6698572572915cc6f4e4fdd110a86ebb38ebc4fc"
+        }
+      }
+    },
+    {
+      "queryId": "personal.watchlist",
+      "contractFingerprint": "e8be15f5e4f392f2dca8f1e943968fb5dc8cb8f36d4f5f6829eda750a225822a",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_watchlist",
+          "sha256": "c81b681d34314c9ea6087820069b223fcf3a089378114850ee9a80d90e050d52"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_watchlist",
+          "sha256": "463d877fc6fb7c7f5e8e38281aae726634dc983a9eb25fad75b37aa3f412e68e"
+        }
+      }
+    },
+    {
+      "queryId": "personal.connections",
+      "contractFingerprint": "b597af8e95f5e874cf88f64d11c46c4525552a0b3953171bacaef072933b9273",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_connections",
+          "sha256": "508adae753950af4c9762d2e5f0ec55c1d5cb90417695d7c632e87e67f90e9f8"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_connections",
+          "sha256": "db692b7747154932cb56f5d7f4aa0e557b76325557ec14cb933e2a063cc6560c"
+        }
+      }
+    },
+    {
+      "queryId": "personal.connected_apps",
+      "contractFingerprint": "0c1b1becf12ba0621ba017a7a7e27c362348cb691c600546ff045ad74e2920b7",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_connected_apps",
+          "sha256": "098829fc1e838f255830839aca178a944e02af4f86668f6180a272b546938dba"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_connected_apps",
+          "sha256": "bb32bbf727e2980dc491bc5feda4f277cb32862c0dc8b6307963d9994ee2c2dc"
+        }
+      }
+    },
+    {
+      "queryId": "personal.memory",
+      "contractFingerprint": "baadfdd4e41199f256b4218a6895306f754ab79efa68a73bcfc8da18db537740",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_memory",
+          "sha256": "6f38e5c11f9aa63bcd061087baa447df732c42cb70c0db6435ff37caed6ea5dd"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_memory",
+          "sha256": "b44641571338efb276d1ac711b99ef9858c6e9781c84b7387f7f74188bb1858b"
+        }
+      }
+    },
+    {
+      "queryId": "personal.activity",
+      "contractFingerprint": "3c2618d69c00b41445ef1445bcd4710639e3e5a4e4681ef0cb9a006d19297a8a",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_activity",
+          "sha256": "bf8831c9dfa945c46101b0cf107f52d8547ba6069c27df82b16dcea70630bb41"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_activity",
+          "sha256": "fb9a1d9564742c718914a8380fc4190c8dc215536bd04bc0342208c01e190b13"
+        }
+      }
+    },
+    {
+      "queryId": "personal.autopilot",
+      "contractFingerprint": "6303d935bc0e08dc4bbc72b2e2d6b5f536ee1d15cc73c19e719427979a382bdd",
+      "runtimeFingerprint": "9d93083dae0f107362f29f901f6950e0d169e85ee9e89c32ef1b1d3d26adc887",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_personal_autopilot",
+          "sha256": "b0e3bb23856948697b6d01a011b4c5c905d56c2caac3787ab87ed44d1197a357"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_personal_autopilot",
+          "sha256": "9e704bff7240d1791f01ddc5332bd55f6efc01de9b7d1c495b5df8759574ee36"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.capabilities.list",
+      "contractFingerprint": "cb436826689bf13bda7780f98a96a7e275f8288a120ec27ec9ccdf7b8c03887b",
+      "runtimeFingerprint": "7aa1542d744209a8228a22f552d6b03e8feae376cd7e59c2de32b277260cffa5",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_offchain_capabilities_list",
+          "sha256": "f7179114f46ce2bb7ef6ea06209d286c9ed8ed7f93599a7f1b131d67a4276daf"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_offchain_capabilities_list",
+          "sha256": "2e8fb84dd02cbb530d280cec62c4fa0a54c1aca3cd181ffbb3069798e2dc47ff"
+        }
+      }
+    },
+    {
+      "queryId": "offchain.capabilities.get",
+      "contractFingerprint": "6742380e42f3df89119052673879459c6550b5aa214900fff9f863db2b2610cf",
+      "runtimeFingerprint": "7aa1542d744209a8228a22f552d6b03e8feae376cd7e59c2de32b277260cffa5",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_offchain_capabilities_get",
+          "sha256": "bbd70c159a630336a67c94c111ca3cc7cdcd2c023595ce12ccf9eaa0fe0a9489"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_offchain_capabilities_get",
+          "sha256": "c4be4ae7d162f25f5eda160dbf4f8773f126a13db00fd28cf874cc2f2e172b05"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.capabilities.list",
+      "contractFingerprint": "d68f07929a778e017b13672e1bcb3ade05799bf09b99828b9496251b6c291d84",
+      "runtimeFingerprint": "7aa1542d744209a8228a22f552d6b03e8feae376cd7e59c2de32b277260cffa5",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_avalanche_capabilities_list",
+          "sha256": "5c57adc8d798487da41afbd8b5a41db5aff2536ec48e79863b0b374e694a7355"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_avalanche_capabilities_list",
+          "sha256": "a343e76c7452b1dc15a477d50013cf833b744b353c0fd9a1d767a0712537d313"
+        }
+      }
+    },
+    {
+      "queryId": "avalanche.docs.tools",
+      "contractFingerprint": "105cd31329488cb6337919ac7a51b0ac7467be24819d352c2d060ae34c691de3",
+      "runtimeFingerprint": "7aa1542d744209a8228a22f552d6b03e8feae376cd7e59c2de32b277260cffa5",
+      "channels": {
+        "carmelita": {
+          "id": "real_49df_web_avalanche_docs_tools",
+          "sha256": "ff8e93ae41098c351a3ac3b42ea57164795d6a0cc2f82c8f644ffe96c213390a"
+        },
+        "chatgpt": {
+          "id": "real_49df_gpt_avalanche_docs_tools",
+          "sha256": "72fee5f6c9b0e4d259d07b1691afe02e8e23c82cbfc7bad9869afe1faf375b12"
+        }
+      }
+    }
+  ]
 }
