@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { listUserConnections } from "@/app/connectors/notion-oauth";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
+import { readConnectionsPanel, withPersonalPanelReadDeadline } from "@/app/queries/personal-panels";
+import { publicMcpErrorCode } from "@/app/mcp/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +16,13 @@ function bearerToken(request: Request) {
 export async function GET(request: Request) {
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
-    const connections = await listUserConnections(claims.user_id);
     return NextResponse.json(
-      { connections },
+      await withPersonalPanelReadDeadline(() => readConnectionsPanel(claims.user_id)),
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     const code =
-      error instanceof Error ? error.message.split(":")[0] : "connections_failed";
-    return NextResponse.json({ error: code }, { status: 401 });
+      error instanceof Error ? publicMcpErrorCode(error) : "connections_failed";
+    return NextResponse.json({ error: code }, { status: code === "read_query_timeout" ? 503 : 401 });
   }
 }

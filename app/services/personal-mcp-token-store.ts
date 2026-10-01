@@ -62,7 +62,8 @@ export async function revokePersonalMcpToken(userId: string, tokenId: string) {
 }
 export async function verifyPersonalMcpToken(rawToken: string) {
   if (!rawToken.startsWith(PERSONAL_MCP_TOKEN_PREFIX)) throw new Error("personal_mcp_token_invalid");
-  const db = await personalMcpDb();
+  // Verification reads an existing credential; schema setup belongs to issuance/admin.
+  const db = getDb();
   const [record] = await db.select().from(mcpAccessTokens).where(eq(mcpAccessTokens.tokenHash, hashPersonalMcpToken(rawToken))).limit(1);
   if (!record || record.subjectType !== "user" || record.status !== "active" || (record.expiresAt && record.expiresAt.getTime() <= Date.now())) throw new Error("personal_mcp_token_invalid");
   await limitPersonalPatUsage(record.id);

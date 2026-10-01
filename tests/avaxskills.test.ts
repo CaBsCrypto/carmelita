@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { searchAvaxSkills } from "../app/connectors/avaxskills";
+import { createEcosystemQueries } from "../app/queries/ecosystem";
+import { executeMcpReadQuery } from "../app/queries/adapters";
+import { parseChatReadRequest } from "../app/queries/chat";
+const runMcp = async (...args: Parameters<typeof executeMcpReadQuery>) => executeMcpReadQuery(...args);
 
 function jsonResponse(value: unknown) {
   return new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
@@ -52,20 +56,44 @@ test("chat parser recognizes AVAX Skills in English, Spanish and Portuguese", as
 
 test("personal MCP exposes advisory search as a read-only tool", async () => {
   const source = await readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8");
-  const start = source.indexOf("search_avax_skills");
-  const end = source.indexOf("list_avalanche_capabilities", start);
-  const section = source.slice(start, end);
-  assert.ok(start >= 0);
-  assert.match(section, /readOnlyHint: true/);
-  assert.match(section, /searchAvaxSkills/);
-  assert.doesNotMatch(section, /sendTransaction|signTypedData|privateKey/i);
+  assert.match(source, /for \(const query of readQueryDefinitions\)/);
+  assert.match(source, /server\.registerTool\(query\.toolName/);
+  assert.match(source, /inputSchema: query\.inputSchema,/);
+  assert.match(source, /readOnlyHint: true, destructiveHint: false/);
+  assert.match(source, /executeMcpReadQuery\(query\.id, input, extra\.authInfo\)/);
+  let calls = 0;
+  const definitions = createEcosystemQueries({ skills: async query => {
+    calls++;
+    return searchAvaxSkills(query, async () => jsonResponse([{ name: "x402-integration", description: "Advisory guide" }]));
+  } });
+  const skills = definitions.find(query => query.id === "avalanche.skills.search");
+  assert.ok(skills);
+  assert.equal(skills.toolName, "search_avax_skills");
+  assert.equal(skills.scope, "agent:read");
+  assert.deepEqual(Object.keys(skills.inputSchema.shape), ["query"]);
+  assert.equal(skills.inputSchema.safeParse({ query: "x402" }).success, true);
+  assert.equal(skills.inputSchema.safeParse({ query: "x" }).success, false);
+  assert.equal(skills.inputSchema.safeParse({ query: "x402", userId: "another-owner" }).success, false);
+  const auth = { token: "fixture-not-a-credential", clientId: "fixture", scopes: ["agent:read"], extra: { subjectType: "user", userId: "owner-a" } };
+  await assert.rejects(runMcp(skills.toolName, { query: "x402" }, undefined, definitions), /mcp_principal_required/);
+  await assert.rejects(runMcp(skills.toolName, { query: "x402" }, { ...auth, scopes: [] }, definitions), /mcp_scope_required/);
+  assert.equal(calls, 0);
+  const result = await executeMcpReadQuery(skills.toolName, { query: "x402" }, auth, definitions) as Awaited<ReturnType<typeof searchAvaxSkills>>;
+  assert.equal(result.trust, "advisory_unverified");
+  assert.equal(result.executionAllowed, false);
+  assert.equal(result.requiresOfficialVerification, true);
+  assert.deepEqual(result.results[0]?.riskFlags, ["legacy_x402"]);
+  assert.equal(calls, 1);
 });
 
 test("chat reports AVAX Skills with a supported read-only connection stage", async () => {
-  const source = await readFile(new URL("../app/agent-chat-store.ts", import.meta.url), "utf8");
-  assert.match(
-    source,
-    /name: "AVAX Skills", stage: "Read-only connected", priority: "P1"/,
-  );
-  assert.doesNotMatch(source, /stage: "Advisory read-only"/);
+  for (const text of ["Search AVAX Skills for account abstraction", "Busca un skill de Avalanche para x402", "Procure no AVAX Skills por agentes"]) {
+    const request = parseChatReadRequest(text);
+    assert.ok(request && !("invalid" in request));
+    assert.equal(request.id, "avalanche.skills.search");
+    assert.deepEqual(Object.keys(request.input), ["query"]);
+  }
+  const chatSource = await readFile(new URL("../app/agent-chat-store.ts", import.meta.url), "utf8");
+  assert.match(chatSource, /executeChatRead\(sharedRead, userId, language\)/);
+  assert.doesNotMatch(chatSource, /stage: "Advisory read-only"/);
 });

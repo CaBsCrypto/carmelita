@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { listPersistedUserWallets } from "@/app/multichain-account";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
-import { getSolanaDevnetBalance } from "@/app/wallets/solana-client";
+import { readSolanaWalletPanel, withPersonalPanelReadDeadline } from "@/app/queries/personal-panels";
+import { publicMcpErrorCode } from "@/app/mcp/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,41 +25,18 @@ export async function GET(request: Request) {
 
   try {
     const claims = await verifyPrivyAccessToken(bearerToken(request));
-    const wallets = await listPersistedUserWallets(claims.user_id);
-    const solanaWallet = wallets.find(
-      (candidate) =>
-        candidate.chainType === "solana" &&
-        candidate.network === "solana:devnet" &&
-        candidate.status === "active",
-    );
-
-    if (!solanaWallet) {
-      return NextResponse.json(
-        { error: "solana_not_activated" },
-        { status: 404, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-
-    const balanceInfo = await getSolanaDevnetBalance(solanaWallet.address)
-      .catch(() => { throw new Error("solana_balance_unavailable"); });
-
     return NextResponse.json(
-      {
-        address: solanaWallet.address,
-        network: "solana:devnet",
-        nativeAsset: "SOL",
-        balance: balanceInfo.formatted,
-        sol: balanceInfo.sol,
-        lamports: balanceInfo.lamports,
-        explorerUrl: `https://explorer.solana.com/address/${solanaWallet.address}?cluster=devnet`,
-      },
+      await withPersonalPanelReadDeadline(() => readSolanaWalletPanel(claims.user_id)),
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "solana_status_failed";
+    const message = error instanceof Error ? publicMcpErrorCode(error) : "solana_status_failed";
+    if (message === "solana_not_activated") return NextResponse.json(
+      { error: message }, { status: 404, headers: { "Cache-Control": "no-store" } },
+    );
     return NextResponse.json(
       { error: message },
-      { status: message === "solana_balance_unavailable" ? 502 : message.includes("access_token") ? 401 : 400, headers: { "Cache-Control": "no-store" } },
+      { status: message === "read_query_timeout" ? 503 : message === "solana_balance_unavailable" ? 502 : message.includes("access_token") ? 401 : 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

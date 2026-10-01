@@ -1,6 +1,7 @@
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
-import { searchTravalaHotels, travalaSearchInput } from "@/app/travala";
+import { travalaSearchInput } from "@/app/travala";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,12 +18,12 @@ function bearerToken(request: Request) {
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   try {
-    await verifyPrivyAccessToken(bearerToken(request));
+    const { user_id: userId } = await verifyPrivyAccessToken(bearerToken(request));
     const parsed = travalaSearchInput.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_travel_search" }, { status: 400 });
     }
-    return NextResponse.json(await searchTravalaHotels(parsed.data), {
+    return NextResponse.json(await executeWebReadQuery("offchain.travala.hotel_search", parsed.data, userId), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

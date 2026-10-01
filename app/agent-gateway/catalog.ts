@@ -7,8 +7,14 @@ import {
   type GatewayCapability,
 } from "@/app/agent-gateway/types";
 import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
+import { readQueryDefinitions } from "@/app/queries/registry";
 
 type StaticCapability = Omit<GatewayCapability, "version" | "execution" | "requiresApproval">;
+
+// A server API key or an existing wallet is not a missing individual OAuth connection.
+const individualConnectionRequirements = new Set(["notion_oauth", "unblck_linked_identity", "existing_oauth_subject_link"]);
+const requiresIndividualConnection = (requirements: readonly string[] = []) =>
+  requirements.some(requirement => individualConnectionRequirements.has(requirement));
 
 const staticCapabilities: readonly StaticCapability[] = [
   {
@@ -241,7 +247,7 @@ function fromAvalanche(capability: AvalancheCapability & { category: string }): 
 }
 
 export function listGatewayCapabilities(): GatewayCapability[] {
-  return [
+  const legacy: GatewayCapability[] = [
     ...staticCapabilities.filter((capability) => capability.id !== "stellar.bazaar.discovery" || getStellarBazaarConfig().enabled).map((capability) => ({
       ...capability,
       requiresApproval: capability.approval !== "none",
@@ -250,6 +256,40 @@ export function listGatewayCapabilities(): GatewayCapability[] {
     })),
     ...listAvalancheCapabilities().map(fromAvalanche),
   ];
+  const aliases: Record<string, string> = {
+    "stellar.wallet.status": "personal.wallets.status",
+    "avalanche.wallet.status": "personal.wallets.status",
+  };
+  const enriched = legacy.map(capability => {
+    const queries = readQueryDefinitions.filter(query => query.id === capability.id || query.id === aliases[capability.id] || capability.readTools?.includes(query.toolName));
+    if (capability.operation !== "read" || !queries.length) return capability;
+    return {
+      ...capability,
+      dataScope: queries[0].dataScope,
+      readTools: queries.map(query => query.toolName),
+      channels: { carmelita: true, chatgpt: true },
+      availability: {
+        implemented: true, connection: queries.some(query => requiresIndividualConnection(query.requirements)) ? "required" as const : "not_required" as const,
+        provider: capability.id === "avalanche.nft.floor_read" ? "known_unavailable" as const : "unverified" as const,
+        acceptance: "pending" as const, available: false,
+      },
+      execution: { exposedByGateway: true, mode: "read_only" as const },
+    };
+  });
+  const existing = new Set(enriched.map(capability => capability.id));
+  const additional: GatewayCapability[] = readQueryDefinitions.filter(query => !existing.has(query.id)).map(query => ({
+    id: query.id, title: query.title, description: query.description,
+    version: GATEWAY_API_VERSION, provider: "Carmelita shared read service", category: "queries",
+    status: "ready_to_test", operation: "read", network: "offchain:testnet", dataScope: query.dataScope,
+    readTools: [query.toolName], approval: "none", requiresApproval: false,
+    requirements: [query.scope, ...(query.requirements ?? [])],
+    channels: { carmelita: true, chatgpt: true },
+    availability: { implemented: true, connection: requiresIndividualConnection(query.requirements) ? "required" : "not_required", provider: "unverified", acceptance: "pending", available: false },
+    evidence: "Both adapters use the same typed read service; channel acceptance is recorded separately.",
+    nextAction: `Query ${query.toolName} from Carmelita or ChatGPT.`,
+    execution: { exposedByGateway: true, mode: "read_only" },
+  }));
+  return [...enriched, ...additional];
 }
 
 export function getGatewayCapability(id: string) {

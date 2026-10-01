@@ -130,8 +130,8 @@ type TravelHotel = {
   thumbnail?: string;
   rating?: number | null;
   star?: number | null;
-  totalPriceUSD: number;
-  pricePerNightUSD: number;
+  totalPriceUSD: number | null;
+  pricePerNightUSD: number | null;
   currency: string;
   mealType?: string;
   address?: string;
@@ -152,13 +152,15 @@ function shortAddress(address: string) {
 export default function AgentOnboarding({
   configured,
   autoLogin = false,
+  initialDraft = "",
 }: {
   configured: boolean;
   autoLogin?: boolean;
+  initialDraft?: string;
 }) {
   const { locale } = useLocale();
   if (!configured) return <PrivySetupRequired />;
-  return <PrivyAgent locale={locale} autoLogin={autoLogin} />;
+  return <PrivyAgent locale={locale} autoLogin={autoLogin} initialDraft={initialDraft} />;
 }
 
 function PrivySetupRequired() {
@@ -185,9 +187,11 @@ function PrivySetupRequired() {
 function PrivyAgent({
   locale,
   autoLogin,
+  initialDraft,
 }: {
   locale: Locale;
   autoLogin: boolean;
+  initialDraft: string;
 }) {
   const t = onboardingUi[locale];
   const pc = preparationCopy[locale];
@@ -394,6 +398,7 @@ function PrivyAgent({
             pc.unavailable
           }
           getAccessToken={getAccessToken}
+          initialDraft={initialDraft}
         />
         <AgentMemoryVault getAccessToken={getAccessToken} />
 
@@ -544,8 +549,8 @@ function PrivyAgent({
                       </div>
                     </div>
                     <footer>
-                      <strong>{"$" + hotel.totalPriceUSD.toFixed(2)}</strong>
-                      <small>{"$" + hotel.pricePerNightUSD.toFixed(2)} / night</small>
+                      <strong>{hotel.totalPriceUSD === null ? ({ es: "No disponible", en: "Unavailable", pt: "Indisponível" }[locale]) : "$" + hotel.totalPriceUSD.toFixed(2)}</strong>
+                      <small>{hotel.pricePerNightUSD === null ? ({ es: "No disponible", en: "Unavailable", pt: "Indisponível" }[locale]) : "$" + hotel.pricePerNightUSD.toFixed(2)} / night</small>
                       <button type="button" onClick={() => setSelectedHotel(hotel)}>
                         {selectedHotel?.packageId === hotel.packageId ? "Selected" : "Select"}
                       </button>
@@ -564,7 +569,7 @@ function PrivyAgent({
                 <p>{selectedHotel.cancellationPolicyString ?? "Review final conditions before booking."}</p>
               </div>
               <div>
-                <strong>{"$" + selectedHotel.totalPriceUSD.toFixed(2)} USD</strong>
+                <strong>{selectedHotel.totalPriceUSD === null ? ({ es: "No disponible", en: "Unavailable", pt: "Indisponível" }[locale]) : "$" + selectedHotel.totalPriceUSD.toFixed(2) + " USD"}</strong>
                 <span>Booking disabled in the Stellar MVP</span>
               </div>
             </aside>

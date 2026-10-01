@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { listReadQueries } from "@/app/queries/registry";
 
 export function GET(request: Request) {
   const origin = new URL(request.url).origin;
@@ -16,11 +17,14 @@ export function GET(request: Request) {
       },
       personalAgent: {
         endpoint: origin + "/api/mcp/agent",
-        authentication: "Privy bearer bridge or scoped carmelita_user_ personal token",
+        authentication: "OAuth bearer authorization bound to the existing Privy identity, or scoped personal diagnostic token",
         scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
         purpose:
           "Read authenticated context and conversation, discover capabilities, query Mainnet market prices and chain TVL, and create non-executable Testnet plans.",
         marketReadTools: ["search_market_assets", "get_market_quotes", "compare_chains"],
+        readQueries: listReadQueries(),
+        webQueryEndpoint: origin + "/api/agent/queries",
+        toolCatalogRefresh: "Internal changes share one server. Tool or parameter changes require refreshing ChatGPT discovery and validating the returned catalog.",
       },
       serviceProvider: {
         endpoint: origin + "/api/mcp/provider",
@@ -33,7 +37,7 @@ export function GET(request: Request) {
     agentApi: {
       baseEndpoint: origin + "/api/v1",
       discovery: origin + "/api/v1/capabilities",
-      authentication: "scoped personal bearer token for user state and planning",
+      authentication: "scoped user authorization for state and non-executable planning",
       environment: "testnet",
       execution: "disabled through the Gateway; no approval, transaction preparation, signing or submission",
     },
@@ -51,7 +55,7 @@ export function GET(request: Request) {
       },
       providerTokens: "SHA-256 hashes at rest; raw token returned once",
       personalTokens: "SHA-256 hashes at rest; raw token returned once",
-      oauth: "OAuth 2.1 remains the public production milestone; scoped PAT is the Testnet bridge",
+      oauth: "Existing OAuth issuer, identity binding and granted scopes are preserved. Diagnostic tokens do not replace visible user consent.",
     },
   });
 }

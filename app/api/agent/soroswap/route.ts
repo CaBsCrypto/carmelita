@@ -1,3 +1,4 @@
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { createHash, randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { and, desc, eq } from "drizzle-orm";
@@ -154,23 +155,6 @@ function idempotencyKey(
       ].join(":"),
     )
     .digest("hex");
-}
-
-function publicQuote(
-  quote: Awaited<ReturnType<typeof getSoroswapQuote>>,
-) {
-  return {
-    network: "Stellar Testnet",
-    assetIn: quote.assetIn,
-    assetOut: quote.assetOut,
-    amountIn: quote.amountIn,
-    amountOut: quote.amountOut,
-    minimumAmountOut: quote.minimumAmountOut,
-    priceImpactPct: quote.priceImpactPct,
-    platform: quote.platform,
-    slippageBps: quote.slippageBps,
-    routePlan: quote.routePlan,
-  };
 }
 
 function publicAction(row: typeof agentStellarActions.$inferSelect) {
@@ -363,7 +347,8 @@ async function executeAction(
 export async function GET(request: Request) {
   try {
     const { userId } = await auth(request);
-    const wallet = await userWallet(userId);
+    const wallet = (await listPersistedUserWallets(userId)).find(row => row.userId === userId && row.chainType === "stellar" && row.network === "stellar:testnet");
+    if (!wallet) throw new Error("stellar_wallet_not_registered");
     const recent = await getDb()
       .select()
       .from(agentStellarActions)
@@ -420,8 +405,10 @@ export async function POST(request: Request) {
       });
     }
     const quote = quoteSchema.parse(body);
+    const result = await executeWebReadQuery("stellar.soroswap.quote", { assetIn: quote.assetIn, assetOut: quote.assetOut, amount: quote.amount, slippageBps: quote.slippageBps }, userId);
+    if (result && typeof result === "object" && "status" in result && result.status === "unavailable") throw new Error("soroswap_quote_unavailable");
     return NextResponse.json(
-      { quote: publicQuote(await getSoroswapQuote(quote)) },
+      { quote: result },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

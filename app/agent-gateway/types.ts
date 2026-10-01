@@ -38,8 +38,16 @@ export type GatewayCapability = {
   status: GatewayCapabilityStatus;
   operation: GatewayOperation;
   network: GatewayNetwork;
-  dataScope?: "mainnet_market_data";
+  dataScope?: string;
   readTools?: readonly string[];
+  channels?: { carmelita: boolean; chatgpt: boolean };
+  availability?: {
+    implemented: boolean;
+    connection: "required" | "not_required";
+    provider: "unverified" | "known_unavailable";
+    acceptance: "pending" | "accepted";
+    available: boolean;
+  };
   approval: "none" | "privy_single" | "privy_dual" | "user_confirmation";
   requiresApproval: boolean;
   requirements: readonly string[];

@@ -4,6 +4,10 @@ import test from "node:test";
 import { buildAdminWalletRegistry } from "../app/admin/wallets/data";
 import { provisionUserWallets } from "../app/wallets/onboarding";
 import type { UserWallet } from "../app/wallets/types";
+import { buildMcpWalletContext } from "../app/mcp/agent-context";
+import { createPersonalQueries } from "../app/queries/personal";
+import { executeMcpReadQuery } from "../app/queries/adapters";
+const runMcp = async (...args: Parameters<typeof executeMcpReadQuery>) => executeMcpReadQuery(...args);
 
 const userId = "did:privy:dual-wallet-acceptance";
 const stellarAddress = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
@@ -162,7 +166,43 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
   ]);
   assert.match(mcpContextSource, /listPersistedUserWallets\(userId\)/);
   assert.match(mcpContextSource, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status, explorerUrl: walletExplorerUrl\(network, address\) \}\)\)/);
-  assert.match(mcpRouteSource, /get_agent_context[\s\S]*getAgentMcpContext\(userId\)/);
+  assert.match(mcpRouteSource, /for \(const query of readQueryDefinitions\)/);
+  assert.match(mcpRouteSource, /server\.registerTool\(query\.toolName/);
+  assert.match(mcpRouteSource, /executeMcpReadQuery\(query\.id, input, extra\.authInfo\)/);
+  const noAncillaryRead = async () => { throw new Error("unexpected_ancillary_read"); };
+  const ownerReads: string[] = [];
+  const definitions = createPersonalQueries({
+    context: async authenticatedOwner => {
+      ownerReads.push(authenticatedOwner);
+      assert.equal(authenticatedOwner, userId);
+      return {
+        user: { id: authenticatedOwner, email: null, status: "active", lastSeenAt: createdAt },
+        ...buildMcpWalletContext(persistedWallets.filter(row => row.userId === authenticatedOwner)),
+        connections: [], authority: { paymentSigning: "not_enabled", custody: false, writeToolsRequireExplicitApproval: true },
+      };
+    },
+    conversation: noAncillaryRead, wallets: noAncillaryRead, nativeBalance: noAncillaryRead,
+    watchlist: noAncillaryRead, quotes: noAncillaryRead, connections: noAncillaryRead,
+    connectedApps: noAncillaryRead, memory: noAncillaryRead, activity: noAncillaryRead,
+    autopilot: noAncillaryRead, stellarAccount: noAncillaryRead,
+    evmDiagnostics: noAncillaryRead, erc20Balance: noAncillaryRead,
+    solanaBalance: noAncillaryRead,
+    now: () => createdAt.getTime(),
+  });
+  const contextDefinition = definitions.find(query => query.toolName === "get_agent_context");
+  assert.ok(contextDefinition);
+  assert.equal(contextDefinition.scope, "agent:context");
+  assert.deepEqual(Object.keys(contextDefinition.inputSchema.shape), []);
+  const auth = { token: "fixture-not-a-credential", clientId: "fixture", scopes: ["agent:context"], extra: { subjectType: "user", userId } };
+  await assert.rejects(runMcp("get_agent_context", {}, { ...auth, scopes: ["agent:read"] }, definitions), /mcp_scope_required/);
+  await assert.rejects(runMcp("get_agent_context", { userId: "foreign-owner" }, auth, definitions));
+  assert.deepEqual(ownerReads, []);
+  const context = await executeMcpReadQuery("get_agent_context", {}, auth, definitions) as { wallets: typeof mcpVisibleWallets; authority: { custody: boolean } };
+  assert.deepEqual(new Set(context.wallets.map(wallet => wallet.network)), new Set(["stellar:testnet", "avalanche:fuji", "solana:devnet"]));
+  assert.ok(context.wallets.some(wallet => wallet.address === stellarAddress));
+  assert.ok(context.wallets.some(wallet => wallet.address === avalancheAddress));
+  assert.equal(context.authority.custody, false);
+  assert.deepEqual(ownerReads, [userId]);
   assert.match(adminUiSource, /wallet\.networkName/);
   assert.match(adminUiSource, /wallet\.address/);
   assert.match(adminUiSource, /initialRegistry\.networks\.map/);

@@ -1,9 +1,9 @@
+import { readAgentVault } from "@/app/queries/personal-store";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseVaultCommand } from "@/app/agent-memory";
 import {
   deleteAgentVaultRecord,
-  listAgentVault,
   saveAgentVaultCommand,
   updateAgentVaultRecord,
 } from "@/app/agent-memory-store";
@@ -75,7 +75,7 @@ function errorResponse(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    return NextResponse.json(await listAgentVault(await userId(request)), {
+    return NextResponse.json(await readAgentVault(await userId(request)), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

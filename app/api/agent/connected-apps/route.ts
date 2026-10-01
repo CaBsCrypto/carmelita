@@ -1,3 +1,4 @@
+import { readOwnConnectedApps } from "@/app/queries/personal";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
@@ -45,13 +46,11 @@ function responseError(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    const { config, subject } = await ownStytchSubject(request);
-    if (!subject) return NextResponse.json({ connectedApps: [] }, { headers: { "Cache-Control": "no-store" } });
-    const connectedApps = await new StytchConnectedAppsClient(config).listConnectedApps(subject);
-    return NextResponse.json({ connectedApps }, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    return responseError(error);
-  }
+    const { user_id: userId } = await verifyPrivyAccessToken(bearerToken(request));
+    const result = await readOwnConnectedApps(userId);
+    if (result.status === "unavailable") throw new Error(result.error ?? "stytch_connected_apps_unavailable");
+    return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { return responseError(error); }
 }
 
 export async function DELETE(request: Request) {

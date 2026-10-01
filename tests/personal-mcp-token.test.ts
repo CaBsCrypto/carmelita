@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { createRawPersonalMcpToken, hashPersonalMcpToken, PERSONAL_MCP_SCOPES, PERSONAL_MCP_TOKEN_PREFIX, personalMcpTokenPrefix, validatePersonalMcpScopes } from "@/app/services/personal-mcp-token-store";
+import { readQueryDefinitions } from "../app/queries/registry";
+import { executeMcpReadQuery } from "../app/queries/adapters";
+const runMcp = async (...args: Parameters<typeof executeMcpReadQuery>) => executeMcpReadQuery(...args);
 
 test("personal MCP credentials use a recognizable high-entropy prefix and SHA-256 hash", () => {
   const first = createRawPersonalMcpToken(); const second = createRawPersonalMcpToken();
@@ -32,6 +35,22 @@ test("personal MCP storage never exposes token hashes as metadata", async () => 
   const projection = source.slice(source.indexOf("function publicTokenMetadata"), source.indexOf("export async function issuePersonalMcpToken"));
   assert.doesNotMatch(projection, /tokenHash/); assert.match(source, /lastUsedAt: usedAt/);
   assert.match(source, /status: "revoked"/); assert.match(source, /subjectType: "user"/);
+});
+
+test("PAT verification does not provision schema and retains expiry, revocation and usage checks", async () => {
+  const source = await readFile(new URL("../app/services/personal-mcp-token-store.ts", import.meta.url), "utf8");
+  const verification = source.slice(source.indexOf("export async function verifyPersonalMcpToken"));
+  assert.match(verification, /const db = getDb\(\)/);
+  assert.doesNotMatch(verification, /personalMcpDb\(|ensureMcpProviderSchema\(|CREATE TABLE/);
+  assert.match(verification, /record\.status !== "active"/);
+  assert.match(verification, /record\.expiresAt\.getTime\(\) <= Date\.now\(\)/);
+  assert.match(verification, /await limitPersonalPatUsage\(record\.id\)/);
+  assert.match(verification, /lastUsedAt: usedAt/);
+  const oauth = await readFile(new URL("../app/mcp/stytch-oauth.ts", import.meta.url), "utf8");
+  const resolution = await readFile(new URL("../app/services/oauth-subject-link-store.ts", import.meta.url), "utf8");
+  const resolvers = resolution.slice(resolution.indexOf("export async function resolveOAuthSubject("));
+  assert.doesNotMatch(oauth, /ensure\w+Schema\(|CREATE TABLE|linkOAuthSubject\(/);
+  assert.doesNotMatch(resolvers, /ensure\w+Schema\(|\.insert\(|\.update\(|CREATE TABLE/);
 });
 test("agent MCP auth accepts personal credentials without weakening provider auth", async () => {
   const source = await readFile(new URL("../app/mcp/auth.ts", import.meta.url), "utf8");
@@ -77,8 +96,25 @@ test("sensitive personal MCP tools require explicit scopes and UI opt-in", async
   const route = await readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8");
   const auth = await readFile(new URL("../app/mcp/auth.ts", import.meta.url), "utf8");
   const ui = await readFile(new URL("../app/agent/agent-external-access.tsx", import.meta.url), "utf8");
-  assert.match(route, /"get_agent_context"[\s\S]*?"agent:context"/);
-  assert.match(route, /"get_agent_conversation"[\s\S]*?"agent:conversation"/);
+  assert.match(route, /for \(const query of readQueryDefinitions\)/);
+  assert.match(route, /server\.registerTool\(query\.toolName/);
+  assert.match(route, /executeMcpReadQuery\(query\.id, input, extra\.authInfo\)/);
+  for (const [toolName, scope] of [["get_agent_context", "agent:context"], ["get_agent_conversation", "agent:conversation"]]) {
+    const definition = readQueryDefinitions.find(query => query.toolName === toolName);
+    assert.ok(definition, toolName);
+    assert.equal(definition.scope, scope);
+    assert.deepEqual(Object.keys(definition.inputSchema.shape), []);
+    let ownerReads = 0;
+    const fixture = { ...definition, execute: async (_input: unknown, context: { userId: string }) => { ownerReads++; return { owner: context.userId }; } };
+    const auth = { token: "fixture-not-a-credential", clientId: "fixture", scopes: [scope], extra: { subjectType: "user", userId: "authorized-owner" } };
+    await assert.rejects(runMcp(toolName, {}, undefined, [fixture]), /mcp_principal_required/);
+    await assert.rejects(runMcp(toolName, {}, { ...auth, scopes: ["agent:read"] }, [fixture]), /mcp_scope_required/);
+    await assert.rejects(runMcp(toolName, {}, { ...auth, extra: { subjectType: "provider", userId: "authorized-owner" } }, [fixture]), /mcp_principal_required/);
+    await assert.rejects(runMcp(toolName, { userId: "foreign-owner" }, auth, [fixture]));
+    assert.equal(ownerReads, 0);
+    assert.deepEqual(await executeMcpReadQuery(toolName, {}, auth, [fixture]), { owner: "authorized-owner" });
+    assert.equal(ownerReads, 1);
+  }
   assert.match(auth, /scopes: \["agent:read", "agent:plan", "agent:context", "agent:conversation"\]/);
   assert.match(ui, /plan,setPlan.*useState\(false\)/);
   assert.match(ui, /context,setContext.*useState\(false\)/);

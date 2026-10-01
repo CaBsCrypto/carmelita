@@ -1,6 +1,7 @@
+import { readAgentAutopilot } from "@/app/queries/personal-store";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAutopilotState, updateAutopilotState } from "@/app/agent-memory-store";
+import { updateAutopilotState } from "@/app/agent-memory-store";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 
 export const runtime = "nodejs";
@@ -56,7 +57,7 @@ function errorResponse(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    return NextResponse.json(await getAutopilotState(await userId(request)), {
+    return NextResponse.json(await readAgentAutopilot(await userId(request)), {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {

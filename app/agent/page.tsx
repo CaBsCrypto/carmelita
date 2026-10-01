@@ -13,7 +13,7 @@ export const metadata = {
 export default async function AgentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connect?: string | string[] }>;
+  searchParams: Promise<{ connect?: string | string[]; draft?: string | string[] }>;
 }) {
   const configured = Boolean(
     (process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim() ||
@@ -22,6 +22,7 @@ export default async function AgentPage({
   );
   const params = await searchParams;
   const autoLogin = params.connect === "privy";
+  const initialDraft = typeof params.draft === "string" && params.draft.length <= 2000 && /^\/(?:consulta|query|consultar)\s/.test(params.draft) ? params.draft : "";
 
   return (
     <main className="agent-page">
@@ -36,7 +37,7 @@ export default async function AgentPage({
           <Link href="/demo">Demo</Link>
         </div>
       </nav>
-      <AgentOnboarding configured={configured} autoLogin={autoLogin} />
+      <AgentOnboarding configured={configured} autoLogin={autoLogin} initialDraft={initialDraft} />
     </main>
   );
 }

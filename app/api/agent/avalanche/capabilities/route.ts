@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { avalancheCapabilityIdSchema, listAvalancheCapabilities, planAvalancheCapability } from "@/app/avalanche/capability-registry";
+import { avalancheCapabilityIdSchema, planAvalancheCapability } from "@/app/avalanche/capability-registry";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,11 +12,11 @@ function sameOrigin(request: Request) { const origin = request.headers.get("orig
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   try {
-    await verifyPrivyAccessToken(bearerToken(request));
+    const claims = await verifyPrivyAccessToken(bearerToken(request));
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "invalid_avalanche_capability_request" }, { status: 400, headers: { "Cache-Control": "no-store" } });
     const input = parsed.data;
-    const result = input.action === "list" ? { capabilities: listAvalancheCapabilities() } : planAvalancheCapability(input.capabilityId, { ...input.context, authenticated: true });
+    const result = input.action === "list" ? await executeWebReadQuery("avalanche.capabilities.list", {}, claims.user_id) : planAvalancheCapability(input.capabilityId, { ...input.context, authenticated: true });
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch { return NextResponse.json({ error: "invalid_privy_token" }, { status: 401, headers: { "Cache-Control": "no-store" } }); }
 }

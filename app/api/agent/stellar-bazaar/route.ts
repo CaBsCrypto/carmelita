@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
-import { searchStellarBazaar } from "@/app/connectors/stellar-bazaar";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,13 +42,13 @@ function failure(error: unknown) {
 
 export async function GET(request: Request) {
   try {
-    await auth(request);
+    const userId = await auth(request);
     const params = new URL(request.url).searchParams;
     if ([...params.keys()].some((key) => key !== "query") || params.getAll("query").length > 1) {
       throw new Error("stellar_bazaar_query_invalid");
     }
     const query = params.get("query") ?? "";
-    const result = await searchStellarBazaar(query);
+    const result = await executeWebReadQuery("stellar.bazaar.discovery", { query }, userId);
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return failure(error);

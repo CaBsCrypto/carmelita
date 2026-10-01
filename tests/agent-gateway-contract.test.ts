@@ -4,6 +4,7 @@ import { readFile, stat } from "node:fs/promises";
 import { listGatewayCapabilities } from "../app/agent-gateway/catalog";
 import { InMemoryGatewayStore } from "../app/agent-gateway/store";
 import { createGatewayPlan } from "../app/agent-gateway/service";
+import { readQueryDefinitions } from "../app/queries/registry";
 
 test("gateway capability contract is explicit and Testnet-only", () => {
   const capabilities = listGatewayCapabilities();
@@ -17,8 +18,15 @@ test("gateway capability contract is explicit and Testnet-only", () => {
     assert.equal(capability.execution.exposedByGateway, Boolean(capability.readTools?.length));
     if (capability.execution.exposedByGateway) {
       assert.equal(capability.operation, "read");
-      assert.equal(capability.dataScope, "mainnet_market_data");
-      assert.deepEqual(capability.requirements, ["agent:read"]);
+      for (const name of capability.readTools ?? []) {
+        const query = readQueryDefinitions.find(item => item.toolName === name);
+        assert.ok(query, `${capability.id} references an unregistered read tool`);
+        assert.ok(["agent:read", "agent:context", "agent:conversation"].includes(query.scope));
+      }
+      if (capability.id === "offchain.market.quote" || capability.id === "offchain.defillama.chains") {
+        assert.equal(capability.dataScope, "mainnet_market_data");
+        assert.deepEqual(capability.requirements, ["agent:read"]);
+      }
     }
     assert.equal(
       capability.requiresApproval,

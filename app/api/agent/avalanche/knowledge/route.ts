@@ -1,9 +1,6 @@
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  listAvalancheReadOnlyTools,
-  searchAvalancheDocs,
-} from "@/app/connectors/avalanche-mcp";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 
 export const runtime = "nodejs";
@@ -36,7 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   }
   try {
-    await verifyPrivyAccessToken(bearerToken(request));
+    const { user_id: userId } = await verifyPrivyAccessToken(bearerToken(request));
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
@@ -46,12 +43,12 @@ export async function POST(request: Request) {
     }
     const input = parsed.data;
     const result = input.action === "list"
-      ? await listAvalancheReadOnlyTools()
-      : await searchAvalancheDocs({
+      ? await executeWebReadQuery("avalanche.docs.tools", {}, userId)
+      : await executeWebReadQuery("avalanche.docs.search", {
           query: input.query,
           source: input.source,
           limit: input.limit,
-        });
+        }, userId);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });

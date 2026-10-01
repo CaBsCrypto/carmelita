@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  getDexalotTestnetQuote,
-  listDexalotTestnetPairs,
-} from "@/app/connectors/dexalot";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 
 export const runtime = "nodejs";
@@ -40,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   }
   try {
-    await verifyPrivyAccessToken(bearerToken(request));
+    const { user_id: userId } = await verifyPrivyAccessToken(bearerToken(request));
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
@@ -50,8 +47,8 @@ export async function POST(request: Request) {
     }
     const input = parsed.data;
     const result = input.action === "pairs"
-      ? await listDexalotTestnetPairs()
-      : await getDexalotTestnetQuote(input);
+      ? await executeWebReadQuery("dexalot.markets.list", {}, userId)
+      : await executeWebReadQuery("dexalot.quote.read", { amount: input.amount, assetIn: input.assetIn, assetOut: input.assetOut }, userId);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });

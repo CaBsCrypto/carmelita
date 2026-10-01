@@ -6,7 +6,6 @@ import { z } from "zod";
 import {
   attachStellarSignature,
   DEFINDEX_TESTNET,
-  getDefindexPosition,
   getSubmittedTransaction,
   prepareDefindexDeposit,
   prepareUsdcTrustline,
@@ -24,6 +23,7 @@ import {
   agentStellarActions,
 } from "@/db/schema";
 import { listPersistedUserWallets } from "@/app/multichain-account";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { evaluateUserAction } from "@/app/agent-memory-store";
 
 export const runtime = "nodejs";
@@ -351,13 +351,25 @@ async function executeAction(userId: string, approvalId: string, clientSignature
 export async function GET(request: Request) {
   try {
     const { userId } = await auth(request);
-    const wallet = await userWallet(userId);
-    const [account, xlmPosition, usdcPosition, recent] = await Promise.all([
-      getStellarTestnetAccount(wallet.address),
-      getDefindexPosition(wallet.address, "XLM").catch(() => null),
-      getDefindexPosition(wallet.address, "USDC").catch(() => null),
+    if (!hasDatabase()) throw new Error("database_not_configured");
+    // Reading a panel must not create schema, wallets or an approval lifecycle.
+    const wallet = (await listPersistedUserWallets(userId)).find(candidate =>
+      candidate.userId === userId && candidate.chainType === "stellar" && candidate.network === "stellar:testnet"
+      && (candidate.status === "active" || candidate.status === "pending"),
+    );
+    if (!wallet) throw new Error("stellar_wallet_not_ready");
+    const [account, positionRead, recent] = await Promise.all([
+      getStellarTestnetAccount(wallet.address, AbortSignal.timeout(10_000)),
+      executeWebReadQuery("stellar.defindex.position.read", {}, userId) as Promise<{
+        positions: Array<{ asset: "XLM" | "USDC"; status: string; vault?: string; sharesAtomic?: string; shares?: string }>;
+      }>,
       getDb()
-        .select()
+        .select({
+          id: agentStellarActions.id, action: agentStellarActions.action, asset: agentStellarActions.asset,
+          amount: agentStellarActions.amount, status: agentStellarActions.status, walletAddress: agentStellarActions.walletAddress,
+          transactionHash: agentStellarActions.transactionHash, preview: agentStellarActions.preview,
+          expiresAt: agentStellarActions.expiresAt, confirmedAt: agentStellarActions.confirmedAt, error: agentStellarActions.error,
+        })
         .from(agentStellarActions)
         .where(eq(agentStellarActions.userId, userId))
         .orderBy(desc(agentStellarActions.createdAt))
@@ -368,6 +380,10 @@ export async function GET(request: Request) {
         balance.asset === "USDC" &&
         balance.issuer === DEFINDEX_TESTNET.usdc.issuer,
     );
+    const position = (asset: "XLM" | "USDC") => {
+      const row = positionRead.positions.find(item => item.asset === asset && item.status === "ok");
+      return row ? { asset: row.asset, vault: row.vault, sharesAtomic: row.sharesAtomic, shares: row.shares } : null;
+    };
     return NextResponse.json(
       {
         network: "Stellar Testnet",
@@ -378,12 +394,19 @@ export async function GET(request: Request) {
           balance: usdc?.balance ?? "0",
           issuer: DEFINDEX_TESTNET.usdc.issuer,
         },
-        positions: { XLM: xlmPosition, USDC: usdcPosition },
+        positions: { XLM: position("XLM"), USDC: position("USDC") },
         vaults: {
           XLM: DEFINDEX_TESTNET.xlm,
           USDC: DEFINDEX_TESTNET.usdc,
         },
-        recent: recent.map(publicAction),
+        recent: recent.map(row => ({
+          id: row.id, action: row.action, asset: row.asset, amount: row.amount, status: row.status,
+          signingAddress: row.walletAddress,
+          signingHash: row.status === "prepared" && row.transactionHash ? `0x${row.transactionHash}` : null,
+          transactionHash: row.transactionHash,
+          explorerUrl: row.transactionHash ? DEFINDEX_TESTNET.explorerUrl + "/tx/" + row.transactionHash : null,
+          preview: row.preview, expiresAt: row.expiresAt.toISOString(), confirmedAt: row.confirmedAt?.toISOString() ?? null, error: row.error,
+        })),
       },
       { headers: { "Cache-Control": "no-store" } },
     );

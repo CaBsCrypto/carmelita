@@ -13,6 +13,19 @@ export const AAVE_V3_FUJI_POOL = "0xb47673b7a73D78743AFF1487AF69dBB5763F00cA" as
 export const CIRCLE_USDC_FUJI = "0x5425890298aed601595a70AB815c96711a31Bc65" as const;
 export const ECOSYSTEM_TIMEOUT_MS = 10_000;
 export const ECOSYSTEM_MAX_RESPONSE_BYTES = 512 * 1024;
+export const ECOSYSTEM_CATALOG_MAX_RESPONSE_BYTES = 32 * 1024 * 1024;
+
+// These existing public catalogs are currently 6–12 MiB. Keep the smaller
+// bound for NFT/indexer/quote responses and every other endpoint.
+function maximumResponseBytes(url: string) {
+  const parsed = new URL(url);
+  const publicCatalog = parsed.protocol === "https:" && !parsed.username && !parsed.password && (
+    parsed.origin === "https://api.llama.fi" && parsed.pathname === "/protocols" ||
+    parsed.origin === "https://yields.llama.fi" && parsed.pathname === "/pools" ||
+    parsed.origin === POLYMARKET_GAMMA_URL && parsed.pathname === "/events"
+  );
+  return publicCatalog ? ECOSYSTEM_CATALOG_MAX_RESPONSE_BYTES : ECOSYSTEM_MAX_RESPONSE_BYTES;
+}
 
 const addressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 const symbolSchema = z.string().trim().toUpperCase().regex(/^[A-Z0-9]{2,10}$/);
@@ -22,6 +35,7 @@ async function readBoundedJson(
   fetcher: typeof fetch,
   signal: AbortSignal,
 ) {
+  const maximumBytes = maximumResponseBytes(url);
   let response: Response;
   try {
     response = await fetcher(url, {
@@ -40,13 +54,18 @@ async function readBoundedJson(
     }
     throw new Error("ecosystem_unreachable");
   }
-  if (!response.ok) throw new Error(`ecosystem_http_${response.status}`);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw new Error(`ecosystem_http_${response.status}`);
+  }
   const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
   if (!contentType.includes("application/json")) {
+    await response.body?.cancel();
     throw new Error("ecosystem_content_type_invalid");
   }
   const length = Number(response.headers.get("content-length"));
-  if (Number.isFinite(length) && length > ECOSYSTEM_MAX_RESPONSE_BYTES) {
+  if (Number.isFinite(length) && length > maximumBytes) {
+    await response.body?.cancel();
     throw new Error("ecosystem_response_too_large");
   }
   if (!response.body) throw new Error("ecosystem_response_empty");
@@ -57,7 +76,7 @@ async function readBoundedJson(
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > ECOSYSTEM_MAX_RESPONSE_BYTES) {
+    if (size > maximumBytes) {
       await reader.cancel();
       throw new Error("ecosystem_response_too_large");
     }
@@ -126,13 +145,14 @@ function nowIso() {
 
 const llamaProtocolSchema = z.object({
   name: z.string(),
-  category: z.string().optional().default(""),
+  category: z.string().nullable().optional().default(""),
   chains: z.array(z.string()).optional().default([]),
-  tvl: z.number().optional().default(0),
-  url: z.string().optional().default(""),
+  tvl: z.number().nullable().optional().default(null),
+  chainTvls: z.record(z.string(), z.number().nullable()).nullable().optional(),
+  url: z.string().nullable().optional(),
 }).passthrough();
 
-const llamaProtocolsSchema = z.array(llamaProtocolSchema).max(5_000);
+const llamaProtocolsSchema = z.array(llamaProtocolSchema).max(20_000);
 
 export async function getPredictionSectorRead(
   fetcher: typeof fetch = fetch,
@@ -143,14 +163,17 @@ export async function getPredictionSectorRead(
   );
   if (!parsed.success) throw new Error("ecosystem_defillama_protocols_invalid");
   const sector = parsed.data.filter(
-    (protocol) => protocol.category.toLowerCase() === "prediction market",
+    (protocol) => protocol.category?.toLowerCase() === "prediction market",
   );
-  const byChain = new Map<string, { protocols: string[]; tvl: number }>();
+  const byChain = new Map<string, { protocols: string[]; tvl: number | null }>();
   for (const protocol of sector) {
     for (const chain of protocol.chains) {
       const entry = byChain.get(chain) ?? { protocols: [], tvl: 0 };
       entry.protocols.push(protocol.name);
-      entry.tvl += protocol.tvl;
+      // A protocol's global TVL must not be attributed in full to every chain.
+      const chainEntry = Object.entries(protocol.chainTvls ?? {}).find(([name]) => name.toLowerCase() === chain.toLowerCase());
+      const chainTvl = chainEntry ? chainEntry[1] : protocol.chains.length === 1 ? protocol.tvl : null;
+      entry.tvl = entry.tvl === null || chainTvl === null ? null : entry.tvl + chainTvl;
       byChain.set(chain, entry);
     }
   }
@@ -160,14 +183,17 @@ export async function getPredictionSectorRead(
       protocols: entry.protocols,
       tvl: entry.tvl,
     }))
-    .sort((a, b) => b.tvl - a.tvl);
+    .sort((a, b) => a.tvl === null ? b.tvl === null ? a.chain.localeCompare(b.chain) : 1 : b.tvl === null ? -1 : b.tvl - a.tvl);
+  const missingTvlProtocols = sector.filter(protocol => protocol.tvl === null).map(protocol => protocol.name);
   return {
+    status: missingTvlProtocols.length || ranked.some(row => row.tvl === null) ? "partial" as const : "ok" as const,
     network: "mainnet (read-only)" as const,
     chainId: null,
     source: DEFILLAMA_PROTOCOLS_URL,
     readOnly: true as const,
     fetchedAt: nowIso(),
-    totalPredictionTvl: sector.reduce((sum, protocol) => sum + protocol.tvl, 0),
+    totalPredictionTvl: missingTvlProtocols.length ? null : sector.reduce((sum, protocol) => sum + (protocol.tvl ?? 0), 0),
+    missingTvlProtocols,
     protocolCount: sector.length,
     byChain: ranked,
     avalanche: ranked.find((row) => row.chain.toLowerCase() === "avalanche") ?? null,
@@ -184,7 +210,7 @@ const polymarketEventSchema = z.object({
     question: z.string().optional(),
     outcomePrices: z.string().optional(),
     active: z.boolean().optional(),
-  })).max(100),
+  })).max(1_000),
 }).passthrough();
 
 const polymarketEventsSchema = z.array(polymarketEventSchema).max(100);
@@ -226,13 +252,13 @@ const yieldPoolSchema = z.object({
   project: z.string(),
   symbol: z.string(),
   tvlUsd: z.number(),
-  apy: z.number(),
-  apyBase: z.number().optional(),
-  apyReward: z.number().optional(),
-  url: z.string().optional(),
+  apy: z.number().nullable().optional().default(null),
+  apyBase: z.number().nullable().optional(),
+  apyReward: z.number().nullable().optional(),
+  url: z.string().nullable().optional(),
 }).passthrough();
 
-const yieldPoolsSchema = z.array(yieldPoolSchema).max(10_000);
+const yieldPoolsSchema = z.array(yieldPoolSchema).max(50_000);
 
 export async function getDefiLlamaYieldsRead(
   fetcher: typeof fetch = fetch,
@@ -244,7 +270,7 @@ export async function getDefiLlamaYieldsRead(
   if (!parsed.success) throw new Error("ecosystem_defillama_yields_invalid");
   const avalanche = parsed.data
     .filter((pool) => pool.chain.toLowerCase() === "avalanche")
-    .sort((a, b) => b.apy - a.apy)
+    .sort((a, b) => a.apy === null ? b.apy === null ? 0 : 1 : b.apy === null ? -1 : b.apy - a.apy)
     .slice(0, 20);
   return {
     network: "mainnet (read-only)" as const,

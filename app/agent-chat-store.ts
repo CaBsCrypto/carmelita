@@ -1,7 +1,10 @@
-import { readChatNativeBalance } from "./agent-chat-balances";
-import { requestsRegisteredWallets, registeredWalletsReply, requestsWalletBalances, walletBalancesReply } from "./agent-chat-wallets";
+import { readAgentConversation } from "@/app/queries/personal-store";
+import { buildRelevantMemoryContext } from "@/app/agent-memory-retrieval";
+import { parseChatReadRequest, executeChatRead } from "@/app/queries/chat";
+import type { QueryLocale } from "@/app/queries/types";
+import { requestsRegisteredWallets, requestsWalletBalances } from "./agent-chat-wallets";
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb, hasDatabase } from "@/db";
 import {
   agentActivities,
@@ -30,7 +33,6 @@ import { DEFINDEX_TESTNET } from "@/app/connectors/defindex";
 import { parseVaultCommand } from "@/app/agent-memory";
 import {
   evaluateUserAction,
-  listAgentVault,
   retrieveRelevantAgentMemory,
   saveAgentVaultCommand,
 } from "@/app/agent-memory-store";
@@ -38,7 +40,6 @@ import {
   addToMarketWatchlist,
   extractMarketSymbol,
   formatMarketQuote,
-  listMarketWatchlist,
 } from "@/app/connectors/coinmarketcap";
 import { getMarketQuote } from "@/app/connectors/coingecko";
 import {
@@ -47,16 +48,10 @@ import {
   shouldUseAgentPlanner,
   type AgentPlan,
 } from "@/app/agent-planner";
-import { getSoroswapQuote } from "@/app/connectors/soroswap";
-import { createNotionWorkflowConnector } from "@/app/orchestration/connectors/notion";
-import { createConnectorRegistry } from "@/app/orchestration/connector";
-import { createPersistedWorkflowRuntime } from "@/app/orchestration/runtime";
-import { createWorkflowState } from "@/app/orchestration/types";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { parseUnblckChatIntent } from "@/app/unblck-chat";
 import { handleUnblckChatIntent } from "@/app/unblck-chat-runtime";
 import { parseAvalancheChatIntent } from "@/app/wallets/avalanche-intents";
-import { searchAvalancheDocs } from "@/app/connectors/avalanche-mcp";
-import { searchAvaxSkills } from "@/app/connectors/avaxskills";
 import {
   parseAvalancheCapabilitiesIntent,
   parseAvaxSkillsIntent,
@@ -64,22 +59,6 @@ import {
   parseAvalancheKnowledgeIntent,
   parseDexalotReadIntent,
 } from "@/app/connectors/avalanche-read-intents";
-import {
-  getDexalotTestnetQuote,
-  listDexalotTestnetPairs,
-} from "@/app/connectors/dexalot";
-import {
-  getAaveFujiMarketRead,
-  getAaveFujiPositionRead,
-  getDefiLlamaYieldsRead,
-  getLfjQuoteRead,
-  getNftCollectionRead,
-  getNftHolderDistribution,
-  getNftProvenanceRead,
-  getNftVenueStatus,
-  getPredictionMarketsRead,
-  getPredictionSectorRead,
-} from "@/app/connectors/avalanche-ecosystem";
 import { parseCctpBridgeIntent } from "@/app/connectors/circle-cctp-intents";
 import { handleCctpBridgeIntent } from "@/app/connectors/circle-cctp-chat";
 import { groupAvalancheCapabilities, listAvalancheCapabilities } from "@/app/avalanche/capability-registry";
@@ -265,22 +244,7 @@ function publicMessage(row: {
 }
 
 export async function getAgentConversation(userId: string) {
-  const db = getDb();
-  const id = await ensureConversation(userId);
-  const rows = await db
-    .select({
-      id: agentMessages.id,
-      role: agentMessages.role,
-      content: agentMessages.content,
-      metadata: agentMessages.metadata,
-      createdAt: agentMessages.createdAt,
-    })
-    .from(agentMessages)
-    .where(eq(agentMessages.conversationId, id))
-    .orderBy(asc(agentMessages.createdAt))
-    .limit(80);
-
-  return { conversationId: id, messages: rows.map(publicMessage) };
+  return readAgentConversation(userId);
 }
 
 type WalletSetupContext = Awaited<ReturnType<typeof walletContext>>;
@@ -414,7 +378,8 @@ export async function chatWalletContext(userId: string, content: string, readCon
   return readContext(userId);
 }
 
-export async function sendAgentMessage(userId: string, content: string) {
+export async function sendAgentMessage(userId: string, content: string, locale?: QueryLocale) {
+  const sharedRead = parseChatReadRequest(content);
   const db = getDb();
   const id = await ensureConversation(userId);
   const now = new Date();
@@ -430,7 +395,7 @@ export async function sendAgentMessage(userId: string, content: string) {
 
   await db.insert(agentMessages).values(userMessage);
   const [wallet, activeConnections, relevantMemory] = await Promise.all([
-    chatWalletContext(userId, content),
+    sharedRead ? Promise.resolve(null) : chatWalletContext(userId, content),
     db
       .select({ provider: agentExternalConnections.provider })
       .from(agentExternalConnections)
@@ -440,14 +405,14 @@ export async function sendAgentMessage(userId: string, content: string) {
           eq(agentExternalConnections.status, "active"),
         ),
       ),
-    retrieveRelevantAgentMemory(userId, content),
+    sharedRead ? Promise.resolve(buildRelevantMemoryContext([], content)) : retrieveRelevantAgentMemory(userId, content),
   ]);
   const connectedProviders = activeConnections.map((item) => item.provider);
   const normalizedContent = content
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  const language = detectAgentLanguage(content);
+  const language = locale ?? detectAgentLanguage(content);
   const local = (english: string, portuguese: string) =>
     language === "pt" ? portuguese : english;
   const balanceRead = requestsWalletBalances(content);
@@ -518,7 +483,7 @@ export async function sendAgentMessage(userId: string, content: string) {
   const deterministicDefindex = parseDefindexIntent(content);
   const deterministicConnection = findRequestedConnection(content);
   const hasDeterministicIntent = Boolean(
-    balanceRead || walletRead || vaultCommand ||
+    sharedRead || balanceRead || walletRead || vaultCommand ||
       unblckIntent ||
       setupIntent ||
       avalancheIntent ||
@@ -546,34 +511,8 @@ export async function sendAgentMessage(userId: string, content: string) {
   }
 
   let reply: AgentChatReply;
-  if (balanceRead) {
-    reply = await walletBalancesReply(userId, await listPersistedUserWallets(userId), language, readChatNativeBalance);
-  } else if (walletRead) {
-    reply = registeredWalletsReply(userId, await listPersistedUserWallets(userId), language);
-  } else if (vaultCommand?.action === "list") {
-    const vault = await listAgentVault(userId);
-    const active = [
-      ...vault.knowledge.filter((item) => item.status === "active"),
-      ...vault.policies.filter((item) => item.status === "active"),
-    ].slice(0, 8);
-    const heading = {
-      en: "**What your agent currently knows and enforces**",
-      es: "**Lo que tu agente recuerda y aplica actualmente**",
-      pt: "**O que seu agente lembra e aplica atualmente**",
-    }[language];
-    const empty = {
-      en: "Your Personal Knowledge Vault is empty. Start with: Remember that I only operate on Testnet.",
-      es: "Tu Personal Knowledge Vault est\u00e1 vac\u00edo. Comienza con: Recuerda que solo opero en Testnet.",
-      pt: "Seu Personal Knowledge Vault est\u00e1 vazio. Comece com: Lembre que opero somente na Testnet.",
-    }[language];
-    reply = {
-      content: active.length
-        ? [heading, ...active.map((item, index) => (index + 1) + ". **" + item.kind + "** \u00b7 " + item.label)].join("\n")
-        : empty,
-      actions: [
-        { label: "My Agent", href: "#my-agent" },
-      ],
-    };
+  if (sharedRead) {
+    reply = await executeChatRead(sharedRead, userId, language);
   } else if (vaultCommand?.action === "save") {
     const saved = await saveAgentVaultCommand(userId, vaultCommand);
     const isDraft = saved.status === "draft";
@@ -635,434 +574,6 @@ export async function sendAgentMessage(userId: string, content: string) {
         { label: labels.details, message: language === "es" ? "Prepara mi pago x402 en Avalanche" : language === "pt" ? "Prepare meu pagamento x402 na Avalanche" : "Prepare my Avalanche x402 payment" },
       ],
     };
-  } else if (avaxSkillsIntent) {
-    try {
-      const result = await searchAvaxSkills(avaxSkillsIntent.query);
-      const labels = {
-        en: { heading: "**AVAX Skills advisory results**", note: "Third-party guidance only. Carmelita did not execute remote instructions and every technical claim must be checked against an official source." },
-        es: { heading: "**Resultados consultivos de AVAX Skills**", note: "Solo es orientacion de terceros. Carmelita no ejecuto instrucciones remotas y cada afirmacion tecnica debe verificarse en una fuente oficial." },
-        pt: { heading: "**Resultados consultivos do AVAX Skills**", note: "Apenas orientacao de terceiros. Carmelita nao executou instrucoes remotas e cada afirmacao tecnica deve ser verificada em uma fonte oficial." },
-      }[language];
-      const rows = result.results.length
-        ? result.results.map((item) => `- **${item.name}** - ${item.description || "No description"}${item.riskFlags.length ? ` - warnings: ${item.riskFlags.join(", ")}` : ""}`)
-        : ["- No matching skills found."];
-      reply = {
-        content: [labels.heading, ...rows, labels.note].join("\n\n"),
-        connection: { name: "AVAX Skills", stage: "Read-only connected", priority: "P1" },
-        actions: result.results.slice(0, 3).map((item) => ({ label: `Open ${item.name}`, href: item.referenceUrl })),
-      };
-    } catch (error) {
-      const code = error instanceof Error ? error.message.split(":")[0] : "avaxskills_failed";
-      reply = { content: `AVAX Skills did not complete (${code}). No remote instruction was executed.`, actions: [] };
-    }
-  } else if (avalancheKnowledgeIntent) {
-    try {
-      const result = await searchAvalancheDocs({
-        query: avalancheKnowledgeIntent.query,
-        source: "integrations",
-        limit: 5,
-      });
-      const copy = {
-        en: {
-          heading: "**Official Avalanche Builder Hub results**",
-          boundary: "Read-only documentation search. No wallet action or transaction was performed.",
-          retry: "Search Avalanche again",
-          retryMessage: "Search Avalanche integrations for agentic commerce",
-          source: "Open official source",
-        },
-        es: {
-          heading: "**Resultados oficiales de Avalanche Builder Hub**",
-          boundary: "Búsqueda de documentación en modo lectura. No se realizó ninguna acción de wallet ni transacción.",
-          retry: "Buscar otra vez",
-          retryMessage: "Busca integraciones de comercio agéntico en Avalanche",
-          source: "Abrir fuente oficial",
-        },
-        pt: {
-          heading: "**Resultados oficiais do Avalanche Builder Hub**",
-          boundary: "Pesquisa de documentação somente para leitura. Nenhuma ação de wallet ou transação foi realizada.",
-          retry: "Pesquisar novamente",
-          retryMessage: "Pesquise integrações de comércio agêntico na Avalanche",
-          source: "Abrir fonte oficial",
-        },
-      }[language];
-      reply = {
-        content: [
-          copy.heading,
-          result.text.slice(0, 6_000),
-          copy.boundary,
-        ].join("\n\n"),
-        connection: {
-          name: "Avalanche Builder Hub MCP",
-          stage: "Read-only connected",
-          priority: "P0",
-        },
-        actions: [
-          {
-            label: copy.retry,
-            message: copy.retryMessage,
-          },
-          ...result.citations.slice(0, 3).map((href, index) => ({
-            label: `${copy.source} ${index + 1}`,
-            href,
-          })),
-        ],
-      };
-    } catch (error) {
-      const code = error instanceof Error
-        ? error.message.split(":")[0]
-        : "avalanche_mcp_failed";
-      const copy = {
-        en: `The official Avalanche MCP did not complete (**${code}**). I did not invent or cache an answer. You can retry explicitly.`,
-        es: `El MCP oficial de Avalanche no completó la búsqueda (**${code}**). No inventé ni presenté una respuesta en caché. Puedes reintentar explícitamente.`,
-        pt: `O MCP oficial da Avalanche não concluiu a pesquisa (**${code}**). Não inventei nem apresentei uma resposta em cache. Você pode tentar novamente.`,
-      }[language];
-      reply = {
-        content: copy,
-        connection: {
-          name: "Avalanche Builder Hub MCP",
-          stage: "Read-only connected",
-          priority: "P0",
-        },
-        actions: [{
-          label: language === "es" ? "Reintentar búsqueda" : language === "pt" ? "Tentar novamente" : "Retry search",
-          message: content,
-        }],
-      };
-    }
-  } else if (dexalotReadIntent) {
-    try {
-      if (dexalotReadIntent.operation === "pairs") {
-        const result = await listDexalotTestnetPairs();
-        const enabled = result.pairs.filter((pair) => pair.allowswap);
-        const copy = {
-          en: {
-            heading: `**Dexalot Testnet markets (${enabled.length} swap-enabled)**`,
-            boundary: "This is the live public Testnet catalog. Reading it required no API key, signature or funds. No trade was prepared.",
-            quote: "Quote 1 AVAX to USDC on Dexalot",
-            quoteLabel: "Quote AVAX / USDC",
-          },
-          es: {
-            heading: `**Mercados de Dexalot Testnet (${enabled.length} con swap habilitado)**`,
-            boundary: "Este es el catálogo público en vivo de Testnet. Leerlo no requirió API key, firma ni saldo. No se preparó ningún trade.",
-            quote: "Cotiza 1 AVAX a USDC en Dexalot",
-            quoteLabel: "Cotizar AVAX / USDC",
-          },
-          pt: {
-            heading: `**Mercados da Dexalot Testnet (${enabled.length} com swap habilitado)**`,
-            boundary: "Este é o catálogo público ao vivo da Testnet. A leitura não exigiu API key, assinatura ou saldo. Nenhum trade foi preparado.",
-            quote: "Cote 1 AVAX para USDC na Dexalot",
-            quoteLabel: "Cotar AVAX / USDC",
-          },
-        }[language];
-        reply = {
-          content: [
-            copy.heading,
-            enabled.slice(0, 20).map((pair) =>
-              `- **${pair.pair}** · min ${pair.mintrade_amnt} ${pair.quote} · taker ${pair.taker_rate_bps} bps`,
-            ).join("\n"),
-            copy.boundary,
-          ].join("\n\n"),
-          connection: {
-            name: "Dexalot Testnet",
-            stage: "Read-only connected",
-            priority: "P0",
-          },
-          actions: [
-            { label: copy.quoteLabel, message: copy.quote },
-            { label: "Dexalot API docs", href: result.source },
-          ],
-        };
-      } else {
-        const result = await getDexalotTestnetQuote(dexalotReadIntent);
-        const copy = {
-          en: `Live non-firm Dexalot Testnet quote: **${result.amountIn} ${result.assetIn} → ${result.amountOut} ${result.assetOut}** at price **${result.price}**. Pair: **${result.pair}**; taker fee: **${result.takerFeeBps} bps**. This is read-only and reserves no liquidity. No approval, signature or trade was requested.`,
-          es: `Cotización no vinculante en vivo de Dexalot Testnet: **${result.amountIn} ${result.assetIn} → ${result.amountOut} ${result.assetOut}** a precio **${result.price}**. Par: **${result.pair}**; comisión taker: **${result.takerFeeBps} bps**. Es de solo lectura y no reserva liquidez. No se solicitó aprobación, firma ni trade.`,
-          pt: `Cotação ao vivo não vinculante da Dexalot Testnet: **${result.amountIn} ${result.assetIn} → ${result.amountOut} ${result.assetOut}** ao preço de **${result.price}**. Par: **${result.pair}**; taxa taker: **${result.takerFeeBps} bps**. É somente leitura e não reserva liquidez. Nenhuma aprovação, assinatura ou trade foi solicitado.`,
-        }[language];
-        reply = {
-          content: copy,
-          connection: {
-            name: "Dexalot Testnet",
-            stage: "Read-only connected",
-            priority: "P0",
-          },
-          actions: [
-            {
-              label: language === "es" ? "Ver otros mercados" : language === "pt" ? "Ver outros mercados" : "Show other markets",
-              message: language === "es" ? "Lista los pares de Dexalot Testnet" : language === "pt" ? "Liste os pares da Dexalot Testnet" : "List Dexalot Testnet pairs",
-            },
-            { label: "Dexalot API docs", href: result.source },
-          ],
-        };
-      }
-    } catch (error) {
-      const code = error instanceof Error ? error.message : "dexalot_failed";
-      reply = {
-        content: {
-          en: `Dexalot Testnet could not return verified read-only data (**${code}**). No transaction was prepared and no funds moved.`,
-          es: `Dexalot Testnet no pudo devolver datos verificados de solo lectura (**${code}**). No se preparó ninguna transacción ni se movieron fondos.`,
-          pt: `A Dexalot Testnet não conseguiu retornar dados verificados somente para leitura (**${code}**). Nenhuma transação foi preparada e nenhum saldo foi movimentado.`,
-        }[language],
-        actions: [{
-          label: language === "es" ? "Reintentar" : language === "pt" ? "Tentar novamente" : "Retry",
-          message: content,
-        }],
-      };
-    }
-  } else if (ecosystemReadIntent) {
-    try {
-      const boundary = {
-        en: "Read-only, keyless, verified against the live source or Fuji chain. No signature, approval, trade or transaction was requested.",
-        es: "Solo lectura, sin API key, verificado contra la fuente viva o la cadena Fuji. No se solicitó firma, aprobación, trade ni transacción.",
-        pt: "Somente leitura, sem API key, verificado contra a fonte viva ou a cadeia Fuji. Nenhuma assinatura, aprovação, trade ou transação foi solicitada.",
-      }[language];
-      let result: Record<string, unknown>;
-      let title = "";
-      switch (ecosystemReadIntent.operation) {
-        case "predictions.sector": {
-          const data = await getPredictionSectorRead();
-          result = {
-            totalPredictionTvl: data.totalPredictionTvl,
-            protocolCount: data.protocolCount,
-            byChain: data.byChain.slice(0, 10),
-            avalanche: data.avalanche,
-            source: data.source,
-          };
-          title = "Prediction-market TVL by chain";
-          break;
-        }
-        case "predictions.markets": {
-          const data = await getPredictionMarketsRead();
-          result = {
-            venue: data.venue,
-            markets: data.markets.slice(0, 10),
-            source: data.source,
-          };
-          title = "Live prediction prices (mainnet, read-only)";
-          break;
-        }
-        case "aave.market": {
-          const data = await getAaveFujiMarketRead();
-          result = {
-            pool: data.pool,
-            reserves: data.reserves,
-            source: data.source,
-          };
-          title = "Aave V3 Fuji market state";
-          break;
-        }
-        case "aave.position": {
-          const data = await getAaveFujiPositionRead(ecosystemReadIntent.wallet);
-          result = {
-            wallet: data.wallet,
-            supplied: data.supplied,
-            rows: data.rows,
-            source: data.source,
-          };
-          title = "Aave V3 Fuji position";
-          break;
-        }
-        case "nft.collection": {
-          const data = await getNftCollectionRead(ecosystemReadIntent.collection);
-          result = {
-            collection: data.collection,
-            name: data.name,
-            symbol: data.symbol,
-            totalSupply: data.totalSupply,
-            owners: data.owners,
-            source: data.source,
-          };
-          title = "Fuji NFT collection";
-          break;
-        }
-        case "nft.holders": {
-          const data = await getNftHolderDistribution(ecosystemReadIntent.collection);
-          result = {
-            collection: data.collection,
-            holderCount: data.holderCount,
-            top: data.top,
-            source: data.source,
-          };
-          title = "Fuji NFT holder distribution";
-          break;
-        }
-        case "nft.provenance": {
-          const data = await getNftProvenanceRead(
-            ecosystemReadIntent.collection,
-            ecosystemReadIntent.tokenId,
-          );
-          result = {
-            collection: data.collection,
-            tokenId: data.tokenId,
-            owner: data.owner,
-            routescanOwner: data.routescanOwner,
-            indexersAgree: data.indexersAgree,
-            history: data.history,
-            source: data.source,
-          };
-          title = "Fuji NFT provenance (cross-checked)";
-          break;
-        }
-        case "nft.venue_status": {
-          const data = await getNftVenueStatus();
-          result = {
-            seaport1_6: data.seaport1_6,
-            joepegs: data.joepegs,
-            source: data.source,
-          };
-          title = "Fuji NFT venue status";
-          break;
-        }
-        case "nft.floor": {
-          result = {
-            status: "no_source",
-            reason: "OpenSea 401, joepegs 401, Reservoir closed 2025-10-15, SimpleHash closed 2025-03-27. A floor-price source on Avalanche requires a human-provided key.",
-          };
-          title = "Fuji NFT floor price";
-          break;
-        }
-        case "defillama.yields": {
-          const data = await getDefiLlamaYieldsRead();
-          result = {
-            chain: data.chain,
-            pools: data.pools,
-            source: data.source,
-          };
-          title = "Avalanche yields (mainnet, labeled)";
-          break;
-        }
-        case "lfj.liveness": {
-          const data = await getLfjQuoteRead({
-            amountIn: ecosystemReadIntent.amount,
-            assetIn: ecosystemReadIntent.assetIn,
-            assetOut: ecosystemReadIntent.assetOut,
-          });
-          result = {
-            assetIn: data.assetIn,
-            assetOut: data.assetOut,
-            amountIn: data.amountIn,
-            price: data.price,
-            livenessNote: data.livenessNote,
-            source: data.source,
-          };
-          title = "LFJ liveness check";
-          break;
-        }
-      }
-      reply = {
-        content: [
-          `**${title}**`,
-          "```json\n" + JSON.stringify(result, null, 2).slice(0, 6_000) + "\n```",
-          boundary,
-        ].join("\n\n"),
-        connection: {
-          name: "Avalanche ecosystem read",
-          stage: "Read-only connected",
-          priority: "P1",
-        },
-        actions: [
-          {
-            label: language === "es" ? "Reintentar lectura" : language === "pt" ? "Tentar novamente" : "Retry read",
-            message: content,
-          },
-        ],
-      };
-    } catch (error) {
-      const code = error instanceof Error ? error.message.split(":")[0] : "ecosystem_read_failed";
-      reply = {
-        content: {
-          en: `The read did not complete (**${code}**). I did not invent or cache an answer; nothing was signed or moved.`,
-          es: `La lectura no completó (**${code}**). No inventé ni presenté una respuesta en caché; no se firmó ni movió nada.`,
-          pt: `A leitura não concluiu (**${code}**). Não inventei nem apresentei uma resposta em cache; nada foi assinado ou movimentado.`,
-        }[language],
-        actions: [{
-          label: language === "es" ? "Reintentar" : language === "pt" ? "Tentar novamente" : "Retry",
-          message: content,
-        }],
-      };
-    }
-  } else if (requestsNotionSearch) {
-    try {
-      const workflowId = "wf_notion_" + createHash("sha256")
-        .update(userId + ":" + userMessage.id)
-        .digest("hex")
-        .slice(0, 32);
-      const runtime = createPersistedWorkflowRuntime(
-        createConnectorRegistry([createNotionWorkflowConnector()]),
-      );
-      const workflow = await runtime.start(createWorkflowState({
-        workflowId,
-        userId,
-        conversationId: id,
-        request: content,
-        connectorId: "notion",
-        capability: "workspace.search",
-        operation: "read",
-        risk: "low",
-        parameters: { query: content },
-      }));
-      if (workflow.status === "awaiting_connection") {
-        throw new Error("notion_not_connected");
-      }
-      if (workflow.status !== "completed" || !workflow.execution) {
-        throw new Error(workflow.error ?? "notion_workflow_failed");
-      }
-      const result = {
-        tool: String(workflow.execution.tool ?? "notion-search"),
-        text: String(workflow.execution.text ?? ""),
-      };
-      reply = {
-        content: [
-          local("I searched your connected Notion workspace using **", "Pesquisei seu workspace conectado do Notion usando **") +
-            result.tool +
-            "**.",
-          result.text,
-        ].join("\n\n"),
-        connection: {
-          name: "Notion MCP",
-          stage: "Connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Search again", "Pesquisar novamente"),
-            message: language === "pt" ? "Pesquise no meu Notion as tarefas pendentes" : "Search my Notion workspace for pending project tasks",
-          },
-          { label: local("Open Notion", "Abrir Notion"), href: "https://www.notion.so/" },
-        ],
-        workflow: {
-          id: workflow.workflowId,
-          status: workflow.status,
-          engine: "langgraph" as const,
-          version: workflow.version,
-        },
-      };
-    } catch (error) {
-      const code =
-        error instanceof Error
-          ? error.message.split(":")[0]
-          : "notion_search_failed";
-      const reconnect =
-        code === "notion_reauth_required" || code === "notion_not_connected";
-      reply = {
-        content: reconnect
-          ? local("Your Notion authorization must be renewed before I can search the workspace.", "Sua autorização do Notion precisa ser renovada antes da pesquisa.")
-          : local("I reached your Notion connection, but the first search did not complete. Nothing was changed. You can retry safely.", "A conexão com o Notion respondeu, mas a pesquisa não terminou. Nada foi alterado e você pode tentar novamente com segurança."),
-        connection: {
-          name: "Notion MCP",
-          stage: reconnect ? ("Credentials needed" as const) : ("Connected" as const),
-          priority: "P0" as const,
-        },
-        actions: reconnect
-          ? [{ label: local("Reconnect Notion", "Reconectar Notion"), connect: "notion" }]
-          : [
-              {
-                label: local("Retry Notion search", "Tentar pesquisa no Notion"),
-                message: language === "pt" ? "Pesquise no meu Notion as tarefas pendentes" : "Search my Notion workspace for pending project tasks",
-              },
-            ],
-      };
-    }
   } else if (requestsWatchlistAdd && marketSymbol) {
     try {
       const quote = await getMarketQuote(marketSymbol);
@@ -1098,125 +609,6 @@ export async function sendAgentMessage(userId: string, content: string) {
           {
             label: local("Try XLM", "Tentar XLM"),
             message: language === "pt" ? "Adicione XLM à minha watchlist do CoinMarketCap" : "Add XLM to my CoinMarketCap watchlist",
-          },
-        ],
-      };
-    }
-  } else if (requestsWatchlist) {
-    const watchlist = await listMarketWatchlist(userId);
-    if (!watchlist.length) {
-      reply = {
-        content:
-          local("Your CoinMarketCap watchlist is empty. Add an asset to begin tracking real market data.", "Sua watchlist do CoinMarketCap está vazia. Adicione um ativo para acompanhar dados reais de mercado."),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Add XLM", "Adicionar XLM"),
-            message: language === "pt" ? "Adicione XLM à minha watchlist do CoinMarketCap" : "Add XLM to my CoinMarketCap watchlist",
-          },
-          {
-            label: local("Add BTC", "Adicionar BTC"),
-            message: language === "pt" ? "Adicione BTC à minha watchlist do CoinMarketCap" : "Add BTC to my CoinMarketCap watchlist",
-          },
-        ],
-      };
-    } else {
-      const results = await Promise.allSettled(
-        watchlist.slice(0, 8).map((item) =>
-          getMarketQuote(item.symbol),
-        ),
-      );
-      const rows = results
-        .filter(
-          (result): result is PromiseFulfilledResult<
-            Awaited<ReturnType<typeof getMarketQuote>>
-          > => result.status === "fulfilled",
-        )
-        .map((result) => {
-          const quote = result.value;
-          const change =
-            quote.change24h === null
-              ? "n/a"
-              : (quote.change24h >= 0 ? "+" : "") +
-                quote.change24h.toFixed(2) +
-                "%";
-          return (
-            "**" +
-            quote.symbol +
-            "** $" +
-            quote.price.toLocaleString("en-US", {
-              maximumFractionDigits: quote.price < 1 ? 6 : 2,
-            }) +
-            " | 24h " +
-            change
-          );
-        });
-      reply = {
-        content: [
-          local("**Your CoinMarketCap watchlist**", "**Sua watchlist do CoinMarketCap**"),
-          rows.join("\n") || local("Live quotes are temporarily unavailable.", "As cotações ao vivo estão temporariamente indisponíveis."),
-          local("Read-only market data. No trading action was performed.", "Dados de mercado somente para leitura. Nenhuma operação foi executada."),
-        ].join("\n\n"),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Add another asset", "Adicionar outro ativo"),
-            message: language === "pt" ? "Adicione ETH à minha watchlist do CoinMarketCap" : "Add ETH to my CoinMarketCap watchlist",
-          },
-          {
-            label: local("Refresh", "Atualizar"),
-            message: language === "pt" ? "Mostre minha watchlist de criptomoedas" : "Show my crypto watchlist",
-          },
-        ],
-      };
-    }
-  } else if (requestsMarketQuote && marketSymbol) {
-    try {
-      const quote = await getMarketQuote(marketSymbol);
-      reply = {
-        content: formatMarketQuote(quote, language),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Add to watchlist", "Adicionar à watchlist"),
-            message:
-              language === "pt" ? "Adicione " + quote.symbol + " à minha watchlist do CoinMarketCap" : "Add " + quote.symbol + " to my CoinMarketCap watchlist",
-          },
-          {
-            label: local("Check BTC", "Ver BTC"),
-            message: language === "pt" ? "Qual é o preço atual do BTC no CoinMarketCap?" : "What is the current BTC price on CoinMarketCap?",
-          },
-        ],
-      };
-    } catch (error) {
-      const code =
-        error instanceof Error ? error.message : "cmc_request_failed";
-      reply = {
-        content:
-          code === "cmc_rate_limited"
-            ? local("CoinMarketCap's keyless trial is temporarily rate-limited. No cached price was presented as live.", "O trial sem chave do CoinMarketCap está temporariamente limitado. Nenhum preço em cache foi apresentado como ao vivo.")
-            : local("CoinMarketCap could not return a verified quote for that asset.", "O CoinMarketCap não conseguiu retornar uma cotação verificada para esse ativo."),
-        connection: {
-          name: "CoinGecko",
-          stage: "Read-only connected" as const,
-          priority: "P0" as const,
-        },
-        actions: [
-          {
-            label: local("Retry XLM", "Tentar XLM novamente"),
-            message: language === "pt" ? "Qual é o preço atual do XLM no CoinMarketCap?" : "What is the current XLM price on CoinMarketCap?",
           },
         ],
       };
@@ -1257,12 +649,16 @@ export async function sendAgentMessage(userId: string, content: string) {
         };
       } else {
         try {
-          const quote = await getSoroswapQuote({
+          const result = await executeWebReadQuery("stellar.soroswap.quote", {
             assetIn,
             assetOut,
             amount,
             slippageBps: plannerPlan.parameters.maxSlippageBps ?? 50,
-          });
+          }, userId, language);
+          if (!result || typeof result !== "object" || !("status" in result) || result.status !== "ok" || !("amountOut" in result)) {
+            throw new Error("soroswap_quote_unavailable");
+          }
+          const quote = result as unknown as { amountIn: string; amountOut: string; minimumAmountOut: string; platform: string; priceImpactPct: string; slippageBps: number };
           const route = `**${quote.amountIn} ${assetIn} -> ${quote.amountOut} ${assetOut}**`;
           const minimum = `**${quote.minimumAmountOut} ${assetOut}**`;
           const copy = {
@@ -1383,7 +779,7 @@ export async function sendAgentMessage(userId: string, content: string) {
     .where(eq(agentConversations.id, id));
 
   const connection = findRequestedConnection(content);
-  if (connection) {
+  if (connection && !sharedRead) {
     await db
       .insert(agentConnectionInterests)
       .values({
@@ -1411,7 +807,8 @@ export async function sendAgentMessage(userId: string, content: string) {
     conversationId: id,
     userMessage: publicMessage(userMessage),
     assistantMessage: publicMessage(assistantMessage),
-    wallet: await chatWalletContext(userId, content),
+    wallet: sharedRead ? null : await chatWalletContext(userId, content),
+    sharedRead: Boolean(sharedRead),
   };
 }
 
@@ -1428,5 +825,3 @@ export async function recentConversationSummary(userId: string) {
     .orderBy(desc(agentConversations.updatedAt))
     .limit(10);
 }
-
-

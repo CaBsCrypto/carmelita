@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { searchAvaxSkills } from "@/app/connectors/avaxskills";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
 
 export const runtime = "nodejs";
@@ -21,10 +21,10 @@ function sameOrigin(request: Request) {
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
   try {
-    await verifyPrivyAccessToken(bearerToken(request));
+    const { user_id: userId } = await verifyPrivyAccessToken(bearerToken(request));
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "invalid_avaxskills_request" }, { status: 400 });
-    return NextResponse.json(await searchAvaxSkills(parsed.data.query), { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(await executeWebReadQuery("avalanche.skills.search", { query: parsed.data.query }, userId), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const code = error instanceof Error ? error.message.split(":")[0] : "avaxskills_failed";
     const status = code === "avaxskills_timeout" ? 504 : code.startsWith("avaxskills_") ? 502 : 401;

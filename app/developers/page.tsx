@@ -24,6 +24,19 @@ const tools = [
   ["get_receipt", "READ", "Retrieve durable execution evidence."],
 ];
 
+const queryExamples = [
+  '/consulta personal.wallets {}',
+  '/consulta offchain.market.quote {"assets":[{"query":"SOL"},{"query":"AVAX"},{"query":"BNB"}]}',
+  '/consulta offchain.defillama.chains {"chains":["Solana","Base","Avalanche"]}',
+  '/consulta avalanche.aave.market.read {}',
+  '/consulta offchain.capabilities.list {}',
+];
+const queryCopy = {
+  es: { title: "Consultas en Carmelita y ChatGPT", text: "Ambos canales utilizan el mismo servicio. Estos ejemplos rellenan el compositor; revisa el comando y envíalo cuando quieras. El catálogo muestra permisos, cobertura y aceptación pendiente.", action: "Abrir como borrador", catalog: "Ver catálogo de consultas" },
+  en: { title: "Queries in Carmelita and ChatGPT", text: "Both channels use the same service. These examples fill the composer; review the command and send it when ready. The catalog reports permissions, coverage and pending acceptance.", action: "Open as draft", catalog: "View query catalog" },
+  pt: { title: "Consultas na Carmelita e no ChatGPT", text: "Os dois canais usam o mesmo serviço. Estes exemplos preenchem o compositor; revise o comando e envie quando desejar. O catálogo informa permissões, cobertura e aceitação pendente.", action: "Abrir como rascunho", catalog: "Ver catálogo de consultas" },
+};
+
 const copy = {
   en: {
     nav: ["Product", "Integration Lab", "GitHub"],
@@ -230,6 +243,8 @@ export default function Developers() {
       <section className="developer-section shell" id="quickstart"><div className="quickstart-grid"><div><p className="eyebrow">03 · QUICKSTART</p><h2>{t.quick}</h2><p>{t.quickText}</p><div className="quick-actions"><button type="button" onClick={() => void copyValue(clientConfig, "config")}>{copied === "config" ? t.copied : t.copy}</button><a href="/.well-known/mcp" target="_blank">{t.test} ↗</a></div></div><div className="code-window"><header><span /><span /><span /><b>mcp.config.json</b></header><pre>{clientConfig}</pre></div></div></section>
 
       <section className="developer-section shell"><header className="section-heading"><p className="eyebrow">04 · TOOL CONTRACT</p><h2>{t.toolsTitle}</h2><p>{t.toolsText}</p></header><div className="developer-tools">{tools.map((tool) => <article key={tool[0]}><header><code>{tool[0]}</code><span>{tool[1]}</span></header><p>{tool[2]}</p></article>)}</div></section>
+
+      <section className="developer-section shell"><header className="section-heading"><h2>{queryCopy[locale].title}</h2><p>{queryCopy[locale].text}</p><a href="/.well-known/mcp" target="_blank" rel="noreferrer">{queryCopy[locale].catalog}</a></header><div className="developer-tools">{queryExamples.map(command => <article key={command}><code>{command}</code><p><Link href={`/agent?draft=${encodeURIComponent(command)}`}>{queryCopy[locale].action}</Link></p></article>)}</div></section>
 
       <section className="provider-band" id="provider"><div className="shell"><header className="section-heading"><p className="eyebrow">05 · PROVIDER MCP</p><h2>{t.providerTitle}</h2><p>{t.providerText}</p></header><div className="provider-steps">{t.providerSteps.map((step) => <article key={step[0]}><b>{step[0]}</b><h3>{step[1]}</h3><p>{step[2]}</p></article>)}</div></div></section>
 

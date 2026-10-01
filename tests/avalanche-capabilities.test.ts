@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { groupAvalancheCapabilities, listAvalancheCapabilities, planAvalancheCapability } from "../app/avalanche/capability-registry";
+import { getReadQuery } from "../app/queries/registry";
 
 test("Avalanche registry separates reads from approval-bound financial actions", () => {
   const capabilities = listAvalancheCapabilities();
@@ -36,11 +37,11 @@ test("CCTP preflight enumerates cross-chain blockers deterministically", () => {
 
 test("personal MCP exposes discovery and planning without execution", async () => {
   const source = await readFile(new URL("../app/api/mcp/agent/route.ts", import.meta.url), "utf8");
-  assert.match(source, /list_avalanche_capabilities/);
+  assert.equal(getReadQuery("list_avalanche_capabilities").scope, "agent:read");
+  assert.match(source, /server\.registerTool\(query\.toolName/);
   assert.match(source, /plan_avalanche_capability/);
   assert.match(source, /readOnlyHint: true/);
-  const section = source.slice(source.indexOf("list_avalanche_capabilities"));
-  assert.doesNotMatch(section, /sendTransaction|signTypedData|broadcast\s*\(|privateKey/i);
+  assert.doesNotMatch(source, /sendTransaction|signTypedData|broadcast\s*\(|privateKey/i);
 });
 
 test("capability API is authenticated and same-origin", async () => {

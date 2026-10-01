@@ -1,7 +1,7 @@
+import { executeWebReadQuery } from "@/app/queries/adapters";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  getAgentConversation,
   sendAgentMessage,
 } from "@/app/agent-chat-store";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 const messageSchema = z.object({
   message: z.string().trim().min(1).max(2000),
+  locale: z.enum(["es", "en", "pt"]).optional(),
 });
 
 function sameOrigin(request: Request) {
@@ -35,7 +36,7 @@ async function authenticatedUser(request: Request) {
 export async function GET(request: Request) {
   try {
     const userId = await authenticatedUser(request);
-    const conversation = await getAgentConversation(userId);
+    const conversation = await executeWebReadQuery("personal.conversation", {}, userId);
     return NextResponse.json(conversation, {
       headers: { "Cache-Control": "no-store" },
     });
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   try {
     const userId = await authenticatedUser(request);
     const input = messageSchema.parse(await request.json());
-    const result = await sendAgentMessage(userId, input.message);
+    const result = await sendAgentMessage(userId, input.message, input.locale);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });

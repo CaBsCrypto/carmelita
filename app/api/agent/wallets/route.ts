@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPrivyUserIdentity, verifyPrivyAccessToken } from "@/app/privy-stellar";
-import { listPersistedUserWallets, persistActivatedWallet } from "@/app/multichain-account";
+import { persistActivatedWallet } from "@/app/multichain-account";
 import { getOrCreateUserWallet } from "@/app/wallets/privy";
-import { getWalletNetwork, isWalletNetworkEnabled, WALLET_NETWORKS } from "@/app/wallets/networks";
+import { getWalletNetwork } from "@/app/wallets/networks";
 import { walletNetworkIdSchema } from "@/app/wallets/types";
 import { hasDatabase } from "@/db";
+import { readWalletListPanel, withPersonalPanelReadDeadline } from "@/app/queries/personal-panels";
+import { publicMcpErrorCode } from "@/app/mcp/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,24 +46,11 @@ async function authenticatedUser(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const user = await authenticatedUser(request);
-    const wallets = (await listPersistedUserWallets(user.userId))
-      .filter((wallet) => isWalletNetworkEnabled(wallet.network))
-      .map(({ id, walletId, address, chainType, network, status, updatedAt }) => ({ id, walletId, address, chainType, network, status, updatedAt }));
-    return NextResponse.json({
-      wallets,
-      networks: Object.keys(WALLET_NETWORKS).map(getWalletNetwork).map((network) => ({
-        id: network.id,
-        family: network.family,
-        name: network.name,
-        nativeAsset: network.nativeAsset,
-        rollout: network.rollout,
-        active: wallets.some((wallet) => wallet.network === network.id),
-      })),
-    }, { headers: { "Cache-Control": "no-store" } });
+    const claims = await verifyPrivyAccessToken(bearerToken(request));
+    return NextResponse.json(await withPersonalPanelReadDeadline(() => readWalletListPanel(claims.user_id)), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    const code = error instanceof Error ? error.message.split(":")[0] : "wallet_list_failed";
-    return NextResponse.json({ error: code }, { status: code === "database_not_configured" ? 503 : 401 });
+    const code = error instanceof Error ? publicMcpErrorCode(error) : "wallet_list_failed";
+    return NextResponse.json({ error: code }, { status: code === "database_not_configured" || code === "read_query_timeout" ? 503 : 401 });
   }
 }
 

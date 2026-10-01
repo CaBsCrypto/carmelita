@@ -3,9 +3,11 @@ import { z } from "zod";
 import {
   buildCctpFujiToStellarPlan,
   getCctpFujiToStellarFees,
+  type CctpBridgeReadiness,
 } from "@/app/connectors/circle-cctp";
 import { getCctpFujiToStellarContext } from "@/app/connectors/circle-cctp-context";
 import { verifyPrivyAccessToken } from "@/app/privy-stellar";
+import { executeWebReadQuery } from "@/app/queries/adapters";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,19 +54,28 @@ export async function POST(request: Request) {
     }
     const input = parsed.data;
     if (input.action === "fees") {
-      return NextResponse.json(await getCctpFujiToStellarFees(), {
+      const fees = await executeWebReadQuery("circle.cctp.fees.read", {}, claims.user_id) as Partial<Awaited<ReturnType<typeof getCctpFujiToStellarFees>>> & { status: string; error?: string };
+      if (fees.status !== "ok") throw new Error(fees.error ?? "cctp_fee_unavailable");
+      return NextResponse.json({ sourceDomain: fees.sourceDomain, destinationDomain: fees.destinationDomain, options: fees.options, fetchedAt: fees.fetchedAt }, {
         headers: { "Cache-Control": "no-store" },
       });
     }
-    const readiness = await getCctpFujiToStellarContext(claims.user_id);
     if (input.action === "readiness") {
+      const result = await executeWebReadQuery("circle.cctp.readiness.read", {}, claims.user_id) as CctpBridgeReadiness & { status: string; errors: string[]; fetchedAt: string };
+      const readiness: CctpBridgeReadiness = {
+        sourceAddress: result.sourceAddress, destinationAddress: result.destinationAddress,
+        sourceGasReady: result.sourceGasReady, sourceUsdcBalance: result.sourceUsdcBalance,
+        destinationGasReady: result.destinationGasReady, destinationTrustlineReady: result.destinationTrustlineReady,
+      };
       return NextResponse.json({
         route: "avalanche:fuji->stellar:testnet",
         readiness,
+        status: result.status, errors: result.errors, fetchedAt: result.fetchedAt,
         fundsMoved: false,
         transactionPrepared: false,
       }, { headers: { "Cache-Control": "no-store" } });
     }
+    const readiness = await getCctpFujiToStellarContext(claims.user_id);
     if (!readiness.sourceAddress || !readiness.destinationAddress) {
       return NextResponse.json({
         error: "cctp_wallets_not_activated",

@@ -42,7 +42,9 @@ test("prediction sector read recomputes the Avalanche share from DefiLlama", asy
   assert.equal(result.readOnly, true);
   assert.equal(result.protocolCount, 2);
   assert.ok(result.avalanche, "Avalanche must appear in the sector");
-  assert.ok(Math.abs(result.avalanche!.tvl - 200.4) < 0.01);
+  assert.equal(typeof result.avalanche!.tvl, "number");
+  assert.notEqual(result.avalanche!.tvl, null);
+  assert.ok(Math.abs(result.avalanche!.tvl! - 200.4) < 0.01);
   assert.equal(result.byChain[0]?.chain, "Polygon");
 });
 

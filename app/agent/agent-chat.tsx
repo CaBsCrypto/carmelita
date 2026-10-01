@@ -202,11 +202,13 @@ export default function AgentChat({
   walletAddress,
   walletBalance,
   getAccessToken,
+  initialDraft = "",
 }: {
   email: string;
   walletAddress: string;
   walletBalance: string;
   getAccessToken: () => Promise<string | null>;
+  initialDraft?: string;
 }) {
   const { locale } = useLocale();
   const { signRawHash } = useSignRawHash();
@@ -224,7 +226,7 @@ export default function AgentChat({
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft);
   const [connections, setConnections] = useState<ExternalConnection[]>([]);
   const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
   const [connectionPopup, setConnectionPopup] = useState<{
@@ -534,7 +536,7 @@ export default function AgentChat({
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, locale }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Message failed");
@@ -574,7 +576,7 @@ export default function AgentChat({
             intent.requestId,
           );
         }
-      } else if (message.toLowerCase().includes("defindex")) {
+      } else if (!body.sharedRead && message.toLowerCase().includes("defindex")) {
         void loadDefindex();
       }
     } catch (caught) {

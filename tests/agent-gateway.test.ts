@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { listGatewayCapabilities } from "../app/agent-gateway/catalog";
+import { readQueryDefinitions } from "../app/queries/registry";
 import { gatewayError } from "../app/agent-gateway/http";
 import { InMemoryGatewayStore } from "../app/agent-gateway/store";
 import {
@@ -18,7 +19,17 @@ test("gateway exposes a versioned, honest multichain Testnet catalog", () => {
   assert.ok(capabilities.some((item) => item.network === "offchain:testnet"));
   assert.ok(capabilities.every((item) => item.version === "2026-08-03"));
   assert.deepEqual(capabilities.filter(item => item.execution.exposedByGateway).map(item => item.id).sort(),
-    ["offchain.defillama.chains", "offchain.market.quote"]);
+    [...new Set([...readQueryDefinitions.map(query => query.id), "stellar.wallet.status", "avalanche.wallet.status"])].sort());
+  const sharedReadTools = new Set(readQueryDefinitions.map(query => query.toolName));
+  for (const capability of capabilities.filter(item => item.execution.exposedByGateway)) {
+    assert.equal(capability.operation, "read", capability.id);
+    assert.equal(capability.execution.mode, "read_only", capability.id);
+    assert.ok(capability.readTools?.length, capability.id);
+    for (const name of capability.readTools) assert.ok(sharedReadTools.has(name), `${capability.id}: ${name}`);
+  }
+  for (const query of readQueryDefinitions) {
+    assert.ok(capabilities.some(capability => capability.execution.exposedByGateway && capability.readTools?.includes(query.toolName)), query.toolName);
+  }
   assert.ok(capabilities.filter(item => item.operation !== "read").every(item => !item.execution.exposedByGateway));
   assert.equal(
     capabilities.find((item) => item.id === "stellar.soroswap.swap")?.status,
