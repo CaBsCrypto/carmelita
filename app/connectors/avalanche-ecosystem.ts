@@ -7,9 +7,14 @@ export const FUJI_CHAIN_ID = 43113 as const;
 export const DEFILLAMA_PROTOCOLS_URL = "https://api.llama.fi/protocols" as const;
 export const DEFILLAMA_YIELDS_URL = "https://yields.llama.fi/pools" as const;
 export const POLYMARKET_GAMMA_URL = "https://gamma-api.polymarket.com" as const;
-export const GLACIER_BASE_URL = "https://glacier-api.avax.network/v1/networks/fuji" as const;
+export const GLACIER_BASE_URL = "https://data-api.avax.network/v1/chains/43113" as const;
 export const ROUTESCAN_BASE_URL = "https://api.routescan.io/v2/network/testnet/evm/43113" as const;
-export const AAVE_V3_FUJI_POOL = "0xb47673b7a73D78743AFF1487AF69dBB5763F00cA" as const;
+// Read-only deployment snapshot verified against the official Aave address book
+// and Fuji eth_call on 2026-10-01. Transaction preparation has separate constants
+// in aave-fuji.ts and is deliberately unchanged by this reader update.
+// https://github.com/bgd-labs/aave-address-book/blob/main/src/ts/AaveV3Fuji.ts
+export const AAVE_V3_FUJI_POOL = "0x8B9b2AF4afB389b4a70A474dfD4AdCD4a302bb40" as const;
+export const AAVE_V3_FUJI_DATA_PROVIDER = "0xC65cbd1e309Bf0e841Ee6f6E786480598e6a4014" as const;
 export const CIRCLE_USDC_FUJI = "0x5425890298aed601595a70AB815c96711a31Bc65" as const;
 export const ECOSYSTEM_TIMEOUT_MS = 10_000;
 export const ECOSYSTEM_MAX_RESPONSE_BYTES = 512 * 1024;
@@ -378,7 +383,7 @@ async function readReserve(
     args: [asset],
   });
   const [configHex, dataHex] = await Promise.all([
-    rpcRead<string>(AAVE_V3_FUJI_POOL, configCalldata, fetcher, signal),
+    rpcRead<string>(AAVE_V3_FUJI_DATA_PROVIDER, configCalldata, fetcher, signal),
     rpcRead<string>(AAVE_V3_FUJI_POOL, dataCalldata, fetcher, signal),
   ]);
   const config = decodeFunctionResult({
@@ -421,9 +426,9 @@ async function readReserve(
 
 const aaveReserveAssets = [
   { symbol: "USDC", address: CIRCLE_USDC_FUJI },
-  { symbol: "WAVAX", address: "0x407287b03D1167593AF113d32093942be13A535f" },
-  { symbol: "WETH", address: "0x28A8E6e41F84e62284970E4bc0867cEe2AAd0DA4" },
-  { symbol: "DAI", address: "0xFc7215C9498Fc12b22Bc0ed335871Db4315f03d3" },
+  { symbol: "EURC", address: "0x5E44db7996c682E92a960b65AC713a54AD815c6B" },
+  { symbol: "WAVAX", address: "0xd00ae08403B9bbb9124bB305C09058E32C39A48c" },
+  { symbol: "USDX", address: "0x22913D4E21D44EF7662B118A6540450e25fE09a9" },
 ] as const;
 
 export async function getAaveFujiMarketRead(
@@ -433,7 +438,13 @@ export async function getAaveFujiMarketRead(
   const reserves = await Promise.all(
     aaveReserveAssets.map(async ({ symbol, address }) => {
       const reserve = await readReserve(address, fetcher, signal);
-      return { symbol, ...reserve };
+      return {
+        symbol,
+        ...reserve,
+        // Raw ray values need exact decimal strings in both JSON adapters.
+        currentLiquidityRate: reserve.currentLiquidityRate.toString(),
+        currentVariableBorrowRate: reserve.currentVariableBorrowRate.toString(),
+      };
     }),
   );
   return {
@@ -500,30 +511,56 @@ export async function getAaveFujiPositionRead(
 // --- avalanche.nft.* ---------------------------------------------------------
 
 const glacierCollectionSchema = z.object({
-  name: z.string().optional().default(""),
-  symbol: z.string().optional().default(""),
-  totalSupply: z.union([z.string(), z.number()]).optional().default("0"),
-  owners: z.union([z.string(), z.number()]).optional().default("0"),
-  numTokens: z.union([z.string(), z.number()]).optional().default("0"),
-  updatedAt: z.string().optional().default(""),
-}).passthrough();
+  address: addressSchema,
+  ercType: z.enum(["ERC-721", "ERC-1155"]),
+  name: z.string().max(500).optional(),
+  symbol: z.string().max(100).optional(),
+});
+
+const nftTokenId = z.string().regex(/^\d{1,78}$/);
 
 const glacierTokenSchema = z.object({
-  tokenId: z.union([z.string(), z.number()]),
-  tokenUri: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  ownerAddress: z.string().optional(),
-  updatedAt: z.string().optional(),
-}).passthrough();
+  address: addressSchema,
+  ercType: z.enum(["ERC-721", "ERC-1155"]),
+  tokenId: nftTokenId,
+  ownerAddress: addressSchema.optional(),
+});
+
+const glacierTokenPageSchema = z.object({
+  tokens: z.array(glacierTokenSchema).max(50),
+  nextPageToken: z.string().max(4096).optional(),
+});
 
 const glacierTransferSchema = z.object({
-  from: z.string(),
-  to: z.string(),
-  tokenId: z.union([z.string(), z.number()]),
-  txHash: z.string().optional(),
-  blockTimestamp: z.string().optional(),
-  blockNumber: z.union([z.string(), z.number()]).optional(),
-}).passthrough();
+  from: z.object({ address: addressSchema }),
+  to: z.object({ address: addressSchema }),
+  txHash: z.string().regex(/^0x[\da-fA-F]{64}$/),
+  blockTimestamp: z.number().int().nonnegative().max(8_640_000_000_000),
+  blockNumber: z.string().regex(/^\d{1,78}$/),
+  erc721Token: glacierTokenSchema.optional(),
+  erc1155Token: glacierTokenSchema.optional(),
+}).refine((transfer) => Boolean(transfer.erc721Token) !== Boolean(transfer.erc1155Token));
+
+const glacierTransferPageSchema = z.object({
+  transfers: z.array(glacierTransferSchema).max(20),
+  nextPageToken: z.string().max(4096).optional(),
+});
+
+const routescanTransferPageSchema = z.object({
+  items: z.array(z.object({
+    chainId: z.literal("43113"),
+    tokenAddress: addressSchema,
+    tokenId: nftTokenId,
+    from: addressSchema,
+    to: addressSchema,
+    blockNumber: z.number().int().nonnegative().safe(),
+    logIndex: z.number().int().nonnegative().safe().optional().default(0),
+  })).max(20),
+});
+
+function sameNftCollection(actual: string, expected: string) {
+  return actual.toLowerCase() === expected.toLowerCase();
+}
 
 function collectionAddress(value: string) {
   return addressSchema.parse(value);
@@ -535,22 +572,27 @@ export async function getNftCollectionRead(
   signal: AbortSignal = AbortSignal.timeout(ECOSYSTEM_TIMEOUT_MS),
 ) {
   const address = collectionAddress(collection);
-  const url = `${GLACIER_BASE_URL}/collections/${address}?tokenCount=1`;
+  // Official Data API contract metadata; /networks/fuji/collections is not an API route.
+  const url = `${GLACIER_BASE_URL}/addresses/${address}`;
   const parsed = glacierCollectionSchema.safeParse(
     await readBoundedJson(url, fetcher, signal),
   );
-  if (!parsed.success) throw new Error("ecosystem_glacier_collection_invalid");
+  if (!parsed.success || !sameNftCollection(parsed.data.address, address)) {
+    throw new Error("ecosystem_glacier_collection_invalid");
+  }
   return {
     network: "avalanche:fuji" as const,
     chainId: FUJI_CHAIN_ID,
-    source: `${GLACIER_BASE_URL}/collections/${address}`,
+    source: url,
     readOnly: true as const,
     fetchedAt: nowIso(),
     collection: address,
-    name: parsed.data.name,
-    symbol: parsed.data.symbol,
-    totalSupply: String(parsed.data.totalSupply),
-    owners: String(parsed.data.owners),
+    name: parsed.data.name ?? null,
+    symbol: parsed.data.symbol ?? null,
+    ercType: parsed.data.ercType,
+    // This endpoint returns metadata, not collection supply or holder totals.
+    totalSupply: null,
+    owners: null,
     attributes: null as null | unknown[],
   };
 }
@@ -561,39 +603,50 @@ export async function getNftHolderDistribution(
   signal: AbortSignal = AbortSignal.timeout(ECOSYSTEM_TIMEOUT_MS),
 ) {
   const address = collectionAddress(collection);
-  const url = `${GLACIER_BASE_URL}/collections/${address}/holders?pageSize=50`;
-  const parsed = z.object({
-    owners: z.array(z.object({
-      address: z.string(),
-      tokenCount: z.union([z.string(), z.number()]),
-    })).optional().default([]),
-  }).passthrough().safeParse(
+  // The Data API has no collection /holders endpoint. Derive a bounded,
+  // explicitly labelled sample from the official NFT token listing instead.
+  const url = `${GLACIER_BASE_URL}/nfts/collections/${address}/tokens?pageSize=50`;
+  const parsed = glacierTokenPageSchema.safeParse(
     await readBoundedJson(url, fetcher, signal),
   );
-  if (!parsed.success) throw new Error("ecosystem_glacier_holders_invalid");
-  const holders = parsed.data.owners ?? [];
-  const total = holders.reduce(
-    (sum, holder) => sum + Number(holder.tokenCount),
-    0,
-  );
-  const top = [...holders]
-    .sort((a, b) => Number(b.tokenCount) - Number(a.tokenCount))
+  if (!parsed.success || parsed.data.tokens.some((token) => !sameNftCollection(token.address, address))
+    || new Set(parsed.data.tokens.map((token) => token.tokenId)).size !== parsed.data.tokens.length) {
+    throw new Error("ecosystem_glacier_holders_invalid");
+  }
+  const counts = new Map<string, { address: string; tokenCount: number }>();
+  for (const token of parsed.data.tokens) {
+    // ERC-1155 metadata does not identify a unique holder. Never infer one.
+    if (token.ercType !== "ERC-721" || !token.ownerAddress) continue;
+    const key = token.ownerAddress.toLowerCase();
+    const holder = counts.get(key) ?? { address: token.ownerAddress, tokenCount: 0 };
+    holder.tokenCount += 1;
+    counts.set(key, holder);
+  }
+  const holders = [...counts.values()];
+  const total = holders.reduce((sum, holder) => sum + holder.tokenCount, 0);
+  const top = holders
+    .sort((a, b) => b.tokenCount - a.tokenCount)
     .slice(0, 10)
     .map((holder) => ({
       address: holder.address,
-      tokenCount: Number(holder.tokenCount),
-      sharePct: total > 0
-        ? Number((Number(holder.tokenCount) / total * 100).toFixed(2))
-        : 0,
+      tokenCount: holder.tokenCount,
+      sharePct: Number((holder.tokenCount / total * 100).toFixed(2)),
     }));
   return {
     network: "avalanche:fuji" as const,
     chainId: FUJI_CHAIN_ID,
-    source: `${GLACIER_BASE_URL}/collections/${address}/holders`,
+    source: url,
     readOnly: true as const,
     fetchedAt: nowIso(),
     collection: address,
-    holderCount: holders.length,
+    status: parsed.data.tokens.length && total === 0 ? "unavailable" as const : "partial" as const,
+    holderCount: null,
+    sampledHolderCount: holders.length,
+    sampledTokenCount: parsed.data.tokens.length,
+    tokensWithKnownOwner: total,
+    hasMore: Boolean(parsed.data.nextPageToken),
+    coverage: "first_page_indexed_erc721_tokens" as const,
+    shareDenominator: "sampled_tokens_with_known_owner" as const,
     top,
   };
 }
@@ -605,45 +658,52 @@ export async function getNftProvenanceRead(
   signal: AbortSignal = AbortSignal.timeout(ECOSYSTEM_TIMEOUT_MS),
 ) {
   const address = collectionAddress(collection);
-  const tokenUrl = `${GLACIER_BASE_URL}/collections/${address}/tokens/${tokenId}`;
-  const transfersUrl = `${GLACIER_BASE_URL}/collections/${address}/transfers?tokenId=${tokenId}&pageSize=20`;
+  const requestedTokenId = BigInt(z.string().regex(/^\d{1,20}$/).parse(tokenId)).toString();
+  const tokenUrl = `${GLACIER_BASE_URL}/nfts/collections/${address}/tokens/${requestedTokenId}`;
+  const transfersUrl = `${GLACIER_BASE_URL}/tokens/${address}/transfers?pageSize=20`;
   const [tokenResult, transfersResult] = await Promise.all([
     readBoundedJson(tokenUrl, fetcher, signal),
     readBoundedJson(transfersUrl, fetcher, signal),
   ]);
   const token = glacierTokenSchema.safeParse(tokenResult);
-  const transfers = z.object({
-    transfers: z.array(glacierTransferSchema).optional().default([]),
-  }).passthrough().safeParse(transfersResult);
-  if (!token.success) throw new Error("ecosystem_glacier_token_invalid");
-  if (!transfers.success) throw new Error("ecosystem_glacier_transfers_invalid");
+  const transfers = glacierTransferPageSchema.safeParse(transfersResult);
+  if (!token.success || !sameNftCollection(token.data.address, address) || token.data.tokenId !== requestedTokenId) {
+    throw new Error("ecosystem_glacier_token_invalid");
+  }
+  if (!transfers.success || transfers.data.transfers.some((transfer) => {
+    const nft = transfer.erc721Token ?? transfer.erc1155Token!;
+    return !sameNftCollection(nft.address, address);
+  })) throw new Error("ecosystem_glacier_transfers_invalid");
 
   // Cross-check: the Routescan mirror should agree on ownership.
-  let routescanOwners: string[] = [];
+  let routescanOwner: string | null = null;
+  let mirrorAvailable = false;
   try {
-    const mirrorUrl = `${ROUTESCAN_BASE_URL}/tokens/${address}/instances/${tokenId}/transfers`;
-    const mirror = z.object({
-      items: z.array(z.object({ from: z.string(), to: z.string() })).optional().default([]),
-    }).passthrough().safeParse(await readBoundedJson(mirrorUrl, fetcher, signal));
-    if (mirror.success) {
-      routescanOwners = (mirror.data.items ?? [])
-        .filter((item) => item.to)
-        .map((item) => item.to);
+    if (token.data.ercType === "ERC-721") {
+      const mirrorUrl = `${ROUTESCAN_BASE_URL}/erc721-transfers?tokenAddress=${address}&tokenId=${requestedTokenId}&sort=desc&limit=20`;
+      const mirror = routescanTransferPageSchema.safeParse(await readBoundedJson(mirrorUrl, fetcher, signal));
+      if (mirror.success && mirror.data.items.every((item) => sameNftCollection(item.tokenAddress, address)
+        && item.tokenId === requestedTokenId)) {
+        mirrorAvailable = true;
+        const latest = [...mirror.data.items].sort((a, b) => b.blockNumber - a.blockNumber || b.logIndex - a.logIndex)[0];
+        routescanOwner = latest?.to ?? null;
+      }
     }
   } catch {
-    routescanOwners = [];
+    // Preserve the primary result and expose that the independent mirror is missing.
   }
 
-  const history = (transfers.data.transfers ?? []).slice(0, 20).map((transfer) => ({
-    from: transfer.from,
-    to: transfer.to,
-    tokenId: String(transfer.tokenId),
-    txHash: transfer.txHash ?? null,
-    blockTimestamp: transfer.blockTimestamp ?? null,
-    blockNumber: transfer.blockNumber !== undefined ? String(transfer.blockNumber) : null,
+  const history = transfers.data.transfers.filter((transfer) =>
+    (transfer.erc721Token ?? transfer.erc1155Token!).tokenId === requestedTokenId,
+  ).map((transfer) => ({
+    from: transfer.from.address,
+    to: transfer.to.address,
+    tokenId: requestedTokenId,
+    txHash: transfer.txHash,
+    blockTimestamp: new Date(transfer.blockTimestamp * 1000).toISOString(),
+    blockNumber: transfer.blockNumber,
   }));
-  const glacierOwner = token.data.ownerAddress ?? history[0]?.to ?? null;
-  const routescanOwner = routescanOwners[routescanOwners.length - 1] ?? null;
+  const glacierOwner = token.data.ercType === "ERC-721" ? token.data.ownerAddress ?? null : null;
   return {
     network: "avalanche:fuji" as const,
     chainId: FUJI_CHAIN_ID,
@@ -651,12 +711,17 @@ export async function getNftProvenanceRead(
     readOnly: true as const,
     fetchedAt: nowIso(),
     collection: address,
-    tokenId,
+    tokenId: requestedTokenId,
+    ercType: token.data.ercType,
     owner: glacierOwner,
     routescanOwner,
     indexersAgree: glacierOwner !== null && routescanOwner !== null
       ? glacierOwner.toLowerCase() === routescanOwner.toLowerCase()
       : null,
+    mirrorAvailable,
+    historyCoverage: "first_page_collection_transfers_filtered_by_token" as const,
+    scannedTransferCount: transfers.data.transfers.length,
+    hasMoreCollectionTransfers: Boolean(transfers.data.nextPageToken),
     history,
   };
 }

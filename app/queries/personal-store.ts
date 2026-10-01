@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { agentActivities, agentConversations, agentDecisionEvents, agentKnowledgeItems, agentMessages, agentPolicies } from "@/db/schema";
 import type { StoredAgentMessage } from "@/app/agent-chat-store";
@@ -50,8 +50,9 @@ export async function readAgentConversation(userId: string, db: ReadDatabase = g
     metadata: agentMessages.metadata, createdAt: agentMessages.createdAt,
   }).from(agentMessages)
     .where(and(eq(agentMessages.userId, userId), eq(agentMessages.conversationId, conversation.id)))
-    .orderBy(asc(agentMessages.createdAt)).limit(80);
-  return { conversationId: conversation.id, messages: messages.map(publicReadMessage) };
+    .orderBy(desc(agentMessages.createdAt)).limit(80);
+  // Bound the newest history window, then preserve the chronological wire order.
+  return { conversationId: conversation.id, messages: messages.reverse().map(publicReadMessage) };
 }
 
 export async function readAgentVault(userId: string, db: ReadDatabase = getDb()) {

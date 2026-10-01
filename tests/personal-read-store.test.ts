@@ -47,6 +47,11 @@ function fixture() {
       if (conversationPredicate) rows = rows.filter((row) => row.conversation_id === params[Number(conversationPredicate[1]) - 1]);
       const kindPredicate = query.match(/\."kind" = \$(\d+)/);
       if (kindPredicate) rows = rows.filter((row) => row.kind === params[Number(kindPredicate[1]) - 1]);
+      const ordering = query.match(/ order by "[a-z_]+"\."([a-z_]+)" (asc|desc)/);
+      if (ordering) rows.sort((left, right) => {
+        const comparison = String(left[ordering[1]]).localeCompare(String(right[ordering[1]]));
+        return ordering[2] === "desc" ? -comparison : comparison;
+      });
       const limitParameter = query.match(/ limit \$(\d+)/);
       assert.ok(limitParameter, "personal reads must be bounded");
       rows = rows.slice(0, Number(params[Number(limitParameter[1]) - 1]));
@@ -71,6 +76,29 @@ test("conversation read preserves existing messages, scopes both tables to owner
   assert.deepEqual(conversation.messages[0].workflow, { id: "read", result: { count: 1 } });
   assert.doesNotMatch(JSON.stringify(conversation), /secret|unknownMetadata|owner-b/);
   assert.equal(statements.length, 2);
+  assert.deepEqual(tables, before);
+});
+
+test("long conversation returns the newest eighty owner messages in chronological order without writes", async () => {
+  const { statements, tables, db } = fixture();
+  tables.agent_messages = Array.from({ length: 82 }, (_, index) => ({
+    id: `own-${index}`, user_id: own, conversation_id: conversationId(own),
+    role: index % 2 ? "assistant" : "user", content: `message-${index}`, metadata: {},
+    created_at: new Date(Date.parse(iso) + index * 1000).toISOString(),
+  }));
+  tables.agent_messages.push({ id: "foreign-latest", user_id: foreign, conversation_id: conversationId(own),
+    role: "assistant", content: "foreign-private", metadata: {},
+    created_at: new Date(Date.parse(iso) + 100_000).toISOString() });
+  const before = structuredClone(tables);
+  const conversation = await readAgentConversation(own, db);
+  assert.equal(conversation.conversationId, conversationId(own));
+  assert.equal(conversation.messages.length, 80);
+  assert.deepEqual(conversation.messages.map(message => message.id), Array.from({ length: 80 }, (_, index) => `own-${index + 2}`));
+  assert.equal(conversation.messages.at(-1)?.content, "message-81", "the latest reply must remain visible after reload");
+  assert.doesNotMatch(JSON.stringify(conversation), /foreign-private|foreign-latest/);
+  assert.equal(statements.length, 2);
+  assert.match(statements[1].query, /order by "agent_messages"\."created_at" desc limit/);
+  assert.equal(statements[1].params.at(-1), 80);
   assert.deepEqual(tables, before);
 });
 

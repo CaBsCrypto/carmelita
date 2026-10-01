@@ -11,6 +11,8 @@ import { executeReadQuery, listReadQueries, readQueryDefinitions } from "../app/
 import { defineQuery, type QueryDefinition } from "../app/queries/types";
 import { createMetadataQueries } from "../app/queries/metadata";
 import { agentContinuationUrl } from "../app/queries/links";
+import { evaluateQueryAcceptance } from "../app/queries/acceptance";
+import { listAvalancheCapabilities } from "../app/avalanche/capability-registry";
 
 const principal = (scope = "agent:read", userId = "owner-a"): AuthInfo => ({
   token: "fixture-not-a-credential", clientId: "parity-test", scopes: [scope], extra: { subjectType: "user", userId },
@@ -32,7 +34,7 @@ function inputFor(id: string): Record<string, unknown> {
   }
 }
 
-test("read registry has unique strict contracts, existing tool aliases and honest pending acceptance", () => {
+test("read registry has unique strict contracts, existing tool aliases and evidence-derived acceptance", () => {
   assert.equal(new Set(readQueryDefinitions.map(query => query.id)).size, readQueryDefinitions.length);
   assert.equal(new Set(readQueryDefinitions.map(query => query.toolName)).size, readQueryDefinitions.length);
   const aliases = new Map([
@@ -53,7 +55,8 @@ test("read registry has unique strict contracts, existing tool aliases and hones
   }
   for (const item of listReadQueries()) {
     assert.deepEqual(item.channels, { carmelita: true, chatgpt: true });
-    assert.equal(item.acceptance, "pending");
+    const definition = readQueryDefinitions.find(query => query.id === item.id)!;
+    assert.equal(item.acceptance, evaluateQueryAcceptance(definition).acceptance);
   }
 });
 
@@ -107,6 +110,24 @@ test("continuation links use HTTPS origins without embedded credentials or navig
     if (original === undefined) delete process.env.CARMELITA_PUBLIC_ORIGIN;
     else process.env.CARMELITA_PUBLIC_ORIGIN = original;
   }
+});
+
+test("Avalanche discovery preserves legacy fields and shares channel availability with the common catalog", async () => {
+  const web = await executeWebReadQuery("avalanche.capabilities.list", {}, "owner-a", "es");
+  const mcp = await executeMcpReadQuery("avalanche.capabilities.list", {}, principal());
+  assert.deepEqual(web, mcp);
+  const common = new Map(listGatewayCapabilities().map(capability => [capability.id, capability]));
+  const result = web as { capabilities: Array<Record<string, unknown>> };
+  for (const legacy of listAvalancheCapabilities()) {
+    const actual = result.capabilities.find(capability => capability.id === legacy.id);
+    assert.ok(actual);
+    for (const [key, value] of Object.entries(legacy)) assert.deepEqual(actual[key], value, `${legacy.id}:${key}`);
+    assert.deepEqual(actual.channels, common.get(legacy.id)?.channels);
+    assert.deepEqual(actual.availability, common.get(legacy.id)?.availability);
+  }
+  const floor = result.capabilities.find(capability => capability.id === "avalanche.nft.floor_read")!;
+  assert.equal((floor.availability as { available: boolean }).available, false);
+  assert.equal((floor.availability as { provider: string }).provider, "known_unavailable");
 });
 
 test("Avalanche documentation metadata uses shared typed authorization and fixed sanitized failures", async () => {

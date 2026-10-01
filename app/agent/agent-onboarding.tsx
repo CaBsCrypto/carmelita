@@ -12,6 +12,7 @@ import AgentConnectedApps from "./agent-connected-apps";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 import { sessionCloseCopy, useSessionClose } from "../use-session-close";
+import { requestTravelSearch } from "./travel-search-request";
 
 const onboardingUi = {
   en: {
@@ -193,6 +194,20 @@ function PrivyAgent({
   autoLogin: boolean;
   initialDraft: string;
 }) {
+  const { authenticated, user } = usePrivy();
+  // An owner change discards all prior profile, travel and chat state together.
+  return <PrivyWorkspace key={authenticated ? user?.id ?? "pending_identity" : "signed_out"} locale={locale} autoLogin={autoLogin} initialDraft={initialDraft} />;
+}
+
+function PrivyWorkspace({
+  locale,
+  autoLogin,
+  initialDraft,
+}: {
+  locale: Locale;
+  autoLogin: boolean;
+  initialDraft: string;
+}) {
   const t = onboardingUi[locale];
   const pc = preparationCopy[locale];
   const { ready, authenticated, user, login, getAccessToken } = usePrivy();
@@ -209,6 +224,7 @@ function PrivyAgent({
   const bootstrappedFor = useRef<string | null>(null);
   const loginStarted = useRef(false);
   const bootstrapRequest = useRef<AbortController | null>(null);
+  const travelRequest = useRef<AbortController | null>(null);
 
   const bootstrap = useCallback(async (force = false) => {
     if (!userId || (!force && bootstrappedFor.current === userId)) return;
@@ -233,6 +249,7 @@ function PrivyAgent({
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Wallet bootstrap failed");
+      controller.signal.throwIfAborted();
       // The wallet may have just been created by the Privy server SDK. Refresh
       // the browser identity so extended-chain signing can discover it without
       // forcing the user through a sign-out/sign-in cycle.
@@ -267,6 +284,7 @@ function PrivyAgent({
 
   useEffect(() => () => {
     bootstrapRequest.current?.abort();
+    travelRequest.current?.abort();
     bootstrappedFor.current = null;
   }, [authenticated, userId]);
 
@@ -279,6 +297,7 @@ function PrivyAgent({
   async function signOut() {
     bootstrappedFor.current = null;
     bootstrapRequest.current?.abort();
+    travelRequest.current?.abort();
     setResult(null);
     setStatus("idle");
     await session.close();
@@ -288,31 +307,25 @@ function PrivyAgent({
   async function searchTravel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    travelRequest.current?.abort();
+    const controller = new AbortController();
+    travelRequest.current = controller;
     setTravelStatus("searching");
     setTravelError(null);
     setSelectedHotel(null);
     try {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Authentication token unavailable");
-      const response = await fetch("/api/agent/travel/search", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          location: String(form.get("location") ?? ""),
-          checkIn: String(form.get("checkIn") ?? ""),
-          checkOut: String(form.get("checkOut") ?? ""),
-          guests: Number(form.get("guests") ?? 1),
-          maxPrice: Number(form.get("maxPrice") ?? 0) || undefined,
-        }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Travel search failed");
+      const body = await requestTravelSearch<TravelSearchResult>({
+        location: String(form.get("location") ?? ""),
+        checkIn: String(form.get("checkIn") ?? ""),
+        checkOut: String(form.get("checkOut") ?? ""),
+        guests: Number(form.get("guests") ?? 1),
+        maxPrice: Number(form.get("maxPrice") ?? 0) || undefined,
+      }, getAccessToken, controller.signal);
+      controller.signal.throwIfAborted();
       setTravelResult(body);
       setTravelStatus("idle");
     } catch (caught) {
+      if (controller.signal.aborted) return;
       setTravelError(caught instanceof Error ? caught.message : "Travel search failed");
       setTravelStatus("error");
     }
@@ -361,7 +374,7 @@ function PrivyAgent({
         <div>
           <p className="eyebrow">{t.workspace}</p>
           <h1>{status === "ready" ? t.ready : t.creating}</h1>
-          <p>{result?.profile?.email ?? user?.email?.address ?? t.authenticated}</p>
+          <p>{(result && result.user.id === userId ? result.profile?.email : undefined) ?? user?.email?.address ?? t.authenticated}</p>
         </div>
         <button className="agent-signout" disabled={session.closing} onClick={() => void signOut()}>{session.closing ? sessionCloseCopy[locale].closing : t.signout}</button>
       </header>

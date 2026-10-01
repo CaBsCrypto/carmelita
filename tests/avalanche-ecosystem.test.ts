@@ -7,8 +7,6 @@ import {
   getAaveFujiMarketRead,
   getDefiLlamaYieldsRead,
   getLfjQuoteRead,
-  getNftCollectionRead,
-  getNftProvenanceRead,
   getPredictionMarketsRead,
   getPredictionSectorRead,
 } from "../app/connectors/avalanche-ecosystem";
@@ -115,40 +113,6 @@ test("Aave market read decodes live Fuji reserves through eth_call", async () =>
   assert.equal(usdc.isActive, true);
   assert.equal(usdc.isFrozen, false);
   assert.equal(usdc.decimals, 6);
-});
-
-test("NFT collection read is keyless and bounded", async () => {
-  const fetcher: typeof fetch = async (input) => {
-    const url = String(input);
-    assert.match(url, /^https:\/\/glacier-api\.avax\.network\/v1\/networks\/fuji\/collections\/0x/);
-    return json({ name: "Sample NFT", symbol: "SAMPLE", totalSupply: "100", owners: "42" });
-  };
-  const result = await getNftCollectionRead("0xfBF22D7c00000000000000000000000000000000", fetcher);
-  assert.equal(result.name, "Sample NFT");
-  assert.equal(result.totalSupply, "100");
-  assert.equal(result.readOnly, true);
-});
-
-test("NFT provenance read cross-checks two indexers", async () => {
-  const requests: string[] = [];
-  const fetcher: typeof fetch = async (input) => {
-    const url = String(input);
-    requests.push(url);
-    if (url.includes("routescan")) {
-      return json({ items: [{ from: "0x0000", to: "0xaaaa0000000000000000000000000000000001" }] });
-    }
-    if (url.includes("/tokens/")) {
-      return json({ tokenId: 1, ownerAddress: "0xaaaa0000000000000000000000000000000001" });
-    }
-    if (url.includes("/transfers")) {
-      return json({ transfers: [{ from: "0x0000", to: "0xaaaa0000000000000000000000000000000001", tokenId: 1 }] });
-    }
-    throw new Error("unexpected");
-  };
-  const result = await getNftProvenanceRead("0xfBF22D7c00000000000000000000000000000000", "1", fetcher);
-  assert.equal(result.tokenId, "1");
-  assert.equal(result.indexersAgree, true);
-  assert.ok(requests.some((url) => url.includes("routescan")));
 });
 
 test("DefiLlama yields read filters Avalanche and labels origin chain", async () => {

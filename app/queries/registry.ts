@@ -4,6 +4,7 @@ import { ecosystemQueries } from "./ecosystem";
 import { discoveryQueries } from "./discovery";
 import { metadataQueries } from "./metadata";
 import { executeQueryDefinition, type QueryDefinition, type QueryLocale, type QueryPrincipal } from "./types";
+import { evaluateQueryAcceptance } from "./acceptance";
 
 export const readQueryDefinitions: readonly QueryDefinition[] = [
   ...marketQueries, ...personalQueries, ...ecosystemQueries, ...discoveryQueries, ...metadataQueries,
@@ -26,9 +27,14 @@ export async function executeReadQuery(
 
 /** Static coverage describes installed adapters, not a user's connection or live upstream health. */
 export function listReadQueries() {
-  return readQueryDefinitions.map(({ id, toolName, title, description, scope, dataScope, requirements }) => ({
-    id, toolName, title, description, scope, dataScope, requirements: requirements ?? [],
-    channels: { carmelita: true, chatgpt: true },
-    acceptance: "pending" as const,
-  }));
+  return readQueryDefinitions.map(query => {
+    const { id, toolName, title, description, scope, dataScope, requirements } = query;
+    const acceptance = evaluateQueryAcceptance(query, { providerKnownUnavailable: id === "avalanche.nft.floor_read" });
+    return {
+      id, toolName, title, description, scope, dataScope, requirements: requirements ?? [],
+      channels: { carmelita: true, chatgpt: true },
+      acceptance: acceptance.acceptance,
+      acceptanceVerification: acceptance.verification,
+    };
+  });
 }

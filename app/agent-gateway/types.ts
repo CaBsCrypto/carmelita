@@ -44,9 +44,11 @@ export type GatewayCapability = {
   availability?: {
     implemented: boolean;
     connection: "required" | "not_required";
-    provider: "unverified" | "known_unavailable";
+    provider: "unverified" | "known_unavailable" | "verified";
     acceptance: "pending" | "accepted";
     available: boolean;
+    /** Historical channel acceptance. Each execution still reports current provider/connection failures. */
+    verification?: { kind: "historical"; observedAt: string; evidenceIds: readonly string[] };
   };
   approval: "none" | "privy_single" | "privy_dual" | "user_confirmation";
   requiresApproval: boolean;

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "groups": {
+    "market": "531c86e54ca658ec8d8ecb751bcc3935a5341d00020c7a8695139e482848b7d9",
+    "personal": "0fe653c9e592f38300479928e0a8c83e69cc804441e1924f462f5c65987fb736",
+    "ecosystem": "9fcbecb1716db0696722487b8825dd9f2d5c0cd4e7e4531b788e36016ecad7db",
+    "discovery": "1c6d16a3a3caa56aa6ca3d43834f3a7a62d03bb30341fbd8b8d795925ef5c62f",
+    "metadata": "7de804354743056b0c4c3c81ce6a0bf01f7125cc9f45015ed8c12df2c4ddaf0b"
+  }
+}

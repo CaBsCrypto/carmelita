@@ -27,7 +27,17 @@ export function createMetadataQueries(overrides: Partial<typeof defaultDependenc
     id: "avalanche.capabilities.list", toolName: "list_avalanche_capabilities", title: "List Avalanche capabilities",
     description: "Read Avalanche capability status, requirements and approval boundaries. No financial action is executed or prepared.",
     inputSchema: z.object({}).strict(), scope: "agent:read", dataScope: "capability_metadata",
-    execute: async () => ({ capabilities: (await import("@/app/avalanche/capability-registry")).listAvalancheCapabilities() }),
+    execute: async () => {
+      const [{ listAvalancheCapabilities }, { listGatewayCapabilities }] = await Promise.all([
+        import("@/app/avalanche/capability-registry"), import("@/app/agent-gateway/catalog"),
+      ]);
+      const common = new Map(listGatewayCapabilities().map(capability => [capability.id, capability]));
+      return { capabilities: listAvalancheCapabilities().map(capability => ({
+        ...capability,
+        channels: common.get(capability.id)?.channels,
+        availability: common.get(capability.id)?.availability,
+      })) };
+    },
   }),
   defineQuery({
     id: "avalanche.docs.tools", toolName: "read_avalanche_docs_tools", title: "Read available Avalanche documentation tools",
