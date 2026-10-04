@@ -99,6 +99,10 @@ const cases = [
   { locale: "es", message: "Muéstrame mis billeteras", title: /Tus billeteras registradas/, pending: /pendiente de registro/, header: /Red.*Dirección.*Estado.*Explorador/ },
   { locale: "en", message: "Show my wallets", title: /Your registered wallets/, pending: /registration pending|pending registration/, header: /Network.*Address.*state.*Explorer/i },
   { locale: "pt", message: "Mostre minhas carteiras", title: /Suas carteiras registradas/, pending: /registro pendente|pendente de registro/, header: /Rede.*Endereço.*Estado.*Explorador/ },
+  { locale: "es", message: "¿Cuáles son mis billeteras?", title: /Tus billeteras registradas/, pending: /pendiente de registro/, header: /Red.*Dirección.*Estado.*Explorador/ },
+  { locale: "es", message: "¿Qué billeteras tengo?", title: /Tus billeteras registradas/, pending: /pendiente de registro/, header: /Red.*Dirección.*Estado.*Explorador/ },
+  { locale: "en", message: "What wallets do I have?", title: /Your registered wallets/, pending: /registration pending|pending registration/, header: /Network.*Address.*state.*Explorer/i },
+  { locale: "en", message: "Which are my wallets?", title: /Your registered wallets/, pending: /registration pending|pending registration/, header: /Network.*Address.*state.*Explorer/i },
 ] as const;
 const checks: Array<{ case: string; passed: boolean; code?: string }> = [];
 async function check(name: string, fn: () => unknown | Promise<unknown>) {
@@ -128,6 +132,24 @@ for (const item of cases) {
     assert.deepEqual(sideReads, snapshot, "metadata_listing_only");
   });
 }
+// Balance requests are parser controls only: do not execute RPC-dependent readers.
+for (const [locale, message] of [
+  ["es", "Muestra el saldo de mis billeteras"],
+  ["en", "Show my wallet balances"],
+  ["pt", "Mostre o saldo das minhas carteiras"],
+] as const) {
+  await check(`balance_route_only:${locale}:${message}`, () => {
+    const snapshot = { ...sideReads };
+    const writesBefore = writes.length;
+    assert.deepEqual(parseChatReadRequest(message), { id: "personal.wallets.balances", input: {} });
+    assert.deepEqual(sideReads, snapshot);
+    assert.equal(writes.length, writesBefore);
+    assert.equal(blockedNetworkAttempts, 0);
+  });
+}
+await check("conceptual_wallet_question_not_personal_read", () => {
+  assert.equal(parseChatReadRequest("Qué es una billetera"), null);
+});
 await check("owner_and_side_effect_boundary", () => {
   assert.ok(ownerReads.length > 0);
   assert.ok(ownerReads.every(userId => userId === "fixture-owner"));

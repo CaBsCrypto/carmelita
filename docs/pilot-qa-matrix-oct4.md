@@ -115,3 +115,5 @@ node --experimental-test-module-mocks --import tsx <own-checkout>/scripts/pilot-
 ```
 
 The revised wallet-chat candidate requires its own clean-source regression, full local QA, deployed natural-query verification and immediate QA registry window. Phone, native ChatGPT, revoked session and independent tester observations remain pending.
+
+The independent script now has 26 checks. In addition to the six original phrases, actual controlled sends cover `¿Cuáles son mis billeteras?`, `¿Qué billeteras tengo?`, `What wallets do I have?` and `Which are my wallets?`, with the same five-row, owner, explorer, registration-state and side-effect assertions. Parser-only controls route `Muestra el saldo de mis billeteras`, `Show my wallet balances` and `Mostre o saldo das minhas carteiras` to `personal.wallets.balances` without executing its reader. `Qué es una billetera` must not resolve to a personal read. The original 14-check baseline receipt remains immutable; the expanded script requires a new receipt against the next integrated candidate.
