@@ -132,12 +132,7 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
   assert.equal(onboarding.fundsMoved, false);
   assert.equal(onboarding.signingRequired, false);
 
-  const mcpVisibleWallets = persistedWallets.map(({ address, chainType, network, status }) => ({
-    address,
-    chainType,
-    network,
-    status,
-  }));
+  const mcpVisibleWallets = buildMcpWalletContext(persistedWallets).wallets;
   assert.deepEqual(
     new Set(mcpVisibleWallets.map((wallet) => wallet.network)),
     new Set(["stellar:testnet", "avalanche:fuji", "solana:devnet"]),
@@ -165,7 +160,11 @@ test("new Privy user can see Stellar and Avalanche Fuji in MCP and admin surface
     readFile(new URL("../app/admin/wallets/wallet-registry.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(mcpContextSource, /listPersistedUserWallets\(userId\)/);
-  assert.match(mcpContextSource, /map\(\(\{ address, chainType, network, status \}\) => \(\{ address, chainType, network, status, explorerUrl: walletExplorerUrl\(network, address\) \}\)\)/);
+  for (const wallet of mcpVisibleWallets) {
+    assert.equal(wallet.registrationStatusScope, "internal_registry");
+    assert.equal(wallet.registrationState, "registered");
+    for (const privateField of ["id", "walletId", "userId", "providerWalletId"]) assert.equal(Object.hasOwn(wallet, privateField), false);
+  }
   assert.match(mcpRouteSource, /for \(const query of readQueryDefinitions\)/);
   assert.match(mcpRouteSource, /server\.registerTool\(query\.toolName/);
   assert.match(mcpRouteSource, /executeMcpReadQuery\(query\.id, input, extra\.authInfo\)/);

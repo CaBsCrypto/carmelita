@@ -239,6 +239,75 @@ test("registered wallets project safe metadata, preserve pending state and never
   assert.deepEqual(calls.map((call) => call.operation), ["wallets"]);
 });
 
+test("context and wallet registry preserve five Testnet/Devnet registrations and semantics identically in web and MCP", async () => {
+  const keys = ["VERCEL_ENV", "CARMELITA_PREVIEW_ISOLATED", "CARMELITA_EVM_TESTNET_EXPANSION_ENABLED"];
+  const previous = keys.map(key => process.env[key]);
+  process.env.VERCEL_ENV = "preview";
+  process.env.CARMELITA_PREVIEW_ISOLATED = "true";
+  process.env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED = "true";
+  try {
+    const rows = [wallet(own, "stellar:testnet", stellar, "stellar"), wallet(own, "solana:devnet", solana, "solana"),
+      wallet(own, "avalanche:fuji"), wallet(own, "bnb:testnet", address, "ethereum", "pending"), wallet(own, "base:sepolia"),
+      wallet(foreign, "avalanche:fuji", "0x1111111111111111111111111111111111111111")];
+    const before = structuredClone(rows);
+    const owners: string[] = [];
+    const { definitions, calls } = fixture({
+      wallets: async userId => { owners.push(userId); return rows; },
+      context: async userId => {
+        owners.push(userId);
+        return { user: { id: userId, email: null, status: "active", lastSeenAt: date },
+          ...buildMcpWalletContext(rows.filter(row => row.userId === userId)), connections: [],
+          authority: { paymentSigning: "not_enabled", custody: false, writeToolsRequireExplicitApproval: true } };
+      },
+    });
+    const explorerByNetwork = {
+      "stellar:testnet": `https://stellar.expert/explorer/testnet/account/${stellar}`,
+      "solana:devnet": `https://explorer.solana.com/address/${solana}?cluster=devnet`,
+      "avalanche:fuji": `https://explorer-test.avax.network/c-chain/address/${address}`,
+      "bnb:testnet": `https://testnet.bscscan.com/address/${address}`,
+      "base:sepolia": `https://sepolia.basescan.org/address/${address}`,
+    };
+    for (const id of ["personal.context", "personal.wallets"]) {
+      const query = definitions.find(item => item.id === id)!;
+      const auth = { token: "fixture", clientId: "fixture", scopes: [query.scope], extra: { subjectType: "user", userId: own } };
+      const mcp = await executeMcpReadQuery(query.toolName, {}, auth, definitions) as ReturnType<typeof buildMcpWalletContext>;
+      for (const locale of ["es", "en", "pt"] as const) {
+        assert.deepEqual(await executeWebReadQuery(id, {}, own, locale, definitions), mcp);
+      }
+      assert.equal(mcp.wallets.length, 5);
+      assert.deepEqual(mcp.walletRegistration.statusSemantics, {
+        scope: "internal_registry", active: "registered", pending: "pending_registration", onChainActivity: "not_inferred", balance: "not_inferred",
+      });
+      for (const row of mcp.wallets) {
+        assert.equal(row.explorerUrl, explorerByNetwork[row.network as keyof typeof explorerByNetwork]);
+        assert.equal(row.registrationStatusScope, "internal_registry");
+        assert.equal(row.registrationState, row.status === "active" ? "registered" : "pending_registration");
+        assert.equal(row.status, rows.find(item => item.userId === own && item.network === row.network)!.status);
+        assert.equal(Object.hasOwn(row, "balance"), false);
+        assert.equal(Object.hasOwn(row, "onChainAccountExists"), false);
+      }
+      assert.equal(new Set(mcp.wallets.filter(row => row.chainType === "ethereum").map(row => row.address)).size, 1);
+      assert.equal(mcp.walletRegistration.pendingRegistration[0].network, "bnb:testnet");
+      assert.deepEqual(mcp.walletRegistration.pendingActivation, mcp.walletRegistration.pendingRegistration);
+      const reads = owners.length;
+      await assert.rejects(async () => executeMcpReadQuery(query.toolName, {}, { ...auth, scopes: [] }, definitions), /mcp_scope_required/);
+      await assert.rejects(async () => executeMcpReadQuery(query.toolName, { userId: foreign }, auth, definitions));
+      await assert.rejects(executeWebReadQuery(id, { address }, own, "es", definitions));
+      assert.equal(owners.length, reads);
+      assert.match(query.description, /status='active'.*internal registry/);
+      assert.match(query.description, /registrada\/pendiente de registro/);
+    }
+    assert.ok(owners.every(owner => owner === own));
+    assert.deepEqual(calls, [], "Metadata reads must not infer balances by contacting RPCs");
+    assert.deepEqual(rows, before, "Raw persisted statuses and addresses must remain unchanged");
+  } finally {
+    keys.forEach((key, index) => {
+      if (previous[index] === undefined) delete process.env[key];
+      else process.env[key] = previous[index];
+    });
+  }
+});
+
 test("native balances preserve real zero, inactive Stellar account and per-network failure independently", async () => {
   const { calls, definitions } = fixture();
   const result = await executeQueryDefinition(definitions.find((item) => item.id === "personal.wallets.balances")!, {}, { userId: own, scopes: ["agent:read"] }) as { status: string; balances: Array<Record<string, unknown>> };
@@ -250,6 +319,9 @@ test("native balances preserve real zero, inactive Stellar account and per-netwo
   assert.equal(absent.balance, null);
   assert.equal(absent.status, "not_activated");
   assert.equal(absent.registrationStatus, "pending");
+  assert.equal(absent.registrationState, "pending_registration");
+  assert.equal(absent.registrationStatusScope, "internal_registry");
+  assert.equal(evm.registrationState, "registered");
   assert.equal(absent.onChainAccountExists, false);
   assert.equal(result.balances.find((row) => row.network === "solana:devnet")?.status, "unavailable");
   assert.doesNotMatch(JSON.stringify(result), /secret-provider-detail|owner-b/);
@@ -375,8 +447,10 @@ test("wallet status returns separate exact Stellar issuers and Fuji Circle contr
   const result = await executeQueryDefinition(definition, {}, { userId: own, scopes: ["agent:read"] }) as { wallets: Array<Record<string, unknown>>; authority: Record<string, boolean>; status: string };
   assert.equal(result.status, "ok");
   assert.equal(result.wallets.length, 3);
-  const stellarRow = result.wallets.find((row) => row.network === "stellar:testnet") as { registrationStatus: string; onChainAccountExists: boolean; native: { balance: string }; tokens: Array<{ asset: string; issuer: string; balance: string }> };
+  const stellarRow = result.wallets.find((row) => row.network === "stellar:testnet") as { registrationStatus: string; registrationState: string; registrationStatusScope: string; onChainAccountExists: boolean; native: { balance: string }; tokens: Array<{ asset: string; issuer: string; balance: string }> };
   assert.equal(stellarRow.registrationStatus, "pending");
+  assert.equal(stellarRow.registrationState, "pending_registration");
+  assert.equal(stellarRow.registrationStatusScope, "internal_registry");
   assert.equal(stellarRow.onChainAccountExists, true);
   assert.equal(stellarRow.native.balance, "123.456");
   assert.deepEqual(stellarRow.tokens.map(({ asset, issuer, balance }) => ({ asset, issuer, balance })), [
