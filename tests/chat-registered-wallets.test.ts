@@ -6,7 +6,13 @@ test('chat wallet lookup covers Spanish request and existing English shortcut wi
   assert.equal(requestsRegisteredWallets('Muéstrame mis billeteras registradas de Stellar, EVM y Solana'), true);
   assert.equal(requestsRegisteredWallets('Show my wallet'), true);
   assert.equal(requestsRegisteredWallets('Dame mis wallets'), true);
+  for (const message of ['Mis billeteras', '¿Mis billeteras?', '¿Cuáles son mis billeteras?', '¿Qué billeteras tengo?', 'My wallets', 'My registered wallets.', 'What wallets do I have?', 'Which are my wallets?', 'Minhas carteiras', 'Minhas carteiras registradas!', 'Quais são minhas carteiras?', 'Que carteiras eu tenho?']) {
+    assert.equal(requestsRegisteredWallets(message), true, message);
+  }
   assert.equal(requestsRegisteredWallets('Send funds from my wallet'), false);
+  for (const message of ['Mis billeteras y quiero transferir', 'Show my wallets and pay John', 'Mostre minhas carteiras e envie 1 SOL', 'Prepare my wallet', 'Activa mi billetera', 'Qué es una billetera', 'What is a wallet?', 'O que é uma carteira?', 'Muestra el saldo de mis billeteras', 'Show my wallet balances', 'Mostre o saldo das minhas carteiras']) {
+    assert.equal(requestsRegisteredWallets(message), false, message);
+  }
 });
 test('chat reads owned records across families and shows pending registration without invented balances', () => {
   const rows = [
@@ -17,7 +23,11 @@ test('chat reads owned records across families and shows pending registration wi
   ];
   const reply=registeredWalletsReply('a',rows,'es');
   for(const address of ['stellar-a','evm-a','solana-a']) assert.ok(reply.content.includes(address));
-  assert.match(reply.content,/pendiente de activación/);
+  assert.match(reply.content,/pendiente de registro/);
+  assert.match(reply.content,/registro interno de Carmelita/);
+  assert.match(reply.content,/no acredita actividad en cadena, activación de la cuenta ni saldo/);
+  assert.doesNotMatch(reply.content,/pendiente de activación/);
+  assert.deepEqual(rows.map(row => row.status), ['pending', 'active', 'active', 'active']);
   assert.doesNotMatch(reply.content,/secret-other-owner|0 SOL|0 XLM/);
   assert.deepEqual(reply.actions,[]);
   assert.match(registeredWalletsReply('c',rows,'es').content,/No hay billeteras/);
@@ -49,12 +59,12 @@ test('Solana malformed RPC balances cannot appear as zero', async () => {
 });
 
 
-test('unactivated Stellar is localized without fabricated balance or repeated network', async () => {
+test('null balance is unavailable without inferring registration or account activation', async () => {
   const { walletBalancesReply } = await import('../app/agent-chat-wallets');
-  for (const [language, expected] of [['es','Registrada, pendiente de activación'],['en','Registered, activation pending'],['pt','Registrada, ativação pendente']] as const) {
+  for (const [language, expected] of [['es','Saldo no disponible'],['en','Balance unavailable'],['pt','Saldo indisponível']] as const) {
     const reply = await walletBalancesReply('a', [{id:'s',userId:'a',address:'s',network:'stellar:testnet',status:'pending'}], language, async () => null);
     assert.ok(reply.content.includes(`Stellar Testnet: ${expected}`));
-    assert.doesNotMatch(reply.content,/0 XLM|Stellar Testnet: Stellar/);
+    assert.doesNotMatch(reply.content,/0 XLM|Stellar Testnet: Stellar|registrada|registered|activaci|activation|ativa/i);
     assert.deepEqual(reply.actions, []);
   }
 });

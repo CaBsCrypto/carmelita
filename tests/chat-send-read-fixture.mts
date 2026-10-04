@@ -7,6 +7,19 @@ const stellarModule = await import("../app/privy-stellar");
 const memoryModule = await import("../app/agent-memory-store");
 const marketModule = await import("../app/market-data/service");
 const schema = await import("../db/schema");
+const { walletExplorerUrl } = await import("../app/wallets/explorer");
+const { getWalletNetwork } = await import("../app/wallets/networks");
+const registeredStellar = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+const sharedEvm = `0x${"1".repeat(40)}`;
+const registeredSolana = "EP4e2aK9EWRNAQvJTgAJ5tQ7qwuiUAfrZozyGFPsesqk";
+const expandedRows = ["stellar:testnet", "avalanche:fuji", "bnb:testnet", "base:sepolia", "solana:devnet"].map(network => ({
+  id: network, userId: "owner", network, address: network.startsWith("stellar") ? registeredStellar : network.startsWith("solana") ? registeredSolana : sharedEvm,
+  status: network.startsWith("stellar") ? "pending" : "active", chainType: network.startsWith("stellar") ? "stellar" : network.startsWith("solana") ? "solana" : "ethereum",
+  providerWalletId: "private-provider-canary", privateKey: "private-key-canary", balance: "fake-balance-canary",
+}));
+let expandedWalletFixture = false;
+let missingStellarBalance = false;
+const registryOwners: string[] = [];
 const writes: Array<{ userId?: string; role?: string; content?: string }> = [];
 const query = () => Object.assign(Promise.resolve([]), {
   from: () => query(), where: () => query(), limit: () => query(), orderBy: () => query(),
@@ -27,11 +40,15 @@ mock.module(new URL("../app/privy-stellar.ts", import.meta.url).href, {
   namedExports: { ...stellarModule, getStellarTestnetAccount: async () => { assert.fail("RPC context must not run around read-only chat replies"); } },
 });
 mock.module(new URL("../app/multichain-account.ts", import.meta.url).href, {
-  namedExports: { ...walletModule, listPersistedUserWallets: async () => [
+  namedExports: { ...walletModule, listPersistedUserWallets: async (userId: string) => {
+    registryOwners.push(userId);
+    if (expandedWalletFixture) return [...expandedRows,
+      { id: "foreign", userId: "other-owner", address: "foreign-secret", network: "stellar:testnet", status: "active", chainType: "stellar" }];
+    return [
     { id: "s", userId: "owner", address: "own-stellar", network: "stellar:testnet", status: "pending", chainType: "stellar" },
     { id: "o", userId: "owner", address: "own-solana", network: "solana:devnet", status: "active", chainType: "solana" },
     { id: "f", userId: "foreign", address: "foreign-secret", network: "stellar:testnet", status: "active", chainType: "stellar" },
-  ] },
+  ]; } },
 });
 mock.module(new URL("../app/agent-memory-store.ts", import.meta.url).href, {
   namedExports: { ...memoryModule,
@@ -43,6 +60,7 @@ const reads: string[] = [];
 mock.module(new URL("../app/agent-chat-balances.ts", import.meta.url).href, {
   namedExports: { readChatNativeBalance: async (_network: string, address: string) => {
     reads.push(address);
+    if (missingStellarBalance && address === "own-stellar") return null;
     if (address === "own-stellar") throw new Error("rpc_unavailable");
     return "0 SOL";
   } },
@@ -163,3 +181,70 @@ for (const [locale, scopeLabel, missing] of [
 assert.deepEqual(quoteRequests.slice(explicitStart), Array.from({ length: 3 }, () => [{ query: "USDC", network: "solana" }, { query: "FAIL" }]));
 assert.deepEqual([...reads].sort(), ["own-solana", "own-stellar"]);
 assert.ok(writes.every(row => row.userId === "owner"));
+
+// Exercise the exact rejected UI phrasing through the real shared service and send handler.
+const beforeEnvironment = { VERCEL_ENV: process.env.VERCEL_ENV, CARMELITA_PREVIEW_ISOLATED: process.env.CARMELITA_PREVIEW_ISOLATED, CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: process.env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED };
+const rawRowsBefore = JSON.stringify(expandedRows);
+Object.assign(process.env, { VERCEL_ENV: "preview", CARMELITA_PREVIEW_ISOLATED: "true", CARMELITA_EVM_TESTNET_EXPANSION_ENABLED: "true" });
+expandedWalletFixture = true;
+try {
+  const readsBefore = reads.length;
+  const ownersBefore = registryOwners.length;
+  for (const [locale, questions, title, header, pending, registryNote] of [
+    ["es", ["Mis billeteras", "¿Cuáles son mis billeteras?", "¿Qué billeteras tengo?"], "Tus billeteras registradas", "Estado de registro", "pendiente de registro", "registro interno de Carmelita"],
+    ["en", ["My wallets", "What wallets do I have?", "Which are my wallets?"], "Your registered wallets", "Registration state", "pending registration", "Carmelita's internal registry"],
+    ["pt", ["Minhas carteiras", "Quais são minhas carteiras?", "Que carteiras eu tenho?"], "Suas carteiras registradas", "Estado de registro", "registro pendente", "registro interno da Carmelita"],
+  ] as const) {
+    for (const question of questions) {
+    for (const selectedLocale of [locale, undefined]) {
+      const response = await sendAgentMessage("owner", question, selectedLocale);
+      const content = response.assistantMessage.content;
+      assert.ok(content.includes(title));
+      assert.ok(content.includes(header));
+      assert.ok(content.includes(pending));
+      assert.ok(content.includes(registryNote));
+      assert.equal(content.split("\n").filter(line => line.startsWith("| ")).length, 7, "Header, separator and all five registrations must be rendered");
+      for (const row of expandedRows) {
+        assert.ok(content.includes(getWalletNetwork(row.network).name));
+        assert.ok(content.includes(walletExplorerUrl(row.network, row.address)!));
+      }
+      assert.equal(content.split("\n").filter(line => line.includes(`| ${sharedEvm} |`)).length, 3);
+      assert.doesNotMatch(content, /foreign-secret|private-provider-canary|private-key-canary|fake-balance-canary|activation pending|pendiente de activación|ativação pendente|0 XLM|0 SOL|DeFindex/);
+      assert.equal(response.wallet, null);
+      assert.equal(response.sharedRead, true);
+      assert.deepEqual(response.assistantMessage.actions, []);
+      for (const intent of ["defindexIntent", "x402Intent", "soroswapIntent", "decision", "planner"]) {
+        assert.equal(response.assistantMessage[intent as keyof typeof response.assistantMessage], undefined);
+      }
+      const stored = writes.at(-1)!;
+      assert.equal(stored.userId, "owner");
+      assert.equal(stored.content, content);
+    }
+    }
+  }
+  assert.deepEqual(registryOwners.slice(ownersBefore), Array.from({ length: 18 }, () => "owner"));
+  const foreignWritesStart = writes.length;
+  const foreignRead = await sendAgentMessage("unregistered-owner", "Mis billeteras", "es");
+  assert.match(foreignRead.assistantMessage.content, /No hay billeteras registradas/);
+  for (const row of expandedRows) assert.ok(!foreignRead.assistantMessage.content.includes(row.address));
+  assert.doesNotMatch(foreignRead.assistantMessage.content, /foreign-secret/);
+  assert.deepEqual(foreignRead.assistantMessage.actions, []);
+  assert.equal(foreignRead.wallet, null);
+  assert.equal(registryOwners.at(-1), "unregistered-owner");
+  assert.ok(writes.slice(foreignWritesStart).length > 0);
+  assert.ok(writes.slice(foreignWritesStart).every(row => row.userId === "unregistered-owner"));
+  assert.equal(reads.length, readsBefore, "Listing registered wallets must never call a balance provider");
+  assert.equal(JSON.stringify(expandedRows), rawRowsBefore, "The public projection must not mutate raw status or records");
+} finally {
+  expandedWalletFixture = false;
+  for (const [key, value] of Object.entries(beforeEnvironment)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+}
+
+missingStellarBalance = true;
+for (const [locale, expected] of [["es", "Cuenta Stellar no encontrada en Testnet"], ["en", "Stellar account not found on Testnet"], ["pt", "Conta Stellar não encontrada na Testnet"]] as const) {
+  const response = await sendAgentMessage("owner", '/query personal.wallets.balances {"networks":["stellar:testnet"]}', locale);
+  assert.ok(response.assistantMessage.content.includes(expected));
+  assert.doesNotMatch(response.assistantMessage.content, /0 XLM|registered|registrada|pendiente de registro|pending registration|registro pendente/);
+  assert.deepEqual(response.assistantMessage.actions, []);
+  assert.equal(response.wallet, null);
+}
