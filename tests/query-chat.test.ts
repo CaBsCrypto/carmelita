@@ -57,6 +57,7 @@ test("financial actions, authorization and watchlist writes are not captured as 
     "Swap 1 XLM to USDC on Soroswap", "Deposita 1 XLM en DeFindex", "Send 0.001 AVAX to my other wallet",
     "Fund my wallet with Testnet XLM", "Add SOL to my watchlist", "Remove ETH from my watchlist", "Connect me to Notion",
     "pay 20 USDC to another account at the current price", "Please pay 20 USDC at the current price",
+    "pay John at the current price", "Please pay John", "pay20USDC", "payJohn",
     "precio de PAY y quiero transferir 20 USDC", "preço de PAY e envie 20 USDC",
   ]) assert.equal(parseChatReadRequest(message), null, message);
 });
@@ -69,6 +70,9 @@ test("normal catalog price questions route through the shared market reader with
   }
   for (const message of ["¿Cuál es el precio de USDC en Solana?", "What is the price of USDC on Solana?", "Qual é o preço de USDC na Solana?"]) {
     assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: "USDC", network: "solana" }] } }, message);
+  }
+  for (const message of ["PAY price", "PAY precio", "PAY preço"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: "PAY" }] } }, message);
   }
 });
 

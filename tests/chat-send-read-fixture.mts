@@ -130,6 +130,16 @@ const inferredSpanish = await sendAgentMessage("owner", "¿Cuál es el precio de
 assert.match(inferredSpanish.assistantMessage.content, /Datos de mercado Mainnet/);
 const selectedSpanish = await sendAgentMessage("owner", "What is the price of PAY?", "es");
 assert.match(selectedSpanish.assistantMessage.content, /Datos de mercado Mainnet/);
+for (const [message, scope] of [["PAY price", /Mainnet market data/], ["PAY precio", /Datos de mercado Mainnet/], ["PAY preço", /Dados de mercado Mainnet/]] as const) {
+  const result = await sendAgentMessage("owner", message);
+  assert.match(result.assistantMessage.content, scope);
+  assert.match(result.assistantMessage.content, /coinmarketcap:1758/);
+  assert.equal(result.wallet, null);
+  assert.deepEqual(result.assistantMessage.actions, []);
+  for (const intent of ["defindexIntent", "x402Intent", "soroswapIntent", "decision", "planner"]) {
+    assert.equal(result.assistantMessage[intent as keyof typeof result.assistantMessage], undefined);
+  }
+}
 assert.deepEqual([...reads].sort(), ["own-solana", "own-stellar"]);
 assert.ok(writes.every(row => row.userId === "owner"));
 const explicitStart = quoteRequests.length;

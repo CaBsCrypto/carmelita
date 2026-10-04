@@ -81,7 +81,8 @@ export function parseMarketIntent(message: string): MarketIntent | null {
   if (/\b(?:saldos?|balances?|wallets?|billeteras?|carteiras?|swap|soroswap|pangolin|dexalot|lfj|nfts?|prediccion|predicciones|prediction|predictions|predicao|aave|skills?|deposit|deposito|deposita|deposite|retira|withdraw|envia|enviar|envie|send|transfiere|transfer|transferir|trade|paga|pagar|pague|trustline|fund|financia|x402|cctp)\b/.test(text)) return null;
   // PAY is also a catalog ticker. Reject payment grammar, not the asset name in
   // an explicit price question such as "What is the price of PAY?".
-  if (/^\s*(?:please\s+)?pay\b/.test(text)
+  const payPriceQuestion = /^\s*pay\s+(?:prices?|precios?|precos?|quote|cotizacion|cotacao)(?:\s+(?:actual|current|atual))?\s*[?!.]*$/.test(text);
+  if ((!payPriceQuestion && /^\s*(?:please\s+)?pay\b/.test(text))
     || /\b(?:can|could|would|will)\s+you\s+(?:please\s+)?pay\b/.test(text)
     || /\b(?:to\s+pay|pay\s+(?:\d|for\b|with\b|using\b|to\b))/.test(text)) return null;
   const tvl = /\b(?:tvl|total value locked|valor (?:total )?(?:bloqueado|travado))\b/.test(text);

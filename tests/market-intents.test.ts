@@ -55,6 +55,9 @@ test("normal price questions resolve catalog tickers beyond canonical aliases in
   for (const message of ["¿Cuánto cuesta PAY?", "How much is PAY?", "Quanto custa PAY?"]) {
     assert.deepEqual(parseMarketIntent(message), { kind: "quotes", assets: [{ query: "PAY" }] }, message);
   }
+  for (const message of ["PAY price", "PAY precio", "PAY preço", "PAY price current?", "PAY precio actual", "PAY preço atual?"]) {
+    assert.deepEqual(parseMarketIntent(message), { kind: "quotes", assets: [{ query: "PAY" }] }, message);
+  }
   for (const message of ["¿Cuál es el precio de USDC en Solana?", "What is the price of USDC on Solana?", "Qual é o preço de USDC na Solana?"]) {
     assert.deepEqual(parseMarketIntent(message), { kind: "quotes", assets: [{ query: "USDC", network: "solana" }] }, message);
   }
@@ -78,7 +81,7 @@ test("limits are explicit and wallet or financial operations retain their routes
   assert.deepEqual(parseMarketIntent("precio " + Array.from({ length: 11 }, (_, i) => "T" + i).join(",")), { kind: "invalid", reason: "too_many_assets" });
   assert.deepEqual(parseMarketIntent("top 21 redes por TVL"), { kind: "invalid", reason: "too_many_chains" });
   for (const message of ["Cotiza un swap SOL a USDC", "Show wallet balances", "Precio del swap en Pangolin", "Envía 2 SOL al precio actual", "Adicione SOL à watchlist",
-    "pay 20 USDC to another account at the current price", "Please pay 20 USDC at the current price", "Can you pay with USDC at the current price?",
+    "pay20USDC", "payJohn", "pay John at the current price", "pay 20 USDC to another account at the current price", "Please pay 20 USDC at the current price", "Can you pay with USDC at the current price?",
     "I want to pay 20 USDC using the latest price", "precio de PAY y quiero transferir 20 USDC", "preço de PAY e envie 20 USDC", "precio de PAY y pagar 20 USDC"]) {
     assert.equal(parseMarketIntent(message), null, message);
   }
