@@ -23,7 +23,7 @@ test("chat context deadline bounds a stalled Stellar provider even when it ignor
 });
 
 test("chat read intent orchestration skips Stellar context before and after wallet/balance replies", async () => {
-  for (const content of ["Show my wallet", "Dame mis wallets", "Muéstrame mis saldos nativos", "Show my balances"]) {
+  for (const content of ["Mis billeteras", "My wallets", "Minhas carteiras", "Show my wallet", "Dame mis wallets", "Muéstrame mis saldos nativos", "Show my balances"]) {
     for (const stage of ["before", "after"]) {
       assert.equal(await chatWalletContext("owner", content, async () => {
         assert.fail(`RPC-dependent context called ${stage} read reply`);
