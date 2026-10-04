@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { safeArgs, runtimePython, BUILD_EXCLUDES, buildConfig } from "./graphify.mjs";
+import { safeArgs, runtimePython, BUILD_EXCLUDES, buildConfig, runtimeEnv } from "./graphify.mjs";
+
+test("project runtime cannot refresh skills outside the checkout", () => {
+  const env = runtimeEnv({ GRAPHIFY_NO_AUTO_REFRESH: "0", KEEP_ME: "yes" });
+  assert.equal(env.GRAPHIFY_NO_AUTO_REFRESH, "1");
+  assert.equal(env.KEEP_ME, "yes");
+});
 
 test("AST extraction cannot silently select an API backend or private ignored files", () => {
   assert.deepEqual(safeArgs(["extract", "."]), ["extract", ".", "--code-only"]);

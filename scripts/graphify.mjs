@@ -37,6 +37,10 @@ export function buildConfig(config, untracked) {
   return { ...config, excludes: [...new Set([...retained, ...BUILD_EXCLUDES, ...untracked])], gitignore: true, carmelita_untracked_excludes: untracked };
 }
 
+export function runtimeEnv(base = process.env) {
+  return { ...base, PYTHONUTF8: "1", GRAPHIFY_NO_TIPS: "1", GRAPHIFY_NO_AUTO_REFRESH: "1", GRAPHIFY_MAX_WORKERS: "2", GRAPHIFY_VIZ_NODE_LIMIT: "0" };
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: "inherit", ...options });
   if (result.error) throw new Error(result.error.message);
@@ -83,7 +87,7 @@ function main() {
     if (existsSync(configPath)) config = JSON.parse(readFileSync(configPath, "utf8"));
     writeFileSync(configPath, JSON.stringify(buildConfig(config, untracked.stdout.split("\0").filter(Boolean))), "utf8");
   }
-  const env = { ...process.env, PYTHONUTF8: "1", GRAPHIFY_NO_TIPS: "1", GRAPHIFY_MAX_WORKERS: "2", GRAPHIFY_VIZ_NODE_LIMIT: "0" };
+  const env = runtimeEnv();
   if (["path", "explain"].includes(finalArgs[0])) {
     const result = spawnSync(python, ["-m", "graphify", ...finalArgs], { env, encoding: "utf8" });
     if (result.error) throw new Error(result.error.message);
