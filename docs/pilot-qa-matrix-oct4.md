@@ -12,7 +12,7 @@ Candidate evaluated: `be150773d9f1138b4c865b0820aafafd6176dae1`, integration che
 | Personal query fixtures | Passed | 23 tests: owner/scopes, conversation coverage, pending registrations, five Testnet/Devnet wallets, connected-app metadata, exact Stellar issuers/Fuji Circle token, partial RPC failures and chain identity. |
 | Intermediate selected suite total | Passed | 72 tests, zero failures, cancellations, skips or TODOs. All provider/owner fixture calls are controlled. |
 | Live public providers through integrated source | Observed | `work/pilot-market-live-source-be15077-1791149784015.json`, UTC `2026-10-04T21:36:24.015Z`: seven HTTPS GETs, no authentication, database or financial operations. |
-| Final full `npm run qa:local` | Pending | Awaiting final UI integration and root-confirmed final source hash. No full-QA claim is made for this intermediate candidate. |
+| Full `npm run qa:local` on UI candidate 3608e7c | Failed | Graphify guards 5/5 and lint passed. Full unit suite: 903 total, 898 passed, three failed, two skipped. The chained build did not run. Source stayed pinned and tracked files remained clean throughout the run. Corrections and a new final run remain pending. |
 | Isolated deployed candidate and authenticated web acceptance | Pending | The direct shared-source probe is not deployed-route or authenticated-session evidence. |
 | Native ChatGPT authenticated candidate queries | Pending | Current native connector remains on production source 7ed; candidate publication and connected-app flow need separate evidence. |
 | Live insufficient/revoked OAuth session and effective grants | Pending | Fixture scope/owner rejection passes; a live revoked session and external OAuth grants require their actual flow. |
@@ -48,3 +48,17 @@ node node_modules/tsx/dist/cli.mjs --tsconfig C:/Users/MGC/Documents/ChatGPT/Car
 ```
 
 The script creates a unique ignored receipt with exclusive creation. Its projection contains public market IDs/names and public source evidence, excludes token addresses, and never loads a connection file, session or environment file. Public catalogs and availability may change. An unavailable upstream result remains explicit and cannot be converted to absence, zero holdings or human acceptance.
+
+## Full QA failure record
+
+`npm run qa:local` evaluated source `3608e7c26abad5b8382b59cc560422de3d8313e2` from `2026-10-04T21:40:20.8917158Z` to `2026-10-04T21:43:42.2353903Z`. Its sanitized log is `work/pilot-qa-local-3608e7c.log`; the receipt is `work/pilot-qa-local-3608e7c-receipt.json`. Log SHA-256: `f5d5bf8d3c1390567203d95baf8faee3faa4edf5f6018e506f5efd47d356de57`. No environment file or broader production acceptance command was loaded.
+
+The three failures are recorded separately:
+
+- `bootstrap-avalanche-contract.test.ts` expected the old exact source projection and prohibited the word `balance` anywhere in the context module. The newly explicit registration semantics include `balance: "not_inferred"`; this requires a meaningful behavior guard rather than the old source mirror.
+- `chat-wallet-resilience.test.ts` exhausted its unchanged 30-second child-process deadline under the full parallel suite. Running that file alone on the identical source passed 4/4, with the actual send fixture completing in 12,609 ms. Limiting full-suite concurrency is justified; the service assertions and deadline need not be weakened.
+- `query-acceptance.test.ts` rejected stale committed runtime hashes. All six groups include shared execution dependencies and package configuration. Current source hashes must be recomputed after final package/UI changes; old human evidence must retain its original fingerprints and remain pending for this changed source.
+
+The strict product acceptance validator must continue rejecting stale or synthetic evidence. Updating `acceptance-runtime.json` is a source-hash refresh, not current human acceptance. A test may distinguish valid immutable historical records from current certification and verify that stale records are not advertised as accepted. Historical `acceptance-manifest.json` and `acceptance-evidence.json` bytes, reference hashes, timestamps, commits, kinds and checks must not be rewritten to make them appear current.
+
+`scripts/pilot-acceptance-runtime-proposal.mts` computes the existing pure build/test helper's `{ schemaVersion, groups }` and writes only a unique ignored proposal receipt. It refuses an uncommitted or mismatched source, checks that historical artifacts remain byte-identical, and explicitly certifies no acceptance. Root must review and apply the runtime artifact after committing final package/source changes; the helper never writes app files.
