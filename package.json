@@ -24,7 +24,7 @@
         "acceptance:second-user:start": "tsx scripts/second-user-acceptance.ts start",
         "acceptance:second-user:fund-usdc": "tsx scripts/second-user-acceptance.ts fund-usdc",
         "acceptance:second-user:verify": "tsx scripts/second-user-acceptance.ts verify",
-        "qa:local": "npm run lint && npm run test && npm run build",
+        "qa:local": "npm run graph:tooling:test && npm run lint && npm run test && npm run build",
         "qa:production": "npm run acceptance:doctor",
         "qa": "npm run qa:local && npm run qa:production",
         "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --max-warnings 0",
