@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
 const explorerHosts = new Set(["stellar.expert", "explorer-test.avax.network", "subnets-test.avax.network", "testnet.bscscan.com", "sepolia.basescan.org", "explorer.solana.com"]);
+const marketSourceHosts = new Set(["coingecko.com", "www.coingecko.com", "coinmarketcap.com", "www.coinmarketcap.com", "defillama.com", "www.defillama.com", "coins.llama.fi"]);
 export function safeExplorerLink(value: string) {
   try {
     const url = new URL(value);
@@ -8,10 +9,20 @@ export function safeExplorerLink(value: string) {
   } catch { return null; }
 }
 
+export function safeMarketSourceLink(value: string) {
+  // Check the original authority too: URL normalizes an explicit :443 away.
+  const authority = /^https:\/\/([^/?#]+)/i.exec(value)?.[1];
+  if (!authority || !marketSourceHosts.has(authority.toLowerCase())) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password && !url.port && marketSourceHosts.has(url.hostname) ? url.href : null;
+  } catch { return null; }
+}
+
 function InlineText({ text }: { text: string }) {
   return text.split(/(\[[^\]\n]+\]\(https:\/\/[^\s)]+\)|\*\*[^*]+\*\*)/g).map((part, index) => {
     const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
-    const href = link ? safeExplorerLink(link[2]) : null;
+    const href = link ? safeExplorerLink(link[2]) ?? safeMarketSourceLink(link[2]) : null;
     if (link && href) return <a key={index} href={href} target="_blank" rel="noopener noreferrer">{link[1]} ↗</a>;
     if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
     return <Fragment key={index}>{part}</Fragment>;
