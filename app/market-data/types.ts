@@ -62,6 +62,8 @@ export type MarketResult = {
   asset?: MarketAsset;
   quote?: MarketPrice;
   candidates?: MarketAsset[];
+  reason?: "inactive";
+  inactiveCandidates?: MarketAsset[];
   error?: string;
 };
 export type MarketQuotes = {
@@ -76,6 +78,8 @@ export type MarketSearch = {
   status: "ok" | "not_found" | "unavailable";
   fetchedAt: string;
   fromCache: boolean;
+  reason?: "inactive";
+  inactiveCandidates?: MarketAsset[];
   error?: string;
 };
 export type MarketOptions = {

@@ -241,6 +241,10 @@ test("successful empty catalogs mean not_found, provider failures mean unavailab
 test("an arbitrary CoinMarketCap ID uses official V2 metadata and verifies its returned ID", async () => {
   const fetcher: typeof fetch = async input => {
     const url = new URL(String(input));
+    if (url.pathname.endsWith("/map")) {
+      assert.equal(url.searchParams.get("symbol"), "UNI");
+      return json({ data: [{ id: 7083, name: "Uniswap", symbol: "UNI", slug: "uniswap", is_active: 1 }] });
+    }
     assert.equal(url.searchParams.get("id"), "7083");
     if (url.pathname.endsWith("/info")) return json({ data: { "7083": {
       id: 7083, name: "Uniswap", symbol: "UNI", slug: "uniswap",
@@ -259,7 +263,11 @@ test("a short token name falls back to exact CMC metadata rather than being mist
   const fetcher: typeof fetch = async input => {
     const url = new URL(String(input));
     if (url.hostname === "api.coingecko.com") return unavailable();
-    if (url.pathname.endsWith("/map")) { assert.equal(url.searchParams.get("symbol"), "UNISWAP"); return json({ data: [] }); }
+    if (url.pathname.endsWith("/map")) {
+      const symbol = url.searchParams.get("symbol");
+      assert.ok(symbol === "UNISWAP" || symbol === "UNI");
+      return json({ data: symbol === "UNI" ? [{ id: 7083, name: "Uniswap", symbol: "UNI", slug: "uniswap", is_active: 1 }] : [] });
+    }
     if (url.pathname.endsWith("/info")) {
       assert.equal(url.searchParams.get("slug"), "uniswap");
       return json({ data: { "7083": { id: 7083, name: "Uniswap", symbol: "UNI", slug: "uniswap" } } });
@@ -273,11 +281,133 @@ test("a short token name falls back to exact CMC metadata rather than being mist
   assert.equal(response.results[0].quote?.source, "CoinMarketCap");
 });
 
-test("CoinMarketCap's explicit no-data response is not confused with an upstream outage", async () => {
+test("a generic CMC no-data HTTP 400 for an ID is unavailable without evidence of absence", async () => {
   const fetcher: typeof fetch = async () => new Response(JSON.stringify({ status: { error_code: 400, error_message: "No data found" } }),
     { status: 400, headers: { "content-type": "application/json" } });
   const response = await getMarketQuotes([{ cmcId: 99999999 }], options(fetcher));
-  assert.equal(response.results[0].status, "not_found");
+  assert.equal(response.results[0].status, "unavailable");
+  assert.equal(response.results[0].error, "market_upstream_http_400");
+});
+
+test("inactive symbol identities stay cached as metadata without falling back to a slug or price", async () => {
+  let time = NOW; let mapReads = 0;
+  const retired = { id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", is_active: 0 };
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/coins/list")) return json([]);
+    assert.ok(url.pathname.endsWith("/map")); mapReads++;
+    return json({ data: [retired] });
+  };
+  const search = () => searchMarketAssets({ query: "PAY" }, 10, options(fetcher, () => time));
+  const first = await search();
+  assert.equal(first.status, "not_found");
+  assert.equal(first.reason, "inactive");
+  assert.deepEqual(first.candidates, []);
+  assert.equal(first.inactiveCandidates?.[0].cmcId, 1758);
+  time += 86_399_000;
+  const cached = await search();
+  assert.equal(cached.reason, "inactive"); assert.equal(cached.fromCache, true);
+  assert.equal(cached.fetchedAt, first.fetchedAt); assert.equal(mapReads, 1);
+  time += 2_000;
+  await search(); assert.equal(mapReads, 2);
+});
+
+test("activity lookup verifies the metadata ID among same-symbol active impostors", async () => {
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/info")) return json({ data: {
+      "1758": { id: 1758, name: "TenX", symbol: "PAY", slug: "tenx" },
+    } });
+    assert.ok(url.pathname.endsWith("/map"));
+    return json({ data: [
+      { id: 901, name: "Active Pay", symbol: "PAY", slug: "active-pay", is_active: 1 },
+      { id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", is_active: 0 },
+    ] });
+  };
+  const result = (await getMarketQuotes([{ cmcId: 1758 }], options(fetcher))).results[0];
+  assert.equal(result.reason, "inactive"); assert.equal(result.status, "unavailable");
+  assert.deepEqual(result.inactiveCandidates?.map(coin => coin.cmcId), [1758]);
+  assert.equal(result.quote, undefined);
+});
+
+test("inactive CMC evidence preserves a CoinGecko failure without asserting global absence", async () => {
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.hostname === "api.coingecko.com") return new Response("quota", { status: 429 });
+    assert.ok(url.pathname.endsWith("/map"));
+    return json({ data: [{ id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", is_active: 0 }] });
+  };
+  const search = await searchMarketAssets({ query: "PAY" }, 10, options(fetcher));
+  assert.equal(search.reason, "inactive"); assert.equal(search.error, "market_rate_limited");
+  assert.equal(search.inactiveCandidates?.[0].sourceUrl, "https://coinmarketcap.com/currencies/tenx/");
+  const result = (await getMarketQuotes([{ query: "PAY" }], options(fetcher))).results[0];
+  assert.equal(result.status, "unavailable"); assert.equal(result.error, "market_rate_limited");
+  assert.equal(result.quote, undefined);
+});
+
+test("an inactive CMC result with a failed CoinGecko read does not cache the aggregate failure", async () => {
+  let recovering = false; let catalogReads = 0; let mapReads = 0;
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/coins/list")) {
+      catalogReads++;
+      return recovering ? json([{ id: "tenx", name: "TenX", symbol: "pay", platforms: {} }]) : unavailable();
+    }
+    if (url.pathname.endsWith("/map")) {
+      mapReads++;
+      return json({ data: [{ id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", is_active: 0 }] });
+    }
+    assert.ok(url.pathname.endsWith("/coins/markets")); return json([cg("tenx", "pay")]);
+  };
+  const first = await searchMarketAssets({ query: "PAY" }, 10, options(fetcher));
+  assert.equal(first.reason, "inactive"); assert.equal(first.error, "market_upstream_http_503");
+  assert.equal(first.fromCache, false);
+  recovering = true;
+  const second = await searchMarketAssets({ query: "PAY" }, 10, options(fetcher));
+  assert.equal(second.status, "ok"); assert.equal(second.reason, undefined);
+  assert.equal(second.fromCache, false); assert.equal(second.candidates[0].coingeckoId, "tenx");
+  assert.equal(catalogReads, 2); assert.equal(mapReads, 1);
+  const quote = (await getMarketQuotes([{ query: "PAY" }], options(fetcher))).results[0];
+  assert.equal(quote.status, "ok"); assert.equal(quote.quote?.source, "CoinGecko");
+});
+
+test("malformed activity metadata cannot quote and a corrected map retries immediately", async () => {
+  let recovering = false; let reads = 0;
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/info")) return json({ data: { "7083": { id: 7083, name: "Uniswap", symbol: "UNI", slug: "uniswap" } } });
+    if (url.pathname.endsWith("/map")) {
+      reads++;
+      return json({ data: [{ id: 7083, name: "Uniswap", symbol: "UNI", ...(recovering ? { is_active: 1 } : {}) }] });
+    }
+    assert.ok(recovering); return json({ data: [cmc(7083, "UNI", "Uniswap")] });
+  };
+  const first = (await getMarketQuotes([{ cmcId: 7083 }], options(fetcher))).results[0];
+  assert.equal(first.status, "unavailable"); assert.equal(first.quote, undefined);
+  recovering = true;
+  const second = (await getMarketQuotes([{ cmcId: 7083 }], options(fetcher))).results[0];
+  assert.equal(second.status, "ok"); assert.equal(reads, 2);
+});
+
+test("explicit provider IDs preserve the exact contract and network while classifying inactivity", async () => {
+  const address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd";
+  const other = "0x1234567890123456789012345678901234567890";
+  const fetcher: typeof fetch = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/coins/list")) return json([{ id: "tenx", name: "TenX", symbol: "pay", platforms: { ethereum: address } }]);
+    if (url.pathname.endsWith("/info")) return json({ data: { "1758": {
+      id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", contract_address: [
+        { contract_address: other, platform: { name: "Solana", coin: { slug: "solana" } } },
+        { contract_address: address, platform: { name: "Ethereum", coin: { slug: "ethereum" } } },
+      ],
+    } } });
+    assert.ok(url.pathname.endsWith("/map"));
+    return json({ data: [{ id: 1758, name: "TenX", symbol: "PAY", slug: "tenx", is_active: 0 }] });
+  };
+  const result = (await getMarketQuotes([{ coingeckoId: "tenx", cmcId: 1758, network: "Ethereum", address }], options(fetcher))).results[0];
+  assert.equal(result.status, "unavailable"); assert.equal(result.reason, "inactive");
+  assert.deepEqual(result.inactiveCandidates?.map(coin => [coin.network, coin.address]), [["ethereum", address]]);
+  assert.equal(result.quote, undefined);
 });
 
 test("shared Next Data Cache never accepts an envelope older than the requested TTL", async () => {
