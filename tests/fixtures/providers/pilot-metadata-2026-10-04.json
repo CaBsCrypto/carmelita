@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "description": "Sanitized bounded metadata evidence; recorded projections preserve identity/activity/status. Synthetic failures are not live observations.",
+  "collectedAt": "2026-10-04",
+  "auth": "none",
+  "observedProviderCallCounts": {"coinmarketcap": 8, "coingecko": 3},
+  "sources": [
+    "https://coinmarketcap.com/api/documentation/pro-api-reference/cryptocurrency",
+    "https://coinmarketcap.com/api/documentation/pro-api-reference/keyless-public-api",
+    "https://coinmarketcap.com/api/documentation/guides/errors-and-rate-limits",
+    "https://docs.coingecko.com/reference/search-data",
+    "https://docs.coingecko.com/reference/coins-list",
+    "https://docs.coingecko.com/docs/errors-and-rate-limits"
+  ],
+  "cases": [
+    {
+      "name": "cmc-pay-map-inactive-only",
+      "provenance": "recorded",
+      "observedAt": "2026-10-04T21:12:42.4192188Z",
+      "request": {"method": "GET", "url": "https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map?symbol=PAY&aux=platform,is_active"},
+      "httpStatus": 200,
+      "body": {
+        "data": [
+          {"id":1758,"name":"TenX","symbol":"PAY","slug":"tenx","rank":null,"is_active":0,"platform":{"id":1,"name":"Ethereum","symbol":"ETH","slug":"ethereum","token_address":"0xb97048628db6b661d4c2aa833e95dbe1a905b280"}},
+          {"id":17978,"name":"PayBolt","symbol":"PAY","slug":"paybolt","rank":null,"is_active":0,"platform":{"id":1,"name":"Ethereum","symbol":"ETH","slug":"ethereum","token_address":"0xe580074A10360404AF3ABfe2d524D5806D993ea3"}},
+          {"id":19749,"name":"PocketPay","symbol":"PAY","slug":"pocketpay-finance","rank":null,"is_active":0,"platform":{"id":16,"name":"Solana","symbol":"SOL","slug":"solana","token_address":"GRCbqUpu1YEMbfzyVo6xma6TqZtXAr9TNSMukZzkpSdc"}}
+        ],
+        "status":{"timestamp":"2026-10-04T21:12:42.355Z","error_code":0,"error_message":null,"elapsed":1,"credit_count":1,"notice":null}
+      },
+      "expected": {"classification":"inactive_only","activeCandidateIds":[],"inactiveCandidateIds":[1758,17978,19749],"searchStatus":"not_found","quoteStatus":"unavailable","reason":"inactive","quoteCalls":0}
+    },
+    {
+      "name":"cmc-pay-valid-slug-absent","provenance":"recorded","observedAt":"2026-10-04T21:12:42.8430179Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay"},"httpStatus":400,
+      "body":{"status":{"timestamp":"2026-10-04T21:12:42.814Z","error_code":400,"error_message":"Invalid value for 'slug': 'pay'","elapsed":0,"credit_count":0,"notice":null}},
+      "expected":{"classification":"provider_absence","slug":"pay"}
+    },
+    {
+      "name":"cmc-unknown-valid-slug-absent","provenance":"recorded","observedAt":"2026-10-04T21:12:42.9925941Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=carmelita-token-inexistente-20261002"},"httpStatus":400,
+      "body":{"status":{"timestamp":"2026-10-04T21:12:42.987Z","error_code":400,"error_message":"Invalid value for 'slug': 'carmelita-token-inexistente-20261002'","elapsed":1,"credit_count":0,"notice":null}},
+      "expected":{"classification":"provider_absence","slug":"carmelita-token-inexistente-20261002"}
+    },
+    {
+      "name":"cmc-tenx-slug-metadata-not-activity","provenance":"recorded-projection","omittedFields":["subreddit","tag-names","tag-groups","twitter_username","contract_address","infinite_supply"],"observedAt":"2026-10-04T21:13:05.8728123Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=tenx&aux=platform"},"httpStatus":200,
+      "body":{"data":{"1758":{"id":1758,"name":"TenX","symbol":"PAY","category":"token","slug":"tenx","platform":{"id":"1027","name":"Ethereum","symbol":"ETH","slug":"ethereum","token_address":"0xb97048628db6b661d4c2aa833e95dbe1a905b280"},"is_hidden":0}},"status":{"timestamp":"2026-10-04T21:13:05.814Z","error_code":0,"error_message":null,"elapsed":4,"credit_count":1,"notice":null}},
+      "expected":{"classification":"metadata_available_activity_unknown","cmcId":1758,"nextEvidence":"map PAY; match id 1758; is_active 0"}
+    },
+    {
+      "name":"cmc-tenx-id-metadata-not-activity","provenance":"recorded-projection","omittedFields":["subreddit","tag-names","tag-groups","twitter_username","contract_address","infinite_supply"],"observedAt":"2026-10-04T21:13:06.1824487Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?id=1758&aux=platform"},"httpStatus":200,
+      "body":{"data":{"1758":{"id":1758,"name":"TenX","symbol":"PAY","category":"token","slug":"tenx","platform":{"id":"1027","name":"Ethereum","symbol":"ETH","slug":"ethereum","token_address":"0xb97048628db6b661d4c2aa833e95dbe1a905b280"},"is_hidden":0}},"status":{"timestamp":"2026-10-04T21:13:06.181Z","error_code":0,"error_message":null,"elapsed":3,"credit_count":1,"notice":null}},
+      "expected":{"classification":"metadata_available_activity_unknown","cmcId":1758,"nextEvidence":"map PAY; match id 1758; is_active 0"}
+    },
+    {
+      "name":"cmc-btc-map-mixed-activity","provenance":"recorded-projection","omittedFields":["data[].platform"],"observedAt":"2026-10-04T21:13:06.3262331Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map?symbol=BTC&aux=platform,is_active"},"httpStatus":200,
+      "body":{"data":[
+        {"id":1,"name":"Bitcoin","symbol":"BTC","slug":"bitcoin","rank":1,"is_active":1},
+        {"id":38552,"name":"Bitcoin Base","symbol":"BTC","slug":"bitcoin-base","rank":3208,"is_active":1},
+        {"id":38692,"name":"Bitcoin Second Chance","symbol":"BTC","slug":"bitcoin-second-chance","rank":3374,"is_active":1},
+        {"id":38133,"name":"Bitcoin AI","symbol":"BTC","slug":"bitcoin-ai","rank":3513,"is_active":1},
+        {"id":32295,"name":"Bullish Trump Coin","symbol":"BTC","slug":"bullish-trump-coin","rank":6787,"is_active":1},
+        {"id":38601,"name":"Bitcoin X (tokenxoff.xyz)","symbol":"BTC","slug":"bitcoin-x-tokenxoff-xyz","rank":7419,"is_active":1},
+        {"id":38650,"name":"Bitcoin Inu (tokeninu.xyz)","symbol":"BTC","slug":"bitcoin-inu-tokeninu-xyz","rank":7430,"is_active":1},
+        {"id":39579,"name":"Bitcoin Gold AI","symbol":"BTC","slug":"bitcoin-gold-ai","rank":7575,"is_active":1},
+        {"id":39556,"name":"Bridged BTC (NEAR Intents)","symbol":"BTC","slug":"bridged-btc-near-intents","rank":8118,"is_active":1},
+        {"id":30938,"name":"Satoshi Pumpomoto","symbol":"BTC","slug":"satoshi-pumpomoto","rank":null,"is_active":0},
+        {"id":31469,"name":"Boost Trump Campaign","symbol":"BTC","slug":"boost-trump-campaign","rank":null,"is_active":0},
+        {"id":31652,"name":"batcat","symbol":"BTC","slug":"batcat","rank":null,"is_active":0},
+        {"id":34316,"name":"HarryPotterTrumpSonic100Inu","symbol":"BTC","slug":"harrypottertrumpsonic100inu","rank":null,"is_active":0}
+      ],"status":{"timestamp":"2026-10-04T21:13:06.324Z","error_code":0,"error_message":null,"elapsed":1,"credit_count":1,"notice":null}},
+      "expected":{"classification":"mixed_activity","activeCandidateIds":[1,38552,38692,38133,32295,38601,38650,39579,39556],"inactiveCandidateIds":[30938,31469,31652,34316]}
+    },
+    {
+      "name":"cmc-malformed-slug-is-not-absence","provenance":"recorded","observedAt":"2026-10-04T21:13:06.4922108Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay%20token"},"httpStatus":400,
+      "body":{"status":{"timestamp":"2026-10-04T21:13:06.467Z","error_code":400,"error_message":"Invalid value for 'slug': 'pay token'","elapsed":0,"credit_count":0,"notice":null}},
+      "expected":{"classification":"invalid_request","providerAbsence":false}
+    },
+    {
+      "name":"cmc-invalid-aux-is-not-absence","provenance":"recorded","observedAt":"2026-10-04T21:13:06.6371161Z",
+      "request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=bitcoin&aux=not-a-valid-field"},"httpStatus":400,
+      "body":{"status":{"timestamp":"2026-10-04T21:13:06.632Z","error_code":400,"error_message":"'aux' should only include one or more comma-separated values from [urls, logo, description, tags, platform, date_added, notice, status]","elapsed":0,"credit_count":0,"notice":null}},
+      "expected":{"classification":"invalid_request","providerAbsence":false}
+    },
+    {
+      "name":"coingecko-pay-fuzzy-no-exact-symbol","provenance":"recorded-projection","omittedFields":["coins[].thumb","coins[].large","exchanges","icos","categories","nfts"],"observedAt":"2026-10-04T21:13:47.2068456Z",
+      "request":{"method":"GET","url":"https://api.coingecko.com/api/v3/search?query=PAY"},"httpStatus":200,
+      "body":{"coins":[
+        {"id":"paypal-usd","name":"PayPal USD","api_symbol":"paypal-usd","symbol":"PYUSD","market_cap_rank":41},
+        {"id":"ozapay","name":"Ozapay","api_symbol":"ozapay","symbol":"OZA","market_cap_rank":476},
+        {"id":"pay-coin","name":"Paycoin","api_symbol":"pay-coin","symbol":"PCI","market_cap_rank":579},
+        {"id":"payai-network-2","name":"PayAI Network","api_symbol":"payai-network-2","symbol":"PAYAI","market_cap_rank":1263},
+        {"id":"zoid-pay","name":"ZoidPay","api_symbol":"zoid-pay","symbol":"ZPAY","market_cap_rank":1862},
+        {"id":"handl-pay","name":"HandlPay","api_symbol":"handl-pay","symbol":"HANDL","market_cap_rank":2455},
+        {"id":"paypal-ondo-tokenized-stock","name":"PayPal (Ondo Tokenized Stock)","api_symbol":"paypal-ondo-tokenized-stock","symbol":"PYPLON","market_cap_rank":2923},
+        {"id":"paypal-bstocks-tokenized-stock","name":"Paypal (bStocks Tokenized Stock)","api_symbol":"paypal-bstocks-tokenized-stock","symbol":"PYPLB","market_cap_rank":3422},
+        {"id":"nodecoin","name":"Nodepay","api_symbol":"nodecoin","symbol":"NC","market_cap_rank":3544},
+        {"id":"pointpay-2","name":"PointPay","api_symbol":"pointpay-2","symbol":"PXP","market_cap_rank":3623},
+        {"id":"platform-of-meme-coins","name":"Platform of meme coins","api_symbol":"platform-of-meme-coins","symbol":"PAYU","market_cap_rank":4294},
+        {"id":"vpay","name":"VPay","api_symbol":"vpay","symbol":"VPAY","market_cap_rank":4548},
+        {"id":"paysenger-ego","name":"Paysenger EGO","api_symbol":"paysenger-ego","symbol":"EGO","market_cap_rank":6055},
+        {"id":"payai-network","name":"PayAI Network [OLD]","api_symbol":"payai-network","symbol":"PAYAI","market_cap_rank":6634},
+        {"id":"qpay-2","name":"QPAY","api_symbol":"qpay-2","symbol":"QPAY","market_cap_rank":7493},
+        {"id":"scrollpay-ai","name":"ScrollPay AI","api_symbol":"scrollpay-ai","symbol":"SCROLL","market_cap_rank":7789},
+        {"id":"plasma-finance","name":"Plasma Finance","api_symbol":"plasma-finance","symbol":"PPAY","market_cap_rank":7880},
+        {"id":"x4pay","name":"x4Pay","api_symbol":"x4pay","symbol":"X4PAY","market_cap_rank":8243},
+        {"id":"equitypay","name":"EquityPay","api_symbol":"equitypay","symbol":"EQPAY","market_cap_rank":8273},
+        {"id":"robinhood-payments-protocol","name":"Robinhood Payments Protocol","api_symbol":"robinhood-payments-protocol","symbol":"RPP402","market_cap_rank":9441},
+        {"id":"alpha-pay","name":"Alpha Pay","api_symbol":"alpha-pay","symbol":"ALPAY","market_cap_rank":9695},
+        {"id":"mmp-pay","name":"MPP Pay","api_symbol":"mmp-pay","symbol":"MPAY","market_cap_rank":10230},
+        {"id":"nest-payfi-vault","name":"Nest PayFi Vault","api_symbol":"nest-payfi-vault","symbol":"NPAYFI","market_cap_rank":10470},
+        {"id":"payb","name":"PayB","api_symbol":"payb","symbol":"PAYB","market_cap_rank":null},
+        {"id":"8pay","name":"8Pay","api_symbol":"8pay","symbol":"8PAY","market_cap_rank":null}
+      ]},
+      "expected":{"classification":"no_exact_symbol_match","exactSymbol":"PAY","exactMatches":[],"fuzzyCoinCount":25}
+    },
+    {
+      "name":"coingecko-tenx-empty-search","provenance":"recorded","observedAt":"2026-10-04T21:13:47.6614329Z",
+      "request":{"method":"GET","url":"https://api.coingecko.com/api/v3/search?query=TenX"},"httpStatus":200,
+      "body":{"coins":[],"exchanges":[],"icos":[],"categories":[],"nfts":[]},
+      "expected":{"classification":"provider_absence","inactivityProven":false}
+    },
+    {
+      "name":"coingecko-unknown-empty-search","provenance":"recorded","observedAt":"2026-10-04T21:13:48.0916491Z",
+      "request":{"method":"GET","url":"https://api.coingecko.com/api/v3/search?query=carmelita-token-inexistente-20261002"},"httpStatus":200,
+      "body":{"coins":[],"exchanges":[],"icos":[],"categories":[],"nfts":[]},
+      "expected":{"classification":"provider_absence","inactivityProven":false}
+    },
+    {
+      "name":"cmc-mismatched-slug-echo","provenance":"synthetic","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay"},"httpStatus":400,
+      "body":{"status":{"error_code":400,"error_message":"Invalid value for 'slug': 'different-slug'"}},"expected":{"classification":"unavailable","providerAbsence":false}
+    },
+    {
+      "name":"cmc-unauthorized","provenance":"synthetic-from-official-error-contract","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay"},"httpStatus":401,
+      "body":{"status":{"error_code":1002,"error_message":"API key missing."}},"expected":{"classification":"auth_unavailable","providerAbsence":false}
+    },
+    {
+      "name":"cmc-ip-rate-limited","provenance":"synthetic-from-official-error-contract","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map?symbol=PAY&aux=platform,is_active"},"httpStatus":429,
+      "body":{"status":{"error_code":1011,"error_message":"You've hit an IP rate limit."}},"expected":{"classification":"rate_limited","providerAbsence":false}
+    },
+    {
+      "name":"cmc-outage","provenance":"synthetic","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay"},"httpStatus":503,
+      "body":{"status":{"error_code":503,"error_message":"Service unavailable"}},"expected":{"classification":"unavailable","providerAbsence":false}
+    },
+    {
+      "name":"cmc-success-malformed-data","provenance":"synthetic","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v1/cryptocurrency/map?symbol=PAY&aux=platform,is_active"},"httpStatus":200,
+      "body":{"data":null,"status":{"error_code":0,"error_message":null}},"expected":{"classification":"malformed_response","providerAbsence":false}
+    },
+    {
+      "name":"cmc-transport-timeout","provenance":"synthetic","request":{"method":"GET","url":"https://pro-api.coinmarketcap.com/public-api/v2/cryptocurrency/info?slug=pay"},"httpStatus":null,
+      "body":null,"transportError":"timeout","expected":{"classification":"unavailable","providerAbsence":false}
+    }
+  ]
+}
