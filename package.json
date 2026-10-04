@@ -10,7 +10,7 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "test": "tsx --test tests/*.test.ts",
+        "test": "tsx --test --test-concurrency=4 tests/*.test.ts",
         "x402:signing:doctor": "tsx --env-file=.env.local scripts/x402-signing-doctor.ts",
         "x402:avalanche:doctor": "tsx scripts/avalanche-x402-doctor.ts",
         "x402:replay:confirmed": "tsx scripts/x402-replay-proof.ts confirmed",
