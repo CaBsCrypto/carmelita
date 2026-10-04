@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { z } from "zod";
-import { acceptanceFingerprint, evaluateQueryAcceptance, queryAcceptanceGroup, queryContractFingerprint,
+import { acceptanceEvidenceSchema, acceptanceManifestSchema, acceptanceFingerprint, evaluateQueryAcceptance, queryAcceptanceGroup, queryContractFingerprint,
   queryRuntimeFingerprint, validateQueryAcceptanceArtifacts, type AcceptanceEvidenceRecord } from "../app/queries/acceptance";
 import { buildAcceptanceRuntimeFingerprints } from "../app/queries/acceptance-source-fingerprint";
 import { listReadQueries, readQueryDefinitions } from "../app/queries/registry";
@@ -36,8 +36,36 @@ function fixtures(records?: AcceptanceEvidenceRecord[]) {
     evidence: { schemaVersion: 1, records: evidenceRecords }, now };
 }
 
-test("committed registry and catalog derive acceptance only from validated current artifacts", () => {
-  validateQueryAcceptanceArtifacts(readQueryDefinitions);
+test("committed historical artifacts retain valid schemas, unique IDs and exact observation digests", () => {
+  const manifest = acceptanceManifestSchema.parse(JSON.parse(readFileSync(path.join(root, "app/queries/acceptance-manifest.json"), "utf8")));
+  const evidence = acceptanceEvidenceSchema.parse(JSON.parse(readFileSync(path.join(root, "app/queries/acceptance-evidence.json"), "utf8")));
+  assert.equal(new Set(manifest.entries.map(entry => entry.queryId)).size, manifest.entries.length);
+  assert.equal(new Set(evidence.records.map(record => record.id)).size, evidence.records.length);
+  for (const entry of manifest.entries) {
+    assert.ok(readQueryDefinitions.some(query => query.id === entry.queryId), `Unknown historical query: ${entry.queryId}`);
+    const records = (["carmelita", "chatgpt"] as const).map(channel => {
+      const reference = entry.channels[channel];
+      const matching = evidence.records.filter(record => record.id === reference.id);
+      assert.equal(matching.length, 1, `${entry.queryId} ${channel} evidence must be unique`);
+      const record = matching[0];
+      assert.equal(acceptanceFingerprint(record), reference.sha256);
+      assert.equal(record.queryId, entry.queryId);
+      assert.equal(record.channel, channel);
+      assert.equal(record.contractFingerprint, entry.contractFingerprint);
+      assert.equal(record.runtimeFingerprint, entry.runtimeFingerprint);
+      assert.equal(record.kind, "real_user_query");
+      assert.equal(record.outcome, "operational");
+      const { discoveryVerified, ...requiredChecks } = record.checks;
+      assert.ok(Object.values(requiredChecks).every(Boolean));
+      if (channel === "chatgpt") assert.equal(discoveryVerified, true);
+      assert.ok(Date.parse(record.observedAt) <= Date.now() + 300_000);
+      return record;
+    });
+    assert.equal(records[0].testerAlias, records[1].testerAlias);
+  }
+});
+
+test("committed registry and catalog derive current acceptance without promoting historical observations", () => {
   for (const query of listReadQueries()) {
     const definition = readQueryDefinitions.find(definition => definition.id === query.id)!;
     const expected = evaluateQueryAcceptance(definition, { providerKnownUnavailable: query.id === "avalanche.nft.floor_read" });
@@ -59,6 +87,40 @@ test("committed registry and catalog derive acceptance only from validated curre
   }
 });
 
+test("changed execution leaves historical observations pending and the certification validator rejects stale claims", () => {
+  const manifest = acceptanceManifestSchema.parse(JSON.parse(readFileSync(path.join(root, "app/queries/acceptance-manifest.json"), "utf8")));
+  const evidence = acceptanceEvidenceSchema.parse(JSON.parse(readFileSync(path.join(root, "app/queries/acceptance-evidence.json"), "utf8")));
+  const actual = buildAcceptanceRuntimeFingerprints(root);
+  for (const entry of manifest.entries) {
+    const query = readQueryDefinitions.find(query => query.id === entry.queryId)!;
+    const contractChanged = entry.contractFingerprint !== queryContractFingerprint(query);
+    const currentRuntime = actual.groups[queryAcceptanceGroup(query.id)]!;
+    if (contractChanged || entry.runtimeFingerprint !== currentRuntime) {
+      const result = evaluateQueryAcceptance(query, { manifest, evidence, runtimeFingerprint: currentRuntime });
+      assert.equal(result.acceptance, "pending", query.id);
+      assert.equal(result.available, false, query.id);
+      assert.equal(result.reason, "implementation_fingerprint_changed", query.id);
+      assert.equal(result.verification, undefined, query.id);
+    }
+    // The production gate uses its committed runtime snapshot. The final CI test
+    // independently requires that snapshot to equal the actual source fingerprints.
+    if (contractChanged || entry.runtimeFingerprint !== queryRuntimeFingerprint(query)) {
+      const result = evaluateQueryAcceptance(query);
+      assert.equal(result.acceptance, "pending", query.id);
+      assert.equal(result.available, false, query.id);
+      assert.equal(result.reason, "implementation_fingerprint_changed", query.id);
+      assert.throws(() => validateQueryAcceptanceArtifacts([query], { schemaVersion: 1, entries: [entry] }, evidence),
+        /unverified_query_acceptance:implementation_fingerprint_changed/);
+    }
+  }
+  const acceptedQueries = readQueryDefinitions.filter(query => {
+    const result = evaluateQueryAcceptance(query, { providerKnownUnavailable: query.id === "avalanche.nft.floor_read" });
+    return result.acceptance === "accepted" && result.available;
+  });
+  validateQueryAcceptanceArtifacts(acceptedQueries, { schemaVersion: 1,
+    entries: manifest.entries.filter(entry => acceptedQueries.some(query => query.id === entry.queryId)) }, evidence);
+});
+
 test("real observations in both channels bind accepted metadata to the same runtime and contract, with historical evidence", () => {
   const proof = fixtures();
   const result = evaluateQueryAcceptance(quote, proof);
@@ -68,6 +130,9 @@ test("real observations in both channels bind accepted metadata to the same runt
     evidenceIds: ["fixture_quote_carmelita", "fixture_quote_chatgpt"] });
   // Commit identity alone is not equivalence: the checked execution/contract fingerprints establish it.
   assert.equal(evaluateQueryAcceptance(quote, { ...proof, runtimeFingerprint: "b".repeat(64) }).acceptance, "pending");
+  const staleClaim = { ...proof.manifest, entries: proof.manifest.entries.map(entry => ({ ...entry, runtimeFingerprint: "b".repeat(64) })) };
+  assert.throws(() => validateQueryAcceptanceArtifacts([quote], staleClaim, proof.evidence),
+    /unverified_query_acceptance:implementation_fingerprint_changed/);
   const changed = { ...quote, inputSchema: z.object({ changedInput: z.string() }).strict() };
   assert.equal(evaluateQueryAcceptance(changed, proof).acceptance, "pending");
 });
