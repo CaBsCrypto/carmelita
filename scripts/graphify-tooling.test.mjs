@@ -11,6 +11,8 @@ test("query defaults and explicit budgets remain at most 1500", () => {
   assert.throws(() => safeArgs(["query", "memory", "--budget", "1501"]));
   assert.throws(() => safeArgs(["query", "memory", "--budget", "NaN"]));
   assert.deepEqual(safeArgs(["query", "memory", "--budget", "500"]), ["query", "memory", "--budget", "500"]);
+  assert.deepEqual(safeArgs(["query", "memory", "--budget=500"]), ["query", "memory", "--budget=500"]);
+  for (const args of [["--budget=1501"], ["--budget="], ["--budget", "500", "--budget", "9000"], ["--budget=500", "--budget", "9000"]]) assert.throws(() => safeArgs(["query", "memory", ...args]));
 });
 test("reports avoid automatic labeling and global launchers", () => {
   assert.deepEqual(safeArgs(["cluster-only", "."]), ["cluster-only", ".", "--no-label", "--no-viz"]);

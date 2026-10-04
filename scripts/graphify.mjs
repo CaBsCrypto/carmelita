@@ -11,9 +11,11 @@ export function safeArgs(input) {
   if (!allowed.has(args[0])) throw new Error("Unsupported Graphify command; use setup, doctor, query, path, explain, update, extract, or cluster-only.");
   if (args.some(a => ["--backend", "--postgres", "--global", "--no-gitignore", "--google-workspace", "--exclude"].some(flag => a === flag || a.startsWith(`${flag}=`)))) throw new Error("External extraction and ignored-file scanning are disabled.");
   if (args[0] === "query") {
-    const index = args.indexOf("--budget");
-    if (index >= 0) {
-      const budget = Number(args[index + 1]);
+    const budgetArgs = args.map((value, index) => ({ value, index })).filter(({ value }) => value === "--budget" || value.startsWith("--budget="));
+    if (budgetArgs.length > 1) throw new Error("Specify the query budget only once.");
+    if (budgetArgs.length === 1) {
+      const { value, index } = budgetArgs[0];
+      const budget = Number(value === "--budget" ? args[index + 1] : value.slice("--budget=".length));
       if (!Number.isInteger(budget) || budget < 1 || budget > 1500) throw new Error("Query budget must be between 1 and 1500.");
     } else args.push("--budget", "1500");
   }
