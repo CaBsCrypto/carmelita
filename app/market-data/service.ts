@@ -76,7 +76,8 @@ const cmcAssetSchema = z.object({ id: z.number().int().positive(), name: z.strin
     id: z.number().optional(), name: z.string().optional(), symbol: z.string().optional(), slug: z.string().optional(), token_address: z.string().optional(),
   }).nullable().optional() });
 type CmcAsset = z.infer<typeof cmcAssetSchema>;
-const cmcMapSchema = z.object({ data: z.array(cmcAssetSchema).max(10_000), status: z.object({ error_code: z.union([z.string(), z.number()]).optional() }).optional() });
+const cmcMapSchema = z.object({ data: z.array(cmcAssetSchema.extend({ is_active: z.union([z.literal(0), z.literal(1)]) })).max(10_000),
+  status: z.object({ error_code: z.union([z.string(), z.number()]).optional() }).optional() });
 const cmcInfoAssetSchema = cmcAssetSchema.omit({ platform: true }).extend({ platform: z.object({
   id: z.union([z.string().regex(/^\d+$/), z.number().int().positive()]).optional(), name: z.string().optional(), symbol: z.string().optional(), slug: z.string().optional(), token_address: z.string().optional(),
 }).nullable().optional(), contract_address: z.array(z.object({ contract_address: z.string(), platform: z.object({
@@ -111,7 +112,7 @@ async function readJson(url: URL, ctx: Context, maxBytes = MAX_RESPONSE_BYTES, h
     redirect: "error", credentials: "omit", cache: "no-store", signal }), signal);
   signal.throwIfAborted();
   const cmcLookup400 = response.status === 400 && url.hostname === "pro-api.coinmarketcap.com"
-    && /\/(?:info|map)$/.test(url.pathname);
+    && url.pathname === "/public-api/v2/cryptocurrency/info";
   if (!response.ok && !cmcLookup400) throw new Error(response.status === 429 ? "market_rate_limited" : `market_upstream_http_${response.status}`);
   if (!response.headers.get("content-type")?.toLowerCase().includes("application/json")) throw new Error("market_response_invalid");
   const length = Number(response.headers.get("content-length"));
@@ -134,8 +135,10 @@ async function readJson(url: URL, ctx: Context, maxBytes = MAX_RESPONSE_BYTES, h
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     const body = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
     if (cmcLookup400) {
-      const parsed = z.object({ status: z.object({ error_message: z.string() }) }).safeParse(body);
-      if (parsed.success && /^no data found[.!]?$/i.test(parsed.data.status.error_message.trim())) throw new Error("market_asset_not_found");
+      const slug = url.searchParams.get("slug");
+      const parsed = z.object({ status: z.object({ error_code: z.literal(400), error_message: z.string() }) }).safeParse(body);
+      if (slug && /^[a-z0-9][a-z0-9-]*$/.test(slug) && parsed.success
+        && parsed.data.status.error_message === `Invalid value for 'slug': '${slug}'`) throw new Error("market_asset_not_found");
       throw new Error("market_upstream_http_400");
     }
     return body;
@@ -227,7 +230,7 @@ function cmcNetwork(coin: CmcAsset) {
 async function cmcInfo(asset: AssetQuery, ctx: Context): Promise<CmcAsset[]> {
   // Official keyless V2 metadata supports id/slug; /map only filters by symbol.
   // https://coinmarketcap.com/api/documentation/pro-api-reference/cryptocurrency
-  const records = (await publicMarketCache(`cmc:info:${asset.cmcId ?? normalize(asset.query ?? "")}`, 86_400, async () => {
+  const records = (await publicMarketCache(`cmc:info:v3:${asset.cmcId ? `id:${asset.cmcId}` : `slug:${normalize(asset.query ?? "")}`}`, 86_400, async () => {
     const url = new URL(`${CMC_BASE}/v2/cryptocurrency/info`);
     if (asset.cmcId) url.searchParams.set("id", String(asset.cmcId));
     else url.searchParams.set("slug", normalize(asset.query!).replace(/\s+/g, "-"));
@@ -250,35 +253,57 @@ async function cmcInfo(asset: AssetQuery, ctx: Context): Promise<CmcAsset[]> {
     } }));
   });
 }
-async function cmcMap(asset: AssetQuery, ctx: Context) {
-  if (asset.cmcId || (asset.query && !/^[a-z0-9]{1,15}$/i.test(asset.query))) return cmcInfo(asset, ctx);
-  const key = `cmc:map:${JSON.stringify(asset)}`;
-  return (await publicMarketCache(key, 86_400, async () => {
-    const metadataByName = async () => (await cmcInfo(asset, ctx)).filter(coin =>
-      [coin.name, coin.symbol, coin.slug].some(value => value && normalize(value) === normalize(asset.query!)));
+async function cmcSymbolMap(symbol: string, ctx: Context): Promise<CmcAsset[]> {
+  return (await publicMarketCache(`cmc:symbol-map:v3:${normalize(symbol)}`, 86_400, async () => {
     const url = new URL(`${CMC_BASE}/v1/cryptocurrency/map`);
-    if (asset.query) url.searchParams.set("symbol", asset.query.toUpperCase());
-    else return [];
+    url.searchParams.set("symbol", symbol.toUpperCase());
     url.searchParams.set("aux", "platform,is_active");
-    let raw: unknown;
-    try { raw = await readJson(url, ctx); }
-    catch (error) { if (error instanceof Error && error.message === "market_asset_not_found") return metadataByName(); throw error; }
-    const parsed = cmcMapSchema.parse(raw);
+    const parsed = cmcMapSchema.parse(await readJson(url, ctx));
     if (parsed.status?.error_code && String(parsed.status.error_code) !== "0") throw new Error("market_upstream_api_error");
-    const matches = parsed.data.filter(coin => coin.is_active !== 0 && normalize(coin.symbol) === normalize(asset.query!));
-    return matches.length ? matches : metadataByName();
+    // Keep inactive identities: a matching ticker must never become a slug fallback.
+    return parsed.data.filter(coin => normalize(coin.symbol) === normalize(symbol));
+  }, ctx.options)).value;
+}
+async function cmcActivity(coins: CmcAsset[], ctx: Context): Promise<CmcAsset[]> {
+  return Promise.all(coins.map(async coin => {
+    if (coin.is_active === 0 || coin.is_active === 1) return coin;
+    // Metadata success establishes identity, not current listing activity.
+    const matches = (await cmcSymbolMap(coin.symbol, ctx)).filter(item => item.id === coin.id);
+    if (matches.length !== 1 || ![0, 1].includes(matches[0].is_active ?? -1)) throw new Error("market_activity_unverified");
+    return { ...coin, is_active: matches[0].is_active };
+  }));
+}
+async function cmcMap(asset: AssetQuery, ctx: Context): Promise<CmcAsset[]> {
+  const key = `cmc:resolution:v3:${JSON.stringify(asset)}`;
+  return (await publicMarketCache(key, 86_400, async () => {
+    if (asset.cmcId || (asset.query && !/^[a-z0-9]{1,15}$/i.test(asset.query))) return cmcActivity(await cmcInfo(asset, ctx), ctx);
+    const metadataByName = async () => cmcActivity((await cmcInfo(asset, ctx)).filter(coin =>
+      [coin.name, coin.symbol, coin.slug].some(value => value && normalize(value) === normalize(asset.query!))), ctx);
+    if (!asset.query) return [];
+    const matches = await cmcSymbolMap(asset.query, ctx);
+    return matches.length ? cmcActivity(matches, ctx) : metadataByName();
   }, ctx.options)).value;
 }
 
-async function resolveCandidates(asset: AssetQuery, ctx: Context): Promise<MarketAsset[]> {
+type Resolution = Pick<MarketSearch, "candidates" | "reason" | "inactiveCandidates" | "error">;
+class PartialResolutionError extends Error {
+  constructor(readonly resolution: Resolution) { super(resolution.error); }
+}
+function cmcResolution(coins: CmcAsset[], network: string | null): Resolution {
+  const candidates = coins.filter(coin => coin.is_active === 1).map(coin => fromCmc(coin, network));
+  const inactiveCandidates = coins.filter(coin => coin.is_active === 0).map(coin => fromCmc(coin, network));
+  return { candidates, ...(inactiveCandidates.length ? { inactiveCandidates,
+    ...(!candidates.length ? { reason: "inactive" as const } : {}) } : {}) };
+}
+async function resolveCandidates(asset: AssetQuery, ctx: Context): Promise<Resolution> {
   const known = asset.coingeckoId ? canonicalAssets.find(item => item.coingeckoId === asset.coingeckoId)
     : asset.cmcId ? canonicalAssets.find(item => item.cmcId === asset.cmcId) : asset.query ? canonicalAssetForQuery(asset.query) : null;
   if (known && ((asset.cmcId && asset.cmcId !== known.cmcId)
-    || (asset.coingeckoId && asset.coingeckoId !== known.coingeckoId))) return [];
+    || (asset.coingeckoId && asset.coingeckoId !== known.coingeckoId))) return { candidates: [] };
   if (known && (asset.coingeckoId || asset.cmcId) && asset.query
-    && canonicalAssetForQuery(asset.query)?.id !== known.id) return [];
+    && canonicalAssetForQuery(asset.query)?.id !== known.id) return { candidates: [] };
   if (known && !asset.network && !asset.address && !asset.issuer
-    && (!asset.cmcId || asset.cmcId === known.cmcId) && (!asset.coingeckoId || asset.coingeckoId === known.coingeckoId)) return [{ ...known }];
+    && (!asset.cmcId || asset.cmcId === known.cmcId) && (!asset.coingeckoId || asset.coingeckoId === known.coingeckoId)) return { candidates: [{ ...known }] };
   const network = asset.network ? await platformId(asset.network, ctx) : null;
   const errors: unknown[] = [];
   let cgAvailable = false;
@@ -288,13 +313,13 @@ async function resolveCandidates(asset: AssetQuery, ctx: Context): Promise<Marke
   }
   if (asset.issuer) {
     if (!cgAvailable) throw errors[0] ?? new Error("market_upstream_unavailable");
-    if (network !== "stellar") return [];
+    if (network !== "stellar") return { candidates: [] };
     const identity = `${asset.query!.toUpperCase()}-${asset.issuer}`;
-    return coins.filter(coin => coin.platforms.stellar === identity
+    return { candidates: coins.filter(coin => coin.platforms.stellar === identity
       && (!asset.address || asset.address === identity)
       && (!asset.coingeckoId || coin.id === asset.coingeckoId)
       && (!asset.cmcId || canonicalAssets.some(known => known.coingeckoId === coin.id && known.cmcId === asset.cmcId)))
-      .map(coin => fromCg(coin, "stellar"));
+      .map(coin => fromCg(coin, "stellar")) };
   }
   const term = normalize(asset.query ?? "");
   let matches = coins.filter(coin => asset.coingeckoId ? coin.id === asset.coingeckoId
@@ -308,16 +333,19 @@ async function resolveCandidates(asset: AssetQuery, ctx: Context): Promise<Marke
     return asset.address ? Boolean(address && addressEqual(address, asset.address)) : Boolean(address || native);
   });
   if (matches.length && asset.cmcId) {
-    const mapped = await cmcMap({ cmcId: asset.cmcId, ...(asset.network ? { network: asset.network } : {}) }, ctx);
-    matches = matches.filter(coin => mapped.some(item => item.id === asset.cmcId
+    const mapped = await cmcInfo({ cmcId: asset.cmcId, ...(asset.network ? { network: asset.network } : {}) }, ctx);
+    const identityMatches = (coin: CgCoin, item: CmcAsset) => item.id === asset.cmcId
       && normalize(item.symbol) === normalize(coin.symbol)
       && (network && coin.platforms[network]
         ? cmcNetwork(item) === network && Boolean(item.platform?.token_address && addressEqual(coin.platforms[network]!, item.platform.token_address))
-        : nameKey(item.name) === nameKey(coin.name))));
-    return matches.map(coin => ({ ...fromCg(coin, network), cmcId: asset.cmcId! }));
+        : nameKey(item.name) === nameKey(coin.name));
+    const associated = await cmcActivity(mapped.filter(item => matches.some(coin => identityMatches(coin, item))), ctx);
+    const resolution = cmcResolution(associated, network);
+    return { ...resolution, candidates: matches.filter(coin => associated.some(item => item.is_active === 1 && identityMatches(coin, item)))
+      .map(coin => ({ ...fromCg(coin, network), cmcId: asset.cmcId! })) };
   }
-  if (matches.length) return matches.map(coin => fromCg(coin, network));
-  if (asset.coingeckoId && cgAvailable) return [];
+  if (matches.length) return { candidates: matches.map(coin => fromCg(coin, network)) };
+  if (asset.coingeckoId && cgAvailable) return { candidates: [] };
   if (asset.coingeckoId && !cgAvailable) throw errors[0] ?? new Error("market_upstream_unavailable");
   let cmcAvailable = false;
   try {
@@ -334,20 +362,39 @@ async function resolveCandidates(asset: AssetQuery, ctx: Context): Promise<Marke
       }
       return true;
     });
-    if (filtered.length) return filtered.map(coin => fromCmc(coin, network));
+    if (filtered.length) {
+      const resolution = cmcResolution(filtered, network);
+      // Inactive CMC evidence does not establish absence in a failed CG catalog.
+      return { ...resolution, ...(resolution.reason && errors.length ? { error: code(errors[0]) } : {}) };
+    }
   } catch (error) { errors.push(error); }
   if (errors.length || (!cgAvailable && !cmcAvailable)) throw errors[0] ?? new Error("market_upstream_unavailable");
-  return [];
+  return { candidates: [] };
 }
 
 async function searchInternal(asset: AssetQuery, limit: number, ctx: Context): Promise<MarketSearch> {
   try {
     ctx.signal.throwIfAborted();
-    const cached = await abortable(publicMarketCache(`search:${JSON.stringify(asset)}:${limit}`, 86_400,
-      async () => ({ candidates: (await resolveCandidates(asset, ctx)).slice(0, limit), fetchedAt: new Date(ctx.now()).toISOString() }), ctx.options), ctx.signal);
+    const cached = await abortable(publicMarketCache(`search:v3:${JSON.stringify(asset)}:${limit}`, 86_400,
+      async () => {
+        const resolution = await resolveCandidates(asset, ctx);
+        // Preserve useful inactive evidence while preventing a failed provider's
+        // aggregate result from entering the 24-hour resolution cache.
+        if (resolution.error) throw new PartialResolutionError(resolution);
+        return { ...resolution, candidates: resolution.candidates.slice(0, limit),
+          ...(resolution.inactiveCandidates ? { inactiveCandidates: resolution.inactiveCandidates.slice(0, limit) } : {}),
+          fetchedAt: new Date(ctx.now()).toISOString() };
+      }, ctx.options), ctx.signal);
     ctx.signal.throwIfAborted();
     return { ...cached.value, status: cached.value.candidates.length ? "ok" : "not_found", fromCache: cached.fromCache, queriedAt: new Date(ctx.now()).toISOString() };
-  } catch (error) { return { candidates: [], status: "unavailable", fetchedAt: new Date(ctx.now()).toISOString(), queriedAt: new Date(ctx.now()).toISOString(), fromCache: false, error: code(error) }; }
+  } catch (error) {
+    if (error instanceof PartialResolutionError) return { ...error.resolution,
+      candidates: error.resolution.candidates.slice(0, limit),
+      ...(error.resolution.inactiveCandidates ? { inactiveCandidates: error.resolution.inactiveCandidates.slice(0, limit) } : {}),
+      status: error.resolution.reason === "inactive" ? "not_found" : "unavailable",
+      fetchedAt: new Date(ctx.now()).toISOString(), queriedAt: new Date(ctx.now()).toISOString(), fromCache: false };
+    return { candidates: [], status: "unavailable", fetchedAt: new Date(ctx.now()).toISOString(), queriedAt: new Date(ctx.now()).toISOString(), fromCache: false, error: code(error) };
+  }
 }
 export async function searchMarketAssets(asset: AssetQuery, limit = 10, options: MarketOptions = {}): Promise<MarketSearch> {
   return searchInternal(assetQuerySchema.parse(asset), z.number().int().min(1).max(20).parse(limit), context(options));
@@ -376,7 +423,7 @@ async function verifiedCmcId(asset: MarketAsset, ctx: Context) {
   if (asset.cmcId) return asset.cmcId;
   const candidates = await cmcMap({ query: asset.symbol }, ctx);
   const matches = candidates.filter(coin => {
-    if (normalize(coin.symbol) !== normalize(asset.symbol)) return false;
+    if (coin.is_active !== 1 || normalize(coin.symbol) !== normalize(asset.symbol)) return false;
     if (asset.address && asset.network) {
       const network = cmcNetwork(coin);
       return network === asset.network && Boolean(coin.platform?.token_address && addressEqual(asset.address, coin.platform.token_address));
@@ -451,7 +498,9 @@ async function price(asset: MarketAsset, ctx: Context) {
 }
 async function result(request: AssetQuery, ctx: Context, prepared?: MarketSearch): Promise<MarketResult> {
   const search = prepared ?? await searchInternal(request, 20, ctx);
-  if (search.status !== "ok") return { request, status: search.status, ...(search.error ? { error: search.error } : {}) };
+  if (search.status !== "ok") return { request, status: search.reason === "inactive" ? "unavailable" : search.status,
+    ...(search.reason ? { reason: search.reason, inactiveCandidates: search.inactiveCandidates } : {}),
+    ...(search.error ? { error: search.error } : {}) };
   if (search.candidates.length > 1) return { request, status: "ambiguous", candidates: search.candidates };
   const asset = search.candidates[0];
   try {
@@ -491,7 +540,7 @@ export async function getVerifiedCmcProviderQuote(symbol: string, fetcher: typeo
     if (!isFresh(quote, ctx.now())) throw new Error("market_quote_stale");
     return { asset: known, quote };
   }
-  const matches = (await cmcMap({ query: symbol }, ctx)).filter(item => normalize(item.symbol) === normalize(symbol));
+  const matches = (await cmcMap({ query: symbol }, ctx)).filter(item => item.is_active === 1 && normalize(item.symbol) === normalize(symbol));
   if (matches.length !== 1) throw new Error(matches.length ? "cmc_asset_ambiguous" : "cmc_asset_not_found");
   const asset = fromCmc(matches[0]);
   const quote = await cmcQuote(asset, ctx);
