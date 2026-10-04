@@ -254,7 +254,7 @@ export function parseDefindexIntent(message: string): AgentDefindexIntent | null
 }
 
 const languageSignals: Record<"es" | "pt", string[]> = {
-  es: ["quiero", "recarga", "activa", "siguiente", "deposita", "invierte", "conectame", "conecta", "muestrame", "billetera", "prueba", "puedes", "busquemos", "archivo", "correo", "viaje", "mi cuenta", "inicie sesion", "ya entre", "sesion", "estado", "reserva", "reservar", "codigo", "credito", "creditos", "cancela", "cancelar", "disponibles"],
+  es: ["quiero", "recarga", "activa", "siguiente", "deposita", "invierte", "conectame", "conecta", "muestrame", "billetera", "prueba", "puedes", "busquemos", "archivo", "correo", "viaje", "mi cuenta", "inicie sesion", "ya entre", "sesion", "estado", "reserva", "reservar", "codigo", "credito", "creditos", "cancela", "cancelar", "disponibles", "precio", "cotizacion", "cual", "cuanto"],
   pt: ["quero", "recarregue", "ative", "proximo", "deposite", "invista", "investir", "conecte", "conectar ao", "mostre", "minha", "meu", "carteira", "teste", "voce", "nao", "pesquise", "arquivo", "viagem", "cotacao", "preco", "ja entrei", "sessao"],
 };
 
@@ -388,9 +388,9 @@ function connectionReply(connection: Connection, context: AgentChatContext, lang
   };
 }
 
-export function buildAgentReply(message: string, context: AgentChatContext = {}): AgentChatReply {
+export function buildAgentReply(message: string, context: AgentChatContext = {}, locale?: AgentLanguage): AgentChatReply {
   const query = normalized(message);
-  const language = detectAgentLanguage(message);
+  const language = locale ?? detectAgentLanguage(message);
   const t = text[language];
   const connection = findRequestedConnection(message);
   const defindexIntent = parseDefindexIntent(message);

@@ -78,11 +78,16 @@ export function parseMarketIntent(message: string): MarketIntent | null {
   const text = normalized(message);
   if (/\b(?:watchlist|lista de seguimiento|lista de acompanhamento)\b/.test(text)) return null;
   // Price discovery must not steal wallet reads, DEX quotes or financial commands.
-  if (/\b(?:saldos?|balances?|wallets?|billeteras?|carteiras?|swap|soroswap|pangolin|dexalot|lfj|nfts?|prediccion|predicciones|prediction|predictions|predicao|aave|skills?|deposit|deposito|deposita|deposite|retira|withdraw|envia|send|transfiere|transfer|trade|paga|pay|trustline|fund|financia|x402|cctp)\b/.test(text)) return null;
+  if (/\b(?:saldos?|balances?|wallets?|billeteras?|carteiras?|swap|soroswap|pangolin|dexalot|lfj|nfts?|prediccion|predicciones|prediction|predictions|predicao|aave|skills?|deposit|deposito|deposita|deposite|retira|withdraw|envia|enviar|envie|send|transfiere|transfer|transferir|trade|paga|pagar|pague|trustline|fund|financia|x402|cctp)\b/.test(text)) return null;
+  // PAY is also a catalog ticker. Reject payment grammar, not the asset name in
+  // an explicit price question such as "What is the price of PAY?".
+  if (/^\s*(?:please\s+)?pay\b/.test(text)
+    || /\b(?:can|could|would|will)\s+you\s+(?:please\s+)?pay\b/.test(text)
+    || /\b(?:to\s+pay|pay\s+(?:\d|for\b|with\b|using\b|to\b))/.test(text)) return null;
   const tvl = /\b(?:tvl|total value locked|valor (?:total )?(?:bloqueado|travado))\b/.test(text);
   const cap = /\b(?:capitalizacion|capitalizacao|market\s*cap(?:italization)?)\b/.test(text);
   const chainWords = /\b(?:redes?|redes?|networks?|chains?|blockchains?)\b/.test(text);
-  const priceWords = /\b(?:prices?|precios?|precos?|cotizacion(?:es)?|cotacao|quote|ticker(?:s)?|analiza|analizar|analyze|analyse|analisar|analise|valor|value|capitalizacion|capitalizacao|market\s*cap|coingecko|coinmarketcap|cmc)\b/.test(text);
+  const priceWords = /\b(?:prices?|precios?|precos?|cuanto cuesta|quanto custa|how much is|cotizacion(?:es)?|cotacao|quote|ticker(?:s)?|analiza|analizar|analyze|analyse|analisar|analise|valor|value|capitalizacion|capitalizacao|market\s*cap|coingecko|coinmarketcap|cmc)\b/.test(text);
   if ((tvl || cap || priceWords) && /\b(?:testnet|devnet|fuji|sepolia)\b/.test(text)) return { kind: "invalid", reason: "testnet_market" };
   if (tvl || (cap && (chainWords || /\b(?:base|bsc|bnb chain|binance smart chain)\b/.test(text)))) {
     const limitMatch = text.match(/\b(?:top|primeras?|first|principais|maiores|mayores)\s+(\d+)\b/);
@@ -107,7 +112,7 @@ export function parseMarketIntent(message: string): MarketIntent | null {
   }
   if (!priceWords && !/^\s*(?:coingecko:[a-z0-9-]+|cmc:\d+)\s*[?!.]*$/i.test(message)) return null;
   const protectedIdentifiers: string[] = [];
-  const protectedMessage = message.replace(/\b(?:coingecko:[a-z0-9][a-z0-9-]{0,119}|(?:cmc|coinmarketcap):\d+|0x[a-f0-9]{40}|G[A-Z2-7]{55})\b/gi, identifier => {
+  const protectedMessage = message.replace(/\b(?:coingecko:[a-z0-9][a-z0-9-]{0,119}|(?:cmc|coinmarketcap):\d+|0x[a-f0-9]{40}|G[A-Z2-7]{55}|[a-z0-9]+(?:-[a-z0-9]+)+)\b/gi, identifier => {
     protectedIdentifiers.push(identifier);
     return `MARKETIDENTIFIER${protectedIdentifiers.length - 1}`;
   });

@@ -56,7 +56,20 @@ test("financial actions, authorization and watchlist writes are not captured as 
   for (const message of [
     "Swap 1 XLM to USDC on Soroswap", "Deposita 1 XLM en DeFindex", "Send 0.001 AVAX to my other wallet",
     "Fund my wallet with Testnet XLM", "Add SOL to my watchlist", "Remove ETH from my watchlist", "Connect me to Notion",
+    "pay 20 USDC to another account at the current price", "Please pay 20 USDC at the current price",
+    "precio de PAY y quiero transferir 20 USDC", "preço de PAY e envie 20 USDC",
   ]) assert.equal(parseChatReadRequest(message), null, message);
+});
+
+test("normal catalog price questions route through the shared market reader without canonical ticker restrictions", () => {
+  for (const asset of ["PAY", "AI", "unknown-pilot-token"]) {
+    for (const message of [`¿Cuál es el precio de ${asset}?`, `What is the price of ${asset}?`, `Qual é o preço de ${asset}?`]) {
+      assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: asset }] } }, message);
+    }
+  }
+  for (const message of ["¿Cuál es el precio de USDC en Solana?", "What is the price of USDC on Solana?", "Qual é o preço de USDC na Solana?"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: "USDC", network: "solana" }] } }, message);
+  }
 });
 
 test("public NFT address selection is distinct from an owner-selected personal position", async () => {

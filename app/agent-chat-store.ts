@@ -628,7 +628,7 @@ export async function sendAgentMessage(userId: string, content: string, locale?:
     ) {
       routedContent = "Connect me to " + plannerPlan.parameters.provider;
     }
-    reply = buildAgentReply(routedContent, { wallet, connectedProviders });
+    reply = buildAgentReply(routedContent, { wallet, connectedProviders }, language);
 
     if (
       plannerPlan &&

@@ -8,6 +8,19 @@ import {
   parseTestnetSetupIntent,
 } from "../app/agent-chat-logic";
 
+test("price questions detect Spanish and fallback replies retain an explicitly selected UI locale", () => {
+  assert.equal(detectAgentLanguage("¿Cuál es el precio de PAY?"), "es");
+  assert.equal(detectAgentLanguage("What is the price of PAY?"), "en");
+  assert.equal(detectAgentLanguage("Qual é o preço de PAY?"), "pt");
+  const es = buildAgentReply("unrecognized request", {}, "es");
+  const pt = buildAgentReply("unrecognized request", {}, "pt");
+  assert.match(es.content, /Entiendo|objetivo|necesito/);
+  assert.match(pt.content, /Entendo|objetivo|preciso/);
+  assert.doesNotMatch(es.content + pt.content, /I understand the goal/);
+  assert.equal(es.defindexIntent, undefined);
+  assert.equal(pt.defindexIntent, undefined);
+});
+
 test("recognizes active pilot aliases in natural language", () => {
   assert.equal(findRequestedConnection("quiero conectarme a ArkusX")?.name, "ArcusX");
   assert.equal(findRequestedConnection("connect me to DeFindex")?.name, "DeFindex");
