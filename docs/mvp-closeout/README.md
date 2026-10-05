@@ -6,6 +6,7 @@ Objetivo de trabajo: 72 horas desde el inicio. No es una aprobación automática
 ## Base y responsables
 
 - Producción de referencia: `7edcb1890a76a7dfcf9f3eb4da50615807a951be`.
+- Hotfix publicado: [PR47](https://github.com/CaBsCrypto/carmelita/pull/47), main `65d5726fd788006a478527d6ee576912736071cb`, deployment productivo `dpl_H96PfS3exwBSJ5NT47kF2kdqZtCJ`. Dominio canónico verificado: health ok, comercio POST 405, dos herramientas públicas de lectura, cinco herramientas retiradas rechazadas y catálogo público GET conservado. Su suite pasó 868 pruebas, dos omitidas, lint, tipos, build y CI del head. La nueva experiencia de PR46 todavía no se publica por este hotfix.
 - Candidata de partida: PR46, `608bb84218be9834607aa414736fac98202520a5`.
 - Scrum Master: agente coordinador de este chat; integración y publicación centralizadas.
 - Dos subagentes activos por pareja; diez responsabilidades en cinco olas. El entorno rechazó crear más hilos después de la primera pareja, por lo que se reutilizan los agentes disponibles. No se acreditan diez agentes distintos.
@@ -38,5 +39,7 @@ Objetivo de trabajo: 72 horas desde el inicio. No es una aprobación automática
 - Mainnet, voz, puentes y worker duradero de preparación: fuera de esta entrega.
 
 ## Registro de verificación
+
+PR22/35 se cerraron como sustituidos y PR34/37 como aplazados; ramas preservadas. Se eliminaron 23 referencias remotas incorporadas mediante leases y borrado atómico, conservando ramas locales y worktrees. PR36 y PR43–45 esperan la integración de PR46. La candidata incorporó el nuevo main mediante merge normal; su QA/CI final y las aceptaciones humanas se registran en PR46 y en recibos privados sobre el SHA exacto, sin cambiar la evidencia histórica de aceptación.
 
 Cada frente entrega archivos, SHA cuando esté integrado, comandos y resultados, y límites restantes. El coordinador conserva evidencias saneadas en `work/mvp-closeout-20261005/`. No guardar secretos, magic links privados, tokens, firmas reutilizables ni direcciones personales en documentos públicos.

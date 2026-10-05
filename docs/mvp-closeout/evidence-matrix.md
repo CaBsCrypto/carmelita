@@ -12,8 +12,8 @@ Código y pruebas locales acreditan comportamientos con identidades y proveedore
 
 | Caso | Código / prueba técnica | Observación hospedada o UI real | Pendiente humano, externo o final |
 | --- | --- | --- | --- |
-| Preservar ramas y trabajo local | Inventario, bundle Git y respaldo documentados en branch-dispositions.md | Evidencia privada de preservación; no prueba funcional | A9: disposición y cierre final de cada PR; rollback verificable |
-| Catálogo legacy público seguro | public-commerce-boundary y commerce-catalog-read: lectura; POST rechazado antes del backend; tools retiradas no llegan a almacenamiento | No confundir pruebas de handler con rechazo hospedado del SHA final | Repetir frontera y discovery en Preview final y producción aprobada |
+| Preservar ramas y trabajo local | Inventario, bundle Git y 33 archivos pendientes preservados | PR22/35 sustituidas; PR34/37 aplazadas; 23 referencias incorporadas limpiadas, worktrees conservados | PR36/43–45 esperan PR46 en main; las ramas aplazadas permanecen |
+| Catálogo legacy público seguro | public-commerce-boundary y commerce-catalog-read: lectura; POST rechazado antes del backend; tools retiradas no llegan a almacenamiento | PR47 publicado en main65d5726: dominio canónico, POST405, dos tools de lectura, cinco retiradas rechazadas y GET público conservado | Reconfirmar en Preview final de PR46; no confundir el hotfix con aceptación de las nuevas funciones |
 | Alta y cinco redes propias | Pruebas de onboarding, registro y consultas por propietario; lectura no crea ni activa billeteras | El usuario informó anteriormente las cinco redes en ChatGPT; sin atribución al SHA final | Repetir alta real desde cero con A/B; comparar pertenencia y estados |
 | OAuth de la misma identidad | oauth-consent-navigation y pruebas de autenticación: callback acotado, cancelación y rechazo de respuestas tardías | Guía local y Copiar URL comprobados; no consta round trip OAuth de segunda cuenta | Consentimiento, regreso a ChatGPT, metadata actualizada, selección de conector y revocación en A/B |
 | Permisos de lectura | agent:read no autoriza gasto ni conversación/contexto privado; tests de owner/scope/revocación | No se consultaron credenciales privadas de terceros | Verificar permisos realmente pedidos por el cliente y denegación cuando falta scope |
@@ -64,7 +64,7 @@ Root informó ancho de contenido 305 / viewport 320 en guía y catálogo y ausen
 | A/B independientes / cliente móvil / permisos | Pendiente humano |
 | UI final 320 px / teclado / zoom 200 % | Reconfirmación final / zoom pendiente |
 | Compra, identidad Bazaar, Guionista y recibos | Bloqueados; no prueba real aceptada |
-| Rollback de producción | Referencia 7edcb1890a76a7dfcf9f3eb4da50615807a951be conservada; procedimiento final por verificar |
+| Rollback de producción | dpl_H96PfS3exwBSJ5NT47kF2kdqZtCJ / main65d5726 conserva el hotfix; 7ed histórico restauraría la superficie legacy |
 
 El registro de usuarios usa SHA, origen, conector, permisos, seudónimo A/B, redes y resultado saneado. No publica secretos, tokens, emails, IDs de propietario, direcciones personales, magic links o firmas. Véase [Guía para primeros usuarios](./first-users.md).
 
