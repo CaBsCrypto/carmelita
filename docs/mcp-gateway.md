@@ -7,7 +7,7 @@ Carmelita now has three MCP surfaces and one outbound connector layer.
 ~~~mermaid
 flowchart LR
     EXT["External agent or MCP client"] --> PERSONAL["Personal Agent MCP"]
-    EXT --> SANDBOX["Commerce Sandbox MCP"]
+    EXT --> SANDBOX["Public Catalog MCP"]
     PROVIDER["Service provider"] --> ADMIN["Provider Admin MCP"]
     ADMIN --> CATALOG["Published service catalog"]
     CATALOG --> SANDBOX
@@ -23,7 +23,7 @@ This closes the architectural loop:
 2. external clients can use a user's agent.
 3. providers can administer services that agents discover.
 
-## Surface 1: commerce sandbox
+## Surface 1: public commerce catalog
 
 Endpoint:
 
@@ -31,17 +31,14 @@ Endpoint:
 https://agente-asistente.vercel.app/api/mcp
 ~~~
 
-Authentication: public sandbox.
+Authentication: public, read-only catalog.
 
 Purpose:
 
 - Search built-in and provider-published offers.
-- Create duplicate-resistant intents.
-- Evaluate demo policy.
-- Demonstrate explicit approval.
-- Create or replay simulated receipts.
+- Read public offer details with `get_offer`.
 
-This endpoint does not sign wallets or settle payments.
+Only `search_offers` and `get_offer` are registered. Legacy intent, policy, authorization, execution and receipt tools are removed and direct calls fail without touching their backend. `POST /api/commerce` returns HTTP 405 (`commerce_demo_disabled`) before reading the request body. Catalog publication does not establish service execution availability.
 
 ## Surface 2: personal agent MCP
 
@@ -240,6 +237,5 @@ The next complete vertical slice should be:
 2. UNBLCK receives a scoped pilot key.
 3. Its developer publishes one offchain-demo reservation.
 4. The public MCP discovers that reservation.
-5. A user creates and approves an intent.
-6. UNBLCK receives an order/fulfillment event.
-7. Payment remains disabled or simulated until the Stellar proof is complete.
+5. Authenticated purchase and delivery require a separate accepted contract, owner binding and transaction-specific approval.
+6. Public demo operations remain disabled; discovery does not establish payment or fulfillment.

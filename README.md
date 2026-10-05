@@ -139,11 +139,11 @@ Find my YC notes in Notion
 
 OAuth tokens are encrypted before storage in Neon. Until production consent and a search succeed for a real user, this integration remains **Ready to validate**.
 
-### 4. Test duplicate-resistant execution
+### 4. Explore the public catalog
 
-Open the [Safety demo](https://agente-asistente.vercel.app/demo), create an intent, evaluate policy, approve it and execute twice. The second request returns the original receipt.
+Open the [Service catalog](https://carmelita.browns.studio/demo) to inspect public offers and availability. The public MCP exposes only `search_offers` and `get_offer`.
 
-Settlement is simulated. Persistence, authorization hashes, audit records and receipt uniqueness are real.
+Legacy public demo operations and private receipt lookup are disabled. `POST /api/commerce` returns HTTP 405 (`commerce_demo_disabled`), including replays. A published listing does not establish that a service is operational.
 
 ### 5. Review a DeFindex Testnet action
 
