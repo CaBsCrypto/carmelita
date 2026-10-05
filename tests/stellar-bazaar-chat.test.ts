@@ -5,7 +5,7 @@ import { listGatewayCapabilities } from "../app/agent-gateway/catalog";
 
 test.beforeEach(() => {
   process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "true";
-  process.env.STELLAR_BAZAAR_BASE_URL = "https://stellar-bazaar-x402.vercel.app";
+  process.env.STELLAR_BAZAAR_BASE_URL = "https://bazaar.browns.studio";
 });
 test.afterEach(() => {
   delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
@@ -13,7 +13,7 @@ test.afterEach(() => {
 });
 
 test("disabled discovery exposes no chat action or Gateway capability", () => {
-  delete process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "false";
   assert.equal(buildAgentReply("Busca en stellar bazaar informes").actions.length, 0);
   assert.equal(listGatewayCapabilities().some(item => item.id === "stellar.bazaar.discovery"), false);
   process.env.STELLAR_BAZAAR_DISCOVERY_ENABLED = "true";

@@ -286,7 +286,8 @@ export function listGatewayCapabilities(): GatewayCapability[] {
     };
   });
   const existing = new Set(enriched.map(capability => capability.id));
-  const additional: GatewayCapability[] = readQueryDefinitions.filter(query => !existing.has(query.id)).map(query => {
+  const additional: GatewayCapability[] = readQueryDefinitions.filter(query => !existing.has(query.id)
+    && (query.id !== "stellar.bazaar.discovery" || getStellarBazaarConfig().enabled)).map(query => {
     const acceptance = evaluateQueryAcceptance(query, { providerKnownUnavailable: query.id === "avalanche.nft.floor_read" });
     return {
       id: query.id, title: query.title, description: query.description,

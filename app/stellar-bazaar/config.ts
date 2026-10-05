@@ -1,5 +1,5 @@
 export const STELLAR_BAZAAR_DEFAULT_BASE_URL =
-  "https://stellar-bazaar-x402.vercel.app";
+  "https://bazaar.browns.studio";
 
 export const STELLAR_BAZAAR_PROVIDER_ALLOWLIST: readonly string[] = [
   "https://website-intelligence-provider.vercel.app",
@@ -25,14 +25,15 @@ function parsedHttpsOrigin(value: string): string | null {
 export function getStellarBazaarConfig(
   env: Record<string, string | undefined> = process.env,
 ) {
-  const override = env.STELLAR_BAZAAR_BASE_URL ?? "";
+  const override = env.STELLAR_BAZAAR_BASE_URL ?? STELLAR_BAZAAR_DEFAULT_BASE_URL;
   const candidate = parsedHttpsOrigin(override);
   const baseUrl = candidate === STELLAR_BAZAAR_DEFAULT_BASE_URL ? candidate : null;
-  const enabled = env.STELLAR_BAZAAR_DISCOVERY_ENABLED === "true" && baseUrl !== null;
+  const flag = env.STELLAR_BAZAAR_DISCOVERY_ENABLED;
+  const enabled = (flag === undefined || flag === "true") && baseUrl !== null;
   return {
     enabled,
     baseUrl: baseUrl ?? null,
-    reason: !enabled ? "stellar_bazaar_config_required" : null,
+    reason: flag === "false" ? "stellar_bazaar_disabled" : !enabled ? "stellar_bazaar_config_invalid" : null,
   } as const;
 }
 

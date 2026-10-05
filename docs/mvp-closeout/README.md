@@ -8,13 +8,13 @@ Objetivo de trabajo: 72 horas desde el inicio. No es una aprobación automática
 - Producción de referencia: `7edcb1890a76a7dfcf9f3eb4da50615807a951be`.
 - Candidata de partida: PR46, `608bb84218be9834607aa414736fac98202520a5`.
 - Scrum Master: agente coordinador de este chat; integración y publicación centralizadas.
-- Dos subagentes activos por pareja. Los diez responsables se ejecutan en cinco olas.
+- Dos subagentes activos por pareja; diez responsabilidades en cinco olas. El entorno rechazó crear más hilos después de la primera pareja, por lo que se reutilizan los agentes disponibles. No se acreditan diez agentes distintos.
 
 | Pareja | Responsabilidades | Estado |
 | --- | --- | --- |
 | A1 / A2 | Respaldo, ramas / seguridad de demo legacy | Revisado; 33 archivos preservados, 41/41 pruebas de frontera, lint y tipos pasan |
-| A3 / A4 | Catálogo Bazaar / contrato de consumo e identidad | En curso |
-| A5 / A6 | Complemento y alta / landing | Pendiente |
+| A3 / A4 | Catálogo Bazaar / contrato de consumo e identidad | Revisado; contrato público observado, pruebas enfocadas pasan, compras bloqueadas |
+| A5 / A6 | Complemento y alta / landing | En curso |
 | A7 / A8 | Recuperación de sesión / QA independiente | Pendiente |
 | A9 / A10 | Publicación y ramas / demo y documentación | Pendiente |
 

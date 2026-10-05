@@ -21,6 +21,8 @@ const collection = "0x1111111111111111111111111111111111111111";
 const runMcp = async (...args: Parameters<typeof executeMcpReadQuery>) => executeMcpReadQuery(...args);
 function inputFor(id: string): Record<string, unknown> {
   switch (id) {
+    case "bazaar.services.detail": return { id: "ai-video-scriptwriter" };
+    case "bazaar.suites.detail": return { id: "brand-identity-bundle" };
     case "offchain.market.search": return { asset: { query: "USDC", network: "solana" } };
     case "offchain.market.quote": return { assets: [{ query: "USDC", network: "solana" }, { query: "not-a-token" }], locale: "es" };
     case "avalanche.docs.search": case "avalanche.skills.search": case "offchain.notion.search": case "stellar.bazaar.discovery": return { query: "wallet integration" };
@@ -114,7 +116,7 @@ test("continuation links use HTTPS origins without embedded credentials or navig
   }
 });
 
-test("Avalanche discovery preserves legacy fields and shares channel availability with the common catalog", async () => {
+test("Avalanche discovery preserves read fields and shares a blocked native boundary for financial metadata", async () => {
   const web = await executeWebReadQuery("avalanche.capabilities.list", {}, "owner-a", "es");
   const mcp = await executeMcpReadQuery("avalanche.capabilities.list", {}, principal());
   assert.deepEqual(web, mcp);
@@ -123,9 +125,20 @@ test("Avalanche discovery preserves legacy fields and shares channel availabilit
   for (const legacy of listAvalancheCapabilities()) {
     const actual = result.capabilities.find(capability => capability.id === legacy.id);
     assert.ok(actual);
-    for (const [key, value] of Object.entries(legacy)) assert.deepEqual(actual[key], value, `${legacy.id}:${key}`);
-    assert.deepEqual(actual.channels, common.get(legacy.id)?.channels);
-    assert.deepEqual(actual.availability, common.get(legacy.id)?.availability);
+    if (legacy.operation === "financial" || legacy.operation === "cross_chain") {
+      for (const key of ["id", "provider", "category", "operation", "network", "dataScope", "requires", "approval"] as const) {
+        assert.deepEqual(actual[key], legacy[key], `${legacy.id}:${key}`);
+      }
+      assert.equal(actual.status, "blocked");
+      assert.equal(actual.implementationStatus, legacy.status);
+      assert.equal((actual.availability as { available: boolean }).available, false);
+      assert.doesNotMatch(String(actual.nextAction), /run one|complete one|run a second|approve a fresh/i);
+      assert.equal("evidence" in actual, false);
+    } else {
+      for (const [key, value] of Object.entries(legacy)) assert.deepEqual(actual[key], value, `${legacy.id}:${key}`);
+      assert.deepEqual(actual.channels, common.get(legacy.id)?.channels);
+      assert.deepEqual(actual.availability, common.get(legacy.id)?.availability);
+    }
   }
   const floor = result.capabilities.find(capability => capability.id === "avalanche.nft.floor_read")!;
   assert.equal((floor.availability as { available: boolean }).available, false);
