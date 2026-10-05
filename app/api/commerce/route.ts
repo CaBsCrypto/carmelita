@@ -1,1 +1,26 @@
-import{NextRequest,NextResponse}from"next/server";import{backend,publicIntent}from"@/app/commerce-backend";export const runtime="nodejs";export async function GET(r:NextRequest){return NextResponse.json({mode:"demo",persistence:backend.mode(),offers:await backend.searchOffers(r.nextUrl.searchParams.get("query")??"")})}export async function POST(r:NextRequest){try{const b=await r.json();switch(b.action){case"create_intent":{const x=await backend.createIntent(b);return NextResponse.json({...x,intent:publicIntent(x.intent),persistence:backend.mode()})}case"evaluate_policy":return NextResponse.json({intent:publicIntent(await backend.evaluatePolicy(b.intentId))});case"authorize":{const x=await backend.authorize(b.intentId,b.explicitUserConfirmation===true),intent="intent"in x?x.intent:x,token="token"in x?x.token:x.authorization?.token;return NextResponse.json({intent:publicIntent(intent),authorizationToken:token,warning:"DEMO ONLY"})}case"execute":return NextResponse.json({receipt:await backend.execute(b.intentId,b.authorizationToken)});case"get_receipt":return NextResponse.json({receipt:await backend.getReceipt(b.intentId)});default:return NextResponse.json({error:"unknown_action"},{status:400})}}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"unknown_error"},{status:400})}}
+import { NextRequest, NextResponse } from "next/server";
+import { backend } from "@/app/commerce-backend";
+
+export const runtime = "nodejs";
+
+export async function GET(r: NextRequest) {
+  if ((r.nextUrl.searchParams.get("query") ?? "").length > 120) {
+    return NextResponse.json({ error: "invalid_catalog_query" }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  }
+  try {
+    return NextResponse.json({
+      mode: "catalog", executionEnabled: false, persistence: backend.mode(),
+      offers: await backend.searchOffers(r.nextUrl.searchParams.get("query") ?? ""),
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({ error: "commerce_catalog_unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+}
+
+export async function POST() {
+  // Reject before reading a body or contacting storage, including receipt lookup
+  // and replay. A client-provided actorId is not an authenticated owner.
+  return NextResponse.json({ error: "commerce_demo_disabled" }, {
+    status: 405, headers: { Allow: "GET", "Cache-Control": "no-store" },
+  });
+}

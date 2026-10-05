@@ -1,10 +1,57 @@
-import{createMcpHandler}from"mcp-handler";import{z}from"zod";import{backend,publicIntent}from"@/app/commerce-backend";export const runtime="nodejs";export const maxDuration=60;const ok=(v:unknown)=>({content:[{type:"text" as const,text:JSON.stringify(v,null,2)}]});const fail=(e:unknown)=>({isError:true,content:[{type:"text" as const,text:JSON.stringify({error:e instanceof Error?e.message:"unknown_error"})}]});
-let handler:ReturnType<typeof createMcpHandler>|null=null;const getHandler=()=>handler??(handler=createMcpHandler(server=>{
-server.registerTool("search_offers",{title:"Search agent-ready offers",description:"Search public offers. Never spends funds.",inputSchema:{query:z.string().max(120).default(""),kind:z.enum(["finance","reservation","task","travel","product","service"]).optional()},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},async({query,kind})=>ok({offers:await backend.searchOffers(query,kind),persistence:backend.mode()}));
-server.registerTool("get_offer",{title:"Get offer",description:"Get offer details. Read-only.",inputSchema:{offerId:z.string()},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},async({offerId})=>{try{return ok(await backend.getOffer(offerId))}catch(e){return fail(e)}});
-server.registerTool("create_intent",{title:"Prepare intent",description:"Prepare only. Same idempotencyKey returns the original intent.",inputSchema:{offerId:z.string(),actorId:z.string(),idempotencyKey:z.string().min(8),amount:z.number().nonnegative().optional()},annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false}},async input=>{try{const r=await backend.createIntent(input);return ok({...r,intent:publicIntent(r.intent),persistence:backend.mode()})}catch(e){return fail(e)}});
-server.registerTool("evaluate_policy",{title:"Evaluate policy",description:"Apply expiry, network and 100 USDC demo limit. Does not authorize.",inputSchema:{intentId:z.string()},annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true,openWorldHint:false}},async({intentId})=>{try{return ok(publicIntent(await backend.evaluatePolicy(intentId)))}catch(e){return fail(e)}});
-server.registerTool("demo_authorize_intent",{title:"Confirm demo intent",description:"Demo-only explicit confirmation. No signature or funds movement.",inputSchema:{intentId:z.string(),explicitUserConfirmation:z.literal(true)},annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:false,openWorldHint:false}},async({intentId,explicitUserConfirmation})=>{try{const result=await backend.authorize(intentId,explicitUserConfirmation);const intent="intent"in result?result.intent:result;const token="token"in result?result.token:result.authorization?.token;return ok({intent:publicIntent(intent),authorizationToken:token,warning:"DEMO ONLY — no wallet signature and no funds moved"})}catch(e){return fail(e)}});
-server.registerTool("execute_authorized_intent",{title:"Execute authorized demo",description:"Execute an authorized demo intent. Duplicates return the same receipt.",inputSchema:{intentId:z.string(),authorizationToken:z.string().min(10)},annotations:{readOnlyHint:false,destructiveHint:true,idempotentHint:true,openWorldHint:false}},async({intentId,authorizationToken})=>{try{return ok(await backend.execute(intentId,authorizationToken))}catch(e){return fail(e)}});
-server.registerTool("get_receipt",{title:"Get receipt",description:"Get execution receipt or null.",inputSchema:{intentId:z.string()},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},async({intentId})=>{try{return ok({receipt:await backend.getReceipt(intentId)})}catch(e){return fail(e)}})
-},{serverInfo:{name:"agente-asistente",version:"0.2.0"}},{basePath:"/api",maxDuration:60,disableSse:true,verboseLogs:process.env.NODE_ENV!=="production"}));export const GET=(request:Request)=>getHandler()(request);export const POST=(request:Request)=>getHandler()(request);export const DELETE=(request:Request)=>getHandler()(request);
+import { createMcpHandler } from "mcp-handler";
+import { z } from "zod";
+import { backend } from "@/app/commerce-backend";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const ok = (value: unknown) => ({
+  content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
+});
+const fail = (error: unknown) => ({
+  isError: true,
+  content: [{
+    type: "text" as const,
+    text: JSON.stringify({
+      error: error instanceof Error && error.message === "offer_not_found"
+        ? "offer_not_found" : "commerce_catalog_unavailable",
+    }),
+  }],
+});
+
+let handler: ReturnType<typeof createMcpHandler> | null = null;
+function getHandler() {
+  return handler ?? (handler = createMcpHandler((server) => {
+    server.registerTool("search_offers", {
+      title: "Search public offers",
+      description: "Search the public catalog. Listing an offer does not establish execution availability or authorize a purchase.",
+      inputSchema: {
+        query: z.string().max(120).default(""),
+        kind: z.enum(["finance", "reservation", "task", "travel", "product", "service"]).optional(),
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async ({ query, kind }) => {
+      try {
+        return ok({ offers: await backend.searchOffers(query, kind), persistence: backend.mode(), executionEnabled: false });
+      } catch (error) { return fail(error); }
+    });
+    server.registerTool("get_offer", {
+      title: "Get public offer",
+      description: "Get public catalog details. Read-only; does not prepare an operation or retrieve private receipts.",
+      inputSchema: { offerId: z.string().min(1).max(128) },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async ({ offerId }) => {
+      try { return ok(await backend.getOffer(offerId)); }
+      catch (error) { return fail(error); }
+    });
+    // Legacy intent and receipt tools are deliberately unregistered: this public
+    // endpoint has no owner identity. Direct calls must not reach their backend.
+  }, { serverInfo: { name: "agente-asistente", version: "0.3.0" } }, {
+    basePath: "/api", maxDuration: 60, disableSse: true,
+    verboseLogs: process.env.NODE_ENV !== "production",
+  }));
+}
+
+export const GET = (request: Request) => getHandler()(request);
+export const POST = (request: Request) => getHandler()(request);
+export const DELETE = (request: Request) => getHandler()(request);
