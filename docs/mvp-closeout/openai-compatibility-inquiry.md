@@ -15,6 +15,7 @@ La propuesta futura usa x402 y USDC en Stellar Testnet, sin dinero real, compra 
 3. ¿La restricción de comercio de servicios digitales distingue una demostración sin monetización real de una compra comercial? ¿Cómo aplica a este caso de x402 Testnet?
 4. ¿Qué flujo está admitido para acceder a un servicio gratuito o ya incluido en una cuenta, conservando confirmación, entrega e historial dentro de ChatGPT?
 5. ¿Qué distribución y enlace de conexión pueden utilizarse para un piloto con cuentas independientes y móvil? No disponemos todavía de un enlace público de instalación aprobado.
+6. ¿Se admite consultar metadatos de un catálogo que declara precios Testnet cuando el complemento mantiene bloqueadas preparación, aprobación, firma, ejecución y enlaces de checkout? Solicitamos distinguir ese acceso informativo de una oferta de compra.
 
 ## Fuentes consultadas
 

@@ -14,8 +14,8 @@ Objetivo de trabajo: 72 horas desde el inicio. No es una aprobación automática
 | --- | --- | --- |
 | A1 / A2 | Respaldo, ramas / seguridad de demo legacy | Revisado; 33 archivos preservados, 41/41 pruebas de frontera, lint y tipos pasan |
 | A3 / A4 | Catálogo Bazaar / contrato de consumo e identidad | Revisado; contrato público observado, pruebas enfocadas pasan, compras bloqueadas |
-| A5 / A6 | Complemento y alta / landing | En curso |
-| A7 / A8 | Recuperación de sesión / QA independiente | Pendiente |
+| A5 / A6 | Complemento y alta / landing | Revisado; guía manual, permisos visibles y OAuth cancelable; 30/30 pruebas de consentimiento, lint y tipos pasan. QA visual pendiente |
+| A7 / A8 | Recuperación de sesión / QA independiente | En curso |
 | A9 / A10 | Publicación y ramas / demo y documentación | Pendiente |
 
 ## Criterios de salida

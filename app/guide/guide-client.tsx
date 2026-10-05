@@ -165,7 +165,7 @@ export default function GuideClient() {
         {t.questions.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
         <details id="chatgpt">
           <summary>{t.chatgpt}</summary><p>{t.chatgptText}</p><p>{t.chatgptHelp}</p>
-          <p><Link href="/agent">{t.agent}</Link></p>
+          <p><Link href="/connect-chatgpt">{locale === "es" ? "Conectar Carmelita con ChatGPT" : locale === "pt" ? "Conectar Carmelita ao ChatGPT" : "Connect Carmelita with ChatGPT"}</Link></p>
         </details>
         <details>
           <summary>{t.advanced}</summary><p>{t.advancedText}</p>

@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 export const GRAPHIFY_VERSION = "0.9.76";
-export const BUILD_EXCLUDES = ["work/", "outputs/", ".codex/", "docs/", ".env*", "**/*connectionfiles*", "**/DBconnectionfiles*", "**/*.pem", "**/*.key", "**/*audio*", "**/*durable*", "**/*0022*", "**/*bazaar*", "*.md", "**/*.md", "**/*.pdf", "**/*.mp3", "**/*.wav", "**/*.mp4"];
+export const BUILD_EXCLUDES = ["work/", "outputs/", ".codex/", "docs/", ".env*", "**/*connectionfiles*", "**/DBconnectionfiles*", "**/*.pem", "**/*.key", "**/*audio*", "**/*durable*", "**/*0022*", "*.md", "**/*.md", "**/*.pdf", "**/*.mp3", "**/*.wav", "**/*.mp4"];
 export function safeArgs(input) {
   const args = [...input];
   const allowed = new Set(["query", "path", "explain", "reflect", "diagnose", "update", "extract", "cluster-only", "--version", "--help"]);
@@ -33,7 +33,9 @@ export function runtimePython(root, platform = process.platform) {
 
 export function buildConfig(config, untracked) {
   const previousUntracked = new Set(config.carmelita_untracked_excludes ?? []);
-  const retained = (Array.isArray(config.excludes) ? config.excludes : []).filter(pattern => !previousUntracked.has(pattern));
+  // Bazaar's tracked read adapter is now in scope. Private evidence remains under
+  // work/ and every build still excludes ignored and untracked files.
+  const retained = (Array.isArray(config.excludes) ? config.excludes : []).filter(pattern => !previousUntracked.has(pattern) && pattern !== "**/*bazaar*");
   return { ...config, excludes: [...new Set([...retained, ...BUILD_EXCLUDES, ...untracked])], gitignore: true, carmelita_untracked_excludes: untracked };
 }
 

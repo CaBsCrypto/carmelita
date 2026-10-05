@@ -26,8 +26,18 @@ test("reports avoid automatic labeling and global launchers", () => {
   assert.match(runtimePython("/repo", "linux").replaceAll("\\", "/"), /work\/graphify-runtime\/bin\/python$/);
 });
 test("fresh build excludes local evidence and out-of-scope sprint files", () => {
-  for (const required of ["work/", "outputs/", ".env*", "**/*connectionfiles*", "**/*audio*", "**/*durable*", "**/*0022*", "**/*bazaar*", "**/*.md"]) assert.ok(BUILD_EXCLUDES.includes(required));
+  for (const required of ["work/", "outputs/", ".env*", "**/*connectionfiles*", "**/*audio*", "**/*durable*", "**/*0022*", "**/*.md"]) assert.ok(BUILD_EXCLUDES.includes(required));
   assert.throws(() => safeArgs(["extract", ".", "--exclude=docs/"]));
+});
+
+test("tracked Bazaar readers enter the graph without including private or untracked material", () => {
+  const config = buildConfig({ excludes: ["**/*bazaar*", "custom-scope/"] }, ["app/bazaar/unreviewed.ts"]);
+  assert.ok(!config.excludes.includes("**/*bazaar*"));
+  assert.ok(config.excludes.includes("app/bazaar/unreviewed.ts"));
+  assert.ok(config.excludes.includes("work/"));
+  assert.ok(config.excludes.includes(".env*"));
+  assert.ok(config.excludes.includes("custom-scope/"));
+  assert.equal(config.gitignore, true);
 });
 test("staging new code removes its prior untracked exclusion while retaining user exclusions", () => {
   const first = buildConfig({ excludes: ["custom-scope/"] }, ["app/new-feature.ts"]);
