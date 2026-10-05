@@ -3,6 +3,8 @@ import { executeMcpReadQuery } from "@/app/queries/adapters";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { createGatewayPlan } from "@/app/agent-gateway/service";
+import { getGatewayCapability } from "@/app/agent-gateway/catalog";
+import { createNativeGatewayPlan, projectNativeAvalanchePlan } from "@/app/bazaar/native-channel-boundary";
 import { createGatewayAudit } from "@/app/agent-gateway/operations";
 import { avalancheCapabilityIdSchema, planAvalancheCapability } from "@/app/avalanche/capability-registry";
 import {
@@ -62,7 +64,7 @@ function getHandler() {
         async (input, extra) => {
           try {
             requireMcpSubject(extra.authInfo, "user", "userId", "agent:read");
-            return ok(planAvalancheCapability(input.capabilityId, { ...input, authenticated: true }));
+            return ok(projectNativeAvalanchePlan(planAvalancheCapability(input.capabilityId, { ...input, authenticated: true })));
           } catch (error) { return fail(error); }
         },
       );
@@ -71,7 +73,7 @@ function getHandler() {
         "plan_action",
         {
           title: "Plan a Carmelita action",
-          description: "Create or replay an idempotent Testnet plan. It never prepares, signs or submits a transaction; sensitive actions continue inside Carmelita with Privy.",
+          description: "Create or replay a non-financial plan with agent:plan permission. It never prepares or executes an operation. Financial and cross-chain requests return blocked metadata without signing, submitting or offering a checkout handoff.",
           inputSchema: {
             capabilityId: z.string().trim().min(3).max(120),
             idempotencyKey: z.string().trim().min(8).max(128),
@@ -83,7 +85,7 @@ function getHandler() {
         async (input, extra) => {
           try {
             const userId = requireMcpSubject(extra.authInfo, "user", "userId", "agent:plan");
-            return ok(await createGatewayPlan(userId, input));
+            return ok(await createNativeGatewayPlan(userId, input, { getCapability: getGatewayCapability, createPlan: createGatewayPlan }));
           } catch (error) { return fail(error); }
         },
       );

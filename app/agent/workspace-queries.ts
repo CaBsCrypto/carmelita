@@ -1,4 +1,5 @@
 import type { Locale } from "../language-toggle";
+import { WORKSPACE_TIMEOUT_MS, sessionAbortable, withSessionDeadline } from "./session-request";
 
 /** Same owner-bound read adapter used by chat and MCP; panels never run preparation. */
 export async function readWorkspaceQuery<T>(
@@ -7,21 +8,22 @@ export async function readWorkspaceQuery<T>(
   locale: Locale,
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
+  timeoutMs = WORKSPACE_TIMEOUT_MS,
 ): Promise<T> {
-  signal.throwIfAborted();
-  const token = await getAccessToken();
-  signal.throwIfAborted();
-  if (!token) throw new Error("authentication_required");
-  const response = await fetcher("/api/agent/queries", {
-    method: "POST", cache: "no-store",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
-    body: JSON.stringify({ query, input: {}, locale }),
+  return withSessionDeadline(signal, timeoutMs, async boundedSignal => {
+    const token = await sessionAbortable(getAccessToken, boundedSignal);
+    if (!token) throw new Error("authentication_required");
+    const response = await sessionAbortable(() => fetcher("/api/agent/queries", {
+      method: "POST", cache: "no-store",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      signal: boundedSignal,
+      body: JSON.stringify({ query, input: {}, locale }),
+    }), boundedSignal);
+    const body = await sessionAbortable(() => response.json(), boundedSignal);
+    boundedSignal.throwIfAborted();
+    if (!response.ok) throw new Error(body.error ?? "read_query_unavailable");
+    return body as T;
   });
-  const body = await response.json();
-  signal.throwIfAborted();
-  if (!response.ok) throw new Error(body.error ?? "read_query_unavailable");
-  return body as T;
 }
 
 export const workspaceCommands = [

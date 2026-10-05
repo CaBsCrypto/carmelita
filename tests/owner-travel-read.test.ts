@@ -25,7 +25,8 @@ test("a late prior-owner response is discarded while the current owner's search 
   const started = deferred<void>();
   const controller = new AbortController();
   const prior = requestTravelSearch(input, async () => "fixture-not-a-credential", controller.signal, async (_url, init) => {
-    assert.equal(init?.signal, controller.signal);
+    assert.ok(init?.signal && !init.signal.aborted);
+    assert.notEqual(init.signal, controller.signal, "The owner signal is combined with a complete request deadline");
     assert.equal(init?.method, "POST");
     started.resolve();
     return { ok: true, json: () => priorBody.promise } as Response;

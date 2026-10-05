@@ -1,4 +1,4 @@
-type CapabilityMetadata = {
+export type CapabilityMetadata = {
   id: string; title: string; description: string; provider: string;
   operation: string; status: string; nextAction: string;
   version?: string; category?: string; network?: string; dataScope?: string;
@@ -57,5 +57,46 @@ export function projectNativeCapabilityBoundary<T extends CapabilityMetadata>(ca
       prepare: false as const, approve: false as const, sign: false as const,
       execute: false as const, checkoutHandoff: false as const,
     },
+  };
+}
+
+/** A caller's claimed balances or prerequisites cannot enable native finance. */
+export function projectNativeAvalanchePlan<T extends {
+  capability: CapabilityMetadata;
+  executable: boolean;
+  blockers: readonly string[];
+  approvalRequired: boolean;
+  boundary: string;
+}>(plan: T) {
+  if (plan.capability.operation !== "financial" && plan.capability.operation !== "cross_chain") return plan;
+  return {
+    capability: projectNativeCapabilityBoundary(plan.capability),
+    executable: false as const,
+    blockers: [...new Set([...plan.blockers, "openai_financial_compatibility_unresolved"])],
+    approvalRequired: plan.approvalRequired,
+    boundary: "native_financial_blocked" as const,
+  };
+}
+
+/** Keep the web gateway's existing planner separate from the native channel.
+ * Financial requests return metadata without writing even a preparatory plan.
+ */
+export async function createNativeGatewayPlan<T extends CapabilityMetadata, R>(
+  actorId: string,
+  input: { capabilityId: string },
+  dependencies: {
+    getCapability: (id: string) => T;
+    createPlan: (actorId: string, input: { capabilityId: string }) => Promise<R>;
+  },
+) {
+  const capability = dependencies.getCapability(input.capabilityId);
+  if (capability.operation !== "financial" && capability.operation !== "cross_chain") return dependencies.createPlan(actorId, input);
+  return {
+    capability: projectNativeCapabilityBoundary(capability),
+    plan: null,
+    replayed: false as const,
+    executionEnabled: false as const,
+    transactionPrepared: false as const,
+    reason: "openai_financial_compatibility_unresolved" as const,
   };
 }

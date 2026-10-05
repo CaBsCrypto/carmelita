@@ -5,9 +5,10 @@ import { MessageText } from "./message-text";
 import { usePrivy } from "@privy-io/react-auth";
 import { prepareStellarPayment, rememberStellarPayment, restoreStellarPayment, sameStellarPaymentDelivery, stellarPaymentContent, stellarPaymentView, type StellarPayment as X402Payment, type StellarPaymentStatus as X402Status } from "./stellar-payment-session";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { requestAgentChat } from "./chat-request";
+import { requestAgentConversation } from "./session-request";
 import { summarizeX402Resource } from "../x402/resource-preview";
 import { stellarPaymentCopy } from "./stellar-payment-copy";
 import { useLocale } from "../language-toggle";
@@ -27,6 +28,12 @@ const chatUi = {
   en: { agent: "Carmelita", controlled: "Testnet wallets · Mainnet market data", memory: "NEON MEMORY ON", loading: "Loading your conversation...", thinking: "Checking capabilities and safety boundaries", placeholder: "Ask about your wallets, prices or available functions…", send: "Send", boundary: "The agent can prepare actions. Payments and irreversible operations always require scoped authorization.", context: "LIVE CONTEXT", contextTitle: "Knows you. Acts for you.", identity: "Identity", balance: "Balance", network: "Network", verify: "Verify wallet on-chain", capabilities: "LIVE CAPABILITIES", readOnly: "read only", help: "PERSONAL HELP", notionConnect: "Connect Notion", notionSearch: "Search Notion", firstSearch: "Run first search", market: "Market prices", price: "XLM price", watchlist: "Watchlist", proof: "Testnet proof", connections: "Connections", notionConnectPrompt: "Connect me to Notion", notionSearchPrompt: "Search my Notion workspace for pending project tasks", pricePrompt: "What is the current XLM price?", watchlistPrompt: "Show my crypto watchlist", proofPrompt: "Start my DeFindex Testnet proof", travalaPrompt: "Connect me to Travala", connectionsPrompt: "What can I connect to?" },
   es: { agent: "Carmelita", controlled: "Billeteras Testnet · mercado Mainnet", memory: "MEMORIA NEON ACTIVA", loading: "Cargando tu conversación...", thinking: "Revisando capacidades y límites de seguridad", placeholder: "Pregunta por tus billeteras, precios o funciones…", send: "Enviar", boundary: "El agente puede preparar acciones. Pagos y operaciones irreversibles siempre requieren autorización específica.", context: "CONTEXTO EN VIVO", contextTitle: "Te conoce. Actúa por ti.", identity: "Identidad", balance: "Saldo", network: "Red", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ACTIVAS", readOnly: "solo lectura", help: "AYUDA PERSONAL", notionConnect: "Conectar Notion", notionSearch: "Buscar en Notion", firstSearch: "Primera búsqueda", market: "Precios de mercado", price: "Precio XLM", watchlist: "Watchlist", proof: "Prueba Testnet", connections: "Conexiones", notionConnectPrompt: "Conéctame con Notion", notionSearchPrompt: "Busca en mi Notion las tareas pendientes", pricePrompt: "¿Cuál es el precio actual de XLM?", watchlistPrompt: "Muéstrame mi watchlist de criptomonedas", proofPrompt: "Inicia mi prueba DeFindex en Testnet", travalaPrompt: "Conéctame con Travala", connectionsPrompt: "¿Qué puedo conectar?" },
   pt: { agent: "Carmelita", controlled: "Carteiras Testnet · mercado Mainnet", memory: "MEMÓRIA NEON ATIVA", loading: "Carregando sua conversa...", thinking: "Verificando capacidades e limites de segurança", placeholder: "Pergunte sobre suas carteiras, preços ou funções…", send: "Enviar", boundary: "O agente pode preparar ações. Pagamentos e operações irreversíveis sempre exigem autorização específica.", context: "CONTEXTO AO VIVO", contextTitle: "Conhece você. Age por você.", identity: "Identidade", balance: "Saldo", network: "Rede", verify: "Verificar wallet on-chain", capabilities: "CAPACIDADES ATIVAS", readOnly: "somente leitura", help: "AJUDA PESSOAL", notionConnect: "Conectar Notion", notionSearch: "Pesquisar no Notion", firstSearch: "Primeira pesquisa", market: "Preços de mercado", price: "Preço do XLM", watchlist: "Watchlist", proof: "Prova Testnet", connections: "Conexões", notionConnectPrompt: "Conecte-me ao Notion", notionSearchPrompt: "Pesquise no meu Notion as tarefas pendentes", pricePrompt: "Qual é o preço atual do XLM?", watchlistPrompt: "Mostre minha watchlist de criptomoedas", proofPrompt: "Inicie minha prova DeFindex na Testnet", travalaPrompt: "Conecte-me à Travala", connectionsPrompt: "O que posso conectar?" },
+};
+
+const requestUi = {
+  es: { load: "No pudimos cargar tu conversación.", send: "No pudimos completar la consulta.", timeout: "La consulta tardó demasiado. Revisa el historial antes de volver a enviarla; tu borrador sigue aquí.", retry: "Reintentar carga", history: "Recuperar historial" },
+  en: { load: "We could not load your conversation.", send: "We could not complete the query.", timeout: "The query took too long. Check history before sending it again; your draft is still here.", retry: "Retry loading", history: "Recover history" },
+  pt: { load: "Não foi possível carregar sua conversa.", send: "Não foi possível concluir a consulta.", timeout: "A consulta demorou demais. Confira o histórico antes de enviar novamente; seu rascunho continua aqui.", retry: "Tentar carregar novamente", history: "Recuperar histórico" },
 };
 
 const defindexUi = {
@@ -239,7 +246,13 @@ export default function AgentChat({
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [conversationError, setConversationError] = useState(false);
+  const [messageError, setMessageError] = useState(false);
+  const [conversationAttempt, setConversationAttempt] = useState(0);
+  const requestLocale = useRef(locale);
+  useEffect(() => { requestLocale.current = locale; }, [locale]);
   const [draft, setDraft] = useState(initialDraft);
+  const draftRevision = useRef(0);
   const [connections, setConnections] = useState<ExternalConnection[]>([]);
   const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
   const [connectionPopup, setConnectionPopup] = useState<{
@@ -304,7 +317,7 @@ export default function AgentChat({
   const [isAtLatest, setIsAtLatest] = useState(true);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const chatSession = useRef(new AbortController());
-  useEffect(() => {
+  useLayoutEffect(() => {
     const controller = new AbortController();
     chatSession.current = controller;
     return () => controller.abort();
@@ -317,6 +330,7 @@ export default function AgentChat({
   }[locale];
 
   function suggestDraft(text: string) {
+    draftRevision.current++;
     setDraft(text);
     composerRef.current?.focus();
   }
@@ -326,6 +340,7 @@ export default function AgentChat({
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
+      draftRevision.current++;
       setDraft(draftSuggestion.text);
       composerRef.current?.focus();
     });
@@ -336,34 +351,21 @@ export default function AgentChat({
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, chatSession.current.signal]);
 
     async function loadConversation() {
       if (!readyForQueries) return;
+      await Promise.resolve();
+      if (!active || signal.aborted) return;
+      setStatus("loading");
       try {
-        const token = await getAccessToken();
-        controller.signal.throwIfAborted();
-        if (!token) throw new Error("Authentication token unavailable");
-        const response = await fetch("/api/agent/chat", {
-          headers: { Authorization: "Bearer " + token },
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const body = await response.json();
-        controller.signal.throwIfAborted();
-        if (!response.ok) throw new Error(body.error ?? "Conversation unavailable");
-        const connectionsResponse = await fetch("/api/connections", {
-          headers: { Authorization: "Bearer " + token },
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const connectionsBody = await connectionsResponse.json();
-        if (active) {
+        const body = await requestAgentConversation<ChatMessage, ExternalConnection>(getAccessToken, signal);
+        signal.throwIfAborted();
+        if (active && !signal.aborted) {
           const params = new URLSearchParams(window.location.search);
           const freshSession = params.get("fresh") === "1";
           setMessages(freshSession ? [] : body.messages);
-          setConnections(
-            connectionsResponse.ok ? connectionsBody.connections ?? [] : [],
-          );
+          setConnections(body.connections);
           if (
             params.get("connection") === "notion" &&
             params.get("status") === "connected"
@@ -379,10 +381,13 @@ export default function AgentChat({
             window.history.replaceState({}, "", "/agent");
           }
           setStatus("ready");
+          setConversationError(false);
+          setMessageError(false);
         }
       } catch (caught) {
-        if (active) {
-          setError(caught instanceof Error ? caught.message : "Conversation unavailable");
+        if (active && !signal.aborted) {
+          setError(caught instanceof Error && caught.name === "TimeoutError" ? requestUi[requestLocale.current].timeout : requestUi[requestLocale.current].load);
+          setConversationError(true);
           setStatus("error");
         }
       }
@@ -393,7 +398,7 @@ export default function AgentChat({
       active = false;
       controller.abort();
     };
-  }, [getAccessToken, readyForQueries]);
+  }, [getAccessToken, readyForQueries, conversationAttempt]);
   useEffect(() => {
     const controller = new AbortController();
     x402Session.current = controller;
@@ -559,9 +564,10 @@ export default function AgentChat({
 
   async function sendMessage(content: string) {
     const message = content.trim();
-    if (!message || status === "sending" || status === "loading" || !readyForQueries) return;
+    if (!message || status === "sending" || status === "loading" || !readyForQueries || conversationError) return;
     const controller = chatSession.current;
     if (controller.signal.aborted) return;
+    const submittedDraftRevision = draftRevision.current;
 
     const optimisticId = "pending-" + (messages.length + 1);
     setMessages((current) => [
@@ -573,10 +579,9 @@ export default function AgentChat({
         createdAt: new Date().toISOString(),
       },
     ]);
-    setDraft("");
-    if (composerRef.current) composerRef.current.style.height = "";
     setStatus("sending");
     setError(null);
+    setMessageError(false);
 
     try {
       const body = await requestAgentChat<{
@@ -586,6 +591,7 @@ export default function AgentChat({
       }>(message, locale, getAccessToken, controller.signal);
       controller.signal.throwIfAborted();
       const assistantMessage = body.assistantMessage as ChatMessage;
+      if (!assistantMessage || typeof assistantMessage.content !== "string" || !body.userMessage) throw new Error("message_response_invalid");
       setMessages((current) => [
         ...current.filter((item) => item.id !== optimisticId),
         body.userMessage,
@@ -598,6 +604,8 @@ export default function AgentChat({
         setLiveWalletBalance(chatBalanceDisplay(body.wallet.balance, body.wallet.accountExists, locale));
       }
       setStatus("ready");
+      const draftUnedited = draftRevision.current === submittedDraftRevision;
+      setDraft(current => draftUnedited && current === content ? "" : current);
       if (assistantMessage.soroswapIntent) {
         await prepareSoroswap(assistantMessage.soroswapIntent);
       } else if (assistantMessage.x402Intent) {
@@ -627,8 +635,8 @@ export default function AgentChat({
     } catch (caught) {
       if (controller.signal.aborted) return;
       setMessages((current) => current.filter((item) => item.id !== optimisticId));
-      setError(caught instanceof Error ? caught.message : "Message failed");
-      setDraft(message);
+      setError(caught instanceof Error && caught.name === "TimeoutError" ? requestUi[locale].timeout : requestUi[locale].send);
+      setMessageError(true);
       setStatus("error");
     }
   }
@@ -1301,7 +1309,7 @@ export default function AgentChat({
           ref={threadRef}
           onScroll={handleThreadScroll}
         >
-          {status === "loading" && (
+          {status === "loading" && readyForQueries && (
             <div className="agent-chat-loading">
               <i />
               <span>{ui.loading}</span>
@@ -1927,7 +1935,7 @@ export default function AgentChat({
             {x402Notice && <p className="defindex-agent-notice">{xrecovery.notices[x402Notice as keyof typeof xrecovery.notices] ?? xrecovery.notices.unavailable}</p>}
           </section>
         )}
-        {error && <p className="agent-chat-error">{error}. {locale === "es" ? "Tu borrador se conservó." : locale === "pt" ? "Seu rascunho foi preservado." : "Your draft was preserved."}</p>}
+        {error && <div className="agent-chat-error" role="alert"><p>{error} {locale === "es" ? "Tu borrador se conservó." : locale === "pt" ? "Seu rascunho foi preservado." : "Your draft was preserved."}</p>{(conversationError || messageError) && <button type="button" onClick={() => { setError(null); setStatus("loading"); setConversationAttempt(value => value + 1); }}>{conversationError ? requestUi[locale].retry : requestUi[locale].history}</button>}</div>}
 
         {!messages.some(message => message.role === "user") && <div className="agent-chat-suggestions" aria-label={locale === "es" ? "Sugerencias" : locale === "pt" ? "Sugestões" : "Suggestions"}>
           {suggestions.map(suggestion => <button key={suggestion.label} type="button" onClick={() => suggestDraft(suggestion.text)}>{suggestion.label}</button>)}
@@ -1939,6 +1947,7 @@ export default function AgentChat({
             ref={composerRef}
             value={draft}
             onChange={(event) => {
+              draftRevision.current++;
               setDraft(event.target.value);
               event.currentTarget.style.height = "auto";
               event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 112)}px`;
@@ -1953,7 +1962,7 @@ export default function AgentChat({
             rows={1}
             maxLength={2000}
           />
-          <button disabled={!draft.trim() || status === "sending" || status === "loading" || !readyForQueries}>{ui.send}</button>
+          <button disabled={!draft.trim() || status === "sending" || status === "loading" || !readyForQueries || conversationError}>{ui.send}</button>
         </form>
         <small className="agent-chat-boundary">
           {ui.boundary}
