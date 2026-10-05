@@ -9,12 +9,12 @@ import {
   INTERNAL_TESTNET_USDC_DISTRIBUTOR_ADDRESS,
 } from "../app/x402/testnet-faucet";
 
-test("health distinguishes sandbox settlement from live Testnet x402", async () => {
+test("health distinguishes disabled public commerce from live Testnet x402", async () => {
   const response = await health();
   const body = await response.json();
   assert.equal(body.status, "ok");
   assert.equal(body.environment, "stellar-testnet");
-  assert.equal(body.payments.commerceSandbox, "simulated");
+  assert.equal(body.payments.commerceSandbox, "disabled");
   assert.equal(body.payments.x402StellarTestnet, "enabled");
   assert.equal(body.payments.mainnet, "disabled");
   assert.equal(body.custody.userFunds, false);
@@ -29,7 +29,9 @@ test("MCP discovery publishes the same payment boundary", async () => {
     "agent:context",
     "agent:conversation",
   ]);
-  assert.equal(body.security.payments.commerceSandbox, "simulated");
+  assert.equal(body.security.payments.commerceSandbox, "disabled");
+  assert.deepEqual(body.surfaces.sandbox.tools, ["search_offers", "get_offer"]);
+  assert.equal(body.surfaces.sandbox.executionEnabled, false);
   assert.equal(body.security.payments.x402StellarTestnet, "explicit-user-approval");
   assert.equal(body.security.payments.mainnet, "disabled");
 });

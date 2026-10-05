@@ -6,14 +6,16 @@ export function GET(request: Request) {
   return NextResponse.json({
     name: "agent-assistant MCP gateway",
     description:
-      "MCP gateway for a public sandbox, personal Testnet discovery and planning, read-only Mainnet market data, and service-provider catalogs.",
+      "MCP gateway for a public read-only catalog, personal Testnet discovery and planning, read-only Mainnet market data, and service-provider catalogs.",
     transport: "streamable-http",
     surfaces: {
       sandbox: {
         endpoint: origin + "/api/mcp",
-        authentication: "public sandbox",
+        authentication: "public read-only catalog",
         purpose:
-          "Offer discovery, intent preparation, policy and duplicate-resistant demo receipts.",
+          "Public offer discovery only. Legacy intent operations and private receipt lookup are disabled.",
+        tools: ["search_offers", "get_offer"],
+        executionEnabled: false,
       },
       personalAgent: {
         endpoint: origin + "/api/mcp/agent",
@@ -49,7 +51,7 @@ export function GET(request: Request) {
     security: {
       custody: false,
       payments: {
-        commerceSandbox: "simulated",
+        commerceSandbox: "disabled",
         x402StellarTestnet: "explicit-user-approval",
         mainnet: "disabled",
       },

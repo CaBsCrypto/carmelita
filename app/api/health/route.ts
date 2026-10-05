@@ -66,7 +66,7 @@ export async function GET() {
       testnetDistributor: true,
     },
     payments: {
-      commerceSandbox: "simulated",
+      commerceSandbox: "disabled",
       x402StellarTestnet: "enabled",
       mainnet: "disabled",
     },

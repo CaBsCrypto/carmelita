@@ -1,11 +1,10 @@
 import Link from "next/link";
 import BrandLockup from "../brand-lockup";
 import ActionConsole from "./action-console";
-import RecordingGuide from "./recording-guide";
 
 export const metadata = {
-  title: "Live action demo | Carmelita",
-  description: "See the live Privy, Stellar Testnet and x402 payment proof.",
+  title: "Service catalog | Carmelita",
+  description: "Explore public service offers and their current availability.",
 };
 
 export default function DemoPage() {
@@ -13,29 +12,28 @@ export default function DemoPage() {
     <main className="demo-page">
       <nav className="demo-nav shell">
         <Link className="brand" href="/"><BrandLockup /></Link>
-        <div><span>LIVE TESTNET</span><Link href="/developers">API docs</Link></div>
+        <div><span>PUBLIC CATALOG</span><Link href="/developers">API docs</Link></div>
       </nav>
 
       <header className="demo-intro shell">
         <div>
-          <p className="eyebrow">90-SECOND PRODUCT PROOF</p>
-          <h1>One agent action. <em>Zero duplicate charges.</em></h1>
-          <p>A Privy-owned wallet paid the official Stellar x402 resource once. Replaying the same payment returns the original receipt and leaves the USDC balance unchanged.</p>
+          <p className="eyebrow">EXPLORE SERVICES</p>
+          <h1>Discover services. <em>Check their availability.</em></h1>
+          <p>Explore the public catalog before connecting your account. Listing an offer does not confirm that its provider is ready to deliver it.</p>
         </div>
         <aside>
-          <strong>What is real today</strong>
-          <span>Privy wallet authorization</span>
-          <span>0.01 USDC settled on Stellar Testnet</span>
-          <span>Durable receipt and replay protection in Neon</span>
-          <small>The action console below remains a separate no-funds architecture sandbox.</small>
+          <strong>Available here</strong>
+          <span>Public offers and service descriptions</span>
+          <span>Listed network and amount</span>
+          <span>Demo and provider availability labels</span>
+          <small>Public demo operations and receipt lookup are disabled.</small>
         </aside>
       </header>
 
-      <RecordingGuide />
       <div id="safety-proof"><ActionConsole /></div>
 
       <section className="demo-next shell">
-        <div><p className="eyebrow">LIVE RECEIPT</p><h2>Open the agent, restore the latest x402 payment and verify a zero-debit replay.</h2></div>
+        <div><p className="eyebrow">YOUR ACCOUNT</p><h2>Open Carmelita to connect your account and discover your available capabilities.</h2></div>
         <Link href="/agent">Open the agent</Link>
       </section>
     </main>
