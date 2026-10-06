@@ -1,5 +1,20 @@
 # Matriz de evidencia y aceptación
 
+## Preparación para prueba externa · 6 de octubre de 2026
+
+La jornada parte de PR46 `b151b8a`, con CI aprobado reportado por el coordinador. Esto es una referencia de partida, **no el SHA final de esta implementación ni aceptación humana**. Registrar las corridas y despliegues nuevos en la ficha final sin sustituir las observaciones históricas inferiores.
+
+| Caso de la próxima jornada | Evidencia exigida | Estado |
+| --- | --- | --- |
+| Endpoint de guía y pop-up | Producción canónica y alias QA explícito, copiado sin credenciales; origen/SHA confirmado | Pendiente de verificación final |
+| Registro desde cero y correo | Dos cuentas explicadas; correo verificado en identidad existente; estados reales de wallets | Pendiente humano |
+| Segunda persona sin acompañamiento | [Checklist externo](./external-tester-checklist.md), consentimiento y consultas propias A/B | Pendiente humano |
+| Celular y revocación | Mismo conector en teléfono real; consulta privada rechazada tras revocar | Pendiente humano |
+| Teclado, ancho pequeño y zoom 200 % | Medición y evidencia del commit desplegado final | Pendiente de verificación final |
+| Compra nativa / historial privado Bazaar | Contrato, compatibilidad y firma dentro del cliente aceptados por separado | Bloqueados; fuera de la prueba de lectura |
+
+No se acredita un tester confirmado, nueva publicación ni prueba móvil por preparar estos documentos.
+
 Corte documental: 5 de octubre de 2026. Base local al preparar este expediente: `8c5b11f73f15f5d5add3f5f23ddd01fabf2db6c0`. Este SHA identifica la candidata local, no la producción ni todas las corridas previas. El coordinador debe registrar la versión final comprobada y actualizar los pendientes antes de publicar.
 
 **Estado general:** pruebas enfocadas locales aprobadas; consultas públicas de Bazaar hospedado comprobadas; aceptación final de despliegue, segundo usuario y celular pendiente. Compra nativa, propietario Bazaar vinculado y nuevo Guionista hospedado: bloqueados.

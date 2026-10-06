@@ -1,5 +1,15 @@
 # Primeros usuarios de Carmelita
 
+## Próxima jornada: guía actual de prueba
+
+Preparación documental del 6 de octubre de 2026: usa el [checklist breve para la segunda persona](./external-tester-checklist.md). La candidata de partida del plan es `b151b8a`; el coordinador debe registrar el commit y despliegue realmente probados después de los cambios. **La aceptación por segunda persona, celular real y revocación sigue pendiente.**
+
+Necesitas dos cuentas: Carmelita para tu identidad y wallets; ChatGPT para instalar la conexión manual. La guía acompaña registro o ingreso en ambas. La posibilidad de agregar un MCP depende de los permisos de ChatGPT y su espacio; crear una cuenta no garantiza esa opción. OAuth necesita correo verificado en la misma identidad Carmelita, conservando sus wallets.
+
+Para esta jornada, el criterio es que la UI muestre el endpoint del entorno elegido: producción canónica o alias QA fijado por configuración. El coordinador debe comprobarlo antes de entregar la prueba. No atribuyas una consulta a QA sólo porque la guía se abrió en una Preview. Copiar el endpoint tampoco acredita conexión autenticada.
+
+Las secciones siguientes conservan el corte histórico del 5 de octubre y sus límites. Sus observaciones no se transfieren automáticamente a la nueva candidata.
+
 Versión de trabajo: 5 de octubre de 2026. Base local al preparar esta guía: `8c5b11f73f15f5d5add3f5f23ddd01fabf2db6c0`. El coordinador debe completar el SHA y el despliegue realmente probado antes de aprobar un piloto; esta guía no acredita publicación.
 
 Carmelita permite consultar tus billeteras registradas, descubrir el catálogo público de Bazaar y revisar tu actividad propia. El historial de conversaciones tiene un permiso adicional. La compra de servicios desde ChatGPT y el historial privado de Bazaar siguen bloqueados.
@@ -16,7 +26,7 @@ Carmelita permite consultar tus billeteras registradas, descubrir el catálogo p
 | Catálogo público — ruta nueva; promoción pendiente | `https://carmelita.browns.studio/services` |
 | Recurso MCP personal | `https://carmelita.browns.studio/api/mcp/agent` |
 
-Estos destinos no acreditan que producción ejecute el SHA candidato ni que ya disponga de las rutas nuevas. La Preview de PR46 es un entorno QA separado y protegido. El coordinador facilita su URL y acceso a los testers; no se publica un enlace de bypass. Para probar una Preview hay que seleccionar su recurso MCP explícitamente. La guía de la candidata muestra la URL MCP de producción y no cambia por visitar una Preview.
+Estos destinos no acreditan que producción ejecute el SHA candidato ni que ya disponga de las rutas nuevas. La Preview de PR46 es un entorno QA separado y protegido. El coordinador facilita su URL y acceso a los testers; no se publica un enlace de bypass. Para probar una Preview hay que seleccionar su recurso MCP explícitamente. En el corte histórico, la guía mostraba la URL MCP de producción y no cambiaba por visitar una Preview; la próxima jornada exige verificar la URL por entorno antes de aceptar la nueva versión.
 
 Si la protección de Preview impide que ChatGPT descubra el MCP, registra ese bloqueo. No desactives la protección ni atribuyas una consulta a producción como prueba de la candidata.
 

@@ -1,11 +1,14 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type { Locale } from "../language-toggle";
-import { MCP_URL, OPENAI_GUIDE } from "../connect-chatgpt/connection-config";
+import { OPENAI_GUIDE } from "../connect-chatgpt/connection-config";
 import AgentPanel from "./agent-panel";
 import styles from "./chatgpt-connection.module.css";
+import ConnectionAccount from "../connect-chatgpt/connection-account";
+import { useConnectionEnvironment } from "../connect-chatgpt/connection-environment";
 
 const copy = {
   es: {
@@ -67,55 +70,50 @@ const copy = {
   },
 };
 
-export default function ChatGPTConnection({ locale, authenticated = false, signInAvailable = true }: { locale: Locale; authenticated?: boolean; signInAvailable?: boolean }) {
+const extra = {
+  es: { account: "Prepara tu cuenta Carmelita", chatgpt: "Crea tu cuenta o ingresa a ChatGPT", create: "Crear cuenta o ingresar a ChatGPT", accountHelp: "Son dos cuentas distintas. Crear una cuenta ChatGPT no garantiza permiso para añadir un MCP. Conserva esta guía abierta mientras completas el registro.", missing: "No encuentro cómo agregar Carmelita", help: "En ChatGPT en la web, busca Complementos → + → Añadir servidor MCP personalizado. Si la opción no aparece, revisa las políticas de tu espacio con su administrador y la ayuda oficial. Carmelita no puede verificar ni cambiar esos permisos. Puedes continuar usando su web.", qa: "Prueba QA · datos separados de producción", production: "Producción · tu cuenta Carmelita", unavailable: "La URL de este entorno no está configurada. No copies una dirección de otro entorno.", test: "La conexión se verifica al recibir tus datos en ChatGPT. Copiar la URL o registrar OAuth no completa esta prueba.", wallets: "Después, prueba: ¿Qué servicios publica Bazaar y cuáles están disponibles?", limit: "El catálogo puede ser parcial. Las compras y el historial privado de Bazaar siguen pendientes; publicar una suite o skill no la hace ejecutable." },
+  en: { account: "Prepare your Carmelita account", chatgpt: "Create an account or sign in to ChatGPT", create: "Create an account or sign in to ChatGPT", accountHelp: "These are two separate accounts. Creating a ChatGPT account does not guarantee permission to add an MCP. Keep this guide open while registering.", missing: "I cannot find how to add Carmelita", help: "In ChatGPT on the web, look for Plugins → + → Add custom MCP server. If it is missing, check workspace policies with your administrator and official help. Carmelita cannot verify or change those permissions. You can continue using its website.", qa: "QA test · data separate from production", production: "Production · your Carmelita account", unavailable: "This environment's URL is not configured. Do not copy another environment's address.", test: "The connection is verified when ChatGPT returns your own data. Copying the URL or recording OAuth does not complete this test.", wallets: "Then try: What services does Bazaar publish, and which are available?", limit: "The catalog may be partial. Purchases and Bazaar private history remain pending; publishing a suite or skill does not make it executable." },
+  pt: { account: "Prepare sua conta Carmelita", chatgpt: "Crie sua conta ou entre no ChatGPT", create: "Criar conta ou entrar no ChatGPT", accountHelp: "São duas contas distintas. Criar uma conta ChatGPT não garante permissão para adicionar um MCP. Mantenha este guia aberto durante o cadastro.", missing: "Não encontro como adicionar Carmelita", help: "No ChatGPT na web, procure Plugins → + → Add custom MCP server. Se não aparecer, confira as políticas do espaço com o administrador e a ajuda oficial. A Carmelita não pode verificar ou mudar essas permissões. Você pode continuar usando o site.", qa: "Teste QA · dados separados da produção", production: "Produção · sua conta Carmelita", unavailable: "A URL deste ambiente não está configurada. Não copie o endereço de outro ambiente.", test: "A conexão é verificada quando o ChatGPT retorna seus próprios dados. Copiar a URL ou registrar OAuth não conclui esse teste.", wallets: "Depois, teste: Quais serviços o Bazaar publica e quais estão disponíveis?", limit: "O catálogo pode ser parcial. Compras e histórico privado do Bazaar seguem pendentes; publicar uma suite ou skill não a torna executável." },
+};
+
+export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: { locale: Locale; onExternalDialog?: () => void; fullPage?: boolean }) {
+  const Heading = fullPage ? "h2" : "h3";
   const t = copy[locale];
+  const e = extra[locale];
+  const { mcpUrl, environment } = useConnectionEnvironment();
   const fieldId = useId();
   const field = useRef<HTMLTextAreaElement>(null);
-  const [open, setOpen] = useState(false);
   const [copyState, setCopyState] = useState<"copied" | "failed" | null>(null);
-
   async function copyUrl() {
-    try {
-      await navigator.clipboard.writeText(MCP_URL);
-      setCopyState("copied");
-    } catch {
-      field.current?.focus();
-      field.current?.select();
-      setCopyState("failed");
-    }
+    if (!mcpUrl) return;
+    try { await navigator.clipboard.writeText(mcpUrl); setCopyState("copied"); }
+    catch { field.current?.focus(); field.current?.select(); setCopyState("failed"); }
   }
+  return <div className={styles.guide}>
+    <p className={styles.intro}>{t.intro}</p>
+    <p className={styles.permissions}>{environment === "unavailable" ? e.unavailable : e[environment]}</p>
+    <div className={styles.urlBox}>
+      <label htmlFor={fieldId}>{t.urlLabel}</label>
+      <textarea id={fieldId} ref={field} readOnly rows={2} value={mcpUrl ?? ""} spellCheck={false} />
+      <button className={styles.copyButton} disabled={!mcpUrl} type="button" onClick={() => void copyUrl()}>{copyState === "copied" ? t.copied : t.copy}</button>
+      <span className={styles.copyStatus} role="status">{copyState === "copied" ? t.copied : copyState === "failed" ? t.copyFailed : ""}</span>
+    </div>
+    <ol className={styles.steps}>
+      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{e.account}</Heading><ConnectionAccount locale={locale} onExternalDialog={onExternalDialog} /></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{e.chatgpt}</Heading><p>{e.accountHelp}</p><a href="https://chatgpt.com/" target="_blank" rel="noreferrer">{e.create}</a></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">3</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a><details><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">4</span><Heading>{t.consentTitle}</Heading><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
+    </ol>
+    <p className={styles.permissions}>{t.permissions}</p><p className={styles.note}>{e.limit}</p>
+    <footer className={styles.footer}><Link href={fullPage ? "/services" : "/connect-chatgpt"}>{fullPage ? ({ es: "Explorar servicios", en: "Explore services", pt: "Explorar serviços" }[locale]) : t.fullGuide}</Link><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></footer>
+  </div>;
+}
 
+export default function ChatGPTConnection({ locale }: { locale: Locale; authenticated?: boolean; signInAvailable?: boolean }) {
+  const t = copy[locale];
+  const [open, setOpen] = useState(false);
   return <>
-    <button
-      type="button"
-      className={styles.trigger}
-      aria-haspopup="dialog"
-      onClick={() => { setCopyState(null); setOpen(true); }}
-    >
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 4h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-5l-5 3v-3a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" /><path d="M8 9h8M8 13h5" /></svg>
-      {t.button}
-    </button>
-    {open && <AgentPanel title={t.title} closeLabel={t.close} onClose={() => setOpen(false)}>
-      <div className={styles.guide}>
-        <p className={styles.intro}>{t.intro}</p>
-        <ol className={styles.steps}>
-          <li>
-            <span className={styles.stepNumber} aria-hidden="true">1</span>
-            <h3>{t.urlTitle}</h3><p>{t.urlHelp}</p>
-            <div className={styles.urlBox}>
-              <label htmlFor={fieldId}>{t.urlLabel}</label>
-              <textarea id={fieldId} ref={field} readOnly rows={2} value={MCP_URL} spellCheck={false} />
-              <button className={styles.copyButton} type="button" onClick={() => void copyUrl()}>{copyState === "copied" ? t.copied : t.copy}</button>
-              <span className={styles.copyStatus} role="status">{copyState === "copied" ? t.copied : copyState === "failed" ? t.copyFailed : ""}</span>
-            </div>
-          </li>
-          <li><span className={styles.stepNumber} aria-hidden="true">2</span><h3>{t.accountTitle}</h3><p>{authenticated ? t.signedIn : signInAvailable ? t.account : t.signInUnavailable}</p></li>
-          <li><span className={styles.stepNumber} aria-hidden="true">3</span><h3>{t.pluginTitle}</h3><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a></li>
-          <li><span className={styles.stepNumber} aria-hidden="true">4</span><h3>{t.consentTitle}</h3><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote></li>
-        </ol>
-        <p className={styles.permissions}>{t.permissions}</p>
-        <footer className={styles.footer}><Link href="/connect-chatgpt">{t.fullGuide}</Link><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></footer>
-      </div>
-    </AgentPanel>}
+    <button type="button" className={styles.trigger} aria-haspopup="dialog" onClick={() => setOpen(true)}>{t.button}</button>
+    {open && <AgentPanel title={t.title} closeLabel={t.close} onClose={() => setOpen(false)}><ConnectionSteps locale={locale} onExternalDialog={() => flushSync(() => setOpen(false))} /></AgentPanel>}
   </>;
 }

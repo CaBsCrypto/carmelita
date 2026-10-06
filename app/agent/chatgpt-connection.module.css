@@ -4,11 +4,16 @@
 .guide{max-width:640px;margin:auto;color:#153f32}
 .guide .intro{font-size:16px;line-height:1.6;margin:0 0 24px;color:#52675f;max-width:58ch}
 .steps{list-style:none;margin:0;padding:0}
+.urlBox+.steps{margin-top:26px}
+.guide button{font:inherit;cursor:pointer;min-height:44px;padding:8px 14px;border:1px solid #b6cbbd;border-radius:8px;background:#fff;color:#153f32;margin-right:8px;max-width:100%;white-space:normal}
+.guide button:disabled{cursor:default;opacity:.65}
+.guide a,.guide p,.guide summary{overflow-wrap:anywhere}
+.guide summary{cursor:pointer;min-height:44px;padding-top:12px;line-height:1.5}
 .steps>li{position:relative;padding:0 0 22px 45px}
 .steps>li+li{border-top:1px solid #d6dcd5;padding-top:22px}
 .stepNumber{position:absolute;left:0;top:0;width:29px;height:29px;border-radius:50%;background:#e5eee8;color:#153f32;display:grid;place-items:center;font-weight:700;font-size:14px}
 .steps>li+li .stepNumber{top:22px}
-.steps>li h3{margin:0 0 8px;font-size:18px;line-height:1.5;color:#153f32}
+.steps>li :is(h2,h3){margin:0 0 8px;font-size:18px;line-height:1.5;color:#153f32}
 .steps>li p{margin:8px 0;font-size:14px;line-height:1.6}
 .urlBox{display:grid;gap:10px;background:#f1f6f2;border:1px solid #b6cbbd;border-radius:12px;padding:16px;margin-top:14px;min-width:0}
 .urlBox label{font-size:13px;font-weight:650;color:#153f32}
