@@ -6,6 +6,7 @@ import AgentMemoryVault from "./agent-memory-vault";
 import RegistryWalletPanel from "./registry-wallet-panel";
 import WorkspaceAvailability from "./workspace-availability";
 import AgentPanel from "./agent-panel";
+import ChatGPTConnection from "./chatgpt-connection";
 import { workspaceCopy } from "./workspace-copy";
 import { workspaceCommands } from "./workspace-queries";
 import { LanguageControl } from "../language-toggle";
@@ -174,7 +175,7 @@ function PrivySetupRequired({ locale }: { locale: Locale }) {
     pt: "O acesso está temporariamente indisponível. Consulte o guia e tente novamente mais tarde.",
   }[locale];
   return <section className="agent-visitor shell">
-    <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /></header>
+    <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} signInAvailable={false} /></header>
     <div className="visitor-chat"><h1>{t.welcome}</h1><p role="status">{text}</p><Link href="/guide">{t.guide}</Link></div>
   </section>;
 }
@@ -336,7 +337,7 @@ function PrivyWorkspace({
 
   if (!authenticated) {
     return <section className="agent-visitor shell">
-      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /></header>
+      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} /></header>
       <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
       {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
     </section>;
@@ -349,6 +350,7 @@ function PrivyWorkspace({
       <header className="workspace-header">
         <Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span>
         <nav aria-label={w.functions}>
+          <ChatGPTConnection locale={locale} authenticated />
           <button onClick={() => setPanel("functions")}>{w.functions}</button>
           <button onClick={() => setPanel("wallets")}>{w.wallets}</button>
           <button onClick={() => setPanel("account")}>{w.account}</button>

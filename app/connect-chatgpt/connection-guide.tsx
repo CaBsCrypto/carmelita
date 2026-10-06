@@ -4,10 +4,8 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import BrandLockup from "../brand-lockup";
 import LanguageToggle, { useLocale } from "../language-toggle";
+import { MCP_URL, OPENAI_GUIDE } from "./connection-config";
 import styles from "./connection.module.css";
-
-const MCP_URL = "https://carmelita.browns.studio/api/mcp/agent";
-const OPENAI_GUIDE = "https://developers.openai.com/plugins/deploy/connect-chatgpt";
 const copy = {
   es: {
     back: "Inicio", services: "Explorar servicios", title: "Conecta Carmelita con ChatGPT",

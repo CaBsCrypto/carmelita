@@ -27,7 +27,7 @@
 .agent-chat-first .agent-chat-boundary{font-size:11px;line-height:1.4;padding:0 14px 8px}
 .agent-chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px;flex-shrink:0}
 .agent-chat-suggestions button{min-height:44px;padding:8px 12px;border:1px solid #bdc8bf;border-radius:10px;background:#f8faf8;color:#153f32;font:inherit;font-size:13px;cursor:pointer}
-.agent-panel{width:min(760px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #c7d1c8;border-radius:18px;background:#fff;color:#20211e;box-shadow:0 20px 70px #122e2440;overflow:auto;overscroll-behavior:contain}
+.agent-panel{width:min(760px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:0;border:1px solid #c7d1c8;border-radius:18px;background:#fff;color:#20211e;box-shadow:0 20px 70px #122e2440;overflow:auto;overscroll-behavior:contain}
 .agent-panel::backdrop{background:#122e2473}
 .agent-panel-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;border-bottom:1px solid #d6dcd5;background:#fff}
 .agent-panel-header h2{margin:0;font-size:22px}
