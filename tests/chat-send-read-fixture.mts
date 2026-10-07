@@ -190,10 +190,10 @@ expandedWalletFixture = true;
 try {
   const readsBefore = reads.length;
   const ownersBefore = registryOwners.length;
-  for (const [locale, questions, title, header, pending, registryNote] of [
-    ["es", ["Mis billeteras", "¿Cuáles son mis billeteras?", "¿Qué billeteras tengo?"], "Tus billeteras registradas", "Estado de registro", "pendiente de registro", "registro interno de Carmelita"],
-    ["en", ["My wallets", "What wallets do I have?", "Which are my wallets?"], "Your registered wallets", "Registration state", "pending registration", "Carmelita's internal registry"],
-    ["pt", ["Minhas carteiras", "Quais são minhas carteiras?", "Que carteiras eu tenho?"], "Suas carteiras registradas", "Estado de registro", "registro pendente", "registro interno da Carmelita"],
+  for (const [locale, questions, title, header, registration, registryNote] of [
+    ["es", ["Mis billeteras", "¿Cuáles son mis billeteras?", "¿Qué billeteras tengo?"], "Tus billeteras registradas", "Estado de registro", "registrada", "registro interno de Carmelita"],
+    ["en", ["My wallets", "What wallets do I have?", "Which are my wallets?"], "Your registered wallets", "Registration state", "registered", "Carmelita's internal registry"],
+    ["pt", ["Minhas carteiras", "Quais são minhas carteiras?", "Que carteiras eu tenho?"], "Suas carteiras registradas", "Estado de registro", "registrada", "registro interno da Carmelita"],
   ] as const) {
     for (const question of questions) {
     for (const selectedLocale of [locale, undefined]) {
@@ -201,7 +201,8 @@ try {
       const content = response.assistantMessage.content;
       assert.ok(content.includes(title));
       assert.ok(content.includes(header));
-      assert.ok(content.includes(pending));
+      assert.equal(content.split("\n").filter(line => line.includes(`| ${registration} |`)).length, 5);
+      assert.doesNotMatch(content, /pendiente de registro|pending registration|registro pendente/);
       assert.ok(content.includes(registryNote));
       assert.equal(content.split("\n").filter(line => line.startsWith("| ")).length, 7, "Header, separator and all five registrations must be rendered");
       for (const row of expandedRows) {

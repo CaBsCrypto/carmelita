@@ -49,7 +49,9 @@ test("expanded catalog produces five rows with one EVM address and separate link
       assert.ok(table?.kind === "table"); assert.equal(table.rows.length, 5);
       const evmRows = table.rows.filter(row => row[1] === evm);
       assert.equal(evmRows.length, 3); assert.equal(new Set(evmRows.map(row => row[3])).size, 3);
-      assert.match(table.rows[0][2], /pendiente|pending|pendente/);
+      const registered = language === "en" ? "registered" : "registrada";
+      assert.ok(table.rows.every(row => row[2] === registered));
+      assert.doesNotMatch(reply.content, /pendiente de registro|pending registration|registro pendente/);
     }
   } finally {
     for (const [key, value] of Object.entries(before)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
