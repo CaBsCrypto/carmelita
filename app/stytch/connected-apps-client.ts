@@ -188,7 +188,8 @@ export class StytchConnectedAppsClient {
       client: {
         clientId: String(client.client_id ?? request.clientId),
         clientName: String(client.client_name ?? client.name ?? "Connected AI assistant"),
-        clientDescription: typeof client.client_description === "string" ? client.client_description : undefined,
+        clientDescription: typeof client.client_description === "string" && client.client_description.trim()
+          ? client.client_description.trim() : undefined,
       },
       requestedScopes,
       consentRequired: body.consent_required !== false,
