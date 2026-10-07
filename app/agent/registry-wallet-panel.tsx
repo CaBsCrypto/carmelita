@@ -33,7 +33,7 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
     <div className="registry-network-list">
       {state.rows.map(row => <article key={row.network}>
         <h3>{row.name}</h3>
-        <dl><div><dt>{t.status}</dt><dd>{row.status === "active" ? t.registered : row.status === "pending" ? t.registrationPending : row.status ?? t.pending}</dd></div>
+        <dl><div><dt>{t.status}</dt><dd>{row.registrationState === "registered" ? t.registered : row.registrationState === null ? t.pending : t.unavailable}</dd></div>
           <div><dt>{t.address}</dt><dd><code>{row.address ?? "—"}</code></dd></div></dl>
         {row.explorerUrl && <a href={row.explorerUrl} target="_blank" rel="noreferrer">{t.explorer}</a>}
       </article>)}

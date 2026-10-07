@@ -12,12 +12,12 @@ export function requestsRegisteredWallets(message: string) {
     && !/\b(send|transfer|swap|bridge|deposit|envia|enviar|envie|transfiere|transferir|transfira|depositar|comprar|pagar|pague|pay|fund|activate|activa|activar|ative|ativar|prepare|prepara)\b/.test(text);
 }
 
-type Row = { id: string; userId: string; address: string; network: string; status: string };
+type Row = { id: string; userId: string; address: string; network: string; status: string; registrationState?: string };
 export function registeredWalletsReply(userId: string, rows: Row[], language: AgentLanguage): AgentChatReply {
   const copy = {
-    es: { title: "Tus billeteras registradas", registered: "registrada", pending: "pendiente de registro", empty: "No hay billeteras registradas para esta cuenta. Completa el ingreso normal en Carmelita.", note: "El estado corresponde al registro interno de Carmelita; no acredita actividad en cadena, activación de la cuenta ni saldo. Las redes EVM comparten dirección y tienen registros independientes. Esta consulta no obtiene saldos ni prepara operaciones." },
-    en: { title: "Your registered wallets", registered: "registered", pending: "pending registration", empty: "No wallets are registered for this account. Complete normal onboarding in Carmelita.", note: "The state refers to Carmelita's internal registry; it does not establish on-chain activity, account activation or balance. EVM networks share an address and have separate registrations. This query does not fetch balances or prepare operations." },
-    pt: { title: "Suas carteiras registradas", registered: "registrada", pending: "registro pendente", empty: "Não há carteiras registradas para esta conta. Complete o acesso normal na Carmelita.", note: "O estado corresponde ao registro interno da Carmelita; não comprova atividade on-chain, ativação da conta nem saldo. As redes EVM compartilham endereço e têm registros independentes. Esta consulta não obtém saldos nem prepara operações." },
+    es: { title: "Tus billeteras registradas", registered: "registrada", empty: "No hay billeteras registradas para esta cuenta. Completa el ingreso normal en Carmelita.", note: "El estado corresponde al registro interno de Carmelita; no acredita actividad en cadena, activación de la cuenta ni saldo. Las redes EVM comparten dirección y tienen registros independientes. Esta consulta no obtiene saldos ni prepara operaciones." },
+    en: { title: "Your registered wallets", registered: "registered", empty: "No wallets are registered for this account. Complete normal onboarding in Carmelita.", note: "The state refers to Carmelita's internal registry; it does not establish on-chain activity, account activation or balance. EVM networks share an address and have separate registrations. This query does not fetch balances or prepare operations." },
+    pt: { title: "Suas carteiras registradas", registered: "registrada", empty: "Não há carteiras registradas para esta conta. Complete o acesso normal na Carmelita.", note: "O estado corresponde ao registro interno da Carmelita; não comprova atividade on-chain, ativação da conta nem saldo. As redes EVM compartilham endereço e têm registros independentes. Esta consulta não obtém saldos nem prepara operações." },
   }[language];
   const own = rows.filter(row => row.userId === userId && isWalletNetworkEnabled(row.network));
   const headers = { es: "Red | Dirección | Estado de registro | Explorador", en: "Network | Address | Registration state | Explorer", pt: "Rede | Endereço | Estado de registro | Explorador" }[language];
@@ -28,7 +28,11 @@ export function registeredWalletsReply(userId: string, rows: Row[], language: Ag
     `**${copy.title}**`,
     [`| ${headers} |`, "| --- | --- | --- | --- |", ...own.map(row => {
       const url = walletExplorerUrl(row.network, row.address);
-      const state = row.status === "pending" ? copy.pending : ["active", "registered"].includes(row.status) ? copy.registered : unavailable;
+      // Prefer the server projection; legacy persisted pending rows are already registered.
+      const registered = row.registrationState === undefined
+        ? ["active", "pending", "registered"].includes(row.status)
+        : row.registrationState === "registered";
+      const state = registered ? copy.registered : unavailable;
       return `| ${getWalletNetwork(row.network).name} | ${safeCell(row.address)} | ${state} | ${url ? `[${linkLabel}](${url})` : "—"} |`;
     })].join("\n"), copy.note,
   ].join("\n\n") : copy.empty, actions: [] };

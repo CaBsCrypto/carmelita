@@ -25,17 +25,45 @@ const publicFiveWallets = [
 test("registered pending wallets remain explicit and do not request onboarding", () => {
   const pending = { ...publicFiveWallets[0], status: "pending" };
   const context = buildMcpWalletContext([pending]);
-  assert.equal(context.walletsByNetwork.stellarTestnet, null);
+  assert.equal(context.walletsByNetwork.stellarTestnet?.address, pending.address);
+  assert.equal(context.walletsByNetwork.stellarTestnet?.status, "pending");
+  assert.equal(context.walletsByNetwork.stellarTestnet?.registrationState, "registered");
   assert.equal(context.walletRegistration.registered, true);
   assert.equal(context.walletRegistration.onboardingRequired, false);
   assert.deepEqual(context.walletRegistration.pendingActivation, [{ ...pending,
-    registrationState: "pending_registration", registrationStatusScope: "internal_registry",
+    registrationState: "registered", registrationStatusScope: "internal_registry",
     explorerUrl: `https://stellar.expert/explorer/testnet/account/${pending.address}` }]);
-  assert.deepEqual(context.walletRegistration.pendingRegistration, context.walletRegistration.pendingActivation);
+  assert.deepEqual(context.walletRegistration.pendingRegistration, []);
+  assert.equal(context.walletRegistration.pendingActivationScope, "legacy_registry_status_not_live");
   assert.deepEqual(context.walletRegistration.statusSemantics, {
-    scope: "internal_registry", active: "registered", pending: "pending_registration", onChainActivity: "not_inferred", balance: "not_inferred",
+    scope: "internal_registry", active: "registered", pending: "registered", onChainActivation: "not_inferred", onChainActivity: "not_inferred", balance: "not_inferred",
   });
   assert.ok(!context.walletRegistration.unregisteredNetworks.includes("stellar:testnet"));
+});
+
+test("five persisted networks including pending Stellar are fully registered without inferring activation", () => {
+  withEvmExpansion(true, () => {
+    const wallets = publicFiveWallets.map(wallet => wallet.network === "stellar:testnet" ? { ...wallet, status: "pending" } : wallet);
+    const before = structuredClone(wallets);
+    const context = buildMcpWalletContext(wallets);
+    assert.deepEqual(context.walletReadiness, { complete: true, missingNetworks: [], suppressedStaleWallets: 0 });
+    assert.deepEqual(context.walletRegistration.unregisteredNetworks, []);
+    assert.deepEqual(context.walletRegistration.pendingRegistration, []);
+    assert.equal(context.walletsByNetwork.stellarTestnet?.registrationState, "registered");
+    assert.equal(context.walletsByNetwork.stellarTestnet?.status, "pending");
+    assert.equal(context.walletRegistration.statusSemantics.onChainActivation, "not_inferred");
+    assert.ok(context.wallets.every(wallet => !Object.hasOwn(wallet, "onChainAccountExists") && !Object.hasOwn(wallet, "balance")));
+    assert.deepEqual(wallets, before);
+  });
+});
+
+test("an unknown stored status does not claim a valid registration or complete coverage", () => {
+  const context = buildMcpWalletContext([{ ...publicFiveWallets[0], status: "unknown" }]);
+  assert.equal(context.wallets[0].registrationState, "unknown");
+  assert.equal(context.walletsByNetwork.stellarTestnet, null);
+  assert.equal(context.walletRegistration.registered, false);
+  assert.ok(context.walletReadiness.missingNetworks.includes("stellar:testnet"));
+  assert.ok(context.walletRegistration.unregisteredNetworks.includes("stellar:testnet"));
 });
 
 test("an account without registered wallets gets onboarding guidance without invented addresses", () => {

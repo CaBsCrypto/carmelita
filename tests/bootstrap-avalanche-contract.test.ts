@@ -44,7 +44,7 @@ test("MCP projects public persisted metadata without leaking provider fields or 
   const context = buildMcpWalletContext(persisted);
   const expected = [
     { address: fujiAddress, chainType: "ethereum", network: "avalanche:fuji", status: "pending",
-      registrationState: "pending_registration", registrationStatusScope: "internal_registry",
+      registrationState: "registered", registrationStatusScope: "internal_registry",
       explorerUrl: `https://explorer-test.avax.network/c-chain/address/${fujiAddress}` },
     { address: stellarAddress, chainType: "stellar", network: "stellar:testnet", status: "active",
       registrationState: "registered", registrationStatusScope: "internal_registry",
@@ -52,11 +52,11 @@ test("MCP projects public persisted metadata without leaking provider fields or 
   ];
   assert.deepEqual(context.wallets, expected);
   assert.deepEqual(context.walletsByNetwork.stellarTestnet, expected[1]);
-  assert.equal(context.walletsByNetwork.avalancheFuji, null);
-  assert.deepEqual(context.walletRegistration.pendingRegistration, [expected[0]]);
+  assert.deepEqual(context.walletsByNetwork.avalancheFuji, expected[0]);
+  assert.deepEqual(context.walletRegistration.pendingRegistration, []);
   assert.deepEqual(context.walletRegistration.pendingActivation, [expected[0]]);
   assert.deepEqual(context.walletRegistration.statusSemantics, {
-    scope: "internal_registry", active: "registered", pending: "pending_registration",
+    scope: "internal_registry", active: "registered", pending: "registered", onChainActivation: "not_inferred",
     onChainActivity: "not_inferred", balance: "not_inferred",
   });
   for (const wallet of context.wallets) {

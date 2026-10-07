@@ -21,3 +21,13 @@ El panel privado `/admin/wallets` permite completar un registro existente cuyo o
 - No se financian cuentas, preparan trustlines, firman transacciones ni modifican permisos de asistentes.
 
 Los tests y el build verifican estos controles técnicamente. La confirmación de un registro real y su consulta posterior desde ChatGPT son evidencias separadas; no se sustituyen por fixtures.
+
+## Registro y activación Stellar
+
+Una fila persistida con estado legacy `active` o `pending` es una wallet registrada en Carmelita. Las consultas devuelven `registrationState: "registered"` y la incluyen en la cobertura de redes registradas. `walletReadiness.complete` sólo describe esa cobertura interna, no la existencia de cuentas en cadena ni su saldo. El estado almacenado se conserva.
+
+`pendingRegistration` queda vacío para wallets ya registradas. `pendingActivation` se conserva por compatibilidad como indicador legacy con `pendingActivationScope: "legacy_registry_status_not_live"`; no es una lectura actual de Stellar.
+
+Para comprobar activación, consultar `read_personal_wallets_status` o `read_personal_wallets_balances`. Una respuesta Horizon 404 indica `onChainAccountExists: false` y `status: "not_activated"`: **registrada en Carmelita; cuenta todavía no activa en Stellar Testnet**. Si Horizon falla, devolver `onChainAccountExists: null` y `unavailable`, conservando el registro sin inventar ausencia o saldo cero. Un estado legacy `pending` también puede coexistir con una cuenta activa si la lectura actual lo confirma.
+
+Crear o financiar una cuenta Stellar es una operación separada sobre la misma dirección. La corrección de etiquetas no ejecuta esa operación ni cambia permisos.
