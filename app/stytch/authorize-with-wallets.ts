@@ -10,6 +10,10 @@ export async function prepareOAuthWallets(
   // Save the verified identity even when a wallet provider fails; retries reuse this owner.
   await persistProfile(identity);
   const result = await provision({ userId: identity.id, email: identity.email });
+  assertWalletPreparationComplete(result);
+}
+
+export function assertWalletPreparationComplete(result: Awaited<ReturnType<typeof provisionUserWallets>>) {
   const families = [result.preparation.stellar, result.preparation.evm, result.preparation.solana];
   if (families.some(family => family.status === "conflict")) throw new Error("wallet_identity_conflict");
   if (families.some(family => family.status !== "ready") || !result.stellar || !result.evm || !result.solana) {

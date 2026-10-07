@@ -70,6 +70,17 @@ test("unavailable provider email does not clear an existing verified profile", (
   assert.match(statement.text, /email = COALESCE\(EXCLUDED\.email, agent_users\.email\)/);
 });
 
+test("administrative wallet maintenance updates only an existing active profile and preserves login dates", () => {
+  const statement = buildWalletPersistenceStatements({ ...input, preserveUserActivity: true })[0];
+  assert.match(statement.text, /UPDATE agent_users SET email = COALESCE\(\$2, email\), updated_at = now\(\)/);
+  assert.match(statement.text, /WHERE id = \$1 AND status = 'active'/);
+  assert.match(statement.text, /count\(\*\) = 1/);
+  assert.doesNotMatch(statement.text, /INSERT INTO agent_users|last_seen_at|created_at|SET status/);
+  assert.deepEqual(statement.parameters, [input.userId, input.email]);
+  const login = buildWalletPersistenceStatements(input)[0];
+  assert.match(login.text, /last_seen_at = now\(\)/);
+});
+
 test("database conflicts reject without retrying or reporting successful persistence", async () => {
   for (const code of ["23505", "23503", "22012"]) {
     let calls = 0;
