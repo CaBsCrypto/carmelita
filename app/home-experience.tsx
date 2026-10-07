@@ -10,7 +10,7 @@ const copy = {
     home: "Inicio de Carmelita", guide: "Guía", developers: "Desarrolladores", enter: "Abrir Carmelita", skip: "Ir al contenido",
     title: "Tus billeteras y servicios, en una conversación.",
     description: "Conecta Carmelita con ChatGPT para consultar tus billeteras y tu historial. Explora los servicios publicados en Bazaar y conoce qué está disponible hoy.",
-    connect: "Conectar Carmelita con ChatGPT", explore: "Explorar servicios",
+    connect: "Conectar Carmelita con ChatGPT", explore: "Explorar servicios", signIn: "Iniciar sesión en Carmelita", recommended: "Recomendado",
     badges: ["Billeteras Testnet", "Mercado Mainnet · consultas", "Catálogo Bazaar"],
     example: "Ejemplo de consulta", question: "¿Cuáles son mis cinco redes?",
     answer: "Puedes consultar tus direcciones y abrir el explorador de cada red.",
@@ -28,7 +28,7 @@ const copy = {
     home: "Carmelita home", guide: "Guide", developers: "Developers", enter: "Open Carmelita", skip: "Skip to content",
     title: "Your wallets and services, in one conversation.",
     description: "Connect Carmelita with ChatGPT to check your wallets and your history. Explore the services published in Bazaar and see what is available today.",
-    connect: "Connect Carmelita with ChatGPT", explore: "Explore services",
+    connect: "Connect Carmelita with ChatGPT", explore: "Explore services", signIn: "Sign in to Carmelita", recommended: "Recommended",
     badges: ["Testnet wallets", "Mainnet market · queries", "Bazaar catalog"],
     example: "Example query", question: "What are my five networks?",
     answer: "You can check your addresses and open each network's explorer.",
@@ -46,7 +46,7 @@ const copy = {
     home: "Início da Carmelita", guide: "Guia", developers: "Desenvolvedores", enter: "Abrir a Carmelita", skip: "Ir para o conteúdo",
     title: "Suas carteiras e serviços, em uma conversa.",
     description: "Conecte a Carmelita ao ChatGPT para consultar suas carteiras e seu histórico. Explore os serviços publicados no Bazaar e veja o que está disponível hoje.",
-    connect: "Conectar a Carmelita ao ChatGPT", explore: "Explorar serviços",
+    connect: "Conectar a Carmelita ao ChatGPT", explore: "Explorar serviços", signIn: "Entrar na Carmelita", recommended: "Recomendado",
     badges: ["Carteiras Testnet", "Mercado Mainnet · consultas", "Catálogo Bazaar"],
     example: "Exemplo de consulta", question: "Quais são minhas cinco redes?",
     answer: "Você pode consultar seus endereços e abrir o explorador de cada rede.",
@@ -84,8 +84,9 @@ export default function HomeExperience() {
           <h1 id="home-title">{t.title}</h1>
           <p className={styles.description}>{t.description}</p>
           <div className={styles.actions}>
-            <Link href="/connect-chatgpt" className={styles.primary}>{t.connect}</Link>
+            <Link href="/connect-chatgpt" className={styles.primary}><span>{t.connect}</span><span className={styles.recommended}>{t.recommended}</span></Link>
             <Link href="/services" className={styles.secondary}>{t.explore}</Link>
+            <Link href="/agent?connect=privy" className={styles.secondary}>{t.signIn}</Link>
           </div>
           <ul className={styles.badges} aria-label={t.explore}>
             {t.badges.map(badge => <li key={badge}>{badge}</li>)}
