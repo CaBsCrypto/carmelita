@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "groups": {
     "market": "b3c6eb0c542ea551846b401e8bac30a57040c7537727d8a156c1f22f06c2a9cd",
-    "personal": "2e6b59284fdd9afd17e2b498d6a77eebb3e86ea35b82f36ec04249c8dff62f5f",
+    "personal": "4d285f2df4972d8c9b3777266531d728ac1558726f67d13526874d9daafc2866",
     "ecosystem": "2ac6639951f8e052104207c652123ccf10fe272be84484500bbb050542ac2e5b",
     "discovery": "16bf5fc46229e3d069a3b93ffb1d8abfa1ed0c445fd7db390b4d61dc31b8d857",
-    "metadata": "6810abc0daea17dfcd2abfc4bb57aea8943e388bdaf34b73fb3c1424c00e5a91",
+    "metadata": "a56151b64f49190be557b8487aa328a6e7aace39b2c860f8fc297d62bc4db6b8",
     "commerce": "9020eee7b4c4cea95ad6202775d8af419ca96b583ec9476cefe0765c9910f198"
   }
 }
