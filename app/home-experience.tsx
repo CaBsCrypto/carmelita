@@ -4,6 +4,7 @@ import Link from "next/link";
 import BrandLockup from "./brand-lockup";
 import LanguageToggle, { useLocale } from "./language-toggle";
 import styles from "./home-experience.module.css";
+import AssistantSelector from "./assistant-selector";
 
 const copy = {
   es: {
@@ -84,7 +85,7 @@ export default function HomeExperience() {
           <h1 id="home-title">{t.title}</h1>
           <p className={styles.description}>{t.description}</p>
           <div className={styles.actions}>
-            <Link href="/connect-chatgpt" className={styles.primary}><span>{t.connect}</span><span className={styles.recommended}>{t.recommended}</span></Link>
+            <AssistantSelector locale={locale} />
             <Link href="/services" className={styles.secondary}>{t.explore}</Link>
             <Link href="/agent?connect=privy" className={styles.secondary}>{t.signIn}</Link>
           </div>
