@@ -19,7 +19,10 @@ type PublicWallet = {
 
 const MCP_WALLET_ORDER = ["stellar:testnet", "avalanche:fuji", "solana:devnet", "bnb:testnet", "base:sepolia"] as const;
 
-export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<typeof connectionConfiguration>[0] = process.env) {
+export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<typeof connectionConfiguration>[0] = {
+  CARMELITA_PUBLIC_ORIGIN: process.env.CARMELITA_PUBLIC_ORIGIN,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+}) {
   const connection = connectionConfiguration(env);
   const guide = connection.mcpUrl ? `${new URL(connection.mcpUrl).origin}/connect-chatgpt` : "the Carmelita connection guide for this environment";
   const networks = enabledWalletNetworks().sort((left, right) => MCP_WALLET_ORDER.indexOf(left.id) - MCP_WALLET_ORDER.indexOf(right.id));
