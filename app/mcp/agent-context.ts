@@ -7,6 +7,7 @@ import {
 import { listPersistedUserWallets } from "@/app/multichain-account";
 import { enabledWalletNetworks } from "@/app/wallets/networks";
 import { walletExplorerUrl } from "@/app/wallets/explorer";
+import { connectionConfiguration } from "@/app/connect-chatgpt/connection-config";
 import { PRIVY_CHAIN_TYPE_BY_FAMILY, type WalletNetworkId } from "@/app/wallets/types";
 
 type PublicWallet = {
@@ -18,7 +19,9 @@ type PublicWallet = {
 
 const MCP_WALLET_ORDER = ["stellar:testnet", "avalanche:fuji", "solana:devnet", "bnb:testnet", "base:sepolia"] as const;
 
-export function buildMcpWalletContext(wallets: PublicWallet[]) {
+export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<typeof connectionConfiguration>[0] = process.env) {
+  const connection = connectionConfiguration(env);
+  const guide = connection.mcpUrl ? `${new URL(connection.mcpUrl).origin}/connect-chatgpt` : "the Carmelita connection guide for this environment";
   const networks = enabledWalletNetworks().sort((left, right) => MCP_WALLET_ORDER.indexOf(left.id) - MCP_WALLET_ORDER.indexOf(right.id));
   // Project fields explicitly: persisted rows also carry private provider IDs.
   const ordered = wallets.filter((wallet) => networks.some((network) =>
@@ -64,7 +67,7 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
       pendingActivation: visible.filter((wallet) => wallet.status === "pending"),
       unregisteredNetworks: networks.filter((network) => !visible.some((wallet) => wallet.network === network.id)).map((network) => network.id),
       onboardingRequired: visible.length === 0,
-      guidance: visible.length === 0 ? "No wallet addresses are registered for this account. Account preparation may not have completed. Start a new OAuth connection from https://carmelita.browns.studio/connect-chatgpt, sign in with the same Carmelita account and authorize preparation of your Testnet wallets. This read does not create wallets or move funds." : null,
+      guidance: visible.length === 0 ? `No wallet addresses are registered for this account. Account preparation may not have completed. Start a new OAuth connection from ${guide}, sign in with the same Carmelita account and authorize preparation of your Testnet wallets. This read does not create wallets or move funds.` : null,
     },
     walletReadiness: {
       complete: missingNetworks.length === 0,

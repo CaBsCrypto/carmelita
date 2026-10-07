@@ -52,6 +52,14 @@ test("an account without registered wallets gets onboarding guidance without inv
   assert.deepEqual(context.wallets, []);
 });
 
+test("QA wallet recovery stays in the configured environment", () => {
+  const context = buildMcpWalletContext([], { VERCEL_ENV: "preview", CARMELITA_PUBLIC_ORIGIN: "https://qa.example.com" });
+  assert.match(context.walletRegistration.guidance!, /https:\/\/qa\.example\.com\/connect-chatgpt/);
+  assert.doesNotMatch(context.walletRegistration.guidance!, /carmelita\.browns\.studio/);
+  const unavailable = buildMcpWalletContext([], { VERCEL_ENV: "preview" });
+  assert.doesNotMatch(unavailable.walletRegistration.guidance!, /carmelita\.browns\.studio/);
+});
+
 test("MCP wallet context names all persisted testnet wallets deterministically", () => {
   const context = buildMcpWalletContext([
     { address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", chainType: "stellar", network: "stellar:testnet", status: "active" },
