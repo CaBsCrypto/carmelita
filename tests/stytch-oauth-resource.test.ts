@@ -162,9 +162,12 @@ test("OAuth identity mapping is exact issuer plus subject and cannot be remapped
 
   const store = await readFile(new URL("../app/services/oauth-subject-link-store.ts", import.meta.url), "utf8");
   const authorize = await readFile(new URL("../app/api/oauth/stytch/authorize/route.ts", import.meta.url), "utf8");
+  const flow = await readFile(new URL("../app/stytch/authorize-owner.ts", import.meta.url), "utf8");
   assert.doesNotMatch(store, /email/i);
-  assert.match(authorize, /if \(body\.consentGranted\) \{[\s\S]*linkOAuthSubject/);
-  assert.ok(authorize.indexOf("linkOAuthSubject") < authorize.indexOf("submitAuthorization"));
+  assert.match(authorize, /identity: \{ id: claims\.user_id, email: identity\.email \}/);
+  assert.match(authorize, /link: linkOAuthSubject/);
+  assert.match(flow, /if \(input\.consentGranted\) \{[\s\S]*dependencies\.link/);
+  assert.ok(flow.indexOf("await dependencies.link") < flow.indexOf("return dependencies.client.submitAuthorization"));
 });
 
 test("PAT and Privy fallbacks remain separate from the Stytch issuer path", async () => {
