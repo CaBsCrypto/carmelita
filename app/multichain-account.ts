@@ -42,6 +42,8 @@ export type PersistWalletNetworksInput = {
   networks: WalletNetworkId[];
   status?: "active" | "pending";
   preserveExistingStatus?: boolean;
+  /** Maintenance must not impersonate a user login or reactivate a disabled profile. */
+  preserveUserActivity?: boolean;
 };
 
 const defaultDependencies: WalletPersistenceDependencies = {
@@ -82,7 +84,11 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
   // are bindings, never a replacement for the legacy Fuji association.
   const legacyNetwork = input.wallet.family === "evm" ? "avalanche:fuji" : networks[0];
   const statements: WalletPersistenceStatement[] = [{
-    text: `INSERT INTO agent_users (id, email, status, last_seen_at, updated_at)
+    text: input.preserveUserActivity ? `WITH existing AS (
+      UPDATE agent_users SET email = COALESCE($2, email), updated_at = now()
+      WHERE id = $1 AND status = 'active' RETURNING id
+    ) SELECT 1 / CASE WHEN count(*) = 1 THEN 1 ELSE 0 END AS existing_owner_available FROM existing`
+      : `INSERT INTO agent_users (id, email, status, last_seen_at, updated_at)
       VALUES ($1, $2, 'active', now(), now())
       ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, agent_users.email), status = 'active', last_seen_at = now(), updated_at = now()`,
     parameters: [input.userId, input.email],
@@ -143,6 +149,7 @@ export async function persistActivatedWallet(input: {
   email: string | null;
   wallet: UserWallet;
   network: WalletNetworkId;
+  preserveUserActivity?: boolean;
 }, dependencies: WalletPersistenceDependencies = defaultDependencies) {
   return persistWalletNetworks({ ...input, networks: [input.network] }, dependencies);
 }
