@@ -1,7 +1,8 @@
 export const CONSENT_TIMEOUT_MS = 20_000;
+export const AUTHORIZATION_TIMEOUT_MS = 60_000;
 const MAX_RESPONSE_BYTES = 64 * 1024;
 
-export type ConsentErrorCode = "session_unavailable" | "inspection_failed" | "inspection_timeout" | "authorization_failed" | "authorization_uncertain" | "redirect_invalid" | "cancelled";
+export type ConsentErrorCode = "session_unavailable" | "inspection_failed" | "inspection_timeout" | "authorization_failed" | "authorization_uncertain" | "wallet_preparation_failed" | "wallet_identity_conflict" | "redirect_invalid" | "cancelled";
 export class ConsentRequestError extends Error {
   constructor(readonly code: ConsentErrorCode) { super(code); }
 }
@@ -13,7 +14,7 @@ export type ConsentPreflight = {
 };
 
 async function readResponse(response: Response, signal: AbortSignal): Promise<unknown> {
-  if (!response.ok || !response.body) throw new Error("invalid_response");
+  if (!response.body) throw new Error("invalid_response");
   const reader = response.body.getReader();
   const cancel = () => { void reader.cancel().catch(() => {}); };
   signal.addEventListener("abort", cancel, { once: true });
@@ -74,6 +75,12 @@ async function request<T>(
         body: JSON.stringify(body),
       });
       const value = await readResponse(response, controller.signal);
+      if (!response.ok) {
+        const code = (value as { error?: unknown } | null)?.error;
+        if (authorization && code === "oauth_wallet_preparation_incomplete") throw new ConsentRequestError("wallet_preparation_failed");
+        if (authorization && code === "wallet_identity_conflict") throw new ConsentRequestError("wallet_identity_conflict");
+        throw new Error("invalid_response");
+      }
       if (controller.signal.aborted) throw new ConsentRequestError("cancelled");
       return parse(value);
     })()]);
@@ -124,12 +131,12 @@ function callback(query: string, consentGranted: boolean, value: unknown): strin
   } catch { throw new ConsentRequestError("redirect_invalid"); }
 }
 
-export function requestConsentRedirect(query: string, consentGranted: boolean, getAccessToken: () => Promise<string | null>, fetcher: typeof fetch = fetch, timeoutMs = CONSENT_TIMEOUT_MS, signal?: AbortSignal): Promise<string> {
+export function requestConsentRedirect(query: string, consentGranted: boolean, getAccessToken: () => Promise<string | null>, fetcher: typeof fetch = fetch, timeoutMs = AUTHORIZATION_TIMEOUT_MS, signal?: AbortSignal): Promise<string> {
   return request("/api/oauth/stytch/authorize", { query, consentGranted }, getAccessToken, value => callback(query, consentGranted, value), fetcher, timeoutMs, signal);
 }
 
 // Keep the first decision, even after a timeout: the authorization may already have reached the server.
-export function createConsentDecision(query: string, getAccessToken: () => Promise<string | null>, fetcher: typeof fetch = fetch, timeoutMs = CONSENT_TIMEOUT_MS, signal?: AbortSignal) {
+export function createConsentDecision(query: string, getAccessToken: () => Promise<string | null>, fetcher: typeof fetch = fetch, timeoutMs = AUTHORIZATION_TIMEOUT_MS, signal?: AbortSignal) {
   let result: Promise<string> | undefined;
   return (consentGranted: boolean) => result ??= requestConsentRedirect(query, consentGranted, getAccessToken, fetcher, timeoutMs, signal);
 }

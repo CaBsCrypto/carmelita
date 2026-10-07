@@ -8,8 +8,10 @@ import {
 } from "@/app/stytch/connected-apps-client";
 import { hasSameRequestOrigin } from "@/app/stytch/request-security";
 import { normalizeOAuthAuthenticationError, publicOAuthError } from "@/app/stytch/public-error";
+import { prepareOAuthWallets } from "@/app/stytch/authorize-with-wallets";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 function bearer(request: Request) {
   const value = request.headers.get("authorization") || "";
@@ -34,6 +36,9 @@ export async function POST(request: Request) {
     const client = new StytchConnectedAppsClient(config);
     const stytchUserId = await client.ensureUserForPrivy(identity.id, identity.email);
     if (body.consentGranted) {
+      // Validate the registered client, exact resource and grantable scopes before provisioning.
+      await client.preflightAuthorization(oauthRequest, stytchUserId);
+      await prepareOAuthWallets({ id: claims.user_id, email: identity.email });
       await linkOAuthSubject({
         issuer: config.issuer,
         subject: stytchUserId,

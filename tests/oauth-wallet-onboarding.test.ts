@@ -95,12 +95,15 @@ test("wallet onboarding provisions and persists Stellar plus Avalanche without m
   assert.equal(result.signingRequired, false);
 });
 
-test("chat OAuth links identity after consent without provisioning wallets or querying balances", async () => {
+test("chat OAuth prepares owner wallets only after validated consent and before linking or granting", async () => {
   const source = await readFile(
     new URL("../app/api/oauth/stytch/authorize/route.ts", import.meta.url),
     "utf8",
   );
   assert.match(source, /if \(body\.consentGranted\) \{[\s\S]*linkOAuthSubject/);
   assert.ok(source.indexOf("await linkOAuthSubject") < source.indexOf("await client.submitAuthorization"));
-  assert.doesNotMatch(source, /provisionUserWallets|wallets\/onboarding|getStellarAccount|fundWallet|friendbot|rawSign|sendTransaction/);
+  assert.ok(source.indexOf("await client.preflightAuthorization") < source.indexOf("await prepareOAuthWallets"));
+  assert.ok(source.indexOf("await prepareOAuthWallets") < source.indexOf("await linkOAuthSubject"));
+  assert.match(source, /if \(body\.consentGranted\) \{[\s\S]*prepareOAuthWallets/);
+  assert.doesNotMatch(source, /fundWallet|friendbot|rawSign|sendTransaction/);
 });
