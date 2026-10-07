@@ -15,7 +15,8 @@ test("chat sends the draft and selected locale through the existing endpoint wit
     const reply = await requestAgentChat('/consulta personal.wallets {}', locale, async () => "fixture-not-a-credential", controller.signal, async (url, init) => {
       assert.equal(url, "/api/agent/chat");
       assert.equal(init?.method, "POST");
-      assert.equal(init?.signal, controller.signal);
+      assert.ok(init?.signal && !init.signal.aborted);
+      assert.notEqual(init.signal, controller.signal, "The owner signal is combined with a complete request deadline");
       assert.equal(new Headers(init?.headers).get("Authorization"), "Bearer fixture-not-a-credential");
       assert.deepEqual(JSON.parse(String(init?.body)), { message: '/consulta personal.wallets {}', locale });
       return Response.json(expected);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineQuery } from "./types";
 import { AVALANCHE_MCP_ENDPOINT, listAvalancheReadOnlyTools } from "@/app/connectors/avalanche-mcp";
+import { projectNativeCapabilityBoundary } from "@/app/bazaar/native-channel-boundary";
 
 const defaultDependencies = { docsTools: listAvalancheReadOnlyTools };
 
@@ -14,14 +15,14 @@ export function createMetadataQueries(overrides: Partial<typeof defaultDependenc
     execute: async () => {
       const { listGatewayCapabilities } = await import("@/app/agent-gateway/catalog");
       const { GATEWAY_API_VERSION, GATEWAY_ENVIRONMENT } = await import("@/app/agent-gateway/types");
-      return { apiVersion: GATEWAY_API_VERSION, environment: GATEWAY_ENVIRONMENT, capabilities: listGatewayCapabilities() };
+      return { apiVersion: GATEWAY_API_VERSION, environment: GATEWAY_ENVIRONMENT, capabilities: listGatewayCapabilities().map(projectNativeCapabilityBoundary) };
     },
   }),
   defineQuery({
     id: "offchain.capabilities.get", toolName: "get_capability", title: "Get one Carmelita capability",
     description: "Inspect one capability's requirements, channels and approval boundary without executing it.",
     inputSchema: z.object({ capabilityId: z.string().trim().min(3).max(120) }).strict(), scope: "agent:read", dataScope: "capability_metadata",
-    execute: async ({ capabilityId }) => (await import("@/app/agent-gateway/catalog")).getGatewayCapability(capabilityId),
+    execute: async ({ capabilityId }) => projectNativeCapabilityBoundary((await import("@/app/agent-gateway/catalog")).getGatewayCapability(capabilityId)),
   }),
   defineQuery({
     id: "avalanche.capabilities.list", toolName: "list_avalanche_capabilities", title: "List Avalanche capabilities",
@@ -32,7 +33,7 @@ export function createMetadataQueries(overrides: Partial<typeof defaultDependenc
         import("@/app/avalanche/capability-registry"), import("@/app/agent-gateway/catalog"),
       ]);
       const common = new Map(listGatewayCapabilities().map(capability => [capability.id, capability]));
-      return { capabilities: listAvalancheCapabilities().map(capability => ({
+      return { capabilities: listAvalancheCapabilities().map(capability => projectNativeCapabilityBoundary({
         ...capability,
         channels: common.get(capability.id)?.channels,
         availability: common.get(capability.id)?.availability,

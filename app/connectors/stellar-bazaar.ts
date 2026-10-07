@@ -5,6 +5,7 @@ import {
   atomicToDisplay,
 } from "@/app/x402/assets";
 import { getStellarBazaarConfig } from "@/app/stellar-bazaar/config";
+import { bazaarPurchaseReadiness } from "@/app/bazaar/readiness";
 
 export const bazaarServiceCardSchema = z.object({
   version: z.literal("bazaar.service-card/v0"),
@@ -93,6 +94,9 @@ export type StellarBazaarSearch = {
   partialResults: boolean;
   dynamicRegistry: "available" | "unavailable";
   source: "stellar-bazaar";
+  readOnly: true;
+  executionEnabled: false;
+  purchase: ReturnType<typeof bazaarPurchaseReadiness>;
 };
 
 /**
@@ -155,35 +159,9 @@ function bazaarFailure(code: string): never {
   throw new Error(code);
 }
 
-async function fetchBazaarJson(
-  url: string,
-  fetcher: typeof fetch,
-  timeoutMs: number,
-  failureCode: string,
-): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await fetcher(url, {
-      method: "GET",
-      redirect: "error",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch {
-    return bazaarFailure(failureCode);
-  }
-  if (!response.ok) return bazaarFailure(failureCode);
-  try {
-    return await response.json();
-  } catch {
-    return bazaarFailure("stellar_bazaar_invalid_response");
-  }
-}
-
 export async function searchStellarBazaar(
   query: string,
-  options: { fetcher?: typeof fetch; timeoutMs?: number } = {},
+  options: { fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal } = {},
 ): Promise<StellarBazaarSearch> {
   const trimmed = query.trim();
   if (trimmed.length < 2 || trimmed.length > 120) {
@@ -193,13 +171,9 @@ export async function searchStellarBazaar(
   if (!config.enabled || !config.baseUrl) {
     bazaarFailure("stellar_bazaar_unavailable");
   }
-  const endpoint = `${config.baseUrl}/api/discovery/search?query=${encodeURIComponent(trimmed)}`;
-  const body = await fetchBazaarJson(
-    endpoint,
-    options.fetcher ?? fetch,
-    options.timeoutMs ?? 15_000,
-    "stellar_bazaar_unavailable",
-  );
+  let body: unknown;
+  try { body = await (await import("./bazaar-catalog")).readBazaarPublicSearch(trimmed, options); }
+  catch { return bazaarFailure("stellar_bazaar_unavailable"); }
   const parsed = searchResponseSchema.safeParse(body);
   if (!parsed.success) bazaarFailure("stellar_bazaar_invalid_response");
   const offers: StellarBazaarOffer[] = [];
@@ -210,15 +184,20 @@ export async function searchStellarBazaar(
       rejectedCards += 1;
       continue;
     }
-    offers.push(normalizeBazaarOffer(card.data, { score: item.score, reasons: item.reasons }));
+    const offer = normalizeBazaarOffer(card.data, { score: item.score, reasons: item.reasons });
+    // Valid terms alone do not authorize execution or certify the provider.
+    offers.push({ ...offer, consumable: false, unavailableReason: offer.unavailableReason ?? "bazaar_purchase_not_enabled" });
   }
   return {
     query: parsed.data.query,
     rankingVersion: parsed.data.ranking.version,
     offers,
     rejectedCards,
-    partialResults: parsed.data.partialResults,
+    partialResults: parsed.data.partialResults || rejectedCards > 0 || parsed.data.dynamicRegistry === "unavailable",
     dynamicRegistry: parsed.data.dynamicRegistry,
     source: "stellar-bazaar",
+    readOnly: true,
+    executionEnabled: false,
+    purchase: bazaarPurchaseReadiness(),
   };
 }

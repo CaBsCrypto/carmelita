@@ -3,101 +3,126 @@
 import Link from "next/link";
 import BrandLockup from "./brand-lockup";
 import LanguageToggle, { useLocale } from "./language-toggle";
+import styles from "./home-experience.module.css";
 
 const copy = {
   es: {
-    home: "Inicio de Carmelita", guide: "Guía", developers: "Desarrolladores", enter: "Abrir el chat",
-    title: "Tus billeteras y el mercado,", emphasis: "en una conversación.",
-    description: "Consulta tus billeteras, busca precios de tokens y compara redes. Empieza con tu correo y pregunta a Carmelita.",
-    start: "Comenzar con Carmelita", how: "Cómo empezar", pilot: "Prueba de registro y consultas · billeteras Testnet",
-    example: "Ejemplo de consulta", question: "¿Qué billeteras tengo?", answer: "Tus billeteras se reúnen en un solo lugar, con sus redes y exploradores.",
-    families: "3 billeteras · 5 redes", preview: "Ejemplo ilustrativo. Tus direcciones aparecen después de ingresar.",
-    questionsTitle: "Empieza por una pregunta.", questionsText: "Elige un ejemplo para dejarlo escrito en el chat. Tú decides cuándo enviarlo.",
-    examples: ["Mis billeteras", "Precio de XLM, SOL, AVAX y BNB", "Comparar redes por TVL"],
-    marketNote: "Precios y TVL son datos de mercado Mainnet. Cada respuesta indica la fuente y la fecha; los fondos Testnet se consultan por separado.",
-    stepsTitle: "Del correo a tu primera consulta.",
-    steps: [["Ingresa con Privy", "Usa tu correo y el código de acceso visible. Tu identidad se conserva."], ["Consulta tus billeteras", "Revisa direcciones, redes, estado del registro y exploradores."], ["Explora a tu ritmo", "Abre Funciones desde el chat. Las conexiones que falten te pedirán autorización."]],
-    chatgpt: "¿Prefieres ChatGPT?", chatgptText: "El complemento es opcional y usa las mismas consultas de Carmelita. Su conexión requiere autorización; el acceso desde otra cuenta de ChatGPT sigue en validación.",
-    chatgptLink: "Ver cómo conectar", footer: "Carmelita · construida en Latinoamérica", feedback: "Una prueba pequeña, una conversación a la vez.",
+    home: "Inicio de Carmelita", guide: "Guía", developers: "Desarrolladores", enter: "Abrir Carmelita", skip: "Ir al contenido",
+    title: "Tus billeteras y servicios, en una conversación.",
+    description: "Conecta Carmelita con ChatGPT para consultar tus billeteras y tu historial. Explora los servicios publicados en Bazaar y conoce qué está disponible hoy.",
+    connect: "Conectar Carmelita con ChatGPT", explore: "Explorar servicios",
+    badges: ["Billeteras Testnet", "Mercado Mainnet · consultas", "Catálogo Bazaar"],
+    example: "Ejemplo de consulta", question: "¿Cuáles son mis cinco redes?",
+    answer: "Puedes consultar tus direcciones y abrir el explorador de cada red.",
+    preview: "Ejemplo ilustrativo. Tus direcciones aparecen al ingresar con tu cuenta.",
+    stepsTitle: "De tu cuenta a la conversación.",
+    steps: [
+      ["Ingresa a Carmelita", "Crea tu acceso con tu correo o ingresa con tu cuenta para consultar tus propias billeteras."],
+      ["Autoriza la conexión", "Sigue la guía de ChatGPT. La conexión depende de las opciones de tu cuenta o espacio de trabajo."],
+      ["Pregunta y descubre", "Consulta tus billeteras, recupera tu historial y descubre las fichas de servicios de Bazaar."],
+    ],
+    boundary: "Los fondos de las billeteras son Testnet. Los precios y datos de mercado son consultas Mainnet. La compra de servicios desde ChatGPT sigue pendiente de validación.",
+    footer: "Carmelita · construida en Latinoamérica",
   },
   en: {
-    home: "Carmelita home", guide: "Guide", developers: "Developers", enter: "Open chat",
-    title: "Your wallets and the market,", emphasis: "in one conversation.",
-    description: "Check your wallets, find token prices and compare networks. Start with your email and ask Carmelita.",
-    start: "Start with Carmelita", how: "How to start", pilot: "Registration and query pilot · Testnet wallets",
-    example: "Example query", question: "Which wallets do I have?", answer: "Your wallets come together in one place, with their networks and explorers.",
-    families: "3 wallets · 5 networks", preview: "Illustrative example. Your addresses appear after signing in.",
-    questionsTitle: "Start with a question.", questionsText: "Choose an example to fill the chat composer. You decide when to send it.",
-    examples: ["My wallets", "Price of XLM, SOL, AVAX and BNB", "Compare networks by TVL"],
-    marketNote: "Prices and TVL are Mainnet market data. Each response shows its source and date; Testnet funds are checked separately.",
-    stepsTitle: "From email to your first query.",
-    steps: [["Sign in with Privy", "Use your email and the visible access code flow. Your identity stays the same."], ["Check your wallets", "Review addresses, networks, registration status and explorers."], ["Explore at your pace", "Open Features from the chat. Missing connections will ask for authorization."]],
-    chatgpt: "Prefer ChatGPT?", chatgptText: "The optional connector uses Carmelita's shared queries. Connecting requires authorization; access from another ChatGPT account is still being validated.",
-    chatgptLink: "See how to connect", footer: "Carmelita · built in Latin America", feedback: "A small pilot, one conversation at a time.",
+    home: "Carmelita home", guide: "Guide", developers: "Developers", enter: "Open Carmelita", skip: "Skip to content",
+    title: "Your wallets and services, in one conversation.",
+    description: "Connect Carmelita with ChatGPT to check your wallets and your history. Explore the services published in Bazaar and see what is available today.",
+    connect: "Connect Carmelita with ChatGPT", explore: "Explore services",
+    badges: ["Testnet wallets", "Mainnet market · queries", "Bazaar catalog"],
+    example: "Example query", question: "What are my five networks?",
+    answer: "You can check your addresses and open each network's explorer.",
+    preview: "Illustrative example. Your addresses appear after you sign in with your account.",
+    stepsTitle: "From your account to the conversation.",
+    steps: [
+      ["Sign in to Carmelita", "Create access with your email or sign in with your account to check your own wallets."],
+      ["Authorize the connection", "Follow the ChatGPT guide. Connecting depends on the options in your account or workspace."],
+      ["Ask and discover", "Check your wallets, recover your history and discover Bazaar service listings."],
+    ],
+    boundary: "Wallet funds are Testnet funds. Prices and market data are Mainnet queries. Buying services from ChatGPT is still awaiting validation.",
+    footer: "Carmelita · built in Latin America",
   },
   pt: {
-    home: "Início da Carmelita", guide: "Guia", developers: "Desenvolvedores", enter: "Abrir o chat",
-    title: "Suas carteiras e o mercado,", emphasis: "em uma conversa.",
-    description: "Consulte suas carteiras, busque preços de tokens e compare redes. Comece com seu e-mail e pergunte à Carmelita.",
-    start: "Começar com a Carmelita", how: "Como começar", pilot: "Teste de cadastro e consultas · carteiras Testnet",
-    example: "Exemplo de consulta", question: "Quais carteiras eu tenho?", answer: "Suas carteiras reunidas em um só lugar, com suas redes e exploradores.",
-    families: "3 carteiras · 5 redes", preview: "Exemplo ilustrativo. Seus endereços aparecem após entrar.",
-    questionsTitle: "Comece por uma pergunta.", questionsText: "Escolha um exemplo para preencher o campo do chat. Você decide quando enviar.",
-    examples: ["Minhas carteiras", "Preço de XLM, SOL, AVAX e BNB", "Comparar redes por TVL"],
-    marketNote: "Preços e TVL são dados de mercado Mainnet. Cada resposta mostra a fonte e a data; fundos Testnet são consultados separadamente.",
-    stepsTitle: "Do e-mail à primeira consulta.",
-    steps: [["Entre com Privy", "Use seu e-mail e o fluxo visível do código de acesso. Sua identidade é preservada."], ["Consulte suas carteiras", "Veja endereços, redes, estado do cadastro e exploradores."], ["Explore no seu ritmo", "Abra Funções no chat. Conexões ausentes solicitarão autorização."]],
-    chatgpt: "Prefere o ChatGPT?", chatgptText: "O complemento opcional usa as consultas compartilhadas da Carmelita. A conexão requer autorização; o acesso de outra conta do ChatGPT continua em validação.",
-    chatgptLink: "Veja como conectar", footer: "Carmelita · criada na América Latina", feedback: "Um teste pequeno, uma conversa por vez.",
+    home: "Início da Carmelita", guide: "Guia", developers: "Desenvolvedores", enter: "Abrir a Carmelita", skip: "Ir para o conteúdo",
+    title: "Suas carteiras e serviços, em uma conversa.",
+    description: "Conecte a Carmelita ao ChatGPT para consultar suas carteiras e seu histórico. Explore os serviços publicados no Bazaar e veja o que está disponível hoje.",
+    connect: "Conectar a Carmelita ao ChatGPT", explore: "Explorar serviços",
+    badges: ["Carteiras Testnet", "Mercado Mainnet · consultas", "Catálogo Bazaar"],
+    example: "Exemplo de consulta", question: "Quais são minhas cinco redes?",
+    answer: "Você pode consultar seus endereços e abrir o explorador de cada rede.",
+    preview: "Exemplo ilustrativo. Seus endereços aparecem ao entrar com sua conta.",
+    stepsTitle: "Da sua conta à conversa.",
+    steps: [
+      ["Entre na Carmelita", "Crie seu acesso com seu e-mail ou entre com sua conta para consultar suas próprias carteiras."],
+      ["Autorize a conexão", "Siga o guia do ChatGPT. A conexão depende das opções da sua conta ou espaço de trabalho."],
+      ["Pergunte e descubra", "Consulte suas carteiras, recupere seu histórico e descubra as fichas de serviços do Bazaar."],
+    ],
+    boundary: "Os fundos das carteiras são Testnet. Preços e dados de mercado são consultas Mainnet. A compra de serviços pelo ChatGPT ainda aguarda validação.",
+    footer: "Carmelita · criada na América Latina",
   },
 };
 
-const drafts = [
-  "/consulta personal.wallets {}",
-  '/consulta offchain.market.quote {"assets":[{"query":"XLM"},{"query":"SOL"},{"query":"AVAX"},{"query":"BNB"}]}',
-  '/consulta offchain.defillama.chains {"sortBy":"tvl","limit":10}',
-];
+const networks = ["Avalanche Fuji", "Base Sepolia", "BNB Testnet", "Solana Devnet", "Stellar Testnet"];
 
 export default function HomeExperience() {
   const { locale, setLocale } = useLocale();
   const t = copy[locale];
+
   return (
-    <main className="welcome-page">
-      <nav className="welcome-nav shell" aria-label={t.home}>
-        <Link href="/" className="brand" aria-label={t.home}><BrandLockup /></Link>
-        <div className="welcome-nav-actions">
-          <Link href="/guide" className="welcome-guide">{t.guide}</Link>
+    <main className={styles.page} lang={locale === "pt" ? "pt-BR" : locale}>
+      <a className={styles.skipLink} href="#home-content">{t.skip}</a>
+      <nav className={styles.nav} aria-label={t.home}>
+        <Link href="/" className={styles.brand} aria-label={t.home}><BrandLockup /></Link>
+        <div className={styles.navActions}>
+          <Link href="/agent">{t.enter}</Link>
           <LanguageToggle locale={locale} onChange={setLocale} compact />
-          <Link href="/agent" className="welcome-enter">{t.enter}</Link>
         </div>
       </nav>
-      <section className="welcome-hero shell">
-        <div className="welcome-intro">
-          <h1>{t.title}<br /><em>{t.emphasis}</em></h1><p>{t.description}</p>
-          <div className="welcome-actions"><Link href="/agent?connect=privy" className="welcome-primary">{t.start}</Link><a href="#start">{t.how}</a></div>
-          <small className="welcome-pilot"><span aria-hidden="true" />{t.pilot}</small>
+
+      <section id="home-content" className={styles.hero} aria-labelledby="home-title" tabIndex={-1}>
+        <div className={styles.intro}>
+          <h1 id="home-title">{t.title}</h1>
+          <p className={styles.description}>{t.description}</p>
+          <div className={styles.actions}>
+            <Link href="/connect-chatgpt" className={styles.primary}>{t.connect}</Link>
+            <Link href="/services" className={styles.secondary}>{t.explore}</Link>
+          </div>
+          <ul className={styles.badges} aria-label={t.explore}>
+            {t.badges.map(badge => <li key={badge}>{badge}</li>)}
+          </ul>
         </div>
-        <aside className="welcome-conversation" aria-label={t.example}>
+
+        <aside className={styles.conversation} aria-label={t.example}>
           <header><BrandLockup /><span>{t.example}</span></header>
-          <p className="welcome-question">{t.question}</p><p className="welcome-answer">{t.answer}</p>
-          <div className="welcome-wallet-preview"><strong>{t.families}</strong><dl>
-            <div><dt>Stellar Testnet</dt><dd>XLM</dd></div>
-            <div><dt>EVM<small>Avalanche Fuji · BNB Testnet · Base Sepolia</small></dt><dd>AVAX · BNB · ETH</dd></div>
-            <div><dt>Solana Devnet</dt><dd>SOL</dd></div>
-          </dl></div><small>{t.preview}</small>
+          <p className={styles.question}>{t.question}</p>
+          <p className={styles.answer}>{t.answer}</p>
+          <ul className={styles.networks}>
+            {networks.map(network => <li key={network}><span aria-hidden="true" />{network}</li>)}
+          </ul>
+          <p className={styles.previewNote}>{t.preview}</p>
         </aside>
       </section>
-      <section className="welcome-questions shell" aria-labelledby="welcome-questions-title">
-        <div><h2 id="welcome-questions-title">{t.questionsTitle}</h2><p>{t.questionsText}</p></div>
-        <div className="welcome-examples">{t.examples.map((example, index) => <Link key={index} href={`/agent?draft=${encodeURIComponent(drafts[index])}`}>{example}</Link>)}</div>
-        <p className="welcome-market-note">{t.marketNote}</p>
+
+      <section className={styles.steps} aria-labelledby="home-steps-title">
+        <h2 id="home-steps-title">{t.stepsTitle}</h2>
+        <ol>
+          {t.steps.map(([title, description], index) => (
+            <li key={title}>
+              <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
+              <div><h3>{title}</h3><p>{description}</p></div>
+            </li>
+          ))}
+        </ol>
+        <p className={styles.boundary}>{t.boundary}</p>
       </section>
-      <section id="start" className="welcome-start shell" aria-labelledby="welcome-start-title">
-        <h2 id="welcome-start-title">{t.stepsTitle}</h2>
-        <ol>{t.steps.map(([title, description], index) => <li key={title}><span aria-hidden="true">0{index + 1}</span><div><h3>{title}</h3><p>{description}</p></div></li>)}</ol>
-        <div className="welcome-chatgpt"><h3>{t.chatgpt}</h3><p>{t.chatgptText}</p><Link href="/guide#chatgpt">{t.chatgptLink}</Link></div>
-      </section>
-      <footer className="welcome-footer shell"><div><BrandLockup /><p>{t.feedback}</p></div><nav aria-label={t.footer}><Link href="/guide">{t.guide}</Link><Link href="/developers">{t.developers}</Link></nav></footer>
+
+      <footer className={styles.footer}>
+        <p>{t.footer}</p>
+        <nav aria-label={t.footer}>
+          <Link href="/guide">{t.guide}</Link>
+          <Link href="/developers">{t.developers}</Link>
+        </nav>
+      </footer>
     </main>
   );
 }

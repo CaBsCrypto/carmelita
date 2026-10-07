@@ -85,3 +85,34 @@ test("receipt verifier rejects removed or duplicate matching logs", async () => 
   await assert.rejects(createAvalancheMerchantReceiptVerifier(reader({ logs: [{ ...log, removed: true }] })).verify({ settlement, record }), /transfer_not_unique/);
   await assert.rejects(createAvalancheMerchantReceiptVerifier(reader({ logs: [log, log] })).verify({ settlement, record }), /transfer_not_unique/);
 });
+
+test("receipt verifier rejects transfers to another recipient, from another payer or in another token", async () => {
+  const other = `0x${"e".repeat(40)}`;
+  const log = { address: AVALANCHE_X402.asset.address, topics: [transferTopic, addressTopic(payer), addressTopic(payTo)], data: amountData(BigInt(10000)) };
+  for (const changed of [
+    { ...log, topics: [transferTopic, addressTopic(payer), addressTopic(other)] },
+    { ...log, topics: [transferTopic, addressTopic(other), addressTopic(payTo)] },
+    { ...log, address: other },
+  ]) {
+    await assert.rejects(createAvalancheMerchantReceiptVerifier(reader({ logs: [changed] })).verify({ settlement, record }), /transfer_not_unique/);
+  }
+});
+
+test("receipt verifier finds a single exact transfer among unrelated and malformed logs", async () => {
+  const other = `0x${"e".repeat(40)}`;
+  const log = { address: AVALANCHE_X402.asset.address, topics: [transferTopic, addressTopic(payer), addressTopic(payTo)], data: amountData(BigInt(10000)) };
+  const evidence = await createAvalancheMerchantReceiptVerifier(reader({ logs: [
+    { ...log, address: other },
+    { ...log, topics: [transferTopic, addressTopic(other), addressTopic(payTo)] },
+    { ...log, topics: [transferTopic, "0x00", addressTopic(payTo)] },
+    { ...log, data: "0x00" },
+    log,
+    { ...log, topics: ["0x00", addressTopic(payer), addressTopic(payTo)] },
+  ] })).verify({ settlement, record });
+  assert.equal(evidence.amountAtomic, "10000");
+  assert.equal(evidence.asset, AVALANCHE_X402.asset.address.toLowerCase());
+});
+
+test("receipt verifier rejects a receipt for a different transaction", async () => {
+  await assert.rejects(createAvalancheMerchantReceiptVerifier(reader({ transactionHash: `0x${"e".repeat(64)}` })).verify({ settlement, record }), /hash_mismatch/);
+});

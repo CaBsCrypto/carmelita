@@ -121,7 +121,7 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
   return [
     defineQuery({
       id: "personal.context", toolName: "get_agent_context", title: "Get personal agent context",
-      description: "Read the authenticated user's profile, registered wallets, connections and authority boundary. Present Network | Address | Registration state | Explorer using returned explorerUrl. Registration is not proof of an on-chain balance or activation. Never create a wallet.",
+      description: "Read the authenticated user's profile, registered wallets, connections and authority boundary. Present Network | Address | Registration state | Explorer using returned explorerUrl for each enabled Testnet/Devnet registration. Raw wallet status='active' means registered in Carmelita's internal registry; status='pending' means pending registration. Use registrationState to present registered/pending registration (registrada/pendiente de registro in Spanish). Neither state proves on-chain activity, account activation or balance. The same EVM address may have separate Avalanche Fuji, BNB Testnet and Base Sepolia registrations. Never create a wallet.",
       inputSchema: z.object({}).strict(), scope: "agent:context", dataScope: "personal_testnet_context",
       execute: (_, { userId }) => dependencies.context(userId),
     }),
@@ -136,13 +136,13 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
     }),
     defineQuery({
       id: "personal.wallets", toolName: "read_personal_wallets", title: "Read registered wallets",
-      description: "Read only the authenticated owner's persisted wallet metadata and Testnet network associations, including pending registrations and exact explorer links. No balances, onboarding, funding or activation is inferred.",
+      description: "Read only the authenticated owner's persisted wallet metadata and Testnet/Devnet network associations, including pending registrations and exact explorer links. Raw wallet status='active' means registered in the internal registry; status='pending' means pending registration. Present registrationState as registered/pending registration (registrada/pendiente de registro in Spanish), with Network | Address | Registration state | Explorer. Separate EVM networks may share an address. No on-chain activity, balances, onboarding, funding or activation is inferred. Legacy pendingActivation is an alias for pendingRegistration.",
       inputSchema: z.object({}).strict(), scope: "agent:read", dataScope: "personal_testnet_wallet_registry",
       execute: async (_, { userId }) => ({ ...await ownWallets(userId), source: "Carmelita wallet registry", queriedAt: queriedAt() }),
     }),
     defineQuery({
       id: "personal.wallets.balances", toolName: "read_personal_wallets_balances", title: "Read Testnet native wallet balances",
-      description: "Read native balances from enabled Testnet RPCs for the authenticated owner's registered wallets. Optional networks only filter existing registrations, never select another owner's address. Null or unavailable is not zero; registration status and on-chain activation are separate. Never value Testnet funds using Mainnet prices.",
+      description: "Read native balances from enabled Testnet/Devnet RPCs for the authenticated owner's registered wallets. Optional networks only filter existing registrations, never select another owner's address. registrationStatus='active' means registered in the internal registry; 'pending' means pending registration, neither proves on-chain activity or balance. Null or unavailable is not zero; registration status and on-chain activation are separate. Never value Testnet funds using Mainnet prices.",
       inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(5).optional() }).strict(),
       scope: "agent:read", dataScope: "personal_testnet_balances",
       execute: async ({ networks }, { userId }) => {
@@ -151,6 +151,7 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
         const balances = await Promise.all(wallets.map(async (wallet) => {
           const network = getWalletNetwork(wallet.network);
           const details = { network: wallet.network, address: wallet.address, registrationStatus: wallet.status,
+            registrationState: wallet.registrationState, registrationStatusScope: wallet.registrationStatusScope,
             nativeAsset: network.nativeAsset, explorerUrl: wallet.explorerUrl,
             source: network.family === "stellar" ? "Stellar Horizon" : network.family === "solana" ? "Solana RPC" : "EVM RPC",
             sourceUrl: network.rpcUrl, fetchedAt: queriedAt() };
@@ -171,7 +172,7 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
     }),
     defineQuery({
       id: "personal.wallets.status", toolName: "read_personal_wallets_status", title: "Read registered Testnet wallet status and assets",
-      description: "Read only the authenticated owner's registered Testnet wallets, native balances and existing Stellar assets with exact issuers. Avalanche Fuji also reads the configured Circle USDC contract. Other EVM and Solana networks expose native balances only; no token discovery is inferred. Registration, on-chain account existence and balances are separate. Missing or failed readings are null, never a fabricated zero. No activation, funding, signatures, transaction preparation or distributor access.",
+      description: "Read only the authenticated owner's registered Testnet/Devnet wallets, native balances and existing Stellar assets with exact issuers. registrationStatus='active' means registered in the internal registry; 'pending' means pending registration, neither proves on-chain activity or balance. Avalanche Fuji also reads the configured Circle USDC contract. Other EVM and Solana networks expose native balances only; no token discovery is inferred. Registration, on-chain account existence and balances are separate. Missing or failed readings are null, never a fabricated zero. No activation, funding, signatures, transaction preparation or distributor access.",
       inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(5).optional() }).strict(),
       scope: "agent:read", dataScope: "personal_testnet_wallet_status",
       execute: async ({ networks }, { userId, signal }) => {
@@ -183,7 +184,8 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
           const source = network.family === "stellar" ? "Stellar Horizon" : network.family === "solana" ? "Solana RPC" : "EVM RPC";
           const sourceUrl = network.family === "stellar" ? `${network.rpcUrl}/accounts/${encodeURIComponent(wallet.address)}` : network.rpcUrl;
           const details = { network: wallet.network, address: wallet.address, chainType: wallet.chainType,
-            registrationStatus: wallet.status, explorerUrl: wallet.explorerUrl, source, sourceUrl, testnet: true };
+            registrationStatus: wallet.status, registrationState: wallet.registrationState,
+            registrationStatusScope: wallet.registrationStatusScope, explorerUrl: wallet.explorerUrl, source, sourceUrl, testnet: true };
           const unavailableNative = () => ({ asset: network.nativeAsset, balance: null, status: "unavailable" as const,
             source, sourceUrl, fetchedAt: queriedAt(), error: "native_balance_unavailable" });
           if (network.family === "stellar") {
@@ -282,7 +284,7 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
     }),
     defineQuery({
       id: "personal.watchlist", toolName: "read_personal_watchlist", title: "Read personal market watchlist",
-      description: "Read the authenticated owner's existing watchlist without adding or changing symbols. Optionally quote up to ten stored symbols using the shared Mainnet market service; preserve ambiguity and per-asset failures and never value Testnet funds.",
+      description: "Read the authenticated owner's existing watchlist without adding or changing symbols. Optionally quote up to ten stored symbols using the shared Mainnet market service; preserve ambiguity, inactive identities (unavailable with reason='inactive'), verified absence (not_found) and provider failures (unavailable). Never value Testnet funds.",
       inputSchema: z.object({ includeQuotes: z.boolean().default(true), limit: z.number().int().min(1).max(10).default(10) }).strict(),
       scope: "agent:read", dataScope: "personal_watchlist_and_mainnet_market_data",
       execute: async ({ includeQuotes, limit }, { userId }) => {

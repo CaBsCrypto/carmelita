@@ -38,7 +38,14 @@ test("natural read routing separates token identity, blockchain TVL and personal
   assert.equal(comparison.id, "offchain.defillama.chains");
   assert.equal(comparison.input.sortBy, "tvl");
   assert.deepEqual(parseChatReadRequest("Dame mis wallets"), { id: "personal.wallets", input: {} });
+  for (const message of ["Mis billeteras", "¿Mis billeteras?", "¿Cuáles son mis billeteras?", "¿Qué billeteras tengo?", "My wallets", "What wallets do I have?", "Which are my wallets?", "Minhas carteiras", "Quais são minhas carteiras?", "Que carteiras eu tenho?"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "personal.wallets", input: {} }, message);
+  }
   assert.deepEqual(parseChatReadRequest("Muéstrame mis saldos"), { id: "personal.wallets.balances", input: {} });
+  for (const message of ["Muestra el saldo de mis billeteras", "Show my wallet balances", "Mostre o saldo das minhas carteiras"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "personal.wallets.balances", input: {} }, message);
+  }
+  for (const message of ["Qué es una billetera", "What is a wallet?", "O que é uma carteira?"]) assert.equal(parseChatReadRequest(message), null, message);
   assert.deepEqual(parseChatReadRequest("Show my watchlist"), { id: "personal.watchlist", input: {} });
   assert.deepEqual(parseChatReadRequest("Show my connections"), { id: "personal.connections", input: {} });
   assert.deepEqual(parseChatReadRequest("Qué sabes de mí"), { id: "personal.memory", input: {} });
@@ -56,7 +63,25 @@ test("financial actions, authorization and watchlist writes are not captured as 
   for (const message of [
     "Swap 1 XLM to USDC on Soroswap", "Deposita 1 XLM en DeFindex", "Send 0.001 AVAX to my other wallet",
     "Fund my wallet with Testnet XLM", "Add SOL to my watchlist", "Remove ETH from my watchlist", "Connect me to Notion",
+    "pay 20 USDC to another account at the current price", "Please pay 20 USDC at the current price",
+    "pay John at the current price", "Please pay John", "pay20USDC", "payJohn",
+    "precio de PAY y quiero transferir 20 USDC", "preço de PAY e envie 20 USDC",
+    "Mis billeteras y quiero transferir 20 USDC", "Show my wallets and pay John", "Mostre minhas carteiras e envie 1 SOL",
   ]) assert.equal(parseChatReadRequest(message), null, message);
+});
+
+test("normal catalog price questions route through the shared market reader without canonical ticker restrictions", () => {
+  for (const asset of ["PAY", "AI", "unknown-pilot-token"]) {
+    for (const message of [`¿Cuál es el precio de ${asset}?`, `What is the price of ${asset}?`, `Qual é o preço de ${asset}?`]) {
+      assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: asset }] } }, message);
+    }
+  }
+  for (const message of ["¿Cuál es el precio de USDC en Solana?", "What is the price of USDC on Solana?", "Qual é o preço de USDC na Solana?"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: "USDC", network: "solana" }] } }, message);
+  }
+  for (const message of ["PAY price", "PAY precio", "PAY preço"]) {
+    assert.deepEqual(parseChatReadRequest(message), { id: "offchain.market.quote", input: { assets: [{ query: "PAY" }] } }, message);
+  }
 });
 
 test("public NFT address selection is distinct from an owner-selected personal position", async () => {

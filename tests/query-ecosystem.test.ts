@@ -18,7 +18,7 @@ function rpc(result: string) {
 
 test("ecosystem exposes catalog reads only, preserving the skills contract", () => {
   const definitions = createEcosystemQueries({ bazaarEnabled: () => true });
-  assert.equal(definitions.length, 19);
+  assert.equal(definitions.length, 24);
   assert.equal(new Set(definitions.map((row) => row.id)).size, definitions.length);
   for (const definition of definitions) {
     assert.equal(definition.scope, "agent:read");

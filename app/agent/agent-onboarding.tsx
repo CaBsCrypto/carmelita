@@ -6,6 +6,7 @@ import AgentMemoryVault from "./agent-memory-vault";
 import RegistryWalletPanel from "./registry-wallet-panel";
 import WorkspaceAvailability from "./workspace-availability";
 import AgentPanel from "./agent-panel";
+import ChatGPTConnection from "./chatgpt-connection";
 import { workspaceCopy } from "./workspace-copy";
 import { workspaceCommands } from "./workspace-queries";
 import { LanguageControl } from "../language-toggle";
@@ -14,10 +15,11 @@ import Link from "next/link";
 import WebMcpInspector, { WebMcpProvider } from "./webmcp-inspector";
 import AgentExternalAccess from "./agent-external-access";
 import AgentConnectedApps from "./agent-connected-apps";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { type Locale, useLocale } from "../language-toggle";
 import { sessionCloseCopy, useSessionClose } from "../use-session-close";
 import { requestTravelSearch } from "./travel-search-request";
+import { requestWalletBootstrap } from "./session-request";
 
 const onboardingUi = {
   en: {
@@ -173,7 +175,7 @@ function PrivySetupRequired({ locale }: { locale: Locale }) {
     pt: "O acesso está temporariamente indisponível. Consulte o guia e tente novamente mais tarde.",
   }[locale];
   return <section className="agent-visitor shell">
-    <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /></header>
+    <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} signInAvailable={false} /></header>
     <div className="visitor-chat"><h1>{t.welcome}</h1><p role="status">{text}</p><Link href="/guide">{t.guide}</Link></div>
   </section>;
 }
@@ -243,26 +245,8 @@ function PrivyWorkspace({
     setError(null);
 
     try {
-      const token = await getAccessToken();
+      const body = await requestWalletBootstrap<BootstrapResult>(userId, getAccessToken, refreshUser, controller.signal);
       controller.signal.throwIfAborted();
-      if (!token) throw new Error("Authentication token unavailable");
-      const response = await fetch("/api/agent/bootstrap", {
-        method: "POST",
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Wallet bootstrap failed");
-      controller.signal.throwIfAborted();
-      // The wallet may have just been created by the Privy server SDK. Refresh
-      // the browser identity so extended-chain signing can discover it without
-      // forcing the user through a sign-out/sign-in cycle.
-      await refreshUser();
-      controller.signal.throwIfAborted();
-      if (body.user?.id !== userId) throw new Error("wallet_response_mismatch");
       setResult(body);
       setStatus("ready");
     } catch (caught) {
@@ -271,10 +255,12 @@ function PrivyWorkspace({
         return;
       }
       bootstrappedFor.current = null;
-      setError(caught instanceof Error ? caught.message : "Wallet bootstrap failed");
+      setError(caught instanceof Error && caught.name === "TimeoutError"
+        ? locale === "es" ? "La preparación tardó demasiado. Puedes reintentar; se revisarán las billeteras existentes." : locale === "pt" ? "A preparação demorou demais. Tente novamente; as carteiras existentes serão verificadas." : "Preparation took too long. Retry to check your existing wallets."
+        : caught instanceof Error ? caught.message : "Wallet bootstrap failed");
       setStatus("error");
     }
-  }, [getAccessToken, refreshUser, userId]);
+  }, [getAccessToken, refreshUser, userId, locale]);
 
   useEffect(() => {
     if (!autoLogin || !ready || authenticated || loginStarted.current) return;
@@ -289,7 +275,7 @@ function PrivyWorkspace({
     void openPrivy();
   }, [authenticated, autoLogin, login, ready]);
 
-  useEffect(() => () => {
+  useLayoutEffect(() => () => {
     bootstrapRequest.current?.abort();
     travelRequest.current?.abort();
     bootstrappedFor.current = null;
@@ -319,6 +305,7 @@ function PrivyWorkspace({
     travelRequest.current = controller;
     setTravelStatus("searching");
     setTravelError(null);
+    setTravelResult(null);
     try {
       const body = await requestTravelSearch<TravelSearchResult>({
         location: String(form.get("location") ?? ""),
@@ -332,7 +319,9 @@ function PrivyWorkspace({
       setTravelStatus("idle");
     } catch (caught) {
       if (controller.signal.aborted) return;
-      setTravelError(caught instanceof Error ? caught.message : "Travel search failed");
+      setTravelError(caught instanceof Error && caught.name === "TimeoutError"
+        ? locale === "es" ? "La búsqueda tardó demasiado. Puedes reintentar." : locale === "pt" ? "A busca demorou demais. Tente novamente." : "The search took too long. You can retry."
+        : caught instanceof Error ? caught.message : "Travel search failed");
       setTravelStatus("error");
     }
   }
@@ -348,7 +337,7 @@ function PrivyWorkspace({
 
   if (!authenticated) {
     return <section className="agent-visitor shell">
-      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /></header>
+      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} /></header>
       <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
       {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
     </section>;
@@ -361,6 +350,7 @@ function PrivyWorkspace({
       <header className="workspace-header">
         <Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span>
         <nav aria-label={w.functions}>
+          <ChatGPTConnection locale={locale} authenticated />
           <button onClick={() => setPanel("functions")}>{w.functions}</button>
           <button onClick={() => setPanel("wallets")}>{w.wallets}</button>
           <button onClick={() => setPanel("account")}>{w.account}</button>

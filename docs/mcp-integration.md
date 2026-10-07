@@ -47,24 +47,14 @@ npx @modelcontextprotocol/inspector@latest
 | --- | --- | --- |
 | search_offers | Search public offers | Read-only, idempotent |
 | get_offer | Read one offer | Read-only, idempotent |
-| create_intent | Freeze an action under a caller idempotency key | Mutating, non-destructive, idempotent |
-| evaluate_policy | Apply expiry, network and 100 USDC sandbox rules | Mutating, non-destructive, idempotent |
-| demo_authorize_intent | Record sandbox confirmation | Not a wallet signature |
-| execute_authorized_intent | Create or replay a simulated receipt | Destructive annotation, idempotent |
-| get_receipt | Read execution evidence | Read-only, idempotent |
 
 ### Recommended flow
 
-1. Search and select an offer.
-2. Create an intent with a stable idempotency key.
-3. Evaluate policy.
-4. Display merchant, amount, network and expiry.
-5. Obtain explicit user confirmation.
-6. Execute with the temporary sandbox capability.
-7. Store and verify the receipt.
-8. Verify settlement and fulfillment separately.
+1. Search public offers with `search_offers`.
+2. Read one offer with `get_offer` and inspect its availability.
+3. Treat publication as catalog metadata, not proof that a service can execute.
 
-The endpoint is a public sandbox. Production mutation requires user-bound OAuth 2.1, per-tool scopes, revocation, rate limits and evaluation coverage.
+Legacy intent, authorization, execution and private receipt tools are unregistered. Direct calls are rejected. `POST /api/commerce` is disabled (HTTP 405, `commerce_demo_disabled`), including replay and receipt lookup. Authenticated commerce requires a separate accepted integration, owner binding and scoped approval; `agent:read` never grants spending authority.
 
 ## Outbound connector model
 
@@ -81,15 +71,14 @@ Outbound OAuth tokens are encrypted with CONNECTOR_ENCRYPTION_KEY. Login to Carm
 When Chrome exposes document.modelContext, app/webmcp-registry.tsx registers:
 
 - search_agent_offers
-- prepare_commerce_intent
 
-WebMCP acts in an open browser tab. Remote MCP works headlessly. Browser-scoped wallet authorization and execution are excluded.
+WebMCP acts in an open browser tab. Remote MCP works headlessly. The public registry offers only catalog reads; browser-scoped wallet authorization and execution are excluded.
 
 ## Persistence and replay safety
 
 With DATABASE_URL, Neon stores intents, policy decisions, hashed authorization capabilities, receipts and audit events. Database uniqueness constraints enforce one intent per idempotency key and one receipt per intent.
 
-Without DATABASE_URL, the commerce demo can use temporary process memory. This is not suitable for production, waitlist capture or persistent connections.
+Legacy storage and backend code remain for historical tests, but public clients cannot access their mutation or receipt lifecycle. Without DATABASE_URL, public discovery returns labelled built-in demos; it does not promise durable service availability.
 
 ## Discovery and health
 

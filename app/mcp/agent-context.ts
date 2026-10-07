@@ -23,7 +23,12 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
   // Project fields explicitly: persisted rows also carry private provider IDs.
   const ordered = wallets.filter((wallet) => networks.some((network) =>
     wallet.network === network.id && wallet.chainType === PRIVY_CHAIN_TYPE_BY_FAMILY[network.family],
-  )).map(({ address, chainType, network, status }) => ({ address, chainType, network, status, explorerUrl: walletExplorerUrl(network, address) })).sort((left, right) =>
+  )).map(({ address, chainType, network, status }) => ({
+    address, chainType, network, status,
+    registrationState: status === "active" ? "registered" as const : status === "pending" ? "pending_registration" as const : "unknown" as const,
+    registrationStatusScope: "internal_registry" as const,
+    explorerUrl: walletExplorerUrl(network, address),
+  })).sort((left, right) =>
     left.network.localeCompare(right.network) || left.address.localeCompare(right.address),
   );
   const activeNetworks = new Set(
@@ -47,6 +52,15 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
     walletsByNetwork,
     walletRegistration: {
       registered: visible.length > 0,
+      statusSemantics: {
+        scope: "internal_registry" as const,
+        active: "registered" as const,
+        pending: "pending_registration" as const,
+        onChainActivity: "not_inferred" as const,
+        balance: "not_inferred" as const,
+      },
+      pendingRegistration: visible.filter((wallet) => wallet.status === "pending"),
+      // Retained DTO alias; these rows await registration, not proven on-chain activation.
       pendingActivation: visible.filter((wallet) => wallet.status === "pending"),
       unregisteredNetworks: networks.filter((network) => !visible.some((wallet) => wallet.network === network.id)).map((network) => network.id),
       onboardingRequired: visible.length === 0,

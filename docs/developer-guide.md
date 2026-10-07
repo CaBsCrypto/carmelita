@@ -8,8 +8,8 @@ For the product model and vocabulary, start with the [canonical narrative](produ
 
 | Goal | Start here |
 | --- | --- |
-| Let another AI agent discover offers and create safe intents | Inbound remote MCP |
-| Build a custom frontend for the sandbox lifecycle | Commerce HTTP API |
+| Let another AI agent discover public offers | Inbound remote MCP |
+| Build a custom frontend for public catalog reads | Commerce HTTP API |
 | Let Carmelita use your product | Outbound connector |
 | Make a page discoverable in supporting Chrome versions | WebMCP |
 | Add login, user state or wallet features | Privy-authenticated application APIs |
@@ -49,9 +49,9 @@ npm run build
 | Surface | Authentication today | Intended use |
 | --- | --- | --- |
 | GET /api/health | Public | Runtime readiness and honest payment mode |
-| GET /api/commerce | Public sandbox | Offer discovery |
-| POST /api/commerce | Public sandbox | Demo commerce lifecycle |
-| POST /api/mcp | Public sandbox | Remote MCP tools |
+| GET /api/commerce | Public read-only catalog | Offer discovery |
+| POST /api/commerce | Disabled | HTTP 405 before body/storage access |
+| POST /api/mcp | Public read-only catalog | search_offers and get_offer only |
 | GET /.well-known/mcp | Public | MCP discovery |
 | POST /api/agent/bootstrap | Privy bearer + same-origin | User and wallet bootstrap |
 | GET/POST /api/agent/chat | Privy bearer + same-origin | User chat and history |
@@ -82,19 +82,15 @@ Configuration:
 }
 ~~~
 
-The seven current tools are documented in [mcp-integration.md](mcp-integration.md).
+The two public read tools are documented in [mcp-integration.md](mcp-integration.md).
 
 Safe caller flow:
 
-1. Generate one stable idempotency key for the logical action.
-2. Call create_intent.
-3. Call evaluate_policy.
-4. Show the frozen action to the user.
-5. Call demo_authorize_intent only after explicit confirmation.
-6. Call execute_authorized_intent with the short-lived capability.
-7. Store the receipt and treat replayed: true as success.
+1. Call `search_offers` to discover public listings.
+2. Call `get_offer` to inspect one listing and its availability.
+3. Verify service readiness independently; publication does not authorize execution.
 
-## Option B: commerce HTTP sandbox
+## Option B: public commerce HTTP catalog
 
 ### Discover offers
 
@@ -102,61 +98,9 @@ Safe caller flow:
 curl "http://localhost:3000/api/commerce?query=travel"
 ~~~
 
-### Create an intent
+`POST /api/commerce` returns HTTP 405 with `commerce_demo_disabled` before reading the body or accessing storage. This includes preparation, authorization, execution, replay and receipt lookup. The public MCP likewise rejects retired tool names.
 
-~~~bash
-curl -X POST "http://localhost:3000/api/commerce" \
-  -H "content-type: application/json" \
-  -d '{
-    "action": "create_intent",
-    "offerId": "travala-search",
-    "actorId": "developer-demo",
-    "idempotencyKey": "demo-travel-001"
-  }'
-~~~
-
-Reusing the same idempotencyKey returns the original intent.
-
-### Evaluate policy
-
-~~~bash
-curl -X POST "http://localhost:3000/api/commerce" \
-  -H "content-type: application/json" \
-  -d '{
-    "action": "evaluate_policy",
-    "intentId": "INTENT_ID"
-  }'
-~~~
-
-The demo rejects expired intents, negative amounts and amounts above 100 USDC.
-
-### Authorize the sandbox action
-
-~~~bash
-curl -X POST "http://localhost:3000/api/commerce" \
-  -H "content-type: application/json" \
-  -d '{
-    "action": "authorize",
-    "intentId": "INTENT_ID",
-    "explicitUserConfirmation": true
-  }'
-~~~
-
-The authorizationToken is a sandbox capability, not a wallet signature.
-
-### Execute and replay
-
-~~~bash
-curl -X POST "http://localhost:3000/api/commerce" \
-  -H "content-type: application/json" \
-  -d '{
-    "action": "execute",
-    "intentId": "INTENT_ID",
-    "authorizationToken": "AUTHORIZATION_TOKEN"
-  }'
-~~~
-
-Send the same request again. The receipt stays the same and replayed becomes true.
+The personal-agent and provider-admin MCP retain their authentication and scoped contracts. Catalog reads are not an authentication or purchase capability.
 
 ## Option C: build an outbound connector
 

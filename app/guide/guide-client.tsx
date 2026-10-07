@@ -32,7 +32,8 @@ const copy = {
     questions: [
       ["¿Qué hago si la preparación queda parcial?", "Conserva la misma cuenta y revisa el aviso en Billeteras. Algunas redes pueden no estar listas todavía; no necesitas crear otra identidad."],
       ["¿Tener una dirección significa que tengo saldo?", "No. El estado del registro describe la preparación en Carmelita. El saldo y la activación en la red se consultan por separado. No necesitas financiar la billetera para este recorrido."],
-      ["¿Qué pasa si una consulta no está disponible?", "La respuesta debe indicar la fuente, la conexión o el dato que falta. Una función en el catálogo no garantiza que su proveedor esté operativo en ese momento."],
+      ["¿Qué pasa si una consulta no está disponible?", "La respuesta indica la fuente, la conexión o el dato que falta. Puedes reintentar la consulta; si un panel muestra Reintentar, usa ese botón. Una función en el catálogo no garantiza que su proveedor esté operativo en ese momento."],
+      ["¿Qué significa un precio no disponible?", "Un activo identificado como inactivo conserva su ID y fuente. No encontrado se limita a los catálogos consultados. Si hay varios candidatos, elige un ID o precisa red y dirección. Si otra fuente falla, la consulta es parcial y puedes reintentar; la falta de precio no equivale a cero."],
       ["¿Por qué los precios dicen Mainnet?", "Los precios y el TVL son datos públicos de mercado Mainnet. Tus billeteras siguen en Testnet y sus fondos de prueba no se valoran automáticamente."],
     ],
     chatgpt: "ChatGPT es opcional",
@@ -65,7 +66,8 @@ const copy = {
     questions: [
       ["What if preparation is only partial?", "Keep the same account and check the notice in Wallets. Some networks may not be ready yet; you do not need to create another identity."],
       ["Does having an address mean I have funds?", "No. Registration status describes preparation in Carmelita. Balance and on-chain activation are checked separately. You do not need to fund a wallet for this visit."],
-      ["What if a query is unavailable?", "The response should identify the missing source, connection or data. A catalog entry does not guarantee that its provider is operating at that moment."],
+      ["What if a query is unavailable?", "The response identifies the missing source, connection or data. You can retry the query; if a panel shows Retry, use that button. A catalog entry does not guarantee that its provider is operating at that moment."],
+      ["What does an unavailable price mean?", "An asset identified as inactive keeps its ID and source. Not found applies only to the catalogs consulted. If several candidates match, choose an ID or specify network and address. If another source fails, the query is partial and you can retry; a missing price is not zero."],
       ["Why do prices say Mainnet?", "Prices and TVL are public Mainnet market data. Your wallets remain on Testnet and test funds are not automatically valued."],
     ],
     chatgpt: "ChatGPT is optional",
@@ -98,7 +100,8 @@ const copy = {
     questions: [
       ["E se a preparação estiver parcial?", "Mantenha a mesma conta e confira o aviso em Carteiras. Algumas redes podem não estar prontas ainda; não é necessário criar outra identidade."],
       ["Ter um endereço significa que tenho saldo?", "Não. O estado do registro descreve a preparação na Carmelita. Saldo e ativação na rede são consultados separadamente. Não é necessário financiar a carteira para este percurso."],
-      ["E se uma consulta estiver indisponível?", "A resposta deve indicar a fonte, conexão ou dado que falta. Uma função no catálogo não garante que seu provedor esteja operando naquele momento."],
+      ["E se uma consulta estiver indisponível?", "A resposta indica a fonte, conexão ou dado que falta. Você pode repetir a consulta; se um painel mostrar Tentar novamente, use esse botão. Uma função no catálogo não garante que seu provedor esteja operando naquele momento."],
+      ["O que significa um preço indisponível?", "Um ativo identificado como inativo mantém seu ID e fonte. Não encontrado se limita aos catálogos consultados. Se houver vários candidatos, escolha um ID ou indique rede e endereço. Se outra fonte falhar, a consulta é parcial e você pode tentar novamente; a falta de preço não equivale a zero."],
       ["Por que os preços dizem Mainnet?", "Preços e TVL são dados públicos de mercado Mainnet. Suas carteiras continuam em Testnet e os fundos de teste não são avaliados automaticamente."],
     ],
     chatgpt: "ChatGPT é opcional",
@@ -162,7 +165,7 @@ export default function GuideClient() {
         {t.questions.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
         <details id="chatgpt">
           <summary>{t.chatgpt}</summary><p>{t.chatgptText}</p><p>{t.chatgptHelp}</p>
-          <p><Link href="/agent">{t.agent}</Link></p>
+          <p><Link href="/connect-chatgpt">{locale === "es" ? "Conectar Carmelita con ChatGPT" : locale === "pt" ? "Conectar Carmelita ao ChatGPT" : "Connect Carmelita with ChatGPT"}</Link></p>
         </details>
         <details>
           <summary>{t.advanced}</summary><p>{t.advancedText}</p>

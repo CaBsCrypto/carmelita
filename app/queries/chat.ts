@@ -128,8 +128,8 @@ export async function executeChatRead(request: ChatReadRequest, userId: string, 
     if (definition.id === "personal.wallets.balances" && result && typeof result === "object" && "balances" in result && Array.isArray(result.balances)) {
       const title = { es: "Saldos nativos consultados", en: "Native balances checked", pt: "Saldos nativos consultados" }[locale];
       const unavailable = { es: "Saldo no disponible", en: "Balance unavailable", pt: "Saldo indisponível" }[locale];
-      const pending = { es: "Registrada, pendiente de activación", en: "Registered, activation pending", pt: "Registrada, ativação pendente" }[locale];
-      return { content: [`**${title}**`, ...result.balances.map(row => `${row.network}: ${row.balance ?? (row.status === "not_activated" ? pending : unavailable)}`)].join("\n\n"), actions: [] };
+      const missingAccount = { es: "Cuenta Stellar no encontrada en Testnet; saldo no disponible", en: "Stellar account not found on Testnet; balance unavailable", pt: "Conta Stellar não encontrada na Testnet; saldo indisponível" }[locale];
+      return { content: [`**${title}**`, ...result.balances.map(row => `${row.network}: ${row.balance ?? (row.status === "not_activated" ? missingAccount : unavailable)}`)].join("\n\n"), actions: [] };
     }
     const label = { es: "Consulta de sólo lectura", en: "Read-only query", pt: "Consulta somente de leitura" }[locale];
     // Structured data preserve the exact contract that ChatGPT receives; presentation is independent.
