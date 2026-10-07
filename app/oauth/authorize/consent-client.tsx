@@ -10,7 +10,7 @@ import styles from "./consent.module.css";
 const copy = {
   es: {
     eyebrow: "CONEXIÓN SEGURA", title: "Conecta Carmelita con tu chat", wants: "quiere conectarse con Carmelita",
-    lede: "Ingresa con tu cuenta Carmelita existente y revisa los permisos que pide esta aplicación. Puedes denegar o revocar el acceso después.",
+    lede: "Ingresa con tu correo para crear o recuperar tu cuenta Carmelita y revisa los permisos que pide esta aplicación. Puedes denegar o revocar el acceso después.",
     loading: "Cargando el inicio de sesión…", login: "Continuar con Privy", inspecting: "Revisando los permisos solicitados…", account: "Cuenta Carmelita", permissions: "La aplicación solicita", permission: "Permiso", deny: "Denegar", allow: "Autorizar conexión", working: "Preparando cuenta y conexión…", continue: "Continuar a",
     ready: "La respuesta de autorización está lista. Continúa para terminar la conexión en tu chat.",
     warning: "Al autorizar, prepararemos las direcciones de tus wallets Testnet y las vincularemos a esta cuenta, sin mover fondos. La activación en la red puede quedar pendiente. agent:read permite lectura de billeteras, catálogo y actividad. El historial de conversaciones requiere agent:conversation, si aparece en esta lista. Esta conexión no habilita compras en Bazaar ni pagos desde ChatGPT.",
@@ -20,7 +20,7 @@ const copy = {
   },
   en: {
     eyebrow: "SECURE CONNECTION", title: "Connect Carmelita to your chat", wants: "wants to connect with Carmelita",
-    lede: "Sign in with your existing Carmelita account and review the permissions requested by this application. You can deny access or revoke it later.",
+    lede: "Sign in with your email to create or recover your Carmelita account and review the permissions requested by this application. You can deny access or revoke it later.",
     loading: "Loading secure sign-in…", login: "Continue with Privy", inspecting: "Checking the requested permissions…", account: "Carmelita account", permissions: "The application requests", permission: "Permission", deny: "Deny", allow: "Allow connection", working: "Preparing account and connection…", continue: "Continue to",
     ready: "The authorization response is ready. Continue to finish connecting in your chat.",
     warning: "When you authorize, we prepare your Testnet wallet addresses and link them to this account without moving funds. Network activation may remain pending. agent:read allows wallet, catalog and activity reads. Conversation history requires agent:conversation, if shown in this list. This connection does not enable Bazaar purchases or payments from ChatGPT.",
@@ -30,7 +30,7 @@ const copy = {
   },
   pt: {
     eyebrow: "CONEXÃO SEGURA", title: "Conecte Carmelita ao seu chat", wants: "quer se conectar à Carmelita",
-    lede: "Entre com sua conta Carmelita existente e confira as permissões solicitadas pelo aplicativo. Você pode negar o acesso ou revogá-lo depois.",
+    lede: "Entre com seu e-mail para criar ou recuperar sua conta Carmelita e confira as permissões solicitadas pelo aplicativo. Você pode negar o acesso ou revogá-lo depois.",
     loading: "Carregando o login…", login: "Continuar com Privy", inspecting: "Conferindo as permissões solicitadas…", account: "Conta Carmelita", permissions: "O aplicativo solicita", permission: "Permissão", deny: "Negar", allow: "Autorizar conexão", working: "Preparando conta e conexão…", continue: "Continuar para",
     ready: "A resposta de autorização está pronta. Continue para concluir a conexão no seu chat.",
     warning: "Ao autorizar, preparamos os endereços das suas carteiras Testnet e vinculamos à conta, sem movimentar fundos. A ativação na rede pode ficar pendente. agent:read permite consultar carteiras, catálogo e atividade. O histórico de conversas exige agent:conversation, se aparecer nesta lista. Esta conexão não habilita compras no Bazaar nem pagamentos pelo ChatGPT.",

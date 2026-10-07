@@ -9,6 +9,7 @@ import {
 import { hasSameRequestOrigin } from "@/app/stytch/request-security";
 import { normalizeOAuthAuthenticationError, publicOAuthError } from "@/app/stytch/public-error";
 import { prepareOAuthWallets } from "@/app/stytch/authorize-with-wallets";
+import { authorizeOwner } from "@/app/stytch/authorize-owner";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -34,18 +35,10 @@ export async function POST(request: Request) {
     const oauthRequest = parseOAuthAuthorizationRequest(body.query);
     const config = readStytchConnectedAppsConfig();
     const client = new StytchConnectedAppsClient(config);
-    const stytchUserId = await client.ensureUserForPrivy(identity.id, identity.email);
-    if (body.consentGranted) {
-      // Validate the registered client, exact resource and grantable scopes before provisioning.
-      await client.preflightAuthorization(oauthRequest, stytchUserId);
-      await prepareOAuthWallets({ id: claims.user_id, email: identity.email });
-      await linkOAuthSubject({
-        issuer: config.issuer,
-        subject: stytchUserId,
-        privyDid: claims.user_id,
-      });
-    }
-    const result = await client.submitAuthorization(oauthRequest, stytchUserId, body.consentGranted);
+    const result = await authorizeOwner({
+      identity: { id: claims.user_id, email: identity.email }, issuer: config.issuer,
+      request: oauthRequest, consentGranted: body.consentGranted,
+    }, { client, prepare: prepareOAuthWallets, link: linkOAuthSubject });
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store", Vary: "Authorization" },
     });

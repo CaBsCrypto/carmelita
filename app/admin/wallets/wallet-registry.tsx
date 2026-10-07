@@ -123,7 +123,7 @@ export default function WalletRegistry({
               <article className="wallet-user" key={user.privyDid}>
                 <header>
                   <div><span className="wallet-user-avatar">{(user.email || "P").charAt(0).toUpperCase()}</span><div><strong>{user.email || "Email unavailable"}</strong><code title={user.privyDid}>{shortDid(user.privyDid)}</code></div></div>
-                  <div><span className={user.complete ? "wallet-health complete" : "wallet-health attention"}>{user.complete ? "Complete" : "Needs attention"}</span><small>Last seen {formatDate(user.lastSeenAt)}</small></div>
+                  <div><span className={user.complete ? "wallet-health complete" : "wallet-health attention"}>{user.complete ? "Complete" : "Needs attention"}</span><small>Registered <time dateTime={user.createdAt}>{formatDate(user.createdAt)}</time></small><small>Last seen <time dateTime={user.lastSeenAt}>{formatDate(user.lastSeenAt)}</time></small></div>
                 </header>
                 <p>{user.uniqueWallets} unique wallets · {user.networkAssociations} network associations</p>
                 {user.evmIdentityConflict && <div className="wallet-integrity-alert">EVM identity conflict: network associations must share one wallet and address.</div>}

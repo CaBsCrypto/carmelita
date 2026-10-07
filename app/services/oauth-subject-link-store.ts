@@ -47,7 +47,8 @@ export function assertOAuthSubjectOwnership(
 export async function linkOAuthSubject(input: OAuthSubjectLinkInput) {
   const normalized = validateOAuthSubjectLink(input);
   const db = getDb();
-  // OAuth links an authenticated profile; wallet onboarding belongs to Carmelita.
+  // Authorization prepares the verified profile and wallets before linking the subject.
+  // Keep the fallback identity insert for existing callers; preserve existing profile fields.
   await db.batch([db.insert(agentUsers).values({
     id: normalized.privyDid,
   }).onConflictDoNothing(), db.insert(oauthSubjectLinks).values({
