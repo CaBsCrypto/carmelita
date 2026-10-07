@@ -38,3 +38,18 @@
 .accountPreparation>p{font-size:14px;line-height:1.6}
 .tutorialTitle{margin:26px 0 16px;font-size:20px;color:#153f32}
 @media(max-width:600px){.quickStart{padding:16px}.quickStart> :is(h2,h3){font-size:21px}.quickStart .urlBox{margin-left:0}.guide .primaryAction{font-size:16px}}
+.steps{display:grid;gap:18px;margin-bottom:24px}
+.steps>li,.steps>li+li{padding:24px 24px 24px 68px;border:1px solid #d6e2da;border-radius:14px;background:#fff;min-width:0}
+.steps .stepNumber,.steps>li+li .stepNumber{top:24px;left:22px;background:#153f32;color:#fff}
+.stepActions{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0 16px}
+.guide .secondaryAction{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 18px;box-sizing:border-box;border:1px solid #8bab99;border-radius:9px;background:#edf5ef;color:#153f32;text-decoration:none;font-weight:650;line-height:1.4;text-align:center;max-width:100%}
+.guide .secondaryAction:hover{background:#dcece1;border-color:#153f32}
+.helpPanel{margin-top:16px;border:1px solid #d6e2da;border-radius:9px;background:#f6f8f5;overflow:hidden}
+.guide .helpPanel>summary,.guide .accountPreparation>summary{display:list-item;padding:14px 18px;min-height:48px;box-sizing:border-box;line-height:1.5;font-weight:600;list-style-position:inside}
+.helpPanel>p,.helpPanel>a{margin:12px 18px!important}
+.helpPanel>a{display:inline-block;padding-bottom:8px;text-decoration:underline;text-underline-offset:3px}
+.accountPreparation{border:1px solid #b6cbbd;border-radius:10px;background:#f1f6f2;padding:0;overflow:hidden}
+.accountPreparation>p,.accountPreparation>div{margin:14px 18px}
+.accountPreparation>summary:hover,.helpPanel>summary:hover{background:#e5eee8}
+.guide summary:focus-visible{outline:3px solid #235b48;outline-offset:-3px}
+@media(max-width:600px){.steps>li,.steps>li+li{padding:58px 16px 20px}.steps .stepNumber,.steps>li+li .stepNumber{top:16px;left:16px}.stepActions{display:grid}.guide .secondaryAction{width:100%}.guide .helpPanel>summary,.guide .accountPreparation>summary{padding:12px}.helpPanel>p,.helpPanel>a{margin:12px!important}}

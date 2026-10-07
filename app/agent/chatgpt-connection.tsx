@@ -111,7 +111,7 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
     <details className={styles.accountPreparation}><summary>{q.account}</summary><p>{q.accountHelp}</p><ConnectionAccount locale={locale} onExternalDialog={onExternalDialog} /></details>
     <Heading className={styles.tutorialTitle}>{q.tutorial}</Heading>
     <ol className={styles.steps}>
-      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a><details><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><div className={styles.stepActions}><a className={styles.secondaryAction} href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a></div><details className={styles.helpPanel}><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
       <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{t.consentTitle}</Heading><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
     </ol>
     <p className={styles.permissions}>{t.permissions}</p><p className={styles.note}>{e.limit}</p>
