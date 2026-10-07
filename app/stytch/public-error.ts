@@ -39,6 +39,8 @@ export function normalizeOAuthAuthenticationError(error: unknown): Error {
 
 export function publicOAuthError(error: unknown, operation: "authorize" | "preflight") {
   const code = error instanceof Error ? error.message : "";
+  if (["oauth_wallet_preparation_incomplete", "wallet_persistence_unavailable", "database_not_configured"].includes(code)) return { code: "oauth_wallet_preparation_incomplete", status: 503 };
+  if (code === "wallet_identity_conflict") return { code, status: 409 };
   if (code === "invalid_origin") return { code, status: 403 };
   if (code === "privy_access_token_missing" || code === "privy_access_token_invalid") return { code, status: 401 };
   if (configurationErrors.has(code)) return { code, status: 503 };
