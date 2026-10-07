@@ -43,9 +43,30 @@ test("pending records retain their address and supplied explorer while missing a
   }));
   assert.equal(rows.length, 5);
   assert.equal(rows[0].status, "pending");
+  assert.equal(rows[0].registrationState, "registered");
   assert.equal(rows[0].address, "GFIXTURE");
   assert.equal(rows[0].explorerUrl, suppliedUrl);
-  for (const row of rows.slice(1)) assert.deepEqual([row.status, row.address, row.explorerUrl], [null, null, null]);
+  for (const row of rows.slice(1)) assert.deepEqual([row.status, row.registrationState, row.address, row.explorerUrl], [null, null, null, null]);
+});
+
+test("backend registration state is authoritative and legacy fallback only recognizes persisted statuses", () => {
+  for (const status of ["active", "pending", "registered"]) {
+    assert.equal(registryNetworkRows(result({ wallets: [{ ...wallets[0], status }] }))[0].registrationState, "registered");
+  }
+  for (const registrationState of ["unknown", "unrecognized", "pending_registration"]) {
+    const row = registryNetworkRows(result({ wallets: [{ ...wallets[0], registrationState }] }))[0];
+    assert.equal(row.status, "active");
+    assert.equal(row.registrationState, "unknown");
+    assert.equal(row.address, wallets[0].address);
+  }
+  assert.equal(registryNetworkRows(result({ wallets: [{ ...wallets[0], status: "unrecognized" }] }))[0].registrationState, "unknown");
+  const input = result({ wallets: [{ ...wallets[0], status: "pending", registrationState: "registered" }] });
+  const before = structuredClone(input);
+  const row = registryNetworkRows(input)[0];
+  assert.equal(row.registrationState, "registered");
+  assert.equal(row.status, "pending");
+  assert.ok(!("onChainAccountExists" in row) && !("balance" in row));
+  assert.deepEqual(input, before);
 });
 
 test("null explorer metadata is not reconstructed from the network or wallet address", () => {

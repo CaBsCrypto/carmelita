@@ -3,6 +3,7 @@ export type RegistryWallet = {
   chainType: string;
   network: string;
   status: string;
+  registrationState?: string;
   explorerUrl: string | null;
 };
 export type RegistryResult = {
@@ -25,7 +26,12 @@ export function registryNetworkRows(result: RegistryResult) {
     const wallet = result.wallets.find(item => item.network === network && item.status === "active")
       ?? result.wallets.find(item => item.network === network);
     const family = ["avalanche:fuji", "bnb:testnet", "base:sepolia"].includes(network) ? "evm" : network.split(":")[0];
+    // An explicit backend state is authoritative. Only older DTOs need a status fallback.
+    const registrationState = !wallet ? null : wallet.registrationState === undefined
+      ? ["active", "pending", "registered"].includes(wallet.status) ? "registered" : "unknown"
+      : wallet.registrationState === "registered" ? "registered" : "unknown";
     return { network, name: networkNames[network] ?? network, family,
-      address: wallet?.address ?? null, status: wallet?.status ?? null, explorerUrl: wallet?.explorerUrl ?? null };
+      address: wallet?.address ?? null, status: wallet?.status ?? null, registrationState,
+      explorerUrl: wallet?.explorerUrl ?? null };
   });
 }

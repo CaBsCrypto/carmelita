@@ -31,7 +31,9 @@ export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<t
     wallet.network === network.id && wallet.chainType === PRIVY_CHAIN_TYPE_BY_FAMILY[network.family],
   )).map(({ address, chainType, network, status }) => ({
     address, chainType, network, status,
-    registrationState: status === "active" ? "registered" as const : status === "pending" ? "pending_registration" as const : "unknown" as const,
+    // Both statuses belong to persisted registrations. Legacy pending may describe
+    // unverified network activation; neither status proves the current chain state.
+    registrationState: status === "active" || status === "pending" ? "registered" as const : "unknown" as const,
     registrationStatusScope: "internal_registry" as const,
     explorerUrl: walletExplorerUrl(network, address),
   })).sort((left, right) =>
@@ -43,34 +45,37 @@ export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<t
   const visible = ordered.filter(
     (wallet) => wallet.status === "active" || !activeNetworks.has(wallet.network),
   );
-  const active = (network: WalletNetworkId) =>
-    ordered.find((wallet) => wallet.network === network && wallet.status === "active") ?? null;
+  const registered = (network: WalletNetworkId) =>
+    visible.find((wallet) => wallet.network === network && wallet.registrationState === "registered") ?? null;
   const walletsByNetwork = {
-    stellarTestnet: active("stellar:testnet"),
-    avalancheFuji: active("avalanche:fuji"),
-    solanaDevnet: active("solana:devnet"),
-    bnbTestnet: active("bnb:testnet"),
-    baseSepolia: active("base:sepolia"),
+    stellarTestnet: registered("stellar:testnet"),
+    avalancheFuji: registered("avalanche:fuji"),
+    solanaDevnet: registered("solana:devnet"),
+    bnbTestnet: registered("bnb:testnet"),
+    baseSepolia: registered("base:sepolia"),
   };
-  const missingNetworks = networks.filter((network) => !active(network.id)).map((network) => network.id);
+  const missingNetworks = networks.filter((network) => !registered(network.id)).map((network) => network.id);
+  const hasRegisteredWallets = visible.some((wallet) => wallet.registrationState === "registered");
   return {
     wallets: visible,
     walletsByNetwork,
     walletRegistration: {
-      registered: visible.length > 0,
+      registered: hasRegisteredWallets,
       statusSemantics: {
         scope: "internal_registry" as const,
         active: "registered" as const,
-        pending: "pending_registration" as const,
+        pending: "registered" as const,
+        onChainActivation: "not_inferred" as const,
         onChainActivity: "not_inferred" as const,
         balance: "not_inferred" as const,
       },
-      pendingRegistration: visible.filter((wallet) => wallet.status === "pending"),
-      // Retained DTO alias; these rows await registration, not proven on-chain activation.
+      pendingRegistration: [] as typeof visible,
+      // Retained legacy indicator, not a live reading of network activation.
       pendingActivation: visible.filter((wallet) => wallet.status === "pending"),
-      unregisteredNetworks: networks.filter((network) => !visible.some((wallet) => wallet.network === network.id)).map((network) => network.id),
-      onboardingRequired: visible.length === 0,
-      guidance: visible.length === 0 ? `No wallet addresses are registered for this account. Account preparation may not have completed. Start a new OAuth connection from ${guide}, sign in with the same Carmelita account and authorize preparation of your Testnet wallets. This read does not create wallets or move funds.` : null,
+      pendingActivationScope: "legacy_registry_status_not_live" as const,
+      unregisteredNetworks: missingNetworks,
+      onboardingRequired: !hasRegisteredWallets,
+      guidance: !hasRegisteredWallets ? `No wallet addresses are registered for this account. Account preparation may not have completed. Start a new OAuth connection from ${guide}, sign in with the same Carmelita account and authorize preparation of your Testnet wallets. This read does not create wallets or move funds.` : null,
     },
     walletReadiness: {
       complete: missingNetworks.length === 0,

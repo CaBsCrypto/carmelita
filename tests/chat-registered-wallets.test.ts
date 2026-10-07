@@ -14,7 +14,7 @@ test('chat wallet lookup covers Spanish request and existing English shortcut wi
     assert.equal(requestsRegisteredWallets(message), false, message);
   }
 });
-test('chat reads owned records across families and shows pending registration without invented balances', () => {
+test('chat reads owned records across families and treats persisted pending wallets as registered without invented balances', () => {
   const rows = [
     { id:'s',userId:'a',address:'stellar-a',network:'stellar:testnet',status:'pending' },
     { id:'e',userId:'a',address:'evm-a',network:'avalanche:fuji',status:'active' },
@@ -23,7 +23,8 @@ test('chat reads owned records across families and shows pending registration wi
   ];
   const reply=registeredWalletsReply('a',rows,'es');
   for(const address of ['stellar-a','evm-a','solana-a']) assert.ok(reply.content.includes(address));
-  assert.match(reply.content,/pendiente de registro/);
+  assert.match(reply.content,/Stellar Testnet \| stellar-a \| registrada/);
+  assert.doesNotMatch(reply.content,/pendiente de registro/);
   assert.match(reply.content,/registro interno de Carmelita/);
   assert.match(reply.content,/no acredita actividad en cadena, activación de la cuenta ni saldo/);
   assert.doesNotMatch(reply.content,/pendiente de activación/);
@@ -31,6 +32,28 @@ test('chat reads owned records across families and shows pending registration wi
   assert.doesNotMatch(reply.content,/secret-other-owner|0 SOL|0 XLM/);
   assert.deepEqual(reply.actions,[]);
   assert.match(registeredWalletsReply('c',rows,'es').content,/No hay billeteras/);
+});
+
+test('persisted pending wallets are registered in Spanish, English and Portuguese without on-chain claims', () => {
+  const rows = [{ id: 's', userId: 'a', address: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', network: 'stellar:testnet', status: 'pending' }];
+  for (const [language, state, note] of [
+    ['es', 'registrada', 'no acredita actividad en cadena, activación de la cuenta ni saldo'],
+    ['en', 'registered', 'does not establish on-chain activity, account activation or balance'],
+    ['pt', 'registrada', 'não comprova atividade on-chain, ativação da conta nem saldo'],
+  ] as const) {
+    const reply = registeredWalletsReply('a', rows, language);
+    assert.ok(reply.content.includes(`| Stellar Testnet | ${rows[0].address} | ${state} |`));
+    assert.ok(reply.content.includes(note));
+    assert.doesNotMatch(reply.content, /pendiente de registro|pending registration|registro pendente|0 XLM/);
+    assert.deepEqual(reply.actions, []);
+  }
+  assert.equal(rows[0].status, 'pending');
+});
+
+test('chat respects an explicit unknown backend registration state instead of upgrading raw legacy status', () => {
+  const row = { id: 's', userId: 'a', address: 'stellar-a', network: 'stellar:testnet', status: 'active', registrationState: 'unknown' };
+  assert.match(registeredWalletsReply('a', [row], 'es').content, /Stellar Testnet \| stellar-a \| Consulta no disponible/);
+  assert.match(registeredWalletsReply('a', [{ ...row, status: 'pending', registrationState: 'registered' }], 'es').content, /Stellar Testnet \| stellar-a \| registrada/);
 });
 
 test('balance queries isolate failures and never read another owner', async () => {

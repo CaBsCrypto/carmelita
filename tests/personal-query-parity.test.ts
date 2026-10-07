@@ -276,26 +276,29 @@ test("context and wallet registry preserve five Testnet/Devnet registrations and
       }
       assert.equal(mcp.wallets.length, 5);
       assert.deepEqual(mcp.walletRegistration.statusSemantics, {
-        scope: "internal_registry", active: "registered", pending: "pending_registration", onChainActivity: "not_inferred", balance: "not_inferred",
+        scope: "internal_registry", active: "registered", pending: "registered", onChainActivation: "not_inferred", onChainActivity: "not_inferred", balance: "not_inferred",
       });
       for (const row of mcp.wallets) {
         assert.equal(row.explorerUrl, explorerByNetwork[row.network as keyof typeof explorerByNetwork]);
         assert.equal(row.registrationStatusScope, "internal_registry");
-        assert.equal(row.registrationState, row.status === "active" ? "registered" : "pending_registration");
+        assert.equal(row.registrationState, "registered");
         assert.equal(row.status, rows.find(item => item.userId === own && item.network === row.network)!.status);
         assert.equal(Object.hasOwn(row, "balance"), false);
         assert.equal(Object.hasOwn(row, "onChainAccountExists"), false);
       }
       assert.equal(new Set(mcp.wallets.filter(row => row.chainType === "ethereum").map(row => row.address)).size, 1);
-      assert.equal(mcp.walletRegistration.pendingRegistration[0].network, "bnb:testnet");
-      assert.deepEqual(mcp.walletRegistration.pendingActivation, mcp.walletRegistration.pendingRegistration);
+      assert.deepEqual(mcp.walletRegistration.pendingRegistration, []);
+      assert.equal(mcp.walletRegistration.pendingActivation[0].network, "bnb:testnet");
+      assert.equal(mcp.walletRegistration.pendingActivationScope, "legacy_registry_status_not_live");
+      assert.equal(mcp.walletReadiness.complete, true);
       const reads = owners.length;
       await assert.rejects(async () => executeMcpReadQuery(query.toolName, {}, { ...auth, scopes: [] }, definitions), /mcp_scope_required/);
       await assert.rejects(async () => executeMcpReadQuery(query.toolName, { userId: foreign }, auth, definitions));
       await assert.rejects(executeWebReadQuery(id, { address }, own, "es", definitions));
       assert.equal(owners.length, reads);
       assert.match(query.description, /status='active'.*internal registry/);
-      assert.match(query.description, /registrada\/pendiente de registro/);
+      assert.match(query.description, /including pending rows|legacy pending rows/);
+      assert.match(query.description, /not pending registrations? or a live chain reading/);
     }
     assert.ok(owners.every(owner => owner === own));
     assert.deepEqual(calls, [], "Metadata reads must not infer balances by contacting RPCs");
@@ -319,7 +322,7 @@ test("native balances preserve real zero, inactive Stellar account and per-netwo
   assert.equal(absent.balance, null);
   assert.equal(absent.status, "not_activated");
   assert.equal(absent.registrationStatus, "pending");
-  assert.equal(absent.registrationState, "pending_registration");
+  assert.equal(absent.registrationState, "registered");
   assert.equal(absent.registrationStatusScope, "internal_registry");
   assert.equal(evm.registrationState, "registered");
   assert.equal(absent.onChainAccountExists, false);
@@ -449,7 +452,7 @@ test("wallet status returns separate exact Stellar issuers and Fuji Circle contr
   assert.equal(result.wallets.length, 3);
   const stellarRow = result.wallets.find((row) => row.network === "stellar:testnet") as { registrationStatus: string; registrationState: string; registrationStatusScope: string; onChainAccountExists: boolean; native: { balance: string }; tokens: Array<{ asset: string; issuer: string; balance: string }> };
   assert.equal(stellarRow.registrationStatus, "pending");
-  assert.equal(stellarRow.registrationState, "pending_registration");
+  assert.equal(stellarRow.registrationState, "registered");
   assert.equal(stellarRow.registrationStatusScope, "internal_registry");
   assert.equal(stellarRow.onChainAccountExists, true);
   assert.equal(stellarRow.native.balance, "123.456");
@@ -481,14 +484,16 @@ test("wallet status preserves partial native/token successes and reports unknown
   assert.equal(stellarRow.onChainAccountExists, null);
   assert.equal(stellarRow.tokensStatus, "unavailable");
   assert.equal(stellarRow.status, "unavailable");
+  assert.equal(stellarRow.registrationState, "registered");
   assert.doesNotMatch(JSON.stringify(result), /provider-secret/);
 });
 
 test("wallet status honors missing Stellar account and failed Circle token without marking registration as activation", async () => {
   const { definitions } = fixture({ erc20Balance: async () => { throw new Error("token-balance-private"); } });
   const result = await executeQueryDefinition(definitions.find((item) => item.id === "personal.wallets.status")!, { networks: ["stellar:testnet", "avalanche:fuji"] }, { userId: own, scopes: ["agent:read"] }) as { wallets: Array<Record<string, unknown>> };
-  const stellarRow = result.wallets.find((row) => row.network === "stellar:testnet") as { status: string; onChainAccountExists: boolean; native: { balance: null }; tokens: unknown[] };
+  const stellarRow = result.wallets.find((row) => row.network === "stellar:testnet") as { status: string; registrationState: string; onChainAccountExists: boolean; native: { balance: null }; tokens: unknown[] };
   assert.equal(stellarRow.status, "not_activated");
+  assert.equal(stellarRow.registrationState, "registered");
   assert.equal(stellarRow.onChainAccountExists, false);
   assert.equal(stellarRow.native.balance, null);
   assert.deepEqual(stellarRow.tokens, []);
