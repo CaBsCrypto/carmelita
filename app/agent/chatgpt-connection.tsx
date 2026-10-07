@@ -70,6 +70,12 @@ const copy = {
   },
 };
 
+const quick = {
+  es: { title: "Añade Carmelita en ChatGPT", action: "Añadir Carmelita en ChatGPT", help: "Copia la URL y abre los complementos. Pégala al añadir un servidor MCP y elige OAuth.", tutorial: "Tutorial paso a paso", account: "¿Aún no tienes cuenta Carmelita?", accountHelp: "Créala o ingresa antes de autorizar la conexión. Si ya tienes cuenta, continúa directamente en ChatGPT." },
+  en: { title: "Add Carmelita in ChatGPT", action: "Add Carmelita in ChatGPT", help: "Copy the URL and open plugins. Paste it when adding an MCP server and choose OAuth.", tutorial: "Step-by-step tutorial", account: "Need a Carmelita account?", accountHelp: "Create one or sign in before authorizing the connection. Already have an account? Continue directly in ChatGPT." },
+  pt: { title: "Adicione Carmelita no ChatGPT", action: "Adicionar Carmelita no ChatGPT", help: "Copie a URL e abra os plugins. Cole ao adicionar um servidor MCP e escolha OAuth.", tutorial: "Tutorial passo a passo", account: "Ainda não tem conta Carmelita?", accountHelp: "Crie sua conta ou entre antes de autorizar a conexão. Se já tem conta, continue diretamente no ChatGPT." },
+};
+
 const extra = {
   es: { account: "Prepara tu cuenta Carmelita", chatgpt: "Crea tu cuenta o ingresa a ChatGPT", create: "Crear cuenta o ingresar a ChatGPT", accountHelp: "Son dos cuentas distintas. Crear una cuenta ChatGPT no garantiza permiso para añadir un MCP. Conserva esta guía abierta mientras completas el registro.", missing: "No encuentro cómo agregar Carmelita", help: "En ChatGPT en la web, busca Complementos → + → Añadir servidor MCP personalizado. Si la opción no aparece, revisa las políticas de tu espacio con su administrador y la ayuda oficial. Carmelita no puede verificar ni cambiar esos permisos. Puedes continuar usando su web.", qa: "Prueba QA · datos separados de producción", production: "Producción · tu cuenta Carmelita", unavailable: "La URL de este entorno no está configurada. No copies una dirección de otro entorno.", test: "La conexión se verifica al recibir tus datos en ChatGPT. Copiar la URL o registrar OAuth no completa esta prueba.", wallets: "Después, prueba: ¿Qué servicios publica Bazaar y cuáles están disponibles?", limit: "El catálogo puede ser parcial. Las compras y el historial privado de Bazaar siguen pendientes; publicar una suite o skill no la hace ejecutable." },
   en: { account: "Prepare your Carmelita account", chatgpt: "Create an account or sign in to ChatGPT", create: "Create an account or sign in to ChatGPT", accountHelp: "These are two separate accounts. Creating a ChatGPT account does not guarantee permission to add an MCP. Keep this guide open while registering.", missing: "I cannot find how to add Carmelita", help: "In ChatGPT on the web, look for Plugins → + → Add custom MCP server. If it is missing, check workspace policies with your administrator and official help. Carmelita cannot verify or change those permissions. You can continue using its website.", qa: "QA test · data separate from production", production: "Production · your Carmelita account", unavailable: "This environment's URL is not configured. Do not copy another environment's address.", test: "The connection is verified when ChatGPT returns your own data. Copying the URL or recording OAuth does not complete this test.", wallets: "Then try: What services does Bazaar publish, and which are available?", limit: "The catalog may be partial. Purchases and Bazaar private history remain pending; publishing a suite or skill does not make it executable." },
@@ -80,6 +86,7 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
   const Heading = fullPage ? "h2" : "h3";
   const t = copy[locale];
   const e = extra[locale];
+  const q = quick[locale];
   const { mcpUrl, environment } = useConnectionEnvironment();
   const fieldId = useId();
   const field = useRef<HTMLTextAreaElement>(null);
@@ -92,17 +99,20 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
   return <div className={styles.guide}>
     <p className={styles.intro}>{t.intro}</p>
     <p className={styles.permissions}>{environment === "unavailable" ? e.unavailable : e[environment]}</p>
+    <section className={styles.quickStart} aria-label={q.title}>
+      <Heading>{q.title}</Heading><p>{q.help}</p><a className={styles.primaryAction} href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{q.action}</a>
     <div className={styles.urlBox}>
       <label htmlFor={fieldId}>{t.urlLabel}</label>
       <textarea id={fieldId} ref={field} readOnly rows={2} value={mcpUrl ?? ""} spellCheck={false} />
       <button className={styles.copyButton} disabled={!mcpUrl} type="button" onClick={() => void copyUrl()}>{copyState === "copied" ? t.copied : t.copy}</button>
       <span className={styles.copyStatus} role="status">{copyState === "copied" ? t.copied : copyState === "failed" ? t.copyFailed : ""}</span>
     </div>
+    </section>
+    <details className={styles.accountPreparation}><summary>{q.account}</summary><p>{q.accountHelp}</p><ConnectionAccount locale={locale} onExternalDialog={onExternalDialog} /></details>
+    <Heading className={styles.tutorialTitle}>{q.tutorial}</Heading>
     <ol className={styles.steps}>
-      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{e.account}</Heading><ConnectionAccount locale={locale} onExternalDialog={onExternalDialog} /></li>
-      <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{e.chatgpt}</Heading><p>{e.accountHelp}</p><a href="https://chatgpt.com/" target="_blank" rel="noreferrer">{e.create}</a></li>
-      <li><span className={styles.stepNumber} aria-hidden="true">3</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a><details><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
-      <li><span className={styles.stepNumber} aria-hidden="true">4</span><Heading>{t.consentTitle}</Heading><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a><details><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{t.consentTitle}</Heading><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
     </ol>
     <p className={styles.permissions}>{t.permissions}</p><p className={styles.note}>{e.limit}</p>
     <footer className={styles.footer}><Link href={fullPage ? "/services" : "/connect-chatgpt"}>{fullPage ? ({ es: "Explorar servicios", en: "Explore services", pt: "Explorar serviços" }[locale]) : t.fullGuide}</Link><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></footer>

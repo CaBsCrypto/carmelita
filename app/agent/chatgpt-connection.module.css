@@ -27,3 +27,14 @@
 .footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:14px;font-size:13px}
 .guide :is(a,button,textarea):focus-visible{outline:3px solid #235b48;outline-offset:3px}
 @media(max-width:600px){.steps>li{padding-left:37px}.urlBox{padding:12px;margin-left:-37px;margin-top:16px}.urlBox textarea{height:94px}.trigger.trigger{font-size:13px}.guide .intro{font-size:15px}.footer{justify-content:flex-start}}
+.quickStart{margin:16px 0 22px;padding:24px;border-radius:16px;background:#e1f1e8;border:1px solid #91bba4;color:#153f32;min-width:0}
+.quickStart> :is(h2,h3){margin:0 0 10px;font-size:24px;line-height:1.25}
+.quickStart>p{font-size:15px;line-height:1.6;margin:0 0 18px;max-width:60ch}
+.guide .primaryAction{display:flex;justify-content:center;align-items:center;min-height:54px;padding:12px 18px;background:#153f32;color:#fff;border-radius:10px;font-weight:700;font-size:17px;text-decoration:none;text-align:center;box-sizing:border-box}
+.guide .primaryAction:hover{background:#235b48}
+.quickStart .urlBox{margin:16px 0 0;background:#fff}
+.accountPreparation{padding:0 0 18px;border-bottom:1px solid #d6dcd5}
+.accountPreparation>summary{font-weight:650;color:#153f32}
+.accountPreparation>p{font-size:14px;line-height:1.6}
+.tutorialTitle{margin:26px 0 16px;font-size:20px;color:#153f32}
+@media(max-width:600px){.quickStart{padding:16px}.quickStart> :is(h2,h3){font-size:21px}.quickStart .urlBox{margin-left:0}.guide .primaryAction{font-size:16px}}
