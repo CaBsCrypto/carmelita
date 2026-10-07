@@ -5,9 +5,11 @@ import { persistActivatedWallet, persistWalletNetworks } from "@/app/multichain-
 import { ensureEvmTestnetWallet } from "@/app/wallets/evm-onboarding";
 import { ensureAvalancheFujiWallet } from "@/app/wallets/avalanche-onboarding";
 import { ensureSolanaDevnetWallet } from "@/app/wallets/solana-onboarding";
+import { ensureStellarTestnetActivation } from "@/app/wallets/stellar-activation";
 
-/** Use the same immutable identities, without creating a user session or moving funds. */
+/** Reuse immutable identities and activate Stellar Testnet without creating a user session. */
 export const recoveryProvisionDependencies: WalletOnboardingDependencies = {
+  activateStellar: ensureStellarTestnetActivation,
   getOrCreateStellarWallet: userId => getOrCreateUserWallet(userId, "stellar"),
   getStellarAccount: address => getStellarTestnetAccount(address, AbortSignal.timeout(8000)),
   persistStellarAccount: async input => {

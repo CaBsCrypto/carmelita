@@ -55,9 +55,11 @@ export default function WalletRecovery({ privyDid }: { privyDid: string }) {
       else {
         if (body.registrationComplete !== true) throw new Error("La preparación todavía no está confirmada.");
         setIdentity(null);
-        setMessage(body.networkActivationComplete
-          ? "Registro de wallets completo. El usuario puede consultarlas desde su conexión vigente."
-          : "Wallets registradas. La activación o los fondos de alguna red todavía están pendientes.");
+        setMessage(body.testnetActivation?.activation === "active"
+          ? "Wallets registradas y activación de Stellar Testnet confirmada. Se conserva la misma dirección. El usuario puede consultarlas desde su conexión vigente."
+          : body.testnetActivation?.fundsMoved === null
+            ? "Wallets registradas. Friendbot podría seguir procesando la solicitud; no se ha confirmado la recepción de XLM Testnet. Actualiza el registro antes de reintentar con la misma dirección."
+            : "Wallets registradas. La activación de Stellar Testnet sigue pendiente o no pudo comprobarse. Actualiza el registro y reintenta con la misma dirección.");
       }
     } catch (error) {
       if (pending.current !== controller) return;
@@ -78,16 +80,16 @@ export default function WalletRecovery({ privyDid }: { privyDid: string }) {
   return <details className="wallet-recovery" onToggle={event => {
     if (!event.currentTarget.open && !busy) { setIdentity(null); setMessage(null); }
   }}>
-    <summary>Recuperar preparación de wallets</summary>
+    <summary>Recuperar wallets y activación Stellar Testnet</summary>
     <div className="wallet-recovery-content" aria-busy={busy !== null}>
-      <p>Completa el registro para esta identidad. Comprueba primero su correo verificado. Se conservan las direcciones existentes; esta acción no financia wallets ni cambia permisos de ChatGPT.</p>
+      <p>Comprueba primero el correo verificado de esta identidad. Se conservan sus direcciones existentes. Si falta activar Stellar Testnet, se solicita XLM al Friendbot oficial para la misma wallet. Son fondos de prueba sin valor real; esta acción no autoriza pagos, Mainnet ni financiación en USDC y no cambia los permisos de ChatGPT.</p>
       {identity && <div className="wallet-recovery-identity">
         <strong>{identity.email}</strong><code>{identity.id}</code>
-        <span>Cuenta comprobada en Privy. Se prepararán únicamente sus wallets de Testnet.</span>
+        <span>Cuenta comprobada en Privy. Se completará el registro y, si falta, se intentará activar su misma wallet Stellar Testnet con Friendbot.</span>
       </div>}
       <div className="wallet-recovery-actions">
         <button type="button" disabled={busy !== null} onClick={() => void request(identity ? "prepare" : "inspect")}>
-          {busy === "inspect" ? "Comprobando cuenta…" : busy === "prepare" ? "Preparando wallets…" : identity ? "Completar wallets de esta cuenta" : "Comprobar cuenta"}
+          {busy === "inspect" ? "Comprobando cuenta…" : busy === "prepare" ? "Preparando wallets y Stellar Testnet…" : identity ? "Completar wallets y activar Stellar Testnet" : "Comprobar cuenta"}
         </button>
         {identity && <button type="button" disabled={busy !== null} onClick={() => { setIdentity(null); setMessage(null); }}>Cancelar</button>}
       </div>

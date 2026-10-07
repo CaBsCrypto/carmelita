@@ -121,14 +121,14 @@ async function listUserStellarWallets(userId: string) {
   }
   return wallets;
 }
-export async function fundStellarTestnetWallet(address: string) {
+export async function fundStellarTestnetWallet(address: string, signal?: AbortSignal) {
   if (!isValidStellarAddress(address)) {
     throw new Error("invalid_stellar_address");
   }
 
   const response = await fetch(
     STELLAR_TESTNET_FRIENDBOT + "?addr=" + encodeURIComponent(address),
-    { method: "GET", cache: "no-store" },
+    { method: "GET", cache: "no-store", signal },
   );
   const body = await response.json().catch(() => null);
 
@@ -168,15 +168,35 @@ export async function getStellarTestnetAccount(address: string, signal?: AbortSi
     throw new Error("horizon_account_lookup_failed");
   }
 
-  const account = body as {
-    sequence?: string;
-    balances?: HorizonBalance[];
+  const candidate = body as Record<string, unknown>;
+  const validBalance = (value: unknown): value is HorizonBalance => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const balance = value as Record<string, unknown>;
+    if (typeof balance.asset_type !== "string" || !/^[a-z][a-z0-9_]{0,49}$/.test(balance.asset_type)
+      || typeof balance.balance !== "string" || !/^\d+(?:\.\d+)?$/.test(balance.balance)) return false;
+    if ((balance.asset_code !== undefined && typeof balance.asset_code !== "string")
+      || (balance.asset_issuer !== undefined && typeof balance.asset_issuer !== "string")) return false;
+    if (balance.asset_type === "credit_alphanum4" || balance.asset_type === "credit_alphanum12") {
+      const maximumLength = balance.asset_type === "credit_alphanum4" ? 4 : 12;
+      return typeof balance.asset_code === "string" && /^[A-Za-z0-9]+$/.test(balance.asset_code)
+        && balance.asset_code.length <= maximumLength && typeof balance.asset_issuer === "string"
+        && isValidStellarAddress(balance.asset_issuer);
+    }
+    // Liquidity pool share balances and other native Horizon asset forms retain
+    // their type; this read does not infer a credit asset or issuer for them.
+    return true;
   };
+  if (candidate.account_id !== address || typeof candidate.sequence !== "string" || !/^\d+$/.test(candidate.sequence)
+    || !Array.isArray(candidate.balances) || !candidate.balances.every(validBalance)
+    || !candidate.balances.some(balance => balance.asset_type === "native")) {
+    throw new Error("horizon_account_lookup_failed");
+  }
+  const account = candidate as { sequence: string; balances: HorizonBalance[] };
 
   return {
     exists: true,
-    sequence: account.sequence ?? null,
-    balances: (account.balances ?? []).map((balance) => ({
+    sequence: account.sequence,
+    balances: account.balances.map((balance) => ({
       asset:
         balance.asset_type === "native"
           ? "XLM"

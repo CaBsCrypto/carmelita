@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "groups": {
-    "market": "1d047fe9e84f507bb70a7253bfb5b600d3858bd87e7f9b07cf2eb0ad4a5fb766",
-    "personal": "a181bc08fc13b7bc154deb55add170ddeb13fff0e9da3d1f9b6d029236df249d",
-    "ecosystem": "56e36649107a7d19feeacaa7ced99bc10bf1a0d0dee7ae6d6ac8d4a8394f82dd",
-    "discovery": "bb4eff470e1cf8c121b6c6ee134fe5368bc97d271601b3eb90c87eaef773e2dc",
-    "metadata": "009ff3fd74c4c45ac35e822aa2e33e09d00854cdbdf4a60cf3e39e1eb15bd7d6",
-    "commerce": "b7083e6bb79a5a757fd06437dfd585ddc1203ee88446d1f1cc4a5dcb97074cb5"
+    "market": "e11bffaf58524352006d79931e0ac23c8cdc27c4b56533091105370657ce5a0e",
+    "personal": "19b4c0f165332ff7b85cd18cc1c46b758484da13ca6764669207084fc377e341",
+    "ecosystem": "38d536bccb393604f9528f4a34cf5b17d99801aebef8c18979a121ea1162e7aa",
+    "discovery": "146ebcb3d70ac4f7ad792981453acbeee6686c97503f422596b67cacda3dd6a9",
+    "metadata": "00dadd456c52e34bb3b4353611840f0e6454fa0e6bc2eec8a57514806a8414ec",
+    "commerce": "49b260e75779809e1eb495e2c2919dcbe08b28695c9c0d7026501887b4840bf3"
   }
 }

@@ -8,6 +8,7 @@ import { ensureEvmTestnetWallet } from "@/app/wallets/evm-onboarding";
 import { hasDatabase, getDb } from "@/db";
 import { sql } from "drizzle-orm";
 import { persistWalletNetworks } from "@/app/multichain-account";
+import { ensureStellarTestnetActivation } from "@/app/wallets/stellar-activation";
 
 type StellarAccount = Awaited<ReturnType<typeof getStellarTestnetAccount>>;
 type AgentAccount = Awaited<ReturnType<typeof persistAgentAccount>>;
@@ -17,6 +18,7 @@ type SolanaAccount = Awaited<ReturnType<typeof ensureSolanaDevnetWallet>>;
 export type FamilyPreparation = { status: "ready" | "failed" | "conflict"; error: string | null; retryable: boolean };
 
 export type WalletOnboardingDependencies = {
+  activateStellar?: typeof ensureStellarTestnetActivation;
   updateStellarStatus?: (wallet: UserWallet, input: { userId: string; email: string | null }, activation: "active" | "pending") => Promise<unknown>;
   ensureEvmWallet?: typeof ensureEvmTestnetWallet;
   getOrCreateStellarWallet: (userId: string) => Promise<UserWallet>;
@@ -38,6 +40,7 @@ export type WalletOnboardingDependencies = {
 };
 
 const defaultDependencies: WalletOnboardingDependencies = {
+  activateStellar: ensureStellarTestnetActivation,
   ensureEvmWallet: ensureEvmTestnetWallet,
   updateStellarStatus: (wallet, input, activation) => persistWalletNetworks({ ...input, wallet, networks: ["stellar:testnet"], status: activation }),
   getOrCreateStellarWallet: (userId) => getOrCreateUserWallet(userId, "stellar"),
@@ -67,6 +70,8 @@ export async function provisionUserWallets(
     catch { throw new Error("wallet_persistence_unavailable"); }
   }
   let persistenceFailed = false;
+  // Preserve an issued activation request even if a later registration write fails.
+  const stellarActivationOutcome: { value: Awaited<ReturnType<typeof ensureStellarTestnetActivation>> | null } = { value: null };
 
   const capture = async <T>(work: () => Promise<T>): Promise<{ value: T | null; preparation: FamilyPreparation }> => {
     try { return { value: await work(), preparation: { status: "ready", error: null, retryable: false } }; }
@@ -87,13 +92,23 @@ export async function provisionUserWallets(
       let account: StellarAccount | null = null;
       let activation: "active" | "pending" | "unknown" = "unknown";
       let readError: string | null = null;
+      let testnetActivation: Awaited<ReturnType<typeof ensureStellarTestnetActivation>> | null = null;
       try { account = await dependencies.getStellarAccount(wallet.address); }
       catch { readError = "stellar_account_unavailable"; }
+      if (account) {
+        if (dependencies.activateStellar) {
+          testnetActivation = await dependencies.activateStellar({ userId: input.userId, wallet, account });
+          stellarActivationOutcome.value = testnetActivation;
+          if (testnetActivation.error === "wallet_identity_conflict") throw new Error("wallet_identity_conflict");
+          account = testnetActivation.account;
+          if (!account) readError = "stellar_account_unavailable";
+        }
+      }
       if (account) {
         activation = account.exists ? "active" : "pending";
         await dependencies.updateStellarStatus?.(wallet, input, activation);
       }
-      return { wallet, account, activation, agentAccount, readError };
+      return { wallet, account, activation, agentAccount, readError, testnetActivation };
     }),
     capture(async () => {
       if (dependencies.ensureEvmWallet) return dependencies.ensureEvmWallet(input);
@@ -111,11 +126,12 @@ export async function provisionUserWallets(
     solana: solanaResult.value,
     account: stellarResult.value?.account ?? null,
     activation: stellarResult.value?.activation ?? "unknown",
+    testnetActivation: stellarActivationOutcome.value,
     agentAccount: stellarResult.value?.agentAccount ?? null,
     persistence: { configured: true, provider: "Neon Postgres" },
     preparation: { stellar: stellarResult.preparation, evm: evmResult.preparation, solana: solanaResult.preparation },
     reads: { stellar: { status: stellarResult.value?.account ? "ready" : "failed", error: stellarResult.value?.readError ?? (stellarResult.value ? null : "stellar_wallet_unavailable") } },
-    fundsMoved: false as const,
+    fundsMoved: stellarActivationOutcome.value ? stellarActivationOutcome.value.fundsMoved : false,
     signingRequired: false as const,
   };
 }

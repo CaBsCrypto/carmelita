@@ -1,6 +1,7 @@
 export const CONVERSATION_TIMEOUT_MS = 15_000;
 export const CHAT_TIMEOUT_MS = 30_000;
 export const WORKSPACE_TIMEOUT_MS = 20_000;
+export const WALLET_BOOTSTRAP_TIMEOUT_MS = 60_000;
 
 /** Race SDK, fetch and body promises too, including transports that ignore AbortSignal. */
 export function sessionAbortable<T>(operation: () => Promise<T>, signal: AbortSignal): Promise<T> {
@@ -74,7 +75,7 @@ export async function requestWalletBootstrap<Result extends { user?: { id?: stri
   refreshUser: () => Promise<unknown>,
   owner: AbortSignal,
   fetcher: typeof fetch = fetch,
-  timeoutMs = WORKSPACE_TIMEOUT_MS,
+  timeoutMs = WALLET_BOOTSTRAP_TIMEOUT_MS,
 ): Promise<Result> {
   return withSessionDeadline(owner, timeoutMs, async signal => {
     const token = await sessionAbortable(getAccessToken, signal);

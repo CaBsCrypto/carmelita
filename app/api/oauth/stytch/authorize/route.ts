@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       throw new Error("oauth_authorization_request_invalid");
     }
     const identity = await getPrivyUserIdentity(claims.user_id);
+    if (identity.id !== claims.user_id) throw new Error("privy_identity_mismatch");
     if (!identity.email) throw new Error("stytch_email_required");
     const oauthRequest = parseOAuthAuthorizationRequest(body.query);
     const config = readStytchConnectedAppsConfig();
