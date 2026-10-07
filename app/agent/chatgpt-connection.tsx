@@ -82,11 +82,20 @@ const extra = {
   pt: { account: "Prepare sua conta Carmelita", chatgpt: "Crie sua conta ou entre no ChatGPT", create: "Criar conta ou entrar no ChatGPT", accountHelp: "São duas contas distintas. Criar uma conta ChatGPT não garante permissão para adicionar um MCP. Mantenha este guia aberto durante o cadastro.", missing: "Não encontro como adicionar Carmelita", help: "No ChatGPT na web, procure Plugins → + → Add custom MCP server. Se não aparecer, confira as políticas do espaço com o administrador e a ajuda oficial. A Carmelita não pode verificar ou mudar essas permissões. Você pode continuar usando o site.", qa: "Teste QA · dados separados da produção", production: "Produção · sua conta Carmelita", unavailable: "A URL deste ambiente não está configurada. Não copie o endereço de outro ambiente.", test: "A conexão é verificada quando o ChatGPT retorna seus próprios dados. Copiar a URL ou registrar OAuth não conclui esse teste.", wallets: "Depois, teste: Quais serviços o Bazaar publica e quais estão disponíveis?", limit: "O catálogo pode ser parcial. Compras e histórico privado do Bazaar seguem pendentes; publicar uma suite ou skill não a torna executável." },
 };
 
-export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: { locale: Locale; onExternalDialog?: () => void; fullPage?: boolean }) {
+export function ConnectionSteps({ locale, onExternalDialog, fullPage = false, assistant = "chatgpt" }: { assistant?: "chatgpt" | "claude"; locale: Locale; onExternalDialog?: () => void; fullPage?: boolean }) {
   const Heading = fullPage ? "h2" : "h3";
-  const t = copy[locale];
-  const e = extra[locale];
-  const q = quick[locale];
+  const isClaude = assistant === "claude";
+  const base = copy[locale];
+  const claude = {
+    es: { title: "Añade Carmelita en Claude", open: "Abrir conectores en Claude", intro: "Configura Carmelita en Claude web y consulta después desde tu celular.", plugin: "Abre Personalizar → Conectores → Añadir conector personalizado. Usa el nombre Carmelita y pega la URL. Elige OAuth, Iniciar sesión ahora y Registrar automáticamente. Añade el conector y pulsa Conectar para autorizar tu cuenta.", availability: "En Team y Enterprise, un administrador autorizado añade primero el conector; cada usuario conecta su propia cuenta. No uses credenciales compartidas.", prompt: "En un chat nuevo, abre + → Conectores, habilita Carmelita y pregunta:", pending: "Piloto Claude: compatibilidad y aceptación web/móvil pendientes.", official: "Ayuda oficial de Claude" },
+    en: { title: "Add Carmelita in Claude", open: "Open Claude connectors", intro: "Set up Carmelita in Claude on the web, then read your data on your phone.", plugin: "Open Customize → Connectors → Add custom connector. Name it Carmelita and paste the URL. Choose OAuth, Sign in now and Register automatically. Add the connector and select Connect to authorize your account.", availability: "On Team and Enterprise, an authorized administrator adds the connector first; each user connects their own account. Do not use shared credentials.", prompt: "In a new chat, open + → Connectors, enable Carmelita and ask:", pending: "Claude pilot: compatibility and web/mobile acceptance pending.", official: "Official Claude help" },
+    pt: { title: "Adicione Carmelita no Claude", open: "Abrir conectores no Claude", intro: "Configure Carmelita no Claude na web e consulte depois no celular.", plugin: "Abra Customize → Connectors → Add custom connector. Use o nome Carmelita e cole a URL. Escolha OAuth, Sign in now e Register automatically. Adicione o conector e selecione Connect para autorizar sua conta.", availability: "Em Team e Enterprise, um administrador autorizado adiciona primeiro o conector; cada usuário conecta sua própria conta. Não use credenciais compartilhadas.", prompt: "Em um novo chat, abra + → Connectors, ative Carmelita e pergunte:", pending: "Piloto Claude: compatibilidade e aceitação web/celular pendentes.", official: "Ajuda oficial do Claude" },
+  }[locale];
+  const t = isClaude ? { ...base, intro: claude.intro, pluginTitle: claude.title, plugin: claude.plugin, availability: claude.availability, openChatGPT: claude.open, prompt: claude.prompt, officialGuide: claude.official } : base;
+  const e = isClaude ? { ...extra[locale], help: extra[locale].help.replaceAll("ChatGPT", "Claude").replaceAll("Complementos → + → Añadir servidor MCP personalizado", "Personalizar → Conectores").replaceAll("Plugins → + → Add custom MCP server", "Customize → Connectors"), test: extra[locale].test.replaceAll("ChatGPT", "Claude") } : extra[locale];
+  const q = isClaude ? { ...quick[locale], title: claude.title, action: claude.open, help: claude.intro } : quick[locale];
+  const destination = isClaude ? "https://claude.ai/customize/connectors" : "https://chatgpt.com/plugins";
+  const officialGuide = isClaude ? "https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" : OPENAI_GUIDE;
   const { mcpUrl, environment } = useConnectionEnvironment();
   const fieldId = useId();
   const field = useRef<HTMLTextAreaElement>(null);
@@ -97,10 +106,10 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
     catch { field.current?.focus(); field.current?.select(); setCopyState("failed"); }
   }
   return <div className={styles.guide}>
-    <p className={styles.intro}>{t.intro}</p>
+    <p className={styles.intro}>{t.intro}</p>{isClaude && <p role="status" className={styles.note}>{claude.pending}</p>}
     <p className={styles.permissions}>{environment === "unavailable" ? e.unavailable : e[environment]}</p>
     <section className={styles.quickStart} aria-label={q.title}>
-      <Heading>{q.title}</Heading><p>{q.help}</p><a className={styles.primaryAction} href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{q.action}</a>
+      <Heading>{q.title}</Heading><p>{q.help}</p><a className={styles.primaryAction} href={destination} target="_blank" rel="noreferrer">{q.action}</a>
     <div className={styles.urlBox}>
       <label htmlFor={fieldId}>{t.urlLabel}</label>
       <textarea id={fieldId} ref={field} readOnly rows={2} value={mcpUrl ?? ""} spellCheck={false} />
@@ -111,11 +120,11 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
     <details className={styles.accountPreparation}><summary>{q.account}</summary><p>{q.accountHelp}</p><ConnectionAccount locale={locale} onExternalDialog={onExternalDialog} /></details>
     <Heading className={styles.tutorialTitle}>{q.tutorial}</Heading>
     <ol className={styles.steps}>
-      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><div className={styles.stepActions}><a className={styles.secondaryAction} href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.openChatGPT}</a></div><details className={styles.helpPanel}><summary>{e.missing}</summary><p>{e.help}</p><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
-      <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{t.consentTitle}</Heading><p>{t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">1</span><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><p className={styles.note}>{t.availability}</p><div className={styles.stepActions}><a className={styles.secondaryAction} href={destination} target="_blank" rel="noreferrer">{t.openChatGPT}</a></div><details className={styles.helpPanel}><summary>{e.missing}</summary><p>{e.help}</p><a href={officialGuide} target="_blank" rel="noreferrer">{t.officialGuide}</a></details></li>
+      <li><span className={styles.stepNumber} aria-hidden="true">2</span><Heading>{t.consentTitle}</Heading><p>{isClaude ? t.consent.replaceAll("ChatGPT", "Claude") : t.consent}</p><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p>{e.wallets}</p><p className={styles.note}>{e.test}</p></li>
     </ol>
     <p className={styles.permissions}>{t.permissions}</p><p className={styles.note}>{e.limit}</p>
-    <footer className={styles.footer}><Link href={fullPage ? "/services" : "/connect-chatgpt"}>{fullPage ? ({ es: "Explorar servicios", en: "Explore services", pt: "Explorar serviços" }[locale]) : t.fullGuide}</Link><a href={OPENAI_GUIDE} target="_blank" rel="noreferrer">{t.officialGuide}</a></footer>
+    <footer className={styles.footer}><Link href={fullPage ? "/services" : "/connect-chatgpt"}>{fullPage ? ({ es: "Explorar servicios", en: "Explore services", pt: "Explorar serviços" }[locale]) : t.fullGuide}</Link><a href={officialGuide} target="_blank" rel="noreferrer">{t.officialGuide}</a></footer>
   </div>;
 }
 

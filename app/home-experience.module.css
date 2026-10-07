@@ -95,3 +95,11 @@
 .actions .primary { flex-direction: column; gap: 4px; }
 .recommended { font-size: 11px; font-weight: 500; color: #cce8d8; }
 .actions a { box-sizing: border-box; }
+.assistantTrigger { min-height: 48px; padding: 13px 18px; border: 1px solid var(--forest); border-radius: 8px; background: var(--forest); color: var(--white); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.assistantTrigger:hover { background: #0d2c22; }
+.assistantTrigger:focus-visible,.assistantOptions a:focus-visible { outline: 3px solid #398668; outline-offset: 3px; }
+.assistantOptions { display: grid; gap: 14px; }
+.assistantOptions a { display: flex; flex-direction: column; gap: 8px; padding: 22px; border: 1px solid #b6cbbd; border-radius: 12px; background: #f1f6f2; color: #153f32; text-decoration: none; }
+.assistantOptions strong { font-size: 22px; }
+.assistantOptions span { font-size: 14px; line-height: 1.5; }
+@media(max-width:600px) { .assistantTrigger { width:100%; } }

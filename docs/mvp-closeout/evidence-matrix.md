@@ -88,3 +88,7 @@ El registro de usuarios usa SHA, origen, conector, permisos, seudónimo A/B, red
 El objetivo vence el **8 de octubre de 2026 a las 00:27, America/Santiago**. Si pasan los gates de lectura y publicación, se podrá presentar ese alcance comprobado con los pendientes explícitos. Si faltan pruebas humanas o correspondencia de versión, no se declarará aceptación final. La compra seguirá bloqueada hasta resolver sus propios requisitos, aunque termine el plazo o se cierren ramas.
 
 El usuario realiza el envío a 500 LatAm. Los documentos preparan una presentación revisable; no acreditan envío, aprobación ni compromiso de la aceleradora.
+
+## Claude — preparación, sin aceptación
+
+Selector y guía ES/EN/PT preparados en una rama posterior a main0dade87. Descubrimiento público anuncia DCR y PKCE S256; pruebas sintéticas de callback no acreditan conexión real. Registro automático, intercambio OAuth, consultas propias, aislamiento A/B, revocación, celular y zoom200% pendientes. No anunciar Claude como validado para500LatAm hasta completar docs/mvp-closeout/claude-acceptance.md. No cambia permisos financieros.
