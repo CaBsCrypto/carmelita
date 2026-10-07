@@ -64,7 +64,7 @@ export function buildMcpWalletContext(wallets: PublicWallet[]) {
       pendingActivation: visible.filter((wallet) => wallet.status === "pending"),
       unregisteredNetworks: networks.filter((network) => !visible.some((wallet) => wallet.network === network.id)).map((network) => network.id),
       onboardingRequired: visible.length === 0,
-      guidance: visible.length === 0 ? "Complete wallet onboarding in Carmelita. Connecting ChatGPT does not create wallets." : null,
+      guidance: visible.length === 0 ? "No wallet addresses are registered for this account. Account preparation may not have completed. Start a new OAuth connection from https://carmelita.browns.studio/connect-chatgpt, sign in with the same Carmelita account and authorize preparation of your Testnet wallets. This read does not create wallets or move funds." : null,
     },
     walletReadiness: {
       complete: missingNetworks.length === 0,
