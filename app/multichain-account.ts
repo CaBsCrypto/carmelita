@@ -84,7 +84,7 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
   const statements: WalletPersistenceStatement[] = [{
     text: `INSERT INTO agent_users (id, email, status, last_seen_at, updated_at)
       VALUES ($1, $2, 'active', now(), now())
-      ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, status = 'active', last_seen_at = now(), updated_at = now()`,
+      ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, agent_users.email), status = 'active', last_seen_at = now(), updated_at = now()`,
     parameters: [input.userId, input.email],
   }, {
     // A conflicting ID returns no row; division by zero rolls back the whole

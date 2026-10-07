@@ -43,8 +43,21 @@ test("an account without registered wallets gets onboarding guidance without inv
   assert.equal(context.walletRegistration.registered, false);
   assert.equal(context.walletRegistration.onboardingRequired, true);
   assert.match(context.walletRegistration.guidance!, /Carmelita/);
+  assert.match(context.walletRegistration.guidance!, /preparation may not have completed/);
+  assert.match(context.walletRegistration.guidance!, /new OAuth connection from https:\/\/carmelita\.browns\.studio\/connect-chatgpt/);
+  assert.match(context.walletRegistration.guidance!, /same Carmelita account/);
+  assert.match(context.walletRegistration.guidance!, /This read does not create wallets or move funds/);
+  assert.doesNotMatch(context.walletRegistration.guidance!, /Connecting ChatGPT does not create wallets/);
   assert.deepEqual(context.walletRegistration.pendingActivation, []);
   assert.deepEqual(context.wallets, []);
+});
+
+test("QA wallet recovery stays in the configured environment", () => {
+  const context = buildMcpWalletContext([], { VERCEL_ENV: "preview", CARMELITA_PUBLIC_ORIGIN: "https://qa.example.com" });
+  assert.match(context.walletRegistration.guidance!, /https:\/\/qa\.example\.com\/connect-chatgpt/);
+  assert.doesNotMatch(context.walletRegistration.guidance!, /carmelita\.browns\.studio/);
+  const unavailable = buildMcpWalletContext([], { VERCEL_ENV: "preview" });
+  assert.doesNotMatch(unavailable.walletRegistration.guidance!, /carmelita\.browns\.studio/);
 });
 
 test("MCP wallet context names all persisted testnet wallets deterministically", () => {

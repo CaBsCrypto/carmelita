@@ -64,6 +64,12 @@ test("deduplicates requested networks and created events without changing their 
   assert.ok(events.every((event) => /ON CONFLICT \(id\) DO NOTHING/.test(event.text)));
 });
 
+test("unavailable provider email does not clear an existing verified profile", () => {
+  const statement = buildWalletPersistenceStatements({ ...input, email: null })[0];
+  assert.equal(statement.parameters[1], null);
+  assert.match(statement.text, /email = COALESCE\(EXCLUDED\.email, agent_users\.email\)/);
+});
+
 test("database conflicts reject without retrying or reporting successful persistence", async () => {
   for (const code of ["23505", "23503", "22012"]) {
     let calls = 0;
