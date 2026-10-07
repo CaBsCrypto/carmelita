@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CHAT_TIMEOUT_MS, CONVERSATION_TIMEOUT_MS, WORKSPACE_TIMEOUT_MS, requestAgentConversation, requestWalletBootstrap } from "../app/agent/session-request";
+import { CHAT_TIMEOUT_MS, CONVERSATION_TIMEOUT_MS, WORKSPACE_TIMEOUT_MS, WALLET_BOOTSTRAP_TIMEOUT_MS, requestAgentConversation, requestWalletBootstrap } from "../app/agent/session-request";
 import { requestAgentChat } from "../app/agent/chat-request";
 import { readWorkspaceQuery } from "../app/agent/workspace-queries";
 import { requestTravelSearch } from "../app/agent/travel-search-request";
@@ -25,6 +25,32 @@ test("the agreed budgets cover conversation, sending and workspace preparation",
   assert.equal(CONVERSATION_TIMEOUT_MS, 15_000);
   assert.equal(CHAT_TIMEOUT_MS, 30_000);
   assert.equal(WORKSPACE_TIMEOUT_MS, 20_000);
+  assert.equal(WALLET_BOOTSTRAP_TIMEOUT_MS, 60_000);
+});
+
+test("automatic wallet activation can finish after a workspace query expires without extending query budgets", async context => {
+  context.mock.timers.enable({ apis: ["setTimeout"] });
+  const bootstrapFetch = deferred<Response>();
+  const bootstrapStarted = deferred<void>();
+  const queryStarted = deferred<void>();
+  let settled = false;
+  const bootstrap = requestWalletBootstrap("current-owner", async () => "owner-token", async () => {}, new AbortController().signal, async () => {
+    bootstrapStarted.resolve();
+    return bootstrapFetch.promise;
+  });
+  void bootstrap.then(() => { settled = true; }, () => { settled = true; });
+  const query = readWorkspaceQuery("personal.wallets", async () => "owner-token", "es", new AbortController().signal, async () => {
+    queryStarted.resolve();
+    return new Promise<Response>(() => {});
+  });
+  const queryExpired = assert.rejects(query, { name: "TimeoutError" });
+  await Promise.all([bootstrapStarted.promise, queryStarted.promise]);
+  context.mock.timers.tick(20_001);
+  await queryExpired;
+  assert.equal(settled, false, "Wallet activation still has its own remaining budget");
+  const prepared = { user: { id: "current-owner" }, activation: "pending", testnetActivation: { activation: "pending", fundsMoved: null, retryable: true } };
+  bootstrapFetch.resolve(Response.json(prepared));
+  assert.deepEqual(await bootstrap, prepared);
 });
 
 for (const [name, read] of readers) {

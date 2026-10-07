@@ -14,7 +14,9 @@ export type WalletRecoveryDependencies = {
   persistProfile: (identity: VerifiedIdentity) => Promise<void>;
   provision: typeof provisionRecoveryWallets;
   registryUser: (id: string) => Promise<AdminWalletUser | null>;
-  audit: (input: { userId: string; actor: string; outcome: "started" | "completed" | "failed" }) => Promise<void>;
+  audit: (input: { userId: string; actor: string; outcome: "started" | "completed" | "failed";
+    fundsMoved?: boolean | null; stellarActivation?: "active" | "pending" | "unknown";
+    faucetRequested?: boolean }) => Promise<void>;
 };
 
 const defaults: WalletRecoveryDependencies = {
@@ -33,11 +35,13 @@ const defaults: WalletRecoveryDependencies = {
   },
   provision: provisionRecoveryWallets,
   registryUser: async id => (await listAdminWalletRegistry()).users.find(user => user.privyDid === id) ?? null,
-  audit: async ({ userId, actor, outcome }) => {
+  audit: async ({ userId, actor, outcome, fundsMoved, stellarActivation, faucetRequested }) => {
     await getDb().insert(agentActivities).values({ id: randomUUID(), userId,
       eventType: `wallet.recovery.${outcome}`,
       summary: outcome === "completed" ? "Wallet registration recovered by an administrator" : "Administrator wallet recovery " + outcome,
-      metadata: { source: "admin", actor, outcome, fundsMoved: false, signingRequired: false } });
+      metadata: { source: "admin", actor, outcome, fundsMoved: fundsMoved ?? null,
+        stellarActivation: stellarActivation ?? "unknown", faucetRequested: faucetRequested ?? null,
+        network: "stellar:testnet", signingRequired: false } });
   },
 };
 
@@ -64,20 +68,30 @@ export async function recoverRegisteredWallets(
   const identity = await verifiedTarget(input.privyDid, dependencies);
   if (identity.email !== input.expectedEmail.trim().toLowerCase()) throw new Error("recovery_inspection_changed");
   const event = { userId: identity.id, actor: input.actor };
-  await dependencies.audit({ ...event, outcome: "started" });
+  await dependencies.audit({ ...event, outcome: "started", fundsMoved: false, faucetRequested: false });
+  let fundsMoved: boolean | null = false;
+  let stellarActivation: "active" | "pending" | "unknown" = "unknown";
+  let faucetRequested: boolean | undefined;
   try {
     await dependencies.persistProfile(identity);
+    // A failed request can have reached Friendbot. Never report no funds on an uncertain outcome.
+    fundsMoved = null;
     const preparation = await dependencies.provision({ userId: identity.id, email: identity.email });
+    fundsMoved = preparation.fundsMoved ?? (preparation.testnetActivation?.faucetRequested ? null : false);
+    stellarActivation = preparation.activation ?? "unknown";
+    faucetRequested = preparation.testnetActivation?.faucetRequested;
     assertWalletPreparationComplete(preparation);
     const user = await dependencies.registryUser(identity.id);
     if (!user || user.privyDid !== identity.id || !user.registeredComplete || user.invalidAddressNetworks.length || user.status !== "active") {
       throw new Error("oauth_wallet_preparation_incomplete");
     }
-    await dependencies.audit({ ...event, outcome: "completed" });
-    return { identity, user, registrationComplete: true, networkActivationComplete: user.complete,
-      fundsMoved: false, signingRequired: false };
+    await dependencies.audit({ ...event, outcome: "completed", fundsMoved, stellarActivation, faucetRequested });
+    return { identity, user, registrationComplete: true,
+      networkActivationComplete: user.complete && stellarActivation === "active",
+      stellarActivationComplete: stellarActivation === "active", testnetActivation: preparation.testnetActivation ?? null,
+      fundsMoved, signingRequired: false };
   } catch (error) {
-    await dependencies.audit({ ...event, outcome: "failed" }).catch(() => {});
+    await dependencies.audit({ ...event, outcome: "failed", fundsMoved, stellarActivation, faucetRequested }).catch(() => {});
     throw error;
   }
 }

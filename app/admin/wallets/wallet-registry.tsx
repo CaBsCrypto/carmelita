@@ -129,7 +129,7 @@ export default function WalletRegistry({
                 <p>{user.uniqueWallets} unique wallets · {user.networkAssociations} network associations</p>
                 {user.evmIdentityConflict && <div className="wallet-integrity-alert">EVM identity conflict: network associations must share one wallet and address.</div>}
                 {!user.complete && <div className="wallet-integrity-alert">{user.missingNetworks.map((item) => <span key={`missing:${item}`}>Missing {item}</span>)}{user.duplicateNetworks.map((item) => <span key={`duplicate:${item}`}>Duplicate {item}</span>)}{user.inactiveNetworks.map((item) => <span key={`inactive:${item}`}>Not active {item}</span>)}{user.invalidAddressNetworks.map((item) => <span key={`invalid:${item}`}>Invalid address {item}</span>)}</div>}
-                {user.status === "active" && (!user.email || !user.registeredComplete) && <WalletRecovery privyDid={user.privyDid} />}
+                {user.status === "active" && (!user.email || !user.registeredComplete || user.inactiveNetworks.includes("stellar:testnet")) && <WalletRecovery privyDid={user.privyDid} />}
                 <div className="wallet-records">
                   <div className="wallet-record-head"><span>Network</span><span>Public address</span><span>Status</span><span>Created</span><span /></div>
                   {user.wallets.map((wallet) => (

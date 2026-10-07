@@ -29,6 +29,12 @@ const onboardingUi = {
     entryText: "Continue with email, Google or a passkey. Your Stellar, EVM and Solana wallets belong to you. Enabled EVM test networks share one address.",
     create: "Work with Carmelita",
     boundary: "No seed phrase or wallet password required during onboarding.",
+    stellarFunding: "We recover your existing addresses and attempt to activate Stellar Testnet with XLM from the official Friendbot. Test funds have no real value. This does not authorize payments, Mainnet operations or USDC funding.",
+    stellarReady: "Your Stellar wallet is registered and activation on Stellar Testnet is confirmed.",
+    stellarPending: "Your Stellar wallet is registered. Testnet activation is still pending or could not be verified. Your address is preserved; you can continue querying Carmelita.",
+    stellarUncertain: "Friendbot may still be processing the request. Receiving funds has not been confirmed. Retrying first checks the same address.",
+    retryActivation: "Retry Stellar Testnet activation",
+    retryActivationWait: "Retry in {seconds}s",
     onboarding: "CHAT-GUIDED ONBOARDING",
     steps: ["Authenticate with Privy", "Recover your three wallet families", "Review each test network and balance", "Approve each financial action separately"],
     workspace: "CARMELITA WORKSPACE",
@@ -49,6 +55,12 @@ const onboardingUi = {
     entryText: "Continúa con email, Google o passkey. Tus wallets Stellar, EVM y Solana te pertenecen. Las redes EVM de prueba habilitadas comparten una dirección.",
     create: "Carmelita trabaja contigo",
     boundary: "No necesitas seed phrase ni contraseña de wallet durante el onboarding.",
+    stellarFunding: "Recuperamos tus direcciones existentes e intentamos activar Stellar Testnet con XLM del Friendbot oficial. Los fondos de prueba no tienen valor real. Esto no autoriza pagos, operaciones Mainnet ni financiación en USDC.",
+    stellarReady: "Tu wallet Stellar está registrada y su activación en Stellar Testnet está confirmada.",
+    stellarPending: "Tu wallet Stellar está registrada. La activación Testnet sigue pendiente o no pudo comprobarse. Se conserva tu dirección y puedes seguir consultando Carmelita.",
+    stellarUncertain: "Friendbot podría seguir procesando la solicitud. No se ha confirmado la recepción de fondos. Al reintentar, primero comprobamos la misma dirección.",
+    retryActivation: "Reintentar activación Stellar Testnet",
+    retryActivationWait: "Reintentar en {seconds}s",
     onboarding: "ONBOARDING DESDE EL CHAT",
     steps: ["Autenticar con Privy", "Recuperar tus tres familias de wallet", "Revisar cada red de prueba y su saldo", "Aprobar cada acción financiera por separado"],
     workspace: "ESPACIO DE CARMELITA",
@@ -69,6 +81,12 @@ const onboardingUi = {
     entryText: "Continue com email, Google ou passkey. Suas wallets Stellar, EVM e Solana pertencem a você. As redes EVM de teste habilitadas compartilham um endereço.",
     create: "Carmelita trabalha com voc\u00ea",
     boundary: "Nenhuma seed phrase ou senha de wallet é necessária durante o onboarding.",
+    stellarFunding: "Recuperamos seus endereços existentes e tentamos ativar a Stellar Testnet com XLM do Friendbot oficial. Os fundos de teste não têm valor real. Isso não autoriza pagamentos, operações Mainnet nem financiamento em USDC.",
+    stellarReady: "Sua carteira Stellar está registrada e a ativação na Stellar Testnet está confirmada.",
+    stellarPending: "Sua carteira Stellar está registrada. A ativação Testnet ainda está pendente ou não pôde ser verificada. O endereço é preservado e você pode continuar consultando a Carmelita.",
+    stellarUncertain: "O Friendbot pode ainda estar processando a solicitação. O recebimento de fundos não foi confirmado. Ao tentar novamente, verificamos primeiro o mesmo endereço.",
+    retryActivation: "Tentar ativação Stellar Testnet novamente",
+    retryActivationWait: "Tentar novamente em {seconds}s",
     onboarding: "ONBOARDING PELO CHAT",
     steps: ["Autenticar com Privy", "Recuperar suas três famílias de wallet", "Revisar cada rede de teste e seu saldo", "Aprovar cada ação financeira separadamente"],
     workspace: "ESPAÇO DA CARMELITA",
@@ -128,6 +146,16 @@ type BootstrapResult = {
     balances: { asset: string; balance: string }[];
   } | null;
   activation: "active" | "activated" | "pending" | "unknown";
+  fundsMoved: boolean | null;
+  testnetActivation?: {
+    activation: "active" | "pending" | "unknown";
+    fundsMoved: boolean | null;
+    faucetRequested: boolean;
+    transactionHash: string | null;
+    error: string | null;
+    retryable: boolean;
+    retryAfterMs: number | null;
+  };
 };
 
 
@@ -227,6 +255,8 @@ function PrivyWorkspace({
   const [result, setResult] = useState<BootstrapResult | null>(null);
   const [status, setStatus] = useState<"idle" | "creating" | "ready" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [activationRetryAt, setActivationRetryAt] = useState(0);
+  const [activationRetryNow, setActivationRetryNow] = useState(0);
   const [travelResult, setTravelResult] = useState<TravelSearchResult | null>(null);
   const [travelStatus, setTravelStatus] = useState<"idle" | "searching" | "error">("idle");
   const [travelError, setTravelError] = useState<string | null>(null);
@@ -234,6 +264,16 @@ function PrivyWorkspace({
   const loginStarted = useRef(false);
   const bootstrapRequest = useRef<AbortController | null>(null);
   const travelRequest = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (activationRetryAt <= Date.now()) return;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setActivationRetryNow(now);
+      if (now >= activationRetryAt) window.clearInterval(timer);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [activationRetryAt]);
 
   const bootstrap = useCallback(async (force = false) => {
     if (!userId || (!force && bootstrappedFor.current === userId)) return;
@@ -248,6 +288,10 @@ function PrivyWorkspace({
       const body = await requestWalletBootstrap<BootstrapResult>(userId, getAccessToken, refreshUser, controller.signal);
       controller.signal.throwIfAborted();
       setResult(body);
+      const now = Date.now();
+      const retryAfter = body.testnetActivation?.retryAfterMs;
+      setActivationRetryNow(now);
+      setActivationRetryAt(typeof retryAfter === "number" && Number.isFinite(retryAfter) && retryAfter > 0 ? now + retryAfter : 0);
       setStatus("ready");
     } catch (caught) {
       if (controller.signal.aborted) {
@@ -338,13 +382,18 @@ function PrivyWorkspace({
   if (!authenticated) {
     return <section className="agent-visitor shell">
       <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} /></header>
-      <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
+      <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><p>{t.stellarFunding}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
       {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
     </section>;
   }
   const current = result?.user.id === userId ? result : null;
   const stellar = current?.wallet ?? null;
   const partial = current && Object.values(current.preparation).some(item => item.status !== "ready");
+  const stellarPrepared = stellar && current?.preparation.stellar.status === "ready";
+  const stellarActivation = current?.testnetActivation?.activation ?? current?.activation;
+  const activationPending = stellarPrepared && stellarActivation !== "active" && stellarActivation !== "activated";
+  const activationRetrySeconds = Math.max(0, Math.ceil((activationRetryAt - activationRetryNow) / 1000));
+  const activationRetryable = current?.testnetActivation?.retryable ?? true;
   return <WebMcpProvider key={userId} locale={locale} getAccessToken={getAccessToken}>
     <section ref={workspaceRef} className="agent-workspace agent-chat-first shell">
       <header className="workspace-header">
@@ -360,6 +409,12 @@ function PrivyWorkspace({
       {status === "creating" && <p role="status" className="workspace-notice">{w.preparing}</p>}
       {status === "error" && <div role="alert" className="workspace-notice workspace-warning"><span>{w.failed}</span><button onClick={() => void bootstrap(true)}>{w.retry}</button></div>}
       {partial && status !== "creating" && <div role="status" className="workspace-notice workspace-warning"><span>{w.partial}</span>{Object.values(current.preparation).some(item => item.retryable) && <button onClick={() => void bootstrap(true)}>{w.retry}</button>}</div>}
+      {stellarPrepared && status !== "creating" && <div className={`workspace-notice${activationPending ? " workspace-warning" : ""}`}>
+        <span role="status">{activationPending ? t.stellarPending : t.stellarReady}{current?.testnetActivation?.fundsMoved === null && <> {t.stellarUncertain}</>}</span>
+        {activationPending && activationRetryable && <button type="button" disabled={activationRetrySeconds > 0} onClick={() => void bootstrap(true)}>
+          {activationRetrySeconds > 0 ? t.retryActivationWait.replace("{seconds}", String(activationRetrySeconds)) : t.retryActivation}
+        </button>}
+      </div>}
       <AgentChat key={userId} email={current?.profile?.email ?? user?.email?.address ?? t.authenticated}
         walletAddress={stellar?.address ?? ""} walletBalance={current?.account?.balances.find(balance => balance.asset === "XLM")?.balance ?? pc.unavailable}
         getAccessToken={getAccessToken} initialDraft={initialDraft} draftSuggestion={draftSuggestion} readyForQueries={Boolean(current) || status === "error"} onNavigateToChat={() => setPanel(null)}

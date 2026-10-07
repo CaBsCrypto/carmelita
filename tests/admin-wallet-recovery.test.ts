@@ -6,8 +6,10 @@ import type { AdminWalletUser } from "../app/admin/wallets/data";
 const identity = { id: "did:privy:existingowner", email: "owner@example.com" };
 function fixture() {
   const calls: string[] = [];
-  const user = { privyDid: identity.id, email: identity.email, status: "active", registeredComplete: true,
-    complete: false, invalidAddressNetworks: [], inactiveNetworks: ["stellar:testnet"] } as AdminWalletUser;
+  const user: AdminWalletUser = { privyDid: identity.id, email: identity.email, status: "active", registeredComplete: true,
+    complete: false, invalidAddressNetworks: [], inactiveNetworks: ["stellar:testnet"],
+    createdAt: "2026-01-01T00:00:00Z", lastSeenAt: "2026-01-02T00:00:00Z", wallets: [],
+    missingNetworks: [], duplicateNetworks: [], uniqueWallets: 3, networkAssociations: 5, evmIdentityConflict: false };
   const dependencies: WalletRecoveryDependencies = {
     registeredUser: async id => { calls.push("registered"); return { id, status: "active" }; },
     identity: async id => { calls.push("provider"); assert.equal(id, identity.id); return identity; },
@@ -94,4 +96,41 @@ test("registry or persistence failure cannot announce completion; repeat uses th
   dependencies.persistProfile = async () => { throw new Error("wallet_persistence_unavailable"); };
   await assert.rejects(recoverRegisteredWallets(input, dependencies), /wallet_persistence_unavailable/);
   assert.ok(!calls.includes("wallets") && !calls.includes("completed"));
+});
+
+test("recovery returns and audits actual Stellar activation and Testnet funding", async () => {
+  const { dependencies, user } = fixture();
+  const audits: Parameters<WalletRecoveryDependencies["audit"]>[0][] = [];
+  dependencies.audit = async value => { audits.push(value); };
+  const provision = dependencies.provision;
+  dependencies.provision = async target => ({ ...await provision(target), activation: "active", fundsMoved: true,
+    testnetActivation: { account: { exists: true, sequence: "1", balances: [] }, activation: "active",
+      faucetRequested: true, fundsMoved: true, transactionHash: "a".repeat(64), error: null, retryable: false, retryAfterMs: null } });
+  user.complete = true;
+  const result = await recoverRegisteredWallets(input, dependencies);
+  assert.equal(result.networkActivationComplete, true);
+  assert.equal(result.stellarActivationComplete, true);
+  assert.equal(result.fundsMoved, true);
+  assert.equal(result.testnetActivation?.faucetRequested, true);
+  assert.deepEqual(audits.map(value => [value.outcome, value.fundsMoved, value.faucetRequested]),
+    [["started", false, false], ["completed", true, true]]);
+});
+
+test("lost recovery response cannot audit no funds or claim live activation from a stale registry", async () => {
+  const { dependencies, user } = fixture();
+  const audits: Parameters<WalletRecoveryDependencies["audit"]>[0][] = [];
+  dependencies.audit = async value => { audits.push(value); };
+  const provision = dependencies.provision;
+  dependencies.provision = async target => ({ ...await provision(target), activation: "unknown", fundsMoved: null,
+    testnetActivation: { account: null, activation: "unknown", faucetRequested: true, fundsMoved: null,
+      transactionHash: null, error: "stellar_account_unavailable", retryable: true, retryAfterMs: 60000 } });
+  user.complete = true;
+  const result = await recoverRegisteredWallets(input, dependencies);
+  assert.equal(result.networkActivationComplete, false);
+  assert.equal(result.fundsMoved, null);
+  assert.equal(audits.at(-1)?.fundsMoved, null);
+  dependencies.provision = async () => { throw new Error("provider request interrupted"); };
+  await assert.rejects(recoverRegisteredWallets(input, dependencies));
+  assert.equal(audits.at(-1)?.outcome, "failed");
+  assert.equal(audits.at(-1)?.fundsMoved, null);
 });

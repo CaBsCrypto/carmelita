@@ -506,7 +506,7 @@ test("wallet status honors missing Stellar account and failed Circle token witho
 });
 
 test("wallet status flags malformed Stellar asset amounts and unsupported balances instead of inventing holdings", async () => {
-  const { definitions } = fixture({ stellarAccount: async () => ({ exists: true, sequence: null, balances: [
+  const { definitions } = fixture({ stellarAccount: async () => ({ exists: true, sequence: "1", balances: [
     { asset: "XLM", issuer: null, balance: "1.0000000" },
     { asset: "USDC", issuer: `G${"A".repeat(55)}`, balance: "not-a-number" },
     { asset: "liquidity_pool_shares", issuer: null, balance: "7" },

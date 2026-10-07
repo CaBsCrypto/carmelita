@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { provisionUserWallets } from "@/app/wallets/onboarding";
 import { hasDatabase } from "@/db";
+import { hasSameRequestOrigin as sameOrigin } from "@/app/stytch/request-security";
 import {
   PRIVY_WALLET_ARCHITECTURE,
   getPrivyStellarReadiness,
@@ -10,17 +11,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function sameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
+export const maxDuration = 60;
 
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") ?? "";
@@ -41,6 +32,7 @@ export async function POST(request: Request) {
       id: claims.user_id,
       email: null,
     }));
+    if (identity.id !== claims.user_id) throw new Error("privy_identity_mismatch");
     const onboarding = await provisionUserWallets({
       userId: claims.user_id,
       email: identity.email,
@@ -61,6 +53,9 @@ export async function POST(request: Request) {
         evm: onboarding.evm,
         account: onboarding.account,
         activation: onboarding.activation,
+        testnetActivation: onboarding.testnetActivation,
+        fundsMoved: onboarding.fundsMoved,
+        signingRequired: onboarding.signingRequired,
         ...onboarding.agentAccount,
         persistence: onboarding.persistence,
         preparation: onboarding.preparation,
@@ -75,7 +70,7 @@ export async function POST(request: Request) {
       error instanceof Error ? error.message.split(":")[0] : "bootstrap_failed";
     const status = code === "privy_not_configured" || code === "database_not_configured" || code === "wallet_persistence_unavailable"
       ? 503
-      : code.includes("conflict") || code === "privy_evm_wallet_ambiguous"
+      : code.includes("conflict") || code === "privy_evm_wallet_ambiguous" || code === "privy_identity_mismatch"
         ? 409
         : code === "privy_access_token_missing" || code === "invalid_privy_user_id"
           ? 401
