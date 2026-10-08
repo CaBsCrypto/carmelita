@@ -1,63 +1,44 @@
-# Disposición de ramas y preservación del trabajo
+# Ramas y cierre del piloto ChatGPT
 
-Verificación del 5 de octubre de 2026. Repositorio: [CaBsCrypto/carmelita](https://github.com/CaBsCrypto/carmelita). La auditoría inicial confirmó nueve PR abiertos y 36 ramas remotas, con los mismos SHA que las referencias locales inspeccionadas. El coordinador cerró PR22/35 como sustituidas y PR34/37 como aplazadas, conservando sus ramas. Eliminó únicamente 23 referencias remotas incorporadas y respaldadas, tras comprobar nuevamente cada SHA, ancestry y bundle; el borrado fue atómico y condicionado a esos SHA. Se conservaron las ramas locales y los worktrees. PR46 y sus cierres dependientes siguen pendientes.
+Auditoría del 8 de octubre de 2026. Base verificada en GitHub y producción: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`. Esta jornada conserva ramas y worktrees; no fusiona a `main` ni publica en Vercel. La disposición histórica del 5 de octubre permanece recuperable en el historial de este documento.
 
-## Base de integración y respaldo
+## Integraciones presentes en main
 
-- `origin/main`: `7edcb1890a76a7dfcf9f3eb4da50615807a951be`, integración de PR42. La rama local `main` está atrasada y no fue usada como base de comparación.
-- Candidata PR46: `608bb84218be9834607aa414736fac98202520a5`, 21 commits propios frente a main. Los cambios de este cierre requerirán aceptación sobre su nuevo SHA; la evidencia histórica de `608bb84` no certifica automáticamente un commit posterior.
-- Worker local: HEAD `bded46951ebf9ae104636d69692247bd9e3c3b15`; 29 archivos pendientes preservados mediante copia exacta, con SHA-256 de origen y destino: 11 modificados y 18 nuevos, 136.843 bytes. Respaldo privado ignorado por Git: `work/mvp-closeout-20261005/worker-backup/manifest.json`. Huella del manifiesto: `036b2cb81d009b3efcff8389eb49ab3426e1744fa7c3cb1850915058daeecf79`.
-- Navegación OAuth: cuatro archivos pendientes encontrados en `work/oauth-consent-navigation`, pese a que su HEAD ya es ancestro de main. Preservados por separado: dos modificados y dos nuevos, 14.241 bytes. Manifiesto privado: `work/mvp-closeout-20261005/oauth-navigation-backup/manifest.json`; SHA-256 `96750d1a2090aeed4b0e5d5d8e7f3e0e48e1acae351a98fef81786c881180846`.
-- Ambos respaldos verificaron todos los hashes, estado Git e índice sin cambios. Se copiaron solamente las rutas aprobadas de código, pruebas, esquema y configuración; no archivos `.env` o credenciales. La revisión de patrones de credenciales de alta confianza no produjo coincidencias. Esto es una comprobación limitada, no una auditoría exhaustiva de secretos.
-- El inventario privado de los 18 worktrees, referencias y nombres de evidencia está en `work/mvp-closeout-20261005/branch-worktree-inventory.json`. El worktree `mvp-beta` está limpio; no se alteró configuración global de Git para inspeccionarlo.
+PR46 se integró mediante `1781a4b7cf48d7719b63c67cc6df0f47d1c779d6`. Las correcciones posteriores incluyen ingreso directo y preparación de identidad/wallets (PR50–52), recuperación administrativa (PR53), distinción entre registro y activación (PR54), y activación automática Stellar Testnet (PR55, `caa3cd3`). La nueva documentación parte de ese código; no sustituye su aceptación humana pendiente.
 
-## Nueve PR: disposición y condición de cierre
-
-| PR / head | Evidencia y trabajo útil | Condición y disposición |
-|---|---|---|
-| [46](https://github.com/CaBsCrypto/carmelita/pull/46) · `608bb84` | Candidata consolidada; resolución de mercado, billeteras, fuentes y presentación ES/EN/PT. Draft, mergeable. | Integrar únicamente la candidata final con pruebas, aceptación y configuración productiva. Actualizar la descripción para reflejar el cierre completo y los bloqueos externos. |
-| [43](https://github.com/CaBsCrypto/carmelita/pull/43) · `feeb797` | `git cherry` contra PR46 marca todo su parche con `-`, ya equivalente en la candidata. | Cerrar como incorporada después de verificar la integración de la candidata; conservar referencia al commit integrado. |
-| [44](https://github.com/CaBsCrypto/carmelita/pull/44) · `70bf2a8` | Base PR43; ambos parches propios `022a41a` y `70bf2a8` son equivalentes en PR46. | Igual que PR43. No fusionar otra vez encima de la consolidación. |
-| [45](https://github.com/CaBsCrypto/carmelita/pull/45) · `385f487` | Base PR43; presentación multilingüe y fuentes, parche equivalente en PR46. | Cerrar como incorporada tras integración verificada. |
-| [35](https://github.com/CaBsCrypto/carmelita/pull/35) · `55075e9` | Seis commits históricos de chat principal, paneles, ingreso y permisos cerrados; el objetivo se implementó mediante PR42. La base actual incluye gating de bootstrap, borrador, paneles y controles de foco. No es equivalente por ancestry o parche. | Cerrada como sustituida el 5 de octubre; cobertura presente en main comprobada. Rama preservada. |
-| [36](https://github.com/CaBsCrypto/carmelita/pull/36) · `fd3d2bb` | Base PR35. El mercado multired se incorporó mediante PR38–41; fuentes seguras están en PR46. Queda útil el último commit: token/cuerpo/refresh cancelables, plazo completo y reintento explícito de conversación. | Adaptar esa recuperación sobre la candidata actual, probar interrupción/propietario tardío/borrador y cerrar como sustituida después. No fusionar toda la rama antigua. |
-| [37](https://github.com/CaBsCrypto/carmelita/pull/37) · `0798aea` | Cuatro commits sobre PR36; 19 archivos. El documento de la propia rama registra precisión **failed / experimental**, Spanish→English reportado por el usuario y omisión de palabras en el fixture largo. | Cerrada como aplazada el 5 de octubre; rama y backlog VOICE preservados. |
-| [34](https://github.com/CaBsCrypto/carmelita/pull/34) · `5974349` | Un commit, ocho archivos. Ocho descriptores direccionales Testnet; todos `executionEnabled:false` y `acceptedOnchain:false`. Ejecutores inversos/Base/Solana y SQL/reinicio pendientes; BNB bloqueada. | Cerrada como aplazada el 5 de octubre; rama y backlog BRIDGE preservados. |
-| [22](https://github.com/CaBsCrypto/carmelita/pull/22) · `13f906d` | Problema original resuelto por otra implementación en main: `settlement.ts` exige `receiptVerifier.verify` antes de registrar; el verificador valida red, hash/estado de recibo y transferencia exacta de token/pagador/destinatario/importe, con cuarentena si falta prueba. El lector espera minería acotada. | Cerrada como sustituida el 5 de octubre; regresiones enfocadas pasan y rama preservada. Sin nuevos pagos. |
-
-El coordinador añadió las regresiones de destinatario incorrecto, pagador incorrecto, contrato token diferente, transferencia correcta entre logs ajenos y hash de otra transacción al verificador actual. `node --import tsx --test tests/avalanche-merchant-receipt.test.ts`: 6/6 pruebas pasan. La cobertura previa incluye red incorrecta, revertido, importe corto, logs eliminados/duplicados y cuarentena antes de entrega. Estas pruebas son locales; no realizaron pagos.
-
-## Otras ramas remotas
-
-| Rama / head | Resultado |
+| PR | Cobertura y disposición |
 |---|---|
-| `feat/mcp-stage-a-hardening` · `cd01bc6` | Preservar; no fusionar completa. El objetivo ArcusX ya está superado y el replay script fue retirado deliberadamente. Las mitigaciones de MCP/comercio genéricos deben adaptarse o aislarse en este cierre; su `actorId` aportado por cliente no sustituye identidad autenticada y la antigua migración `0015` no es reutilizable. El MCP personal conserva controles distintos. |
-| `feat/avalanche-x402-merchant-sdk` · `49c5f8b` | Funcionalidad incorporada mediante `a08ae50`. `git cherry` sigue mostrando `+`, por lo que no se confundirá equivalencia funcional con ancestry. Preservar comparación antes de limpiar. |
-| `fix/apify-connection-claim` · `248e6c3` | `git cherry origin/main` devuelve `-`: parche equivalente incorporado mediante `9df3959`. Clasificar como incorporada. |
+| [43](https://github.com/CaBsCrypto/carmelita/pull/43) · `feeb797` | Su único parche es equivalente en `main` (`git cherry origin/main` devuelve `-`). Resolución de mercado y recuperación de errores incorporadas mediante PR46. Cerrado como incorporado, sin repetir la fusión. |
+| [44](https://github.com/CaBsCrypto/carmelita/pull/44) · `70bf2a8` | Los tres parches, incluida su base PR43, son equivalentes en `main`. Registro de wallets y contratos web/MCP incorporados mediante PR46. Cerrado como incorporado. |
+| [45](https://github.com/CaBsCrypto/carmelita/pull/45) · `385f487` | Sus dos parches, incluida su base PR43, son equivalentes en `main`. Estados multilingües y fuentes verificadas incorporados mediante PR46. Cerrado como incorporado. |
+| [36](https://github.com/CaBsCrypto/carmelita/pull/36) · `fd3d2bb` | Sus diez commits no son equivalentes por parche. Mercado/presentación fueron sustituidos por `7eb9fb4`, `a8e211a`, `92e41a1` y `3608e7c`; recuperación adaptada mediante `8c5b11f`. Cerrado como sustituido tras regresiones enfocadas. No fusionar la rama antigua completa. |
+| [49](https://github.com/CaBsCrypto/carmelita/pull/49) · `f28ea6f` | Claude y selector de asistentes: conservar abierto e independiente. Su CI aprobado no acredita OAuth web/móvil ni aceptación por segunda cuenta. |
 
-Veintitrés ramas de trabajo son ancestros completos de main, con cero commits exclusivos: `codex/channel-parity`, `codex/channel-parity-foundation`, `codex/channel-parity-personal`, `codex/mcp-market`, `codex/multichain-onboarding`, `codex/oauth-client-identity`, `codex/oauth-introspection-contract`, `codex/oauth-rejection-diagnostics`, `codex/tester-interface`, `codex/wallet-explorer-links`, `feat/aave-fuji`, `feat/avalanche-connection-intelligence`, `feat/avalanche-ecosystem-next`, `feat/carmelita-agent-gateway`, `feat/carmelita-oauth-chat-connectors`, `feat/multichain-wallet-foundation`, `feat/solana-devnet-foundation`, `feat/webmcp-official-integration`, `fix/dexalot-quote-not-live`, `fix/stellar-reconnect-idempotency`, `fix/webmcp-type-contract`, `integrate/avalanche-multichain` e `integrate/avalanche-release`.
+Los checks históricos fallidos de PR43–45 no se reclasifican como aprobados: 167 regresiones enfocadas de la implementación integrada pasan sobre `caa3cd3` (114 del recorrido y 53 de la cobertura sustituida), sin fallos ni omisiones. No se realizaron pagos ni fallos en producción.
 
-La eliminación de una referencia incorporada no autoriza retirar un worktree con cambios o evidencia privada. Primero debe existir una copia recuperable del código y de la evidencia necesaria; no usar `reset --hard`, `clean` o borrado recursivo para conseguir una lista limpia.
+## Trabajo pendiente preservado
 
-## Siete ramas locales sin rama remota
-
-| Rama local / head | Disposición |
+| Rama o snapshot | Base y seguimiento |
 |---|---|
-| `codex/mvp-beta` · `f5aab6b` | Dos parches propios no equivalentes en PR46: `bd7701e` lifecycle/revocación Notion y `f5aab6b` límites duraderos del chat web. Revisar selectivamente; no sustituir la nueva landing con la antigua beta ni afirmar cuotas equivalentes en ChatGPT. Conservar la referencia local mientras no exista respaldo recuperable de ambos commits. |
-| `codex/wallet-preparation-worker` · `bded469` | Cero commits exclusivos de main, pero 29 archivos pendientes ahora respaldados. Backlog WORKER: leases/reintentos/cron y migración `0022` quedan fuera de la candidata; no aplicar migración ni habilitar cron en este cierre. |
-| `codex/oauth-consent-navigation` · `bded469` | Cero commits exclusivos, pero cuatro archivos pendientes ahora respaldados. Revisar su cancelación/navegación en el frente ChatGPT antes de clasificarla como terminada o retirar el worktree. |
-| `codex/pilot-chat-routing-fix` · `556880f` | Único parche propio equivalente en PR46 (`git cherry -`). Clasificar como incorporada después de integrar candidata. |
-| `codex/pilot-graph-tools` · `691255a` | Parche propio equivalente en PR46, que contiene correcciones adicionales posteriores. Clasificar como incorporada tras integración. |
-| `codex/pilot-provider-diagnosis` · `06aedc0` | Documento equivalente en PR46 (`git cherry -`). Conservar evidencia y luego clasificar como incorporada. |
-| `codex/pilot-script-qa` · `71b2f0b` | Nueve commits históricos: cuatro parches equivalentes y cinco no equivalentes (`ddc2e87`, `9ce84e9`, `1f42030`, `d2bf9fe`, `71b2f0b`), principalmente evidencia y control independiente. Retener esa evidencia; comparar el control útil antes de cualquier limpieza. No mezclar automáticamente todos los scripts de QA. |
+| `codex/wallet-preparation-worker` | Base `bded46951ebf9ae104636d69692247bd9e3c3b15`, 29 archivos pendientes. Conservar sus bytes y base en el respaldo privado. Leases, cron, reintentos y migración `0022` requieren revisión propia; no activarlos en esta jornada. |
+| `codex/oauth-consent-navigation` | Misma base `bded469`, cuatro archivos pendientes. Preservar por separado; el cierre de PR36 no declara terminados estos cambios de navegación. |
+| `codex/mvp-beta` · `f5aab6b` | Dos commits locales exclusivos: `bd7701e` (lifecycle/revocación Notion) y `f5aab6b` (cuotas del chat web). Respaldo explícito y revisión selectiva posterior; no fusionar la antigua beta completa. |
+| `codex/pilot-script-qa` · `71b2f0b` | Nueve commits históricos locales: preservar como archivo separado. Cinco parches no equivalentes requieren revisión; la evidencia histórica no certifica producción actual. |
+| `codex/pilot-chat-routing-fix`, `codex/pilot-graph-tools`, `codex/pilot-provider-diagnosis` | Un commit local exclusivo por referencia; los parches útiles están incorporados. Preservar referencias explícitas antes de cualquier limpieza futura. |
+| `feat/mcp-stage-a-hardening` | Preservar para adaptación selectiva. No recuperar actor aportado por cliente, replay retirado ni migraciones antiguas como si fuesen compatibles con el MCP personal actual. |
+| `feat/avalanche-x402-merchant-sdk` | Cobertura funcional incorporada mediante `a08ae50`; ancestry y equivalencia de parche no son iguales. Mantener comparación y referencia histórica. |
+| `fix/apify-connection-claim` | Parche equivalente incorporado mediante `9df3959`. Conservar rama en esta jornada. |
 
-## Backlog que no bloquea la demo aprobada
+PR22 y PR35 se cerraron como sustituidos; PR34 (puentes) y PR37 (voz experimental) como aplazados el 5 de octubre. Sus referencias se conservan. Las ramas integradas, incluidas las de PR48 y PR50–55, tampoco se eliminan aquí.
 
-- **VOICE:** precisión de dictado local en español, descarga inicial, permisos y recuperación en teléfono real. La voz nativa de ChatGPT no acredita este componente web.
-- **BRIDGE:** ejecutores por dirección, identidad oficial de contratos/programas, SQL concurrente, reinicio, conciliación y aceptación on-chain autorizada por separado. BNB requiere proveedor/ruta acreditados.
-- **WORKER:** migración aditiva revisada, leases/reintentos/cron, pruebas SQL reales y activación específica; preservar el respaldo actual.
-- **NOTION-LIFECYCLE / QUOTA:** revisión selectiva de `mvp-beta`, sin expandir el alcance de Guionista y catálogo. Las cuotas web requieren un diseño separado si se desean también en MCP.
-- **MCP-COMMERCE-HARDENING:** aislar ahora las mutaciones genéricas inseguras; una reactivación posterior exigirá identidad, propiedad, idempotencia por principal y estados finales protegidos.
-- **ACCEPTANCE:** alta con segunda cuenta, móvil real, expiración/reconexión y aceptación hospedada Bazaar permanecen puertas explícitas según el alcance publicado. El cierre de una rama no las satisface.
+## Seguimientos independientes
 
-Las restricciones de compra nativa, firma real dentro de ChatGPT y financiación no se resolverán cerrando ramas. El cierre técnico puede publicarse con lectura/catálogo aprobados mientras esas condiciones se mantienen visibles y la ejecución permanece bloqueada.
+- **RECOVERY-36:** completar aceptación humana de cancelación/reintento y cambio de identidad; revisar legibilidad de tablas en móvil (la propuesta antigua `ca1091f` difiere de la implementación actual).
+- **OAUTH-NAVIGATION:** revisar el snapshot de cuatro archivos antes de adaptarlo a la implementación actual.
+- **WORKER:** revisar migración, concurrencia SQL, recuperación y despliegue como entrega independiente.
+- **LEGACY-STELLAR:** reconciliar perfiles históricos con estado pendiente en base de datos o cuenta todavía sin activar; no afirmar que todos los registros antiguos están activos.
+- **CLAUDE:** completar PR49 y aceptación web/móvil después del milestone ChatGPT.
+- **SERVICES / PURCHASES:** identidad compartida, contrato hospedado Bazaar, firma, activo/trustline USDC y compatibilidad de compras siguen fuera de este cierre.
+- **NOTION / QUOTA / VOICE / BRIDGE:** conservar trabajo y revisar con alcance y aceptación propios.
+
+La etiqueta del piloto identifica únicamente el recorrido aceptado de registro/autorización/consulta de wallets. El milestone completo sigue condicionado a la [matriz de aceptación](evidence-matrix.md), el respaldo restaurado y el CI obligatorio. El cierre de PRs históricos no satisface esas puertas.

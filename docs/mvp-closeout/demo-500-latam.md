@@ -1,5 +1,7 @@
 # Demo para 500 LatAm: tres minutos
 
+> **Documento histórico: corte del 5 de octubre de 2026.** Conserva el guion y las observaciones de esa fecha; no describe el estado actual de PR46 o producción. Para presentar el alcance actual, consultar la ficha del [milestone ChatGPT](./chatgpt-milestone.md) y la [política de builds](./vercel-build-policy.md). No ejecutar sus pasos de Preview, fusión o publicación hasta revisar Billing y acordar una publicación concreta.
+
 Carmelita propone ser una pasarela de aplicaciones desde la conversación: una identidad propia, descubrimiento de servicios y permisos claros. La primera demostración implementada cubre consultas y catálogo. La compra nativa, la asociación privada de comprador con Bazaar y el nuevo Guionista siguen pendientes; no se presentan como funciones terminadas.
 
 Base documental local: `8c5b11f73f15f5d5add3f5f23ddd01fabf2db6c0`, 5 de octubre de 2026. Antes de presentar, completar el SHA, el despliegue y las pruebas humanas de la [matriz](./evidence-matrix.md). La demo no prueba por sí sola un lanzamiento ni aceptación de 500 LatAm.
