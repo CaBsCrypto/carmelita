@@ -1,6 +1,6 @@
 # GitHub y respaldo recuperable del piloto
 
-Corte: 8 de octubre de 2026. Código productivo `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`; documentación en `codex/chatgpt-milestone-closeout`. El resultado final de `local-quality` y el SHA de la documentación se registran en el PR, sin fusionarlo.
+Corte: 8 de octubre de 2026. Código productivo `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`; documentación en [PR56](https://github.com/CaBsCrypto/carmelita/pull/56), `codex/chatgpt-milestone-closeout`. El resultado final de `local-quality` y el SHA de la documentación se registran allí, sin fusionarlo. El [recibo de CI](./evidence/documentation-ci-20261008.json) conserva la primera revisión aprobada.
 
 ## Respaldo remoto comprobado
 

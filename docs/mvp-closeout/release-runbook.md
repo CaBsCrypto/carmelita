@@ -1,5 +1,7 @@
 # Publicación y cierre de referencias
 
+> **Procedimiento histórico: corte del 5 de octubre de 2026.** Conserva operaciones, referencias y decisiones de esa fecha; no ejecutar sus pasos como procedimiento actual. Consultar el [milestone ChatGPT vigente](./chatgpt-milestone.md) y la [política de builds](./vercel-build-policy.md). Preview, fusión y publicación requieren revisar Billing y acordar una publicación concreta.
+
 Preparado el 5 de octubre de 2026. Este documento es un procedimiento revisable; A9 no hizo push, merge, deploy, cambios de configuración ni eliminación de ramas. El coordinador ejecuta las operaciones y registra sus resultados.
 
 ## Estado comprobado y alcance

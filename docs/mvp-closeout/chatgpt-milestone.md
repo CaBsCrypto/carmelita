@@ -16,8 +16,8 @@ El SHA productivo fue corroborado en el corte de la jornada; **no se capturó in
 
 | Entregable | Estado |
 | --- | --- |
-| Matriz, checklist y guía Stellar coherentes con `caa3cd3` | Preparados; revisión final del PR pendiente |
-| PR documental `codex/chatgpt-milestone-closeout` | Enlace y SHA pendientes de registrar; no fusionar |
+| Matriz, checklist y guía Stellar coherentes con `caa3cd3` | Preparados y revisados; aceptación humana restante explícita |
+| PR documental `codex/chatgpt-milestone-closeout` | [PR56](https://github.com/CaBsCrypto/carmelita/pull/56), draft y sin fusionar; SHA y CI finales registrados allí |
 | Check obligatorio `local-quality` y protección de administradores | Configurados; comprobación final registrada en la matriz |
 | Respaldo privado `CaBsCrypto/carmelita-recovery` | Aprobado en `810c2589`; clonado de GitHub y restaurado, Actions desactivado y sin Vercel |
 | Manifiestos SHA256 y reconstrucción de 29 archivos worker + 4 OAuth | Aprobado: 73 archivos y seis bundles verificados; [recibo saneado](./evidence/recovery-restoration-20261008.json) |
@@ -25,7 +25,7 @@ El SHA productivo fue corroborado en el corte de la jornada; **no se capturó in
 | Etiqueta del piloto y límites aceptados | `chatgpt-wallets-pilot-2026-10-07` anotada sobre `caa3cd3`; no declara aceptación completa |
 | Aceptación humana restante | Pendiente con CGPT-01 y CGPT-02 |
 
-El [recibo público saneado](./evidence/chatgpt-local-tests-20261008.json) registra 167/167 tests enfocados aprobados, sin fallidos ni omitidos, sobre el código funcional de `caa3cd3`. La [protección de `main`](./evidence/main-protection-20261008.json) exige PR y calidad, incluidos administradores. La evidencia técnica tiene su comando, resultado y SHA propios en la [matriz](./evidence-matrix.md). El CI completo del PR documental sigue pendiente. Su SHA final no modifica el código desplegado.
+El [recibo público saneado](./evidence/chatgpt-local-tests-20261008.json) registra 167/167 tests enfocados aprobados, sin fallidos ni omitidos, sobre el código funcional de `caa3cd3`. La [protección de `main`](./evidence/main-protection-20261008.json) exige PR y calidad, incluidos administradores. El CI completo aprobó `bbdf813`: siete tests Graphify, 1048 tests de aplicación, dos probes vivos omitidos, lint y build. Su [recibo con SHA](./evidence/documentation-ci-20261008.json) identifica esa revisión; el check del head documental posterior y su SHA final se registran en PR56. La documentación no modifica el código desplegado.
 
 El respaldo conserva historial publicado, snapshots pendientes, bases de restauración, políticas y manifiestos. Excluye credenciales, bases de datos, listados personales y reportes privados de usuarios Neon/Privy; la historia original conserva contactos ya públicos y autoría Git. Actions permanece desactivado y el repositorio de recuperación separado de Vercel. Véase [respaldo y controles comprobados](./github-recovery-closeout.md). Recuperar Neon, identidades Privy y configuración secreta requiere procedimientos adicionales; este respaldo protege **código y evidencia**.
 

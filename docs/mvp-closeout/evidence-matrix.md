@@ -12,8 +12,8 @@ Corte documental: **8 de octubre de 2026**. Este cierre cubre conectar Carmelita
 | Producción | `https://carmelita.browns.studio` | Mantener el origen y el endpoint productivo durante la aceptación; una guía QA no prueba ese entorno si copia producción |
 | Endpoint MCP personal | `https://carmelita.browns.studio/api/mcp/agent` | URL pública, sin tokens ni credenciales |
 | Prueba externa CGPT-01 | Reportada por el usuario el 7 de octubre de 2026, America/Santiago: alta, autorización y listado de wallets propias | El SHA exacto de sus llamadas ChatGPT no se capturó independientemente; la producción fue corroborada en el corte posterior |
-| Documento de esta jornada | Rama `codex/chatgpt-milestone-closeout`, basada en el `main` anterior | SHA final y PR documental pendientes de registrar; ese SHA no es una nueva versión desplegada |
-| CI de la jornada | Pendiente de enlace, SHA y resultado final | El CI de una versión anterior no acredita el PR documental ni su restauración |
+| Documento de esta jornada | [PR56](https://github.com/CaBsCrypto/carmelita/pull/56), rama `codex/chatgpt-milestone-closeout`, basada en el `main` anterior | El head exacto y su check final se registran en el PR; ese SHA no es una nueva versión desplegada |
+| CI de la jornada | [Corrida aprobada 37726445279](https://github.com/CaBsCrypto/carmelita/actions/runs/37726445279) sobre `bbdf8136485794c392a6b8b281730b285234cea7` | La revisión posterior sólo agrega evidencia documental y debe pasar también el check obligatorio; consultar el resultado final en PR56 |
 
 CGPT-01 es un seudónimo. La correspondencia con una identidad real y las comparaciones de direcciones permanecen privadas; estos documentos no publican correos, DID, direcciones personales, credenciales ni capturas de la sesión.
 
@@ -41,7 +41,7 @@ Cada caso tiene un estado independiente: **Aprobado**, **Fallido** o **Pendiente
 | Respaldo privado restaurado | Aprobado | Clon GitHub de `carmelita-recovery` en `810c2589`, 73 archivos verificados, seis bundles y 14 commits locales; 29 archivos worker + cuatro OAuth restaurados sobre `bded469` | [Recibo de restauración](./evidence/recovery-restoration-20261008.json); no acredita recuperación de Neon o Privy |
 | Protección de `main` | Aprobado | PR obligatorio y `local-quality` de GitHub Actions requerido, rama al día y protección aplicada a administradores; force-push y borrado bloqueados. [Lectura de configuración](./evidence/main-protection-20261008.json) | Reconfirmar lectura final; cero aprobaciones de terceros exigidas mientras exista un único colaborador |
 | PRs históricos clasificados | Aprobado | PR43–45 cerrados como incorporados; PR36 cerrado como sustituido, con cobertura y seguimiento citados en sus comentarios | Ramas conservadas; PR49 y worker siguen separados. Véase [Clasificación de ramas](./branch-dispositions.md) |
-| CI del PR documental | Pendiente | Check obligatorio `local-quality` | Enlace a corrida aprobada y SHA exacto; el PR permanece sin fusionar |
+| CI del PR documental | Aprobado en la revisión documentada | `local-quality` en `bbdf8136485794c392a6b8b281730b285234cea7`: siete tests Graphify y 1048 de aplicación aprobados, dos probes vivos omitidos, lint y build aprobados | [Recibo con SHA](./evidence/documentation-ci-20261008.json); el check del head final se registra en PR56 y el PR permanece sin fusionar |
 | Etiqueta y límites del piloto | Aprobado | Etiqueta anotada [chatgpt-wallets-pilot-2026-10-07](https://github.com/CaBsCrypto/carmelita/tree/chatgpt-wallets-pilot-2026-10-07) sobre `caa3cd3`, con el alcance CGPT-01 y pendientes explícitos | Es un ancla de recuperación del piloto, no aceptación completa del milestone |
 
 ## Evidencia técnica de esta jornada
@@ -55,9 +55,9 @@ El [recibo público saneado](./evidence/chatgpt-local-tests-20261008.json) regis
 | Recurso OAuth y revocación Stytch | Scope, issuer/audience, expiración y rechazo después de revocar | Aprobado dentro de la corrida enfocada enlazada |
 | Sesión y recuperación | Cancelación, respuesta tardía, conservación del borrador y lectura de recuperación sin reenvío automático | Aprobado dentro de la corrida enfocada enlazada |
 | Cobertura histórica de PRs | Paridad de mercado y recuperación incorporada | Aprobado dentro de la corrida enfocada; clasificación de cierres por registrar |
-| Calidad completa del PR documental | `local-quality`: tooling de Graphify, lint, tests y build en GitHub | Pendiente de corrida del PR; el build se ejecuta fuera de Vercel |
+| Calidad completa del PR documental | `local-quality`: tooling de Graphify, lint, tests y build en GitHub | Aprobado sobre `bbdf813`; [recibo con SHA y resultados](./evidence/documentation-ci-20261008.json). El head posterior requiere el mismo check; todos estos builds se ejecutan fuera de Vercel |
 
-La suite completa histórica de `main` registró 1048 tests aprobados y dos omisiones explícitas de probes vivos Avalanche MCP/Dexalot. No sustituye el CI del PR documental. Los tests usan identidades y proveedores controlados; no prueban por sí solos una sesión ChatGPT móvil real.
+La suite completa de PR56 registró 1048 tests aprobados y dos omisiones explícitas de probes vivos Avalanche MCP/Dexalot. Los tests usan identidades y proveedores controlados; no prueban por sí solos una sesión ChatGPT móvil real. El [recibo de ausencia de builds Vercel](./evidence/no-vercel-build-20261008.json) registra producción y despliegue sin cambios después de abrir el PR.
 
 ## Límites y antecedentes
 
@@ -69,6 +69,6 @@ La documentación no modifica permisos financieros: `agent:read` permite lectura
 
 ## Decisión de cierre
 
-El milestone completo sigue **pendiente** hasta registrar la aceptación humana restante, CI obligatorio, clasificación de PRs y restauración remota. No se cierra por agotar una jornada o un plazo. La ficha para 500 LatAm puede describir ya el recorrido demostrado, indicando sus pendientes; el envío corresponde al usuario.
+El milestone completo sigue **pendiente de la aceptación humana restante**. La clasificación de PRs, protección y restauración remota ya están registradas; el check obligatorio del head documental se verifica en PR56. No se cierra por agotar una jornada o un plazo. La ficha para 500 LatAm puede describir ya el recorrido demostrado, indicando sus pendientes; el envío corresponde al usuario.
 
 La ficha resumida está en [Milestone ChatGPT](./chatgpt-milestone.md), la prueba próxima en [Checklist externo](./external-tester-checklist.md) y la guía de entrada en [Primeros usuarios](./first-users.md).

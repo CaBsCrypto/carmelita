@@ -25,7 +25,7 @@ Actualizado el **8 de octubre de 2026**. CGPT-01 completó alta, autorización y
 
 1. Inicia una autorización nueva y **cancela antes de aceptar**. Comprueba que vuelve a un estado claro y no anuncia una conexión completada. No aceptes permisos para superar el caso de cancelación.
 2. Reintenta desde ChatGPT con tu misma identidad Carmelita. Tras autorizar, compara en privado las direcciones con el registro anterior; deben conservarse.
-3. Desde la sección de conexiones de Carmelita, **revoca la conexión ChatGPT**. Anota la hora y realiza una consulta privada nueva desde ChatGPT. Debe pedir autorización o rechazar el acceso; una respuesta anterior almacenada en el chat no prueba que el token siga vigente.
+3. Ingresa con tu identidad Carmelita en [`/agent`](https://carmelita.browns.studio/agent), abre **Cuenta → Conexiones → Chats conectados a Carmelita** y pulsa **Revocar acceso** en la conexión ChatGPT. Confirma la decisión, anota la hora y realiza una consulta privada nueva desde ChatGPT. Debe pedir autorización o rechazar el acceso; una respuesta anterior almacenada en el chat no prueba que el token siga vigente. Si la sección no aparece o no carga, registra el bloqueo.
 4. Vuelve a conectar sólo si decides aprobar otro consentimiento. Consulta de nuevo las cinco redes y confirma que conserva las mismas direcciones. Desconectar sólo en ChatGPT no sustituye la revocación desde Carmelita.
 
 ## Segunda identidad y cambio de sesión
