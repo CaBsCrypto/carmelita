@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-08T01:10:43.455193-03:00",
+  "packageManifestSha256": "38e42d6b34fbe33da7bcf031a1861d84a069ebd0f8abe5bfec1acdbf4fc8631a",
+  "checksumFileSha256": "2f06163862e7c75bedd1987ef1f3d0ffe4529c147fb83e6e21ec2faf649043c6",
+  "payloadFilesVerified": 73,
+  "publishedMain": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "snapshotBase": "bded46951ebf9ae104636d69692247bd9e3c3b15",
+  "verifiedBundles": [
+    {
+      "path": "archives/published-main.bundle",
+      "ref": "refs/remotes/origin/main",
+      "head": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+      "prerequisitesVerified": true
+    },
+    {
+      "path": "archives/local-mvp-beta.bundle",
+      "ref": "refs/heads/codex/mvp-beta",
+      "head": "f5aab6bc5f49c3fbccc7c4937d5fc63e5360eba0",
+      "prerequisitesVerified": true
+    },
+    {
+      "path": "archives/local-pilot-script-qa.bundle",
+      "ref": "refs/heads/codex/pilot-script-qa",
+      "head": "71b2f0b24d973aa9c71720a9e9419de76c3b4f1f",
+      "prerequisitesVerified": true
+    },
+    {
+      "path": "archives/local-pilot-chat-routing-fix.bundle",
+      "ref": "refs/heads/codex/pilot-chat-routing-fix",
+      "head": "556880f340332dfa4f0cba9a148aeffd1266b733",
+      "prerequisitesVerified": true
+    },
+    {
+      "path": "archives/local-pilot-graph-tools.bundle",
+      "ref": "refs/heads/codex/pilot-graph-tools",
+      "head": "691255a273af4062f58c3b543e6f1140fe841064",
+      "prerequisitesVerified": true
+    },
+    {
+      "path": "archives/local-pilot-provider-diagnosis.bundle",
+      "ref": "refs/heads/codex/pilot-provider-diagnosis",
+      "head": "06aedc0a21195cc6d9d932ecbc826bf0a28ba017",
+      "prerequisitesVerified": true
+    }
+  ],
+  "localOnlyCommitsVerified": 14,
+  "snapshotRestoration": [
+    {
+      "group": "worker",
+      "baseCommit": "bded46951ebf9ae104636d69692247bd9e3c3b15",
+      "restoredFiles": 29,
+      "allOriginalBytesMatch": true,
+      "policyRestored": true
+    },
+    {
+      "group": "oauth",
+      "baseCommit": "bded46951ebf9ae104636d69692247bd9e3c3b15",
+      "restoredFiles": 4,
+      "allOriginalBytesMatch": true,
+      "policyRestored": true
+    }
+  ],
+  "applicationSourceExecuted": false,
+  "packagesInstalled": false,
+  "buildsOrDeployments": false,
+  "databaseOrProviderCredentialsIncluded": false,
+  "credentialScopeDeclaration": "Runtime secrets and database exports were excluded by payload selection and reviewed pattern screening; this declaration is not a mathematical proof that no undiscovered secret exists.",
+  "recoveryRepository": "CaBsCrypto/carmelita-recovery",
+  "recoveryCommit": "810c2589d05be50a07ec6812c0e4ac6f8234a187",
+  "cloneSource": "Fresh authenticated GitHub clone, not local source or previous backup",
+  "privateRepositoryVerified": true,
+  "githubActionsEnabled": false,
+  "vercelLinkedProjects": 0
+}

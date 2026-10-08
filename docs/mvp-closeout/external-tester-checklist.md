@@ -1,40 +1,53 @@
-# Prueba externa de conexión y lectura
+# Checklist externo: conexión ChatGPT y wallets propias
 
-Preparado el 6 de octubre de 2026. **Pendiente de ejecución por una segunda persona y en celular real.** Esta lista no acredita una publicación, una compra ni una prueba aprobada.
+Actualizado el **8 de octubre de 2026**. CGPT-01 completó alta, autorización y listado de wallets, según la prueba real reportada el 7 de octubre. **Celular, cancelación, revocación, reconexión y aislamiento siguen pendientes.** Este checklist sirve para completarlos con CGPT-01 y una segunda identidad CGPT-02.
 
 ## Antes de empezar
 
-- El coordinador entrega origen web, entorno, SHA desplegado y endpoint MCP esperado. Si no están confirmados, detener la aceptación de versión.
-- Necesitas una cuenta Carmelita y una cuenta ChatGPT propia. Crear ChatGPT no garantiza que tu cuenta o espacio permita agregar un MCP personalizado; la guía debe explicar cómo comprobar esa opción.
-- En Carmelita, usa tu identidad habitual. Para OAuth, verifica el correo en esa misma identidad; no crees otra cuenta para resolverlo ni reemplaces las wallets existentes.
-- Usa un perfil separado del coordinador. No recibas ni compartas sus tokens, cookies o conexión.
-- En QA protegido, el acceso del navegador no demuestra que ChatGPT pueda acceder al MCP. El coordinador gestiona cualquier ventana autorizada y su restauración; tú no debes desactivar protección.
+- El coordinador registra entorno, origen, endpoint y SHA del código desplegado. Producción comprobada al preparar la jornada: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542` en `https://carmelita.browns.studio`. Reconfirmar antes de cada sesión; el SHA del PR documental no sustituye ese dato.
+- Usa tu cuenta ChatGPT y una identidad Carmelita propia. El permiso para agregar un MCP depende de la cuenta y del espacio de trabajo de ChatGPT; crear una cuenta no lo garantiza.
+- Puedes registrarte en la autorización Carmelita iniciada desde ChatGPT. Usa siempre la misma identidad y su correo verificado; no crees otra para resolver una incidencia ni sustituyas wallets existentes.
+- Usa un perfil o sesión separado del coordinador y del otro tester. No compartas tokens, cookies, códigos ni conexiones.
+- Esta jornada no abre una Preview nueva ni provoca fallos en producción. La indisponibilidad de proveedores se comprueba con tests locales controlados. Una eventual prueba QA hospedada necesita origen aislado y ventana autorizada propia.
 
-## Recorrido sin acompañamiento
+## Prueba básica y móvil
 
-1. Abre la landing indicada y elige **Conectar Carmelita con ChatGPT**. Sigue la guía sin instrucciones adicionales del coordinador.
-2. Crea tu cuenta o ingresa a Carmelita. Comprueba que identidad, correo y preparación de wallets tienen estados claros; anota cualquier estado pendiente.
-3. Crea tu cuenta o ingresa a ChatGPT. Comprueba la opción de agregar un servidor MCP personalizado. Si no aparece, utiliza la ayuda de la guía y registra el bloqueo.
-4. Copia el endpoint mostrado en la guía y contrástalo con el entorno indicado. Una Preview debe copiar su endpoint QA explícito; no uses producción como evidencia de QA.
-5. Agrega Carmelita, revisa el consentimiento y autoriza con la misma identidad Carmelita. Copiar la URL no significa que la conexión esté completa.
-6. En un chat nuevo, selecciona Carmelita y pregunta: **«Muéstrame mis billeteras registradas»**. Compara las redes y direcciones con tu cuenta web en privado.
-7. Pregunta: **«¿Qué servicios publica Bazaar y cuáles están disponibles?»** y **«Muéstrame mi actividad reciente»**. Un catálogo parcial o actividad vacía son resultados válidos. No pruebes compras, transferencias o firmas.
-8. Cancela una autorización y reintenta. El resultado debe ser claro y no debe mezclar usuarios. Con el coordinador, comprueba recuperación de una consulta interrumpida sin reenviar automáticamente el mensaje.
-9. En tu celular, usa tu misma cuenta ChatGPT y selecciona la misma conexión. Repite wallets, catálogo y actividad. Si no aparece el conector, registra el bloqueo: una prueba de escritorio no sustituye este caso.
-10. Revoca la conexión desde Carmelita e intenta una consulta privada nueva. Debe perder acceso. Vuelve a conectar sólo si decides aprobar otro consentimiento.
+1. Abre [la landing](https://carmelita.browns.studio/) y elige la acción de conexión con ChatGPT. Sigue [la guía](https://carmelita.browns.studio/connect-chatgpt) sin ayuda paso a paso. Registra cualquier explicación adicional necesaria.
+2. Copia `https://carmelita.browns.studio/api/mcp/agent` para esta prueba productiva. Comprueba que no contiene tokens. Si se asigna otro entorno, usa únicamente el endpoint explícito de ese entorno.
+3. Agrega Carmelita en ChatGPT, elige OAuth e inicia sesión o crea tu cuenta Carmelita durante la autorización. Revisa los permisos y autoriza sólo los que quieras compartir. Copiar la URL no significa conexión completada.
+4. En un chat nuevo, selecciona Carmelita y pregunta **«Muéstrame mis billeteras registradas»**. Espera estas cinco redes: Avalanche Fuji, Base Sepolia, BNB Testnet, Solana Devnet y Stellar Testnet.
+5. Compara las direcciones con tu cuenta Carmelita **en privado**. Avalanche, Base y BNB deben compartir tu dirección EVM; Solana y Stellar tienen sus propias direcciones. Una wallet registrada no demuestra saldo disponible.
+6. Pregunta **«¿Está activa mi cuenta Stellar Testnet?»**. Sólo una comprobación actual de la red debe presentarla activa. Si aparece pendiente o indisponible, registra ese resultado y continúa las lecturas disponibles; no generes otra wallet. XLM es nativo, sin trustline. No pruebes USDC ni firmas.
+7. Pregunta **«¿Qué servicios publica Bazaar y cuáles están disponibles?»** y **«Muéstrame mi actividad reciente»**. Catálogo parcial, proveedor indisponible o actividad vacía son resultados válidos si se explican. No pruebes compras o ejecución de servicios.
+8. En tu celular, usa la misma cuenta ChatGPT y la misma conexión Carmelita. Selecciona el conector y repite wallets, estado Stellar, catálogo y actividad. Registra modelo de dispositivo, versión del cliente, fecha y resultado. Si no aparece el conector, registra el bloqueo; escritorio no aprueba este caso.
 
-El historial de conversaciones Carmelita requiere permiso adicional y no equivale al historial de compras Bazaar ni al historial completo de ChatGPT. Los servicios del catálogo se ofrecen para lectura; la compra nativa permanece bloqueada.
+## Cancelación, revocación y reconexión
 
-## Registrar el resultado
+1. Inicia una autorización nueva y **cancela antes de aceptar**. Comprueba que vuelve a un estado claro y no anuncia una conexión completada. No aceptes permisos para superar el caso de cancelación.
+2. Reintenta desde ChatGPT con tu misma identidad Carmelita. Tras autorizar, compara en privado las direcciones con el registro anterior; deben conservarse.
+3. Desde la sección de conexiones de Carmelita, **revoca la conexión ChatGPT**. Anota la hora y realiza una consulta privada nueva desde ChatGPT. Debe pedir autorización o rechazar el acceso; una respuesta anterior almacenada en el chat no prueba que el token siga vigente.
+4. Vuelve a conectar sólo si decides aprobar otro consentimiento. Consulta de nuevo las cinco redes y confirma que conserva las mismas direcciones. Desconectar sólo en ChatGPT no sustituye la revocación desde Carmelita.
 
-| Campo | Completar por caso |
+## Segunda identidad y cambio de sesión
+
+CGPT-02 repite el recorrido desde su propia identidad y sesión. Cada persona compara sus datos de forma privada: ninguna debe recibir las wallets ni la actividad de la otra. Abrir otro chat de CGPT-01 no crea una segunda identidad.
+
+El coordinador comprueba además el cambio de usuario en el chat web Carmelita y el descarte de una respuesta pendiente de la sesión anterior. Los plazos, errores y respuestas tardías se ejercitan con transportes controlados **localmente**; no se bloquean servicios ni se modifica producción para provocar el caso. Registra por separado evidencia técnica y observación humana.
+
+El historial de conversaciones Carmelita requiere permiso adicional. No equivale al historial completo de ChatGPT ni al historial de compras Bazaar; `agent:read` no lo concede automáticamente.
+
+## Registro de resultados
+
+| Campo | Qué registrar |
 | --- | --- |
-| SHA / origen / entorno / endpoint MCP sin credenciales | Pendiente |
-| Tester seudónimo A o B / fecha / navegador y celular | Pendiente |
-| Paso / resultado / error saneado / ayuda necesaria | Pendiente |
-| Permisos consentidos / revocación efectiva | Pendiente |
-| Captura saneada, si hace falta | Pendiente |
+| Caso / estado | Aprobado, Fallido o Pendiente; motivo concreto |
+| Versión | SHA desplegado, origen, entorno y endpoint sin credenciales |
+| Persona | CGPT-01 o CGPT-02; ningún correo ni ID de propietario |
+| Sesión | Fecha y zona horaria, navegador o cliente y dispositivo |
+| Resultado | Redes presentes, estados de registro/activación y comparación privada de pertenencia o continuidad |
+| Permisos | Scopes consentidos y resultado de cancelación/revocación |
+| Ayuda o fallo | Paso que necesitó ayuda y mensaje saneado |
 
-No compartas contraseñas, tokens, códigos OAuth, cookies, claves, magic links ni firmas. Evita capturas de URLs de autorización, correos, IDs de propietario, direcciones personales o conversaciones privadas; redacta o recorta antes de registrar evidencia. Compara la pertenencia de datos en privado y registra sólo el resultado.
+No compartas contraseñas, códigos OAuth, tokens, cookies, claves, magic links ni firmas. No publiques capturas de URLs de autorización, correos, direcciones, IDs de propietario o conversaciones privadas. Conserva la comparación privada y registra sólo su resultado.
 
-**Aceptación:** la segunda persona completa conexión y lectura mediante la guía; los datos son suyos; celular y revocación pasan sobre el mismo despliegue identificado. Si necesita acompañamiento, registrar el punto y corregir la guía antes de declarar aceptación. Teclado, ancho pequeño y zoom al 200 % deben tener evidencia técnica adicional.
+**Aceptación:** una persona externa completa el recorrido siguiendo la guía; móvil, revocación y continuidad de direcciones pasan sobre un despliegue identificado; dos identidades mantienen aislamiento. Teclado, 320 px y zoom al 200 % tienen su evidencia técnica propia. Los resultados se incorporan a la [matriz](./evidence-matrix.md); no se anuncian aprobados antes de recibirlos.
