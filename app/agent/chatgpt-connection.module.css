@@ -1,55 +1,67 @@
-.trigger.trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;color:#153f32;background:#e5eee8;border-color:#a5bcae;font-weight:650;line-height:1.3}
-.trigger.trigger:hover{background:#d9e7df}
-.trigger svg{width:19px;height:19px;flex-shrink:0}
-.guide{max-width:640px;margin:auto;color:#153f32}
-.guide .intro{font-size:16px;line-height:1.6;margin:0 0 24px;color:#52675f;max-width:58ch}
-.steps{list-style:none;margin:0;padding:0}
-.urlBox+.steps{margin-top:26px}
-.guide button{font:inherit;cursor:pointer;min-height:44px;padding:8px 14px;border:1px solid #b6cbbd;border-radius:8px;background:#fff;color:#153f32;margin-right:8px;max-width:100%;white-space:normal}
-.guide button:disabled{cursor:default;opacity:.65}
-.guide a,.guide p,.guide summary{overflow-wrap:anywhere}
-.guide summary{cursor:pointer;min-height:44px;padding-top:12px;line-height:1.5}
-.steps>li{position:relative;padding:0 0 22px 45px}
-.steps>li+li{border-top:1px solid #d6dcd5;padding-top:22px}
-.stepNumber{position:absolute;left:0;top:0;width:29px;height:29px;border-radius:50%;background:#e5eee8;color:#153f32;display:grid;place-items:center;font-weight:700;font-size:14px}
-.steps>li+li .stepNumber{top:22px}
-.steps>li :is(h2,h3){margin:0 0 8px;font-size:18px;line-height:1.5;color:#153f32}
-.steps>li p{margin:8px 0;font-size:14px;line-height:1.6}
-.urlBox{display:grid;gap:10px;background:#f1f6f2;border:1px solid #b6cbbd;border-radius:12px;padding:16px;margin-top:14px;min-width:0}
-.urlBox label{font-size:13px;font-weight:650;color:#153f32}
-.urlBox textarea{display:block;width:100%;min-width:0;resize:none;overflow-wrap:anywhere;word-break:break-all;min-height:76px;border:1px solid #b6cbbd;border-radius:6px;background:#fff;padding:10px;font:16px/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;color:#153f32;box-sizing:border-box}
-.urlBox .copyButton{background:#153f32;color:#fff;border-color:#153f32;font-weight:650;min-height:46px}
-.urlBox .copyButton:hover{background:#235b48}
-.copyStatus{min-height:1.5em;font-size:13px;line-height:1.5;color:#235b48}
-.steps>li .note{font-size:13px;color:#52675f}
-.example{margin:10px 0 0;border-left:3px solid #153f32;padding:10px 14px;background:#faf9f6;font-size:15px;line-height:1.5;color:#153f32}
-.guide .permissions{border-top:1px solid #d6dcd5;margin:0;padding-top:18px;font-size:13px;line-height:1.6;color:#52675f}
-.footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-top:14px;font-size:13px}
-.guide :is(a,button,textarea):focus-visible{outline:3px solid #235b48;outline-offset:3px}
-@media(max-width:600px){.steps>li{padding-left:37px}.urlBox{padding:12px;margin-left:-37px;margin-top:16px}.urlBox textarea{height:94px}.trigger.trigger{font-size:13px}.guide .intro{font-size:15px}.footer{justify-content:flex-start}}
-.quickStart{margin:16px 0 22px;padding:24px;border-radius:16px;background:#e1f1e8;border:1px solid #91bba4;color:#153f32;min-width:0}
-.quickStart> :is(h2,h3){margin:0 0 10px;font-size:24px;line-height:1.25}
-.quickStart>p{font-size:15px;line-height:1.6;margin:0 0 18px;max-width:60ch}
-.guide .primaryAction{display:flex;justify-content:center;align-items:center;min-height:54px;padding:12px 18px;background:#153f32;color:#fff;border-radius:10px;font-weight:700;font-size:17px;text-decoration:none;text-align:center;box-sizing:border-box}
-.guide .primaryAction:hover{background:#235b48}
-.quickStart .urlBox{margin:16px 0 0;background:#fff}
-.accountPreparation{padding:0 0 18px;border-bottom:1px solid #d6dcd5}
-.accountPreparation>summary{font-weight:650;color:#153f32}
-.accountPreparation>p{font-size:14px;line-height:1.6}
-.tutorialTitle{margin:26px 0 16px;font-size:20px;color:#153f32}
-@media(max-width:600px){.quickStart{padding:16px}.quickStart> :is(h2,h3){font-size:21px}.quickStart .urlBox{margin-left:0}.guide .primaryAction{font-size:16px}}
-.steps{display:grid;gap:18px;margin-bottom:24px}
-.steps>li,.steps>li+li{padding:24px 24px 24px 68px;border:1px solid #d6e2da;border-radius:14px;background:#fff;min-width:0}
-.steps .stepNumber,.steps>li+li .stepNumber{top:24px;left:22px;background:#153f32;color:#fff}
-.stepActions{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0 16px}
-.guide .secondaryAction{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 18px;box-sizing:border-box;border:1px solid #8bab99;border-radius:9px;background:#edf5ef;color:#153f32;text-decoration:none;font-weight:650;line-height:1.4;text-align:center;max-width:100%}
-.guide .secondaryAction:hover{background:#dcece1;border-color:#153f32}
-.helpPanel{margin-top:16px;border:1px solid #d6e2da;border-radius:9px;background:#f6f8f5;overflow:hidden}
-.guide .helpPanel>summary,.guide .accountPreparation>summary{display:list-item;padding:14px 18px;min-height:48px;box-sizing:border-box;line-height:1.5;font-weight:600;list-style-position:inside}
-.helpPanel>p,.helpPanel>a{margin:12px 18px!important}
-.helpPanel>a{display:inline-block;padding-bottom:8px;text-decoration:underline;text-underline-offset:3px}
-.accountPreparation{border:1px solid #b6cbbd;border-radius:10px;background:#f1f6f2;padding:0;overflow:hidden}
-.accountPreparation>p,.accountPreparation>div{margin:14px 18px}
-.accountPreparation>summary:hover,.helpPanel>summary:hover{background:#e5eee8}
-.guide summary:focus-visible{outline:3px solid #235b48;outline-offset:-3px}
-@media(max-width:600px){.steps>li,.steps>li+li{padding:58px 16px 20px}.steps .stepNumber,.steps>li+li .stepNumber{top:16px;left:16px}.stepActions{display:grid}.guide .secondaryAction{width:100%}.guide .helpPanel>summary,.guide .accountPreparation>summary{padding:12px}.helpPanel>p,.helpPanel>a{margin:12px!important}}
+.trigger.trigger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #153f32; background: #e5eee8; border-color: #a5bcae; font-weight: 650; line-height: 1.3; }
+.trigger.trigger:hover { background: #d9e7df; }
+.guide { --connect-green: #153f32; --connect-muted: #53665d; --connect-line: #d9e2dc; max-width: 640px; margin: auto; color: var(--connect-green); font-family: "Carmelita Inter", Inter, ui-sans-serif, system-ui, sans-serif; }
+.fullPage { max-width: none; }
+.intro { margin: 0 0 24px; max-width: 60ch; font-size: 16px; line-height: 1.7; color: var(--connect-muted); }
+.guide p { line-height: 1.7; }
+.guide a { color: var(--connect-green); text-underline-offset: 5px; }
+.guide button { min-height: 44px; max-width: 100%; padding: 10px 16px; border: 1px solid #a5bcae; border-radius: 8px; background: white; color: var(--connect-green); font: inherit; font-size: 14px; cursor: pointer; white-space: normal; }
+.guide button:disabled { cursor: default; opacity: .65; }
+.guide :is(a, button, textarea, summary):focus-visible { outline: 3px solid var(--connect-green); outline-offset: 5px; }
+.guide :is(a, p, summary, h2, h3, h4) { overflow-wrap: anywhere; }
+.note { margin: 12px 0; color: var(--connect-muted); font-size: 14px; line-height: 1.7; }
+.urlCard { position: relative; padding: 28px; border: 1px solid #0e3026; border-radius: 20px; background: var(--connect-green); color: white; box-shadow: 0 22px 36px -24px #153f3280; }
+.urlCard > p { margin: 12px 0 20px; max-width: 50ch; color: #d1e5d8; font-size: 16px; }
+.urlCard .environment { margin: 0 0 22px; font-size: 14px; color: #d1e5d8; }
+.urlTitle { margin: 0; font-size: 26px; font-weight: 600; line-height: 1.35; letter-spacing: -.025em; color: white; }
+.urlBox { display: grid; gap: 12px; min-width: 0; }
+.urlBox label { font-size: 14px; font-weight: 600; color: white; }
+.urlBox textarea { display: block; width: 100%; min-width: 0; box-sizing: border-box; resize: none; overflow-wrap: anywhere; word-break: normal; min-height: 96px; border: 1px solid #c8dacd; border-radius: 8px; background: white; padding: 14px; font: 16px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--connect-green); }
+.urlBox .copyButton { background: #d8eddd; color: var(--connect-green); border-color: #d8eddd; min-height: 48px; font-size: 16px; font-weight: 650; }
+.urlBox .copyButton:hover:not(:disabled) { background: #c7e2cf; }
+.urlCard :is(button, textarea):focus-visible { outline-color: white; }
+.copyStatus { min-height: 24px; color: #d1e5d8; font-size: 14px; line-height: 1.7; }
+.quickStart { margin-bottom: 28px; }
+.quickStart .urlCard { margin-top: 20px; padding: 22px; }
+.primaryAction { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 20px; border: 1px solid var(--connect-green); border-radius: 10px; background: var(--connect-green); color: white !important; text-decoration: none; font-size: 16px; font-weight: 650; line-height: 1.5; text-align: center; }
+.primaryAction:hover { background: #0d3025; }
+.tutorial { margin-top: 28px; }
+.tutorialTitle { margin: 0 0 14px; font-size: 22px; font-weight: 600; line-height: 1.3; }
+.steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; list-style: none; padding: 0; margin: 24px 0 0; }
+.steps > li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; min-width: 0; padding: 22px; border: 1px solid var(--connect-line); border-radius: 14px; background: white; }
+.stepNumber { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #c8dacd; border-radius: 50%; background: #eef4ef; color: var(--connect-green); font-size: 14px; font-weight: 700; }
+.steps :is(h3, h4) { margin: 0 0 12px; color: var(--connect-green); font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; }
+.steps p { margin: 10px 0; font-size: 16px; }
+.steps .note { font-size: 14px; }
+.fullPage .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 24px; }
+.fullPage .steps > li { display: block; padding: 24px; }
+.fullPage .stepNumber { margin-bottom: 20px; }
+.secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; max-width: 100%; padding: 10px 16px; margin-top: 12px; border: 1px solid #a5bcae; border-radius: 8px; background: #eef4ef; color: var(--connect-green); font-size: 14px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; }
+.secondaryAction:hover { background: #d8eddd; }
+.example { margin: 18px 0; padding: 16px 18px; border-left: 3px solid var(--connect-green); border-radius: 0 8px 8px 0; background: #eef4ef; font-size: 17px; line-height: 1.6; color: var(--connect-green); }
+.accountSection { margin-top: 28px; }
+.accountPreparation, .helpPanel { margin: 0; padding: 0; border-top: 1px solid var(--connect-line); }
+.helpPanel { border-bottom: 1px solid var(--connect-line); }
+.guide summary { cursor: pointer; min-height: 56px; padding: 18px 4px; font-size: 16px; font-weight: 600; color: var(--connect-green); line-height: 1.5; }
+.accountPreparation > p, .accountPreparation > div, .helpPanel > p, .helpPanel > div { margin: 0 4px 22px; max-width: 75ch; font-size: 16px; }
+.accountPreparation > div > a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 600; }
+.accountPreparation > div > button { margin: 4px 12px 4px 0; }
+.inlineLinks, .footer { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.inlineLinks a, .footer a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 600; }
+.permissions { margin: 20px 0 0; color: var(--connect-muted); font-size: 14px; line-height: 1.7; }
+.footer { margin-top: 24px; }
+
+@media (max-width: 1000px) { .fullPage .steps { gap: 18px; } .fullPage .steps > li { padding: 20px; } }
+@media (max-width: 899px) {
+  .fullPage .steps { grid-template-columns: minmax(0, 1fr); }
+  .fullPage .steps > li { display: grid; grid-template-columns: 32px minmax(0, 1fr); }
+  .fullPage .stepNumber { margin: 0; }
+}
+@media (max-width: 540px) {
+  .urlCard { padding: 20px; }
+  .quickStart .urlCard { padding: 18px; }
+  .urlBox textarea { font-size: 14px; min-height: 108px; }
+  .steps > li, .fullPage .steps > li { display: block; padding: 20px; }
+  .stepNumber, .fullPage .stepNumber { margin-bottom: 16px; }
+  .urlTitle { font-size: 24px; }
+}

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import BrandLockup from "../brand-lockup";
-import LanguageToggle, { useLocale } from "../language-toggle";
+import { useLocale } from "../language-toggle";
+import PublicPageShell from "../public-page-shell";
+import styles from "../public-pages.module.css";
 
 const commands = {
   wallets: "/consulta personal.wallets {}",
@@ -12,106 +13,124 @@ const commands = {
 
 const copy = {
   es: {
-    back: "Inicio", agent: "Abrir chat", eyebrow: "COMIENZA AQUÍ",
-    title: "Conoce Carmelita desde el chat.",
-    lede: "Ingresa con Privy, consulta tus billeteras de prueba y explora el mercado.",
-    badges: ["Billeteras Testnet", "Precios Mainnet", "Español · English · Português"],
-    before: "Tu primer recorrido", beforeTitle: "Ingresa y haz una consulta.",
-    beforeText: "Privy proporciona tu identidad. Carmelita carga o prepara tus registros de billeteras Stellar, EVM y Solana; una cuenta existente conserva sus direcciones.",
-    beforeItems: ["La preparación completa incluye tres familias y cinco redes.", "Las tres redes EVM comparten dirección y tienen exploradores distintos.", "El registro, el saldo y la activación en la red son datos distintos."],
-    journey: "PASO A PASO", journeyTitle: "Ingresa. Consulta. Explora.",
-    journeyText: "Los ejemplos sólo rellenan el compositor. Revisa la consulta y envíala cuando quieras.",
+    title: "Tu primera conversación con Carmelita.",
+    lede: "Conecta Carmelita con ChatGPT, autoriza tu cuenta y pregunta por tu información. Empieza con Stellar Testnet.",
+    connect: "Conectar con ChatGPT", recommended: "Recomendado", web: "Usar el chat de Carmelita",
+    example: "Tu primera consulta", question: "¿Está activa mi cuenta Stellar Testnet?",
+    exampleTitle: "Una cuenta tuya. Una respuesta útil.",
+    exampleItems: ["Registro de tu cuenta", "Estado de activación en la red", "Saldo XLM y enlace al explorador"],
+    exampleNote: "Ejemplo ilustrativo. Tus datos aparecen después de autorizar; la activación se confirma en Stellar.",
+    startTitle: "De la conexión a tu primera consulta.",
+    startText: "Puedes crear tu cuenta Carmelita o iniciar sesión durante la autorización. No necesitas prepararla antes en otra pestaña.",
     steps: [
-      ["01", "Ingresa con Privy", "Abre el chat, elige un método de acceso disponible y espera a que carguen tus registros de billeteras.", ""],
-      ["02", "Consulta tus billeteras", "Consulta red, dirección, estado del registro y explorador de tus cinco redes Testnet.", commands.wallets],
-      ["03", "Consulta un precio", "Prueba SOL, AVAX y BNB. Las respuestas muestran la fuente y la fecha de los datos de mercado Mainnet.", commands.market],
-      ["04", "Descubre funciones", "Abre Funciones o consulta el catálogo. La implementación, tu conexión y la disponibilidad del proveedor se muestran por separado.", commands.functions],
+      ["Abre la guía de conexión", "Copia la URL de Carmelita y añádela manualmente en los conectores de ChatGPT. Tu cuenta debe permitir conectores personalizados."],
+      ["Autoriza tu cuenta", "Crea tu cuenta Carmelita o usa tu identidad existente. Revisa los permisos antes de aceptar; una cuenta existente conserva sus direcciones."],
+      ["Empieza por Stellar", "Habilita Carmelita en una conversación y pregunta: «¿Está activa mi cuenta Stellar Testnet?». Revisa la respuesta y abre el explorador si quieres comprobarla."],
+    ],
+    readGuide: "Abrir la guía de conexión",
+    webTitle: "También puedes conversar aquí.",
+    webText: "El chat de Carmelita es otra forma de consultar tu cuenta. Inicia sesión con la misma identidad para acceder a las wallets que ya tienes.",
+    webNote: "Los siguientes ejemplos abren un borrador en el chat de Carmelita. Revísalo y envíalo cuando quieras: abrirlo no ejecuta la consulta.",
+    examplesTitle: "Consultas que puedes probar.",
+    examples: [
+      ["Tus wallets", "Consulta las direcciones y el estado de registro. Empieza por Stellar Testnet y revisa las otras cuatro redes de prueba.", commands.wallets],
+      ["Datos de mercado", "Prueba una consulta de SOL, AVAX o BNB. Comprueba la fuente, la fecha y cualquier resultado parcial; son datos Mainnet separados de tus fondos de prueba.", commands.market],
+      ["Consultas disponibles", "Revisa las funciones que Carmelita tiene implementadas y su disponibilidad. Cada consulta depende de sus permisos, conexión y fuente.", commands.functions],
     ],
     draft: "Abrir como borrador", command: "Ver comando",
-    help: "PREGUNTAS COMUNES", helpTitle: "Si algo falta",
+    helpTitle: "Si algo queda pendiente.",
+    helpText: "Mantén la misma identidad y comprueba qué parte del recorrido falta.",
     questions: [
-      ["¿Qué hago si la preparación queda parcial?", "Conserva la misma cuenta y revisa el aviso en Billeteras. Algunas redes pueden no estar listas todavía; no necesitas crear otra identidad."],
-      ["¿Tener una dirección significa que tengo saldo?", "No. El estado del registro describe la preparación en Carmelita. El saldo y la activación en la red se consultan por separado. No necesitas financiar la billetera para este recorrido."],
-      ["¿Qué pasa si una consulta no está disponible?", "La respuesta indica la fuente, la conexión o el dato que falta. Puedes reintentar la consulta; si un panel muestra Reintentar, usa ese botón. Una función en el catálogo no garantiza que su proveedor esté operativo en ese momento."],
-      ["¿Qué significa un precio no disponible?", "Un activo identificado como inactivo conserva su ID y fuente. No encontrado se limita a los catálogos consultados. Si hay varios candidatos, elige un ID o precisa red y dirección. Si otra fuente falla, la consulta es parcial y puedes reintentar; la falta de precio no equivale a cero."],
-      ["¿Por qué los precios dicen Mainnet?", "Los precios y el TVL son datos públicos de mercado Mainnet. Tus billeteras siguen en Testnet y sus fondos de prueba no se valoran automáticamente."],
+      ["¿No aparece la opción de añadir Carmelita en ChatGPT?", "La cuenta o el espacio de trabajo debe permitir conectores MCP personalizados. Crear una cuenta ChatGPT no garantiza ese permiso. La guía de conexión explica cómo comprobarlo; mientras tanto, puedes usar el chat de Carmelita."],
+      ["¿Qué pasa si mis wallets no están listas?", "Revisa el estado de cada red con tu misma cuenta. La preparación puede ser parcial o una red puede no responder todavía. Si aparece Reintentar, úsalo; crear otra identidad generaría una cuenta distinta."],
+      ["¿Qué significa que Stellar está activa?", "La activación se presenta como completada sólo cuando Stellar Testnet la confirma. Carmelita intenta activarla automáticamente con XLM de prueba; si la red no responde, puede quedar pendiente. XLM es el activo nativo y no necesita una trustline. Otros activos tienen requisitos propios."],
+      ["¿Qué redes puedo consultar?", "Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia y BNB Testnet. Las tres redes EVM comparten una dirección; cada una mantiene su propio saldo y actividad. Tener una dirección no significa tener fondos en todas las redes."],
+      ["¿Qué hago si una consulta devuelve datos incompletos?", "Comprueba la fuente y el aviso de la respuesta. Una consulta puede quedar parcial si su proveedor no está disponible. Puedes reintentar; un precio que falta no equivale a cero y una función listada no garantiza que su proveedor esté operativo."],
     ],
-    chatgpt: "ChatGPT es opcional",
-    chatgptText: "Puedes completar este recorrido en Carmelita. Si tienes acceso al complemento, autoriza la misma cuenta por el flujo visible y revisa sus permisos. El acceso desde otra cuenta independiente de ChatGPT sigue pendiente de validación.",
-    chatgptHelp: "Si la conexión no termina, continúa en Carmelita y registra el paso que falló sin compartir códigos, tokens ni credenciales.",
-    advanced: "Documentación avanzada",
-    advancedText: "La financiación de Testnet, las trustlines y los depósitos tienen requisitos propios y quedan fuera de esta primera prueba de registro y consultas.",
-    developers: "Comandos y documentación para desarrolladores",
-    financeDocs: "Consultar documentación técnica de DeFindex Testnet",
-    footer: "Registro y consultas · Billeteras Testnet",
+    advanced: "Quiero revisar los detalles técnicos",
+    advancedText: "Consulta los comandos y el alcance actual. La financiación de otros activos, las trustlines y los depósitos tienen requisitos específicos; no son parte del recorrido de conexión y lectura.",
+    developers: "Documentación para desarrolladores",
+    financeDocs: "Documentación técnica de DeFindex Testnet",
   },
   en: {
-    back: "Home", agent: "Open chat", eyebrow: "START HERE",
-    title: "Get to know Carmelita through chat.",
-    lede: "Sign in with Privy, view your test wallets and explore the market.",
-    badges: ["Testnet wallets", "Mainnet prices", "English · Español · Português"],
-    before: "Your first visit", beforeTitle: "Sign in and ask a question.",
-    beforeText: "Privy provides your identity. Carmelita loads or prepares your Stellar, EVM and Solana wallet records; an existing account keeps its addresses.",
-    beforeItems: ["Complete preparation includes three wallet families and five networks.", "The three EVM networks share an address and use different explorers.", "Registration, balance and on-chain activation are separate facts."],
-    journey: "STEP BY STEP", journeyTitle: "Sign in. Ask. Explore.",
-    journeyText: "Examples only fill the composer. Review the query and send it when ready.",
+    title: "Your first conversation with Carmelita.",
+    lede: "Connect Carmelita with ChatGPT, authorize your account and ask about your information. Start with Stellar Testnet.",
+    connect: "Connect with ChatGPT", recommended: "Recommended", web: "Use Carmelita’s chat",
+    example: "Your first query", question: "Is my Stellar Testnet account active?",
+    exampleTitle: "Your own account. A useful answer.",
+    exampleItems: ["Your account’s registration", "Activation status on the network", "XLM balance and explorer link"],
+    exampleNote: "Illustrative example. Your data appears after authorization; activation is confirmed on Stellar.",
+    startTitle: "From connecting to your first query.",
+    startText: "You can create your Carmelita account or sign in during authorization. You do not need to prepare it in another tab first.",
     steps: [
-      ["01", "Sign in with Privy", "Open chat, choose an available sign-in method and wait for your wallet records to load.", ""],
-      ["02", "View your wallets", "Check the network, address, registration status and explorer for your five Testnet networks.", commands.wallets],
-      ["03", "Check a price", "Try SOL, AVAX and BNB. Responses show the source and date of Mainnet market data.", commands.market],
-      ["04", "Discover features", "Open Features or query the catalog. Implementation, your connection and provider availability are reported separately.", commands.functions],
+      ["Open the connection guide", "Copy Carmelita’s URL and add it manually in ChatGPT’s connectors. Your account must allow custom connectors."],
+      ["Authorize your account", "Create your Carmelita account or use your existing identity. Review the permissions before accepting; an existing account keeps its addresses."],
+      ["Start with Stellar", "Enable Carmelita in a conversation and ask: “Is my Stellar Testnet account active?”. Review the answer and open the explorer if you want to check it."],
+    ],
+    readGuide: "Open the connection guide",
+    webTitle: "You can also chat here.",
+    webText: "Carmelita’s chat is another way to query your account. Sign in with the same identity to access the wallets you already have.",
+    webNote: "The examples below open a draft in Carmelita’s chat. Review it and send it when ready: opening a draft does not run the query.",
+    examplesTitle: "Queries you can try.",
+    examples: [
+      ["Your wallets", "Check addresses and registration status. Start with Stellar Testnet and review the other four test networks.", commands.wallets],
+      ["Market data", "Try querying SOL, AVAX or BNB. Check the source, date and any partial results; this is Mainnet data separate from your test funds.", commands.market],
+      ["Available queries", "Review the features Carmelita has implemented and their availability. Each query depends on its permissions, connection and source.", commands.functions],
     ],
     draft: "Open as draft", command: "View command",
-    help: "COMMON QUESTIONS", helpTitle: "If something is missing",
+    helpTitle: "If something is still pending.",
+    helpText: "Keep the same identity and check which part of the flow is missing.",
     questions: [
-      ["What if preparation is only partial?", "Keep the same account and check the notice in Wallets. Some networks may not be ready yet; you do not need to create another identity."],
-      ["Does having an address mean I have funds?", "No. Registration status describes preparation in Carmelita. Balance and on-chain activation are checked separately. You do not need to fund a wallet for this visit."],
-      ["What if a query is unavailable?", "The response identifies the missing source, connection or data. You can retry the query; if a panel shows Retry, use that button. A catalog entry does not guarantee that its provider is operating at that moment."],
-      ["What does an unavailable price mean?", "An asset identified as inactive keeps its ID and source. Not found applies only to the catalogs consulted. If several candidates match, choose an ID or specify network and address. If another source fails, the query is partial and you can retry; a missing price is not zero."],
-      ["Why do prices say Mainnet?", "Prices and TVL are public Mainnet market data. Your wallets remain on Testnet and test funds are not automatically valued."],
+      ["Can’t find the option to add Carmelita in ChatGPT?", "Your account or workspace must allow custom MCP connectors. Creating a ChatGPT account does not guarantee this permission. The connection guide explains how to check; meanwhile, you can use Carmelita’s chat."],
+      ["What if my wallets are not ready?", "Check each network’s status with the same account. Preparation may be partial, or a network may not be responding yet. If you see Retry, use it; creating another identity would create a different account."],
+      ["What does an active Stellar account mean?", "Activation is shown as complete only after Stellar Testnet confirms it. Carmelita attempts automatic activation with test XLM; if the network does not respond, it may remain pending. XLM is the native asset and needs no trustline. Other assets have their own requirements."],
+      ["Which networks can I query?", "Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia and BNB Testnet. The three EVM networks share an address; each has its own balance and activity. Having an address does not mean having funds on every network."],
+      ["What if a query returns incomplete data?", "Check the source and the notice in the response. A query can be partial when its provider is unavailable. You can retry; a missing price is not zero, and a listed feature does not guarantee that its provider is operating."],
     ],
-    chatgpt: "ChatGPT is optional",
-    chatgptText: "You can complete this visit in Carmelita. If you have access to the connector, authorize the same account through the visible flow and review its permissions. Access from another independent ChatGPT account is still awaiting validation.",
-    chatgptHelp: "If connecting does not finish, continue in Carmelita and note the step that failed without sharing codes, tokens or credentials.",
-    advanced: "Advanced documentation",
-    advancedText: "Testnet funding, trustlines and deposits have their own requirements and are outside this first registration and query test.",
-    developers: "Commands and developer documentation",
-    financeDocs: "Read the DeFindex Testnet technical documentation",
-    footer: "Registration and queries · Testnet wallets",
+    advanced: "I want to review the technical details",
+    advancedText: "Check the commands and current scope. Funding other assets, trustlines and deposits have specific requirements; they are outside the connection and read-only flow.",
+    developers: "Developer documentation",
+    financeDocs: "DeFindex Testnet technical documentation",
   },
   pt: {
-    back: "Início", agent: "Abrir chat", eyebrow: "COMECE AQUI",
-    title: "Conheça a Carmelita pelo chat.",
-    lede: "Entre com Privy, consulte suas carteiras de teste e explore o mercado.",
-    badges: ["Carteiras Testnet", "Preços Mainnet", "Português · Español · English"],
-    before: "Seu primeiro percurso", beforeTitle: "Entre e faça uma consulta.",
-    beforeText: "Privy fornece sua identidade. Carmelita carrega ou prepara seus registros de carteiras Stellar, EVM e Solana; uma conta existente mantém seus endereços.",
-    beforeItems: ["A preparação completa inclui três famílias e cinco redes.", "As três redes EVM compartilham o endereço e têm exploradores diferentes.", "Registro, saldo e ativação na rede são dados distintos."],
-    journey: "PASSO A PASSO", journeyTitle: "Entre. Consulte. Explore.",
-    journeyText: "Os exemplos apenas preenchem o compositor. Revise a consulta e envie quando desejar.",
+    title: "Sua primeira conversa com a Carmelita.",
+    lede: "Conecte a Carmelita ao ChatGPT, autorize sua conta e pergunte sobre suas informações. Comece pela Stellar Testnet.",
+    connect: "Conectar ao ChatGPT", recommended: "Recomendado", web: "Usar o chat da Carmelita",
+    example: "Sua primeira consulta", question: "Minha conta Stellar Testnet está ativa?",
+    exampleTitle: "Uma conta sua. Uma resposta útil.",
+    exampleItems: ["Registro da sua conta", "Estado de ativação na rede", "Saldo XLM e link do explorador"],
+    exampleNote: "Exemplo ilustrativo. Seus dados aparecem após a autorização; a ativação é confirmada na Stellar.",
+    startTitle: "Da conexão à sua primeira consulta.",
+    startText: "Você pode criar sua conta Carmelita ou entrar durante a autorização. Não precisa prepará-la antes em outra aba.",
     steps: [
-      ["01", "Entre com Privy", "Abra o chat, escolha um método de acesso disponível e aguarde seus registros de carteiras carregarem.", ""],
-      ["02", "Consulte suas carteiras", "Confira rede, endereço, estado do registro e explorador das suas cinco redes Testnet.", commands.wallets],
-      ["03", "Consulte um preço", "Experimente SOL, AVAX e BNB. As respostas mostram a fonte e a data dos dados de mercado Mainnet.", commands.market],
-      ["04", "Descubra funções", "Abra Funções ou consulte o catálogo. A implementação, sua conexão e a disponibilidade do provedor são apresentadas separadamente.", commands.functions],
+      ["Abra o guia de conexão", "Copie a URL da Carmelita e adicione-a manualmente nos conectores do ChatGPT. Sua conta precisa permitir conectores personalizados."],
+      ["Autorize sua conta", "Crie sua conta Carmelita ou use sua identidade existente. Confira as permissões antes de aceitar; uma conta existente mantém seus endereços."],
+      ["Comece pela Stellar", "Ative a Carmelita em uma conversa e pergunte: “Minha conta Stellar Testnet está ativa?”. Confira a resposta e abra o explorador se quiser verificá-la."],
+    ],
+    readGuide: "Abrir o guia de conexão",
+    webTitle: "Você também pode conversar aqui.",
+    webText: "O chat da Carmelita é outra forma de consultar sua conta. Entre com a mesma identidade para acessar as carteiras que já possui.",
+    webNote: "Os exemplos abaixo abrem um rascunho no chat da Carmelita. Revise e envie quando desejar: abrir um rascunho não executa a consulta.",
+    examplesTitle: "Consultas que você pode experimentar.",
+    examples: [
+      ["Suas carteiras", "Consulte endereços e o estado do registro. Comece pela Stellar Testnet e confira as outras quatro redes de teste.", commands.wallets],
+      ["Dados de mercado", "Experimente consultar SOL, AVAX ou BNB. Confira a fonte, a data e resultados parciais; são dados Mainnet separados dos seus fundos de teste.", commands.market],
+      ["Consultas disponíveis", "Confira as funções que a Carmelita implementou e sua disponibilidade. Cada consulta depende de suas permissões, conexão e fonte.", commands.functions],
     ],
     draft: "Abrir como rascunho", command: "Ver comando",
-    help: "PERGUNTAS COMUNS", helpTitle: "Se algo estiver faltando",
+    helpTitle: "Se algo estiver pendente.",
+    helpText: "Mantenha a mesma identidade e confira qual parte do fluxo está faltando.",
     questions: [
-      ["E se a preparação estiver parcial?", "Mantenha a mesma conta e confira o aviso em Carteiras. Algumas redes podem não estar prontas ainda; não é necessário criar outra identidade."],
-      ["Ter um endereço significa que tenho saldo?", "Não. O estado do registro descreve a preparação na Carmelita. Saldo e ativação na rede são consultados separadamente. Não é necessário financiar a carteira para este percurso."],
-      ["E se uma consulta estiver indisponível?", "A resposta indica a fonte, conexão ou dado que falta. Você pode repetir a consulta; se um painel mostrar Tentar novamente, use esse botão. Uma função no catálogo não garante que seu provedor esteja operando naquele momento."],
-      ["O que significa um preço indisponível?", "Um ativo identificado como inativo mantém seu ID e fonte. Não encontrado se limita aos catálogos consultados. Se houver vários candidatos, escolha um ID ou indique rede e endereço. Se outra fonte falhar, a consulta é parcial e você pode tentar novamente; a falta de preço não equivale a zero."],
-      ["Por que os preços dizem Mainnet?", "Preços e TVL são dados públicos de mercado Mainnet. Suas carteiras continuam em Testnet e os fundos de teste não são avaliados automaticamente."],
+      ["Não encontro a opção de adicionar a Carmelita no ChatGPT?", "A conta ou o espaço de trabalho precisa permitir conectores MCP personalizados. Criar uma conta ChatGPT não garante essa permissão. O guia de conexão explica como verificar; enquanto isso, você pode usar o chat da Carmelita."],
+      ["E se minhas carteiras não estiverem prontas?", "Confira o estado de cada rede com a mesma conta. A preparação pode estar parcial ou uma rede pode não responder ainda. Se aparecer Tentar novamente, use esse botão; criar outra identidade geraria uma conta diferente."],
+      ["O que significa que a Stellar está ativa?", "A ativação só aparece como concluída após a confirmação da Stellar Testnet. A Carmelita tenta ativá-la automaticamente com XLM de teste; se a rede não responder, pode ficar pendente. XLM é o ativo nativo e não precisa de uma trustline. Outros ativos têm requisitos próprios."],
+      ["Quais redes posso consultar?", "Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia e BNB Testnet. As três redes EVM compartilham um endereço; cada uma tem seu próprio saldo e atividade. Ter um endereço não significa ter fundos em todas as redes."],
+      ["E se uma consulta retornar dados incompletos?", "Confira a fonte e o aviso da resposta. Uma consulta pode ficar parcial quando o provedor está indisponível. Você pode tentar novamente; um preço que falta não equivale a zero e uma função listada não garante que seu provedor esteja operando."],
     ],
-    chatgpt: "ChatGPT é opcional",
-    chatgptText: "Você pode completar este percurso na Carmelita. Se tiver acesso ao complemento, autorize a mesma conta pelo fluxo visível e confira suas permissões. O acesso por outra conta independente do ChatGPT ainda aguarda validação.",
-    chatgptHelp: "Se a conexão não terminar, continue na Carmelita e registre a etapa que falhou sem compartilhar códigos, tokens ou credenciais.",
-    advanced: "Documentação avançada",
-    advancedText: "Financiamento de Testnet, trustlines e depósitos têm requisitos próprios e ficam fora desta primeira prova de registro e consultas.",
-    developers: "Comandos e documentação para desenvolvedores",
-    financeDocs: "Consultar a documentação técnica de DeFindex Testnet",
-    footer: "Registro e consultas · Carteiras Testnet",
+    advanced: "Quero conferir os detalhes técnicos",
+    advancedText: "Consulte os comandos e o escopo atual. O financiamento de outros ativos, as trustlines e os depósitos têm requisitos específicos; ficam fora do fluxo de conexão e leitura.",
+    developers: "Documentação para desenvolvedores",
+    financeDocs: "Documentação técnica de DeFindex Testnet",
   },
 };
 
@@ -120,62 +139,84 @@ export default function GuideClient() {
   const t = copy[locale];
 
   return (
-    <main className="guide-page">
-      <nav className="guide-nav shell">
-        <Link className="brand" href="/"><BrandLockup /></Link>
-        <div>
-          <Link href="/">{t.back}</Link>
-          <LanguageToggle locale={locale} onChange={setLocale} compact />
-          <Link className="guide-nav-agent" href="/agent">{t.agent}</Link>
+    <PublicPageShell locale={locale} onLocaleChange={setLocale} active="guide">
+      <header className={styles.hero}>
+        <div className={styles.intro}>
+          <h1 className={styles.heroTitle}>{t.title}</h1>
+          <p className={styles.lede}>{t.lede}</p>
+          <div className={styles.actions}>
+            <Link href="/connect-chatgpt" className={styles.primary}>
+              <span>{t.connect}</span><span className={styles.badge}>{t.recommended}</span>
+            </Link>
+            <Link href="/agent?connect=privy" className={styles.secondary}>{t.web}</Link>
+          </div>
         </div>
-      </nav>
-      <header className="guide-hero shell">
-        <div>
-          <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{t.title}</h1>
-          <p className="lede">{t.lede}</p>
-          <div className="guide-badges">{t.badges.map(badge => <span key={badge}>{badge}</span>)}</div>
-        </div>
-        <aside>
-          <span>{t.before}</span><h2>{t.beforeTitle}</h2><p>{t.beforeText}</p>
-          <ul>{t.beforeItems.map(item => <li key={item}>{item}</li>)}</ul>
+        <aside className={styles.heroAside} aria-label={t.example}>
+          <div className={styles.visualCard}>
+            <p className={styles.kicker}>{t.example}</p>
+            <blockquote className={styles.prompt}>{t.question}</blockquote>
+            <h2 className={styles.panelTitle}>{t.exampleTitle}</h2>
+            <ul className={styles.list}>{t.exampleItems.map(item => <li key={item}>{item}</li>)}</ul>
+            <p className={styles.muted}>{t.exampleNote}</p>
+          </div>
         </aside>
       </header>
-      <section className="guide-journey shell">
-        <div className="guide-heading">
-          <p className="eyebrow">{t.journey}</p><h2>{t.journeyTitle}</h2><p>{t.journeyText}</p>
+
+      <section id="chatgpt" className={styles.section} aria-labelledby="guide-start">
+        <div className={styles.sectionHead}>
+          <h2 id="guide-start">{t.startTitle}</h2><p>{t.startText}</p>
         </div>
-        <ol>
-          {t.steps.map(([number, title, description, command]) => (
-            <li key={number}>
-              <span>{number}</span>
-              <div>
-                <h3>{title}</h3><p>{description}</p>
-                {command && <>
-                  <p><Link href={"/agent?draft=" + encodeURIComponent(command)}>{t.draft}</Link></p>
-                  <details><summary>{t.command}</summary><div className="guide-command"><code>{command}</code></div></details>
-                </>}
-              </div>
+        <ol className={styles.steps} role="list">
+          {t.steps.map(([title, description], index) => (
+            <li key={title}>
+              <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
+              <div className={styles.stepBody}><h3>{title}</h3><p>{description}</p></div>
             </li>
           ))}
         </ol>
+        <Link href="/connect-chatgpt" className={styles.textLink}>{t.readGuide}</Link>
       </section>
-      <section className="guide-faq guide-help shell">
-        <div className="guide-heading"><p className="eyebrow">{t.help}</p><h2>{t.helpTitle}</h2></div>
-        {t.questions.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
-        <details id="chatgpt">
-          <summary>{t.chatgpt}</summary><p>{t.chatgptText}</p><p>{t.chatgptHelp}</p>
-          <p><Link href="/connect-chatgpt">{locale === "es" ? "Conectar Carmelita con ChatGPT" : locale === "pt" ? "Conectar Carmelita ao ChatGPT" : "Connect Carmelita with ChatGPT"}</Link></p>
-        </details>
-        <details>
+
+      <section className={styles.section} aria-labelledby="guide-web">
+        <div className={styles.sectionHead}>
+          <h2 id="guide-web">{t.webTitle}</h2><p>{t.webText}</p>
+        </div>
+        <Link href="/agent?connect=privy" className={styles.textLink}>{t.web}</Link>
+      </section>
+
+      <section className={styles.section} aria-labelledby="guide-examples">
+        <div className={styles.sectionHead}>
+          <h2 id="guide-examples">{t.examplesTitle}</h2><p>{t.webNote}</p>
+        </div>
+        <div className={styles.queryCards}>
+          {t.examples.map(([title, description, command]) => (
+            <article className={styles.panel} key={title}>
+              <h3 className={styles.panelTitle}>{title}</h3><p>{description}</p>
+              <Link href={"/agent?draft=" + encodeURIComponent(command)} className={styles.textLink}>{t.draft}</Link>
+              <details className={styles.disclosure}>
+                <summary>{t.command}</summary>
+                <pre className={styles.codeBlock}><code>{command}</code></pre>
+              </details>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="guide-help">
+        <div className={styles.sectionHead}>
+          <h2 id="guide-help">{t.helpTitle}</h2><p>{t.helpText}</p>
+        </div>
+        {t.questions.map(([question, answer]) => (
+          <details className={styles.disclosure} key={question}><summary>{question}</summary><p>{answer}</p></details>
+        ))}
+        <details className={styles.disclosure}>
           <summary>{t.advanced}</summary><p>{t.advancedText}</p>
-          <p><Link href="/developers#quickstart">{t.developers}</Link></p>
-          <p><a href="https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md" target="_blank" rel="noreferrer">{t.financeDocs} ↗</a></p>
+          <div className={styles.inlineLinks}>
+            <Link href="/developers#quickstart">{t.developers}</Link>
+            <a href="https://github.com/CaBsCrypto/carmelita/blob/main/docs/defindex-testnet.md" target="_blank" rel="noreferrer">{t.financeDocs}</a>
+          </div>
         </details>
       </section>
-      <footer className="guide-footer shell">
-        <Link className="brand" href="/"><BrandLockup /></Link><span>{t.footer}</span><Link href="/agent">{t.agent}</Link>
-      </footer>
-    </main>
+    </PublicPageShell>
   );
 }

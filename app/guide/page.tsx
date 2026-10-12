@@ -1,9 +1,9 @@
 import GuideClient from "./guide-client";
 
 export const metadata = {
-  title: "New user guide | Carmelita",
+  title: "Guía para empezar | Carmelita",
   description:
-    "Sign in with Privy, check Testnet wallets and explore market queries. Connecting ChatGPT is optional.",
+    "Conecta Carmelita con ChatGPT, autoriza tu cuenta y empieza a consultar Stellar Testnet. Guía de uso y alternativa desde el chat de Carmelita.",
 };
 
 export default function GuidePage() {
