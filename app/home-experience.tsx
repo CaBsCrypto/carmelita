@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import BrandLockup from "./brand-lockup";
 import LanguageToggle, { useLocale } from "./language-toggle";
+import LandingDepthStage from "./landing-depth-stage";
 import styles from "./home-experience.module.css";
 
 const copy = {
@@ -15,7 +16,7 @@ const copy = {
     alternative: "También puedes entrar directamente", scope: "Primer caso de uso: Stellar Testnet.",
     example: "Ejemplo · Stellar Testnet", question: "¿Está activa mi cuenta Stellar Testnet?", answer: "Consulta tu cuenta con los permisos que autorizas.",
     queries: ["Registro de tu cuenta", "Estado de activación en la red", "Saldo XLM y enlace al explorador"],
-    preview: "Ejemplo ilustrativo en Stellar Testnet. Tus datos aparecen después de autorizar.",
+    preview: "Ejemplo ilustrativo en Stellar Testnet. Tus datos aparecen después de autorizar.", reduceEffects: "Reducir efectos",
     benefits: [
       ["Una cuenta tuya", "Accede a la información vinculada a la identidad que autorizas."],
       ["Permisos claros", "El acceso se limita a los permisos que revisas y autorizas."],
@@ -52,7 +53,7 @@ const copy = {
     alternative: "You can also sign in directly", scope: "First use case: Stellar Testnet.",
     example: "Example · Stellar Testnet", question: "Is my Stellar Testnet account active?", answer: "Check your account with the permissions you authorize.",
     queries: ["Your account’s registration", "Activation status on the network", "XLM balance and explorer link"],
-    preview: "Illustrative Stellar Testnet example. Your data appears after authorization.",
+    preview: "Illustrative Stellar Testnet example. Your data appears after authorization.", reduceEffects: "Reduce effects",
     benefits: [
       ["Your own account", "Access information linked to the identity you authorize."],
       ["Clear permissions", "Access is limited to the permissions you review and authorize."],
@@ -89,7 +90,7 @@ const copy = {
     alternative: "Você também pode entrar diretamente", scope: "Primeiro caso de uso: Stellar Testnet.",
     example: "Exemplo · Stellar Testnet", question: "Minha conta Stellar Testnet está ativa?", answer: "Consulte sua conta com as permissões que autoriza.",
     queries: ["Registro da sua conta", "Estado de ativação na rede", "Saldo XLM e link do explorador"],
-    preview: "Exemplo ilustrativo na Stellar Testnet. Seus dados aparecem após a autorização.",
+    preview: "Exemplo ilustrativo na Stellar Testnet. Seus dados aparecem após a autorização.", reduceEffects: "Reduzir efeitos",
     benefits: [
       ["Uma conta sua", "Acesse as informações vinculadas à identidade que autoriza."],
       ["Permissões claras", "O acesso se limita às permissões que você confere e autoriza."],
@@ -133,6 +134,7 @@ function QueryIcon({ kind }: { kind: number }) {
 export default function HomeExperience() {
   const { locale, setLocale } = useLocale();
   const contentRef = useRef<HTMLElement>(null);
+  const [reducedEffects, setReducedEffects] = useState(false);
   const t = copy[locale];
 
   return (
@@ -160,6 +162,7 @@ export default function HomeExperience() {
           <p className={styles.scope}><span aria-hidden="true" />{t.scope}</p>
         </div>
         <figure className={styles.demo} aria-label={t.example}>
+          <LandingDepthStage reduced={reducedEffects}>
           <div className={styles.conversation}>
             <header><BrandLockup /><span>{t.example}</span></header>
             <p className={styles.question}>{t.question}</p>
@@ -172,7 +175,11 @@ export default function HomeExperience() {
               </ul>
             </div>
           </div>
-          <figcaption className={styles.previewNote}>{t.preview}</figcaption>
+          </LandingDepthStage>
+          <figcaption className={styles.previewNote}>
+            <p>{t.preview}</p>
+            <button type="button" className={styles.effectsToggle} aria-pressed={reducedEffects} onClick={() => setReducedEffects((value) => !value)}>{t.reduceEffects}</button>
+          </figcaption>
         </figure>
       </section>
       <div className={styles.benefits}>
