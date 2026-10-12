@@ -28,18 +28,18 @@ const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1
 layers.push({ input: background, left: 0, top: 0 });
 layers.push({ input: await sharp(await readFile("public/brand/carmelita-mark.svg")).resize(38, 38).png().toBuffer(), left: 56, top: 35 });
 await text("Carmelita", 108, 40, 28, "#153f32", "bold");
-await text("Your personal", 52, 176, 64, "#153f32", "semibold");
-await text("agent in ChatGPT.", 52, 252, 64, "#153f32", "semibold");
-await text("Your account, activity and information.", 56, 355, 24, "#53665d");
+await text("Your activity.", 52, 176, 64, "#153f32", "semibold");
+await text("One conversation.", 52, 252, 64, "#153f32", "semibold");
+await text("Your personal agent in ChatGPT.", 56, 355, 24, "#53665d");
 await text("Connect Carmelita with ChatGPT", 80, 431, 22, "white", "semibold");
 await text("Application connections: in development.", 80, 510, 20, "#53665d");
-await text("Illustrative example", 741, 189, 22, "#d1e5d8");
-await text("Is my Stellar Testnet", 762, 257, 23, "#153f32", "semibold");
-await text("account active?", 762, 287, 23, "#153f32", "semibold");
-await text("Your account, with your permission.", 762, 349, 18, "#20372e");
-await text("Check registration,", 762, 388, 22, "#20372e");
-await text("network status and balance.", 762, 418, 22, "#20372e");
-await text("Example only. No live account data.", 762, 478, 17, "#53665d");
+await text("Illustrative · Multichain", 741, 189, 22, "#d1e5d8");
+await text("Which networks can", 762, 257, 23, "#153f32", "semibold");
+await text("I check with Carmelita?", 762, 287, 23, "#153f32", "semibold");
+await text("Stellar Testnet · Solana Devnet", 762, 354, 18, "#20372e");
+await text("Avalanche Fuji · Base Sepolia", 762, 388, 18, "#20372e");
+await text("BNB Testnet", 762, 422, 18, "#20372e");
+await text("Example wallets. Test networks.", 762, 478, 17, "#53665d");
 await text("carmelita.browns.studio", 56, 579, 20, "#53665d");
 await sharp({ create: { width: 1200, height: 630, channels: 4, background: "#fcfdfb" } })
   .composite(layers).png().toFile("public/brand/carmelita-landing-social.png");

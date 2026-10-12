@@ -88,6 +88,9 @@
 .response { padding: 0; }
 .replyIdentity { display: block; color: var(--home-green); font-size: 14px; font-weight: 650; line-height: 1.5; }
 .answer { margin: 10px 0 20px; color: var(--home-text); font-size: 18px; font-weight: 450; line-height: 1.65; }
+.networks { display: flex; flex-wrap: wrap; gap: 8px 12px; list-style: none; margin: 0 0 22px; padding: 0; }
+.networks li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--home-green); font-size: 14px; line-height: 1.5; }
+.networks li::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--home-coral); }
 .explorerHint { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding-top: 18px; border-top: 1px solid var(--home-line); color: var(--home-text); font-size: 15px; line-height: 1.6; }
 .explorerHint svg { flex-shrink: 0; margin-top: 2px; color: var(--home-green); }
 .exampleLabel { margin: 30px 0 0; color: var(--home-muted); font-size: 14px; line-height: 1.6; }
