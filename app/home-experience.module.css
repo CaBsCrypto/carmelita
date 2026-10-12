@@ -35,7 +35,7 @@
   color: white; background: var(--home-green); transform: translateY(-180%);
 }
 .skipLink:focus { transform: translateY(0); }
-.nav, .hero, .benefits, .steps, .faq, .vision, .footer { width: min(1180px, 100%); margin-inline: auto; }
+.nav, .hero, .benefits, .stellarUse, .steps, .faq, .vision, .footer { width: min(1180px, 100%); margin-inline: auto; }
 .nav {
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
   padding-block: 22px; border-bottom: 1px solid var(--home-line);
@@ -48,10 +48,10 @@
 .navActions :global(.language-toggle button) { min-width: 44px; min-height: 44px; padding: 10px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--home-green); }
 .navActions :global(.language-toggle button.active) { background: var(--home-green); color: white; }
 
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 64px; padding-block: 80px 64px; scroll-margin-top: 24px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); align-items: center; gap: 56px; padding-block: 72px 56px; scroll-margin-top: 24px; }
 .intro { min-width: 0; }
-.intro h1 { margin: 0; color: var(--home-green); font-size: clamp(48px, 5.4vw, 76px); font-weight: 650; line-height: 1.04; letter-spacing: -.06em; overflow-wrap: break-word; }
-.description { margin: 26px 0 32px; max-width: 480px; font-size: 18px; line-height: 1.7; color: var(--home-muted); }
+.intro h1 { margin: 0; color: var(--home-green); font-size: clamp(44px, 5.4vw, 64px); font-weight: 650; line-height: 1.08; letter-spacing: -.055em; overflow-wrap: break-word; }
+.description { margin: 26px 0 32px; max-width: 600px; font-size: 18px; line-height: 1.7; color: var(--home-muted); }
 .actions { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
 .primary { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; max-width: 100%; padding: 16px 26px; border-radius: 10px; background: var(--home-green); color: white; font-size: 16px; font-weight: 650; line-height: 1.5; text-align: center; text-decoration: none; transition: background-color 150ms ease; }
 .primary:hover { background: #0d3025; }
@@ -70,18 +70,18 @@
 .question { width: fit-content; max-width: 95%; margin: 0 0 22px auto; padding: 13px 17px; border-radius: 12px 12px 3px 12px; background: #d8eddd; color: var(--home-green); font-size: 16px; line-height: 1.5; }
 .response { padding: 22px; background: white; border-radius: 3px 12px 12px 12px; }
 .answer { margin: 0 0 14px; color: var(--home-text); font-size: 16px; font-weight: 550; line-height: 1.6; }
-.networks { list-style: none; padding: 0; margin: 0; }
-.networks li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 51px; padding-block: 10px; border-top: 1px solid var(--home-line); font-size: 15px; line-height: 1.5; }
-.networkSymbol { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; font-weight: 650; }
-.evm { background: #e6eee8; color: var(--home-green); }
-.solana { background: #e8eaf6; color: #414c7c; }
-.stellar { background: #f6eade; color: #775334; }
-.address { color: var(--home-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.queryList { list-style: none; padding: 0; margin: 0; }
+.queryList li { display: flex; align-items: center; gap: 12px; min-height: 54px; padding-block: 14px; border-top: 1px solid var(--home-line); font-size: 15px; line-height: 1.6; }
+.queryList svg { flex-shrink: 0; color: var(--home-green); }
 .previewNote { margin: 14px 4px 0; max-width: 510px; color: var(--home-muted); font-size: 14px; line-height: 1.6; }
 
 .benefits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; border-top: 1px solid var(--home-line); padding-block: 36px 48px; }
 .benefits h2 { margin: 0 0 12px; font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -.025em; }
 .benefits p { margin: 0; max-width: 330px; color: var(--home-muted); font-size: 16px; line-height: 1.7; }
+.stellarUse { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 40px; padding: 36px; margin-bottom: 52px; background: var(--home-soft); border-left: 3px solid var(--home-green); }
+.stellarUse h2 { margin: 0; max-width: 440px; font-size: clamp(28px, 3vw, 34px); font-weight: 600; line-height: 1.2; letter-spacing: -.035em; color: var(--home-green); }
+.stellarQuestion { margin: 0 0 14px; padding: 0; border: 0; color: var(--home-green); font-size: 21px; line-height: 1.5; }
+.stellarDescription { margin: 0; color: var(--home-muted); font-size: 16px; line-height: 1.7; }
 .steps { padding-block: 72px; border-top: 1px solid var(--home-line); }
 .sectionHeading h2 { margin: 0; max-width: 760px; color: var(--home-green); font-size: clamp(30px, 3.2vw, 42px); font-weight: 600; line-height: 1.16; letter-spacing: -.045em; }
 .sectionHeading > p { margin: 18px 0 0; max-width: 620px; color: var(--home-muted); font-size: 16px; line-height: 1.7; }
@@ -120,7 +120,7 @@
 @media (max-width: 1100px) { .hero { gap: 40px; } .conversation { padding: 22px; } .response { padding: 18px; } .faq { gap: 40px; } .vision { gap: 40px; padding: 32px; } }
 @media (max-width: 899px) {
   .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 56px 44px; }
-  .intro h1 { font-size: clamp(44px, 8vw, 68px); }
+  .intro h1 { font-size: clamp(44px, 8vw, 64px); }
   .description { max-width: 600px; }
   .demo { max-width: 620px; }
   .benefits, .steps ol { grid-template-columns: minmax(0, 1fr); gap: 28px; }
@@ -129,7 +129,7 @@
   .steps h3 { margin: 3px 0 0; }
   .steps li p { grid-column: 2; }
   .steps, .faq { padding-block: 52px; }
-  .faq, .vision { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .faq, .vision, .stellarUse { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .vision { margin-bottom: 52px; }
 }
 @media (max-width: 540px) {
@@ -147,10 +147,11 @@
   .conversation header :global(.brand-wordmark) { font-size: 18px; }
   .conversation header > span:last-child { width: 100%; }
   .response { padding: 16px; }
-  .networks li { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; font-size: 14px; }
-  .networkSymbol { width: 26px; height: 26px; }
+  .queryList li { gap: 10px; }
   .previewNote { margin-inline: 0; }
   .benefits { padding-block: 28px 36px; }
+  .stellarUse { padding: 26px 22px; margin-bottom: 36px; }
+  .stellarQuestion { font-size: 19px; }
   .sectionHeading h2 { font-size: 30px; }
   .steps ol { margin-top: 28px; }
   .steps h3, .benefits h2 { font-size: 18px; }

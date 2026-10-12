@@ -28,16 +28,18 @@ const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1
 layers.push({ input: background, left: 0, top: 0 });
 layers.push({ input: await sharp(await readFile("public/brand/carmelita-mark.svg")).resize(38, 38).png().toBuffer(), left: 56, top: 35 });
 await text("Carmelita", 108, 40, 28, "#153f32", "bold");
-await text("Your wallets,", 52, 176, 76, "#153f32", "semibold");
+await text("Carmelita,", 52, 176, 76, "#153f32", "semibold");
 await text("in ChatGPT.", 52, 262, 76, "#153f32", "semibold");
+await text("Your account and Web3 data.", 56, 365, 26, "#53665d");
 await text("Connect Carmelita with ChatGPT", 80, 431, 22, "white", "semibold");
-await text("Testnet and Devnet. Test funds.", 80, 510, 23, "#53665d");
+await text("Start with Stellar Testnet.", 80, 510, 23, "#53665d");
 await text("Illustrative example", 741, 189, 22, "#d1e5d8");
-await text("Show me my wallets", 762, 257, 23, "#153f32", "semibold");
-const networks = ["Avalanche Fuji", "Base Sepolia", "BNB Testnet", "Solana Devnet", "Stellar Testnet"];
-for (let index = 0; index < networks.length; index++) {
-  await text(networks[index], 762, 307 + index * 38, 21, "#20372e");
-}
+await text("Is my Stellar Testnet", 762, 257, 23, "#153f32", "semibold");
+await text("account active?", 762, 287, 23, "#153f32", "semibold");
+await text("Your account, with your permission.", 762, 349, 18, "#20372e");
+await text("Check registration,", 762, 388, 22, "#20372e");
+await text("network status and balance.", 762, 418, 22, "#20372e");
+await text("Example only. No live account data.", 762, 478, 17, "#53665d");
 await text("carmelita.browns.studio", 56, 579, 20, "#53665d");
 await sharp({ create: { width: 1200, height: 630, channels: 4, background: "#fcfdfb" } })
   .composite(layers).png().toFile("public/brand/carmelita-landing-social.png");

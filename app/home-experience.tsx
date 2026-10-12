@@ -8,22 +8,26 @@ import styles from "./home-experience.module.css";
 const copy = {
   es: {
     home: "Inicio de Carmelita", footerNav: "Enlaces de Carmelita", skip: "Ir al contenido", guide: "Guía de conexión", developers: "Desarrolladores",
-    title: "Tus wallets,", titleEnd: "en ChatGPT.",
-    description: "Conecta Carmelita y consulta las direcciones de tus wallets en cinco redes de prueba, desde una conversación.",
+    title: "Carmelita,", titleEnd: "dentro de ChatGPT.",
+    description: "Carmelita es un complemento para consultar tu información y datos Web3 desde ChatGPT. Conecta tu cuenta y pregunta por tus wallets, redes y mercado en la misma conversación.",
     connect: "Conectar Carmelita con ChatGPT", recommended: "Recomendado", signIn: "Iniciar sesión en Carmelita",
-    alternative: "También puedes entrar directamente", scope: "Wallets Testnet y Devnet. Fondos de prueba.",
-    example: "Ejemplo ilustrativo", question: "Muéstrame mis wallets", answer: "Estas son tus cinco redes de prueba.",
-    address: "Ejemplo de dirección", preview: "Vista ilustrativa. Al conectar, consultas las direcciones asociadas a tu cuenta.",
+    alternative: "También puedes entrar directamente", scope: "Consultas vinculadas a la cuenta que autorizas.",
+    example: "Ejemplo ilustrativo", question: "¿Qué puedo consultar con Carmelita?", answer: "Empieza por tu cuenta y el contexto de tus redes.",
+    queries: ["Tu wallet Stellar y tus otras wallets", "El estado de tu cuenta en la red", "Información de mercado y redes"],
+    preview: "Ejemplo ilustrativo de consultas. Tus datos aparecen después de autorizar.",
     benefits: [
-      ["Pregunta con tus palabras", "Consulta tus direcciones sin cambiar de conversación."],
-      ["Encuentra tus wallets", "Revisa las wallets de la cuenta que autorizas y abre sus exploradores."],
-      ["Empieza en redes de prueba", "Conoce el recorrido con Testnet y Devnet antes de usar fondos reales."],
+      ["Tu información", "Consulta las wallets asociadas a la cuenta que autorizas."],
+      ["El contexto", "Pregunta por precios y redes, con fuentes y disponibilidad."],
+      ["Tu conversación", "Pregunta con tus palabras, sin salir de ChatGPT."],
     ],
-    stepsTitle: "De la conexión a tu primera pregunta.", stepsIntro: "La guía te acompaña. La conexión se añade manualmente en ChatGPT.",
+    stellarLabel: "Empieza con Stellar", stellarTitle: "Una pregunta para conocer tu cuenta.",
+    stellarQuestion: "«¿Está activa mi cuenta Stellar Testnet?»",
+    stellarDescription: "Carmelita consulta su estado. La activación se confirma en la red; los fondos de este recorrido son de prueba.",
+    stepsTitle: "Conecta una vez. Empieza a preguntar.", stepsIntro: "La guía te acompaña. La conexión se añade manualmente en ChatGPT.",
     steps: [
       ["Abre la guía", "Copia la URL de Carmelita y abre la sección de conectores de ChatGPT."],
       ["Añade Carmelita y autoriza", "Crea tu cuenta Carmelita o inicia sesión durante la autorización. Revisa los permisos antes de aceptar."],
-      ["Pregunta por tus wallets", "Habilita Carmelita en una conversación y escribe: «Muéstrame mis wallets»."],
+      ["Empieza a preguntar", "Habilita Carmelita en una conversación. Puedes empezar con: «¿Está activa mi cuenta Stellar Testnet?»."],
     ],
     stepsLink: "Abrir la guía paso a paso",
     faqTitle: "Antes de conectar.", faqIntro: "Lo que necesitas saber para empezar con tu cuenta.",
@@ -31,8 +35,8 @@ const copy = {
       ["¿Necesito crear una cuenta Carmelita antes?", "Puedes crear tu cuenta Carmelita o iniciar sesión durante la autorización desde ChatGPT. Si ya tienes cuenta, utiliza la misma identidad para conservar tus wallets."],
       ["¿Funciona con cualquier cuenta de ChatGPT?", "Tu cuenta debe permitir conectores MCP personalizados. La disponibilidad depende de tu cuenta y de las políticas de tu espacio de trabajo. Crear una cuenta ChatGPT no garantiza ese permiso; la guía explica cómo comprobarlo."],
       ["¿Mis wallets se preparan al conectar?", "La autorización prepara tus wallets para las cinco redes de prueba. Stellar intenta activarse automáticamente con XLM Testnet y sólo aparece activa cuando la red lo confirma. Si la red no responde, la activación puede quedar pendiente. Las otras redes no se financian automáticamente."],
-      ["¿Por qué tres redes comparten una dirección?", "Avalanche Fuji, Base Sepolia y BNB Testnet utilizan la misma dirección EVM. Cada red mantiene su propio saldo y actividad. Solana Devnet y Stellar Testnet tienen sus propias direcciones."],
-      ["¿Estos fondos tienen valor real?", "Las wallets de este recorrido usan Testnet o Devnet. Sus fondos sirven para pruebas y no se convierten en fondos Mainnet. XLM es el activo nativo de Stellar y no necesita una trustline."],
+      ["¿Qué redes puedo consultar?", "Empezamos por Stellar Testnet. También puedes consultar tus wallets en Solana Devnet, Avalanche Fuji, Base Sepolia y BNB Testnet. Las tres redes EVM comparten una dirección; cada red mantiene su propio saldo y actividad."],
+      ["¿Son fondos reales o de prueba?", "Las wallets de este recorrido usan Testnet o Devnet. Sus fondos sirven para pruebas y no se convierten en fondos Mainnet. Los datos de mercado se consultan por separado y no dan valor real a los fondos Testnet. XLM es el activo nativo de Stellar y no necesita una trustline."],
     ],
     development: "En desarrollo", visionTitle: "Más servicios, una misma conexión.",
     vision: "Estamos preparando Carmelita como una pasarela para conectar servicios de empresas y desarrolladores con los asistentes. Bazaar, las compras y la ejecución de servicios siguen pendientes de validación.",
@@ -40,22 +44,26 @@ const copy = {
   },
   en: {
     home: "Carmelita home", footerNav: "Carmelita links", skip: "Skip to content", guide: "Connection guide", developers: "Developers",
-    title: "Your wallets,", titleEnd: "in ChatGPT.",
-    description: "Connect Carmelita and check your wallet addresses across five test networks, from a conversation.",
+    title: "Carmelita,", titleEnd: "in ChatGPT.",
+    description: "Carmelita is a connector for checking your information and Web3 data from ChatGPT. Connect your account and ask about your wallets, networks and markets in the same conversation.",
     connect: "Connect Carmelita with ChatGPT", recommended: "Recommended", signIn: "Sign in to Carmelita",
-    alternative: "You can also sign in directly", scope: "Testnet and Devnet wallets. Test funds.",
-    example: "Illustrative example", question: "Show me my wallets", answer: "Here are your five test networks.",
-    address: "Example address", preview: "Illustrative view. Once connected, you can check the addresses associated with your account.",
+    alternative: "You can also sign in directly", scope: "Queries linked to the account you authorize.",
+    example: "Illustrative example", question: "What can I ask Carmelita about?", answer: "Start with your account and the context of your networks.",
+    queries: ["Your Stellar wallet and your other wallets", "Your account’s status on the network", "Market and network information"],
+    preview: "Illustrative queries. Your data appears after authorization.",
     benefits: [
-      ["Ask in your own words", "Check your addresses without leaving the conversation."],
-      ["Find your wallets", "View the wallets of the account you authorize and open their explorers."],
-      ["Start on test networks", "Learn the flow with Testnet and Devnet before using real funds."],
+      ["Your information", "Check the wallets associated with the account you authorize."],
+      ["The context", "Ask about prices and networks, with sources and availability."],
+      ["Your conversation", "Ask in your own words, without leaving ChatGPT."],
     ],
-    stepsTitle: "From connecting to your first question.", stepsIntro: "The guide walks you through it. You add the connection manually in ChatGPT.",
+    stellarLabel: "Start with Stellar", stellarTitle: "One question to learn about your account.",
+    stellarQuestion: "“Is my Stellar Testnet account active?”",
+    stellarDescription: "Carmelita checks its status. Activation is confirmed on the network; funds in this flow are test funds.",
+    stepsTitle: "Connect once. Start asking.", stepsIntro: "The guide walks you through it. You add the connection manually in ChatGPT.",
     steps: [
       ["Open the guide", "Copy Carmelita’s URL and open the connectors section in ChatGPT."],
       ["Add Carmelita and authorize", "Create your Carmelita account or sign in during authorization. Review the permissions before accepting."],
-      ["Ask about your wallets", "Enable Carmelita in a conversation and type: “Show me my wallets”."],
+      ["Start asking", "Enable Carmelita in a conversation. You can start with: “Is my Stellar Testnet account active?”."],
     ],
     stepsLink: "Open the step-by-step guide",
     faqTitle: "Before you connect.", faqIntro: "What you need to know to get started with your account.",
@@ -63,8 +71,8 @@ const copy = {
       ["Do I need a Carmelita account first?", "You can create your Carmelita account or sign in during authorization from ChatGPT. If you already have an account, use the same identity to keep your wallets."],
       ["Does it work with every ChatGPT account?", "Your account must allow custom MCP connectors. Availability depends on your account and workspace policies. Creating a ChatGPT account does not guarantee this permission; the guide explains how to check."],
       ["Are my wallets prepared when I connect?", "Authorization prepares your wallets for the five test networks. Stellar attempts automatic activation with Testnet XLM and is shown as active only after network confirmation. If the network does not respond, activation may remain pending. The other networks are not automatically funded."],
-      ["Why do three networks share an address?", "Avalanche Fuji, Base Sepolia and BNB Testnet use the same EVM address. Each network keeps its own balance and activity. Solana Devnet and Stellar Testnet have their own addresses."],
-      ["Do these funds have real value?", "The wallets in this flow use Testnet or Devnet. Their funds are for testing and do not become Mainnet funds. XLM is Stellar’s native asset and does not need a trustline."],
+      ["Which networks can I ask about?", "Start with Stellar Testnet. You can also check your wallets on Solana Devnet, Avalanche Fuji, Base Sepolia and BNB Testnet. The three EVM networks share an address; each network keeps its own balance and activity."],
+      ["Are these real funds or test funds?", "The wallets in this flow use Testnet or Devnet. Their funds are for testing and do not become Mainnet funds. Market data is queried separately and does not give Testnet funds real value. XLM is Stellar’s native asset and does not need a trustline."],
     ],
     development: "In development", visionTitle: "More services, one connection.",
     vision: "We are preparing Carmelita as a gateway connecting services from businesses and developers with assistants. Bazaar, purchases and service execution are still awaiting validation.",
@@ -72,22 +80,26 @@ const copy = {
   },
   pt: {
     home: "Início da Carmelita", footerNav: "Links da Carmelita", skip: "Ir para o conteúdo", guide: "Guia de conexão", developers: "Desenvolvedores",
-    title: "Suas carteiras,", titleEnd: "no ChatGPT.",
-    description: "Conecte a Carmelita e consulte os endereços das suas carteiras em cinco redes de teste, a partir de uma conversa.",
+    title: "Carmelita,", titleEnd: "no ChatGPT.",
+    description: "A Carmelita é um conector para consultar suas informações e dados Web3 pelo ChatGPT. Conecte sua conta e pergunte sobre suas carteiras, redes e mercado na mesma conversa.",
     connect: "Conectar a Carmelita ao ChatGPT", recommended: "Recomendado", signIn: "Entrar na Carmelita",
-    alternative: "Você também pode entrar diretamente", scope: "Carteiras Testnet e Devnet. Fundos de teste.",
-    example: "Exemplo ilustrativo", question: "Mostre minhas carteiras", answer: "Estas são suas cinco redes de teste.",
-    address: "Exemplo de endereço", preview: "Vista ilustrativa. Ao conectar, você consulta os endereços associados à sua conta.",
+    alternative: "Você também pode entrar diretamente", scope: "Consultas vinculadas à conta que você autoriza.",
+    example: "Exemplo ilustrativo", question: "O que posso consultar com a Carmelita?", answer: "Comece pela sua conta e pelo contexto das suas redes.",
+    queries: ["Sua carteira Stellar e suas outras carteiras", "O estado da sua conta na rede", "Informações de mercado e redes"],
+    preview: "Exemplo ilustrativo de consultas. Seus dados aparecem após a autorização.",
     benefits: [
-      ["Pergunte com suas palavras", "Consulte seus endereços sem sair da conversa."],
-      ["Encontre suas carteiras", "Confira as carteiras da conta que autoriza e abra seus exploradores."],
-      ["Comece em redes de teste", "Conheça o fluxo com Testnet e Devnet antes de usar fundos reais."],
+      ["Suas informações", "Consulte as carteiras associadas à conta que autoriza."],
+      ["O contexto", "Pergunte sobre preços e redes, com fontes e disponibilidade."],
+      ["Sua conversa", "Pergunte com suas palavras, sem sair do ChatGPT."],
     ],
-    stepsTitle: "Da conexão à sua primeira pergunta.", stepsIntro: "O guia acompanha você. A conexão é adicionada manualmente no ChatGPT.",
+    stellarLabel: "Comece com Stellar", stellarTitle: "Uma pergunta para conhecer sua conta.",
+    stellarQuestion: "“Minha conta Stellar Testnet está ativa?”",
+    stellarDescription: "A Carmelita consulta o estado da conta. A ativação é confirmada na rede; os fundos deste fluxo são de teste.",
+    stepsTitle: "Conecte uma vez. Comece a perguntar.", stepsIntro: "O guia acompanha você. A conexão é adicionada manualmente no ChatGPT.",
     steps: [
       ["Abra o guia", "Copie a URL da Carmelita e abra a seção de conectores do ChatGPT."],
       ["Adicione a Carmelita e autorize", "Crie sua conta Carmelita ou entre durante a autorização. Confira as permissões antes de aceitar."],
-      ["Pergunte pelas suas carteiras", "Ative a Carmelita em uma conversa e escreva: “Mostre minhas carteiras”."],
+      ["Comece a perguntar", "Ative a Carmelita em uma conversa. Você pode começar com: “Minha conta Stellar Testnet está ativa?”."],
     ],
     stepsLink: "Abrir o guia passo a passo",
     faqTitle: "Antes de conectar.", faqIntro: "O que você precisa saber para começar com sua conta.",
@@ -95,8 +107,8 @@ const copy = {
       ["Preciso criar uma conta Carmelita antes?", "Você pode criar sua conta Carmelita ou entrar durante a autorização pelo ChatGPT. Se já tem uma conta, use a mesma identidade para manter suas carteiras."],
       ["Funciona com qualquer conta do ChatGPT?", "Sua conta precisa permitir conectores MCP personalizados. A disponibilidade depende da conta e das políticas do espaço de trabalho. Criar uma conta ChatGPT não garante essa permissão; o guia explica como verificar."],
       ["Minhas carteiras são preparadas ao conectar?", "A autorização prepara suas carteiras para as cinco redes de teste. A Stellar tenta ativar-se automaticamente com XLM Testnet e só aparece ativa após confirmação da rede. Se a rede não responder, a ativação pode ficar pendente. As demais redes não recebem fundos automaticamente."],
-      ["Por que três redes compartilham um endereço?", "Avalanche Fuji, Base Sepolia e BNB Testnet usam o mesmo endereço EVM. Cada rede mantém seu próprio saldo e atividade. Solana Devnet e Stellar Testnet têm seus próprios endereços."],
-      ["Esses fundos têm valor real?", "As carteiras deste fluxo usam Testnet ou Devnet. Seus fundos servem para testes e não se tornam fundos Mainnet. XLM é o ativo nativo da Stellar e não precisa de uma trustline."],
+      ["Quais redes posso consultar?", "Comece pela Stellar Testnet. Você também pode consultar suas carteiras na Solana Devnet, Avalanche Fuji, Base Sepolia e BNB Testnet. As três redes EVM compartilham um endereço; cada rede mantém seu próprio saldo e atividade."],
+      ["São fundos reais ou de teste?", "As carteiras deste fluxo usam Testnet ou Devnet. Seus fundos servem para testes e não se tornam fundos Mainnet. Dados de mercado são consultados separadamente e não dão valor real aos fundos Testnet. XLM é o ativo nativo da Stellar e não precisa de uma trustline."],
     ],
     development: "Em desenvolvimento", visionTitle: "Mais serviços, uma mesma conexão.",
     vision: "Estamos preparando a Carmelita como uma plataforma para conectar serviços de empresas e desenvolvedores aos assistentes. Bazaar, compras e execução de serviços ainda aguardam validação.",
@@ -104,13 +116,15 @@ const copy = {
   },
 };
 
-const networks = [
-  { name: "Avalanche Fuji", symbol: "A", family: "evm", example: "0x…" },
-  { name: "Base Sepolia", symbol: "B", family: "evm", example: "0x…" },
-  { name: "BNB Testnet", symbol: "B", family: "evm", example: "0x…" },
-  { name: "Solana Devnet", symbol: "S", family: "solana", example: "…" },
-  { name: "Stellar Testnet", symbol: "S", family: "stellar", example: "G…" },
-];
+function QueryIcon({ kind }: { kind: number }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {kind === 0 ? <><rect x="3" y="5" width="18" height="15" rx="2" /><path d="M3 9h18m0 3h-5v5h5" /><circle cx="18" cy="14.5" r=".7" /></> :
+        kind === 1 ? <path d="M2 12h4l3-8 4 16 3-8h6" /> :
+          <path d="M4 4v16h16M8 16v-4m4 4V8m4 8V5" />}
+    </svg>
+  );
+}
 
 export default function HomeExperience() {
   const { locale, setLocale } = useLocale();
@@ -146,13 +160,9 @@ export default function HomeExperience() {
             <p className={styles.question}>{t.question}</p>
             <div className={styles.response}>
               <p className={styles.answer}>{t.answer}</p>
-              <ul className={styles.networks}>
-                {networks.map(network => (
-                  <li key={network.name}>
-                    <span className={styles.networkSymbol + " " + styles[network.family]} aria-hidden="true">{network.symbol}</span>
-                    <span>{network.name}</span>
-                    <span className={styles.address} aria-label={t.address}>{network.example}</span>
-                  </li>
+              <ul className={styles.queryList}>
+                {t.queries.map((query, index) => (
+                  <li key={query}><QueryIcon kind={index} /><span>{query}</span></li>
                 ))}
               </ul>
             </div>
@@ -165,6 +175,16 @@ export default function HomeExperience() {
           <div key={title}><h2>{title}</h2><p>{description}</p></div>
         ))}
       </div>
+      <section className={styles.stellarUse} aria-labelledby="home-stellar-title">
+        <div>
+          <p className={styles.development}><span aria-hidden="true" />{t.stellarLabel}</p>
+          <h2 id="home-stellar-title">{t.stellarTitle}</h2>
+        </div>
+        <div>
+          <blockquote className={styles.stellarQuestion}>{t.stellarQuestion}</blockquote>
+          <p className={styles.stellarDescription}>{t.stellarDescription}</p>
+        </div>
+      </section>
       <section className={styles.steps} aria-labelledby="home-steps-title">
         <div className={styles.sectionHeading}>
           <h2 id="home-steps-title">{t.stepsTitle}</h2><p>{t.stepsIntro}</p>

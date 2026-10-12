@@ -1,10 +1,12 @@
-# Landing centrada en la conexión con ChatGPT
+# Carmelita como complemento de ChatGPT
 
 Rama: `codex/landing-redesign`. Base: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`.
 
-La portada presenta el recorrido disponible: añadir Carmelita manualmente en ChatGPT, autorizar una identidad y consultar sus wallets en cinco redes de prueba. Mantiene el CTA recomendado, ofrece ingreso directo y separa la visión de servicios bajo «En desarrollo». Español, inglés y portugués conservan el selector y la persistencia existentes.
+La portada explica qué es Carmelita y qué permite consultar: información de la cuenta autorizada, wallets y estado de red, y datos de mercado mediante los adaptadores de lectura existentes. Presenta el recorrido de añadir Carmelita manualmente en ChatGPT y autorizar una identidad. Mantiene el CTA recomendado, ofrece ingreso directo y separa la visión de servicios bajo «En desarrollo». Español, inglés y portugués conservan el selector y la persistencia existentes.
 
-Las direcciones del ejemplo son marcadores ilustrativos, sin datos de usuarios. No se anuncian Bazaar, compras, ejecución de servicios ni historial completo como prestaciones disponibles. Stellar distingue preparación de wallets y confirmación de activación por la red; XLM es nativo y no requiere trustline. La guía compartida permite crear identidad durante OAuth y propone comprobar Stellar como consulta posterior.
+El usuario eligió el enfoque «Complemento de ChatGPT: qué es y qué permite consultar» frente a las otras dos propuestas. La revisión sustituye el titular centrado en wallets y la tabla de direcciones del hero por una conversación ilustrativa con tres tipos de consultas. Stellar es el primer caso de uso en una sección propia y encabeza las redes de la FAQ. No hay datos personales ni resultados de activación inventados.
+
+No se anuncian Bazaar, compras, ejecución de servicios ni historial completo como prestaciones disponibles. Stellar distingue preparación de wallets y confirmación de activación por la red; XLM es nativo y no requiere trustline. La guía compartida permite crear identidad durante OAuth y propone comprobar Stellar como consulta posterior. Las consultas de mercado son de lectura y dependen de fuentes disponibles; esta revisión de interfaz no certifica la disponibilidad actual de cada proveedor ni muestra cotizaciones en vivo.
 
 ## Reproducir localmente
 
@@ -20,7 +22,7 @@ Inter se sirve desde `public/fonts/InterVariable.woff2`, con su licencia SIL OFL
 
 ## Verificación
 
-Verificación local del 11 de octubre de 2026 (Santiago), incluyendo el build de producción local:
+Verificación de la revisión elegida del 11 de octubre de 2026 (Santiago), incluyendo el build de producción local:
 
 | Caso | Resultado |
 | --- | --- |
@@ -29,15 +31,15 @@ Verificación local del 11 de octubre de 2026 (Santiago), incluyendo el build de
 | Suite de aplicación | 1.048 aprobadas, 2 omitidas, 0 fallidas |
 | Build y TypeScript | Aprobados |
 | ES/EN/PT a 320, 390, 768, 1024 y 1440 px | 15 combinaciones, sin desbordamiento ni texto visible menor de 14 px |
-| Contraste renderizado | 71 pares de texto; mínimo 5,49:1; sin fallos |
+| Contraste renderizado | 73 pares de texto, incluidas FAQ abiertas; mínimo 5,49:1; sin fallos |
 | Teclado | Salto al contenido, acceso al CTA, foco visible y apertura/cierre de FAQ |
-| Navegación | Guía, documentación de desarrolladores e ingreso directo conservan sus destinos |
+| Navegación | Guía, documentación de desarrolladores e ingreso directo conservan sus destinos; comprobados desde la portada renderizada |
 | Regreso tras el salto al contenido | Corregido con NextLink; Volver restaura la portada y Avanzar restaura la guía |
 | Reflujo equivalente al 200 % | Sin desbordamiento a 720 × 450, equivalente a una ventana 1440 × 900 ampliada |
 
 El controlador del navegador interno no aplica zoom real mediante el atajo de teclado; la comprobación manual al 200 % sigue pendiente. El servidor local no tiene credenciales Privy: el destino de ingreso muestra su aviso de indisponibilidad esperado. Esta revisión no repite el alta ni OAuth contra producción, ni certifica nuevos flujos de wallets.
 
-Capturas y mediciones locales quedan en `work/landing-qa/`, sin datos privados y excluidas de Git. La revisión independiente comprobó estilos heredados, traducciones y React. Graphify se actualizó con AST, sin llamadas LLM; su extractor SQL sigue sin modelar algunas migraciones porque no está instalado tree_sitter_sql.
+Capturas y mediciones de la revisión elegida quedan en `work/landing-qa-companion/`, sin datos privados y excluidas de Git; `work/landing-qa/` conserva la revisión anterior. Se guardaron vistas completas y recortes del hero de escritorio y móvil en ES/EN/PT. La revisión independiente comprobó estilos heredados, traducciones, React y la imagen social. Graphify se actualizó con AST (3.851 nodos, 9.981 aristas), sin llamadas LLM; su extractor SQL sigue sin modelar algunas migraciones porque no está instalado tree_sitter_sql.
 
 ## Publicación
 
