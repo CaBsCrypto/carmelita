@@ -2,41 +2,67 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useLocale } from "../language-toggle";
+import Link from "next/link";
+import { useEffect, useRef } from "react";
+import BrandLockup from "../brand-lockup";
+import LanguageToggle, { useLocale } from "../language-toggle";
+import styles from "../account-access.module.css";
 
 const copy = {
   en: {
-    setupEyebrow: "SECURE ACCOUNT ACCESS", setupTitle: "Privy credentials are required.", setupText: "The login experience is ready but its public App ID is not configured in this environment.", missing: "Missing configuration",
-    eyebrow: "YOUR CARMELITA ACCOUNT", title: "One login for Carmelita, your wallet and history.", text: "Continue securely with email, Google or a passkey. Privy manages your identity and wallet authorization; Carmelita stores only the profile and activity required to operate.", ready: "Sign in or create account", loading: "Preparing secure sign-in...", boundary: "No wallet password, seed phrase or private key is stored by Carmelita.", includes: "ACCOUNT INCLUDES", steps: ["Privy identity and secure session", "Automatic user-owned Stellar wallet", "Neon-backed profile and activity history", "Policies, intents and receipts linked to you"],
+    home: "Carmelita home", skip: "Skip to content", guide: "User guide", title: "Sign in to Carmelita.",
+    text: "Use your existing account or create one to query your own information. You can also create your Carmelita account when authorizing the connection in ChatGPT.",
+    ready: "Sign in or create account", loading: "Preparing secure sign-in…", boundary: "You do not need to enter a seed phrase or wallet password to get started.",
+    unavailable: "Sign-in is temporarily unavailable in this environment. Read the connection guide and try again later.", connect: "Connect with ChatGPT", recommended: "Recommended",
+    includes: "Your account, your information.", steps: ["A secure account you can use in Carmelita and ChatGPT", "Your existing addresses recovered, or new test wallets prepared", "Stellar Testnet address, activation status and XLM balance"],
+    note: "Stellar activation is shown only after confirmation from the network. Test funds have no real value.",
   },
   es: {
-    setupEyebrow: "ACCESO SEGURO", setupTitle: "Se requieren credenciales de Privy.", setupText: "La experiencia de ingreso está lista, pero falta configurar el App ID público en este entorno.", missing: "Configuración faltante",
-    eyebrow: "TU CUENTA DE CARMELITA", title: "Un ingreso para Carmelita, tu wallet e historial.", text: "Continúa de forma segura con email, Google o passkey. Privy administra tu identidad y autorización de wallet; Carmelita guarda solo el perfil y la actividad necesarios.", ready: "Ingresar o crear cuenta", loading: "Preparando ingreso seguro...", boundary: "Carmelita no guarda contraseña de wallet, seed phrase ni clave privada.", includes: "LA CUENTA INCLUYE", steps: ["Identidad Privy y sesión segura", "Wallet Stellar automática propiedad del usuario", "Perfil e historial persistentes en Neon", "Políticas, intents y recibos vinculados a ti"],
+    home: "Inicio de Carmelita", skip: "Ir al contenido", guide: "Guía de uso", title: "Inicia sesión en Carmelita.",
+    text: "Usa tu cuenta existente o crea una para consultar tu información. También puedes crear tu cuenta Carmelita al autorizar la conexión en ChatGPT.",
+    ready: "Iniciar sesión o crear cuenta", loading: "Preparando ingreso seguro…", boundary: "No necesitas ingresar una seed phrase ni contraseña de wallet para empezar.",
+    unavailable: "El ingreso no está disponible temporalmente en este entorno. Consulta la guía de conexión y vuelve a intentarlo más tarde.", connect: "Conectar con ChatGPT", recommended: "Recomendado",
+    includes: "Tu cuenta, tu información.", steps: ["Una cuenta segura que puedes usar en Carmelita y ChatGPT", "Recuperación de tus direcciones existentes o preparación de wallets de prueba", "Dirección de Stellar Testnet, estado de activación y saldo XLM"],
+    note: "La activación de Stellar se muestra sólo después de la confirmación de la red. Los fondos de prueba no tienen valor real.",
   },
   pt: {
-    setupEyebrow: "ACESSO SEGURO", setupTitle: "As credenciais da Privy são necessárias.", setupText: "A experiência de login está pronta, mas o App ID público não está configurado neste ambiente.", missing: "Configuração ausente",
-    eyebrow: "SUA CONTA CARMELITA", title: "Um login para Carmelita, sua wallet e histórico.", text: "Continue com segurança usando email, Google ou passkey. A Privy gerencia sua identidade e autorização da wallet; Carmelita guarda apenas o perfil e a atividade necessários.", ready: "Entrar ou criar conta", loading: "Preparando login seguro...", boundary: "Carmelita não armazena senha da wallet, seed phrase ou chave privada.", includes: "A CONTA INCLUI", steps: ["Identidade Privy e sessão segura", "Wallet Stellar automática do usuário", "Perfil e histórico persistentes no Neon", "Políticas, intents e recibos vinculados a você"],
+    home: "Início da Carmelita", skip: "Ir para o conteúdo", guide: "Guia de uso", title: "Entre na Carmelita.",
+    text: "Use sua conta existente ou crie uma para consultar suas informações. Você também pode criar sua conta Carmelita ao autorizar a conexão no ChatGPT.",
+    ready: "Entrar ou criar conta", loading: "Preparando acesso seguro…", boundary: "Você não precisa informar uma seed phrase ou senha de wallet para começar.",
+    unavailable: "O acesso está temporariamente indisponível neste ambiente. Consulte o guia de conexão e tente novamente mais tarde.", connect: "Conectar com ChatGPT", recommended: "Recomendado",
+    includes: "Sua conta, suas informações.", steps: ["Uma conta segura para usar na Carmelita e no ChatGPT", "Recuperação dos endereços existentes ou preparação de wallets de teste", "Endereço Stellar Testnet, status de ativação e saldo XLM"],
+    note: "A ativação da Stellar só aparece após confirmação da rede. Os fundos de teste não têm valor real.",
   },
 };
 
 export default function LoginPanel({ configured }: { configured: boolean }) {
-  const { locale } = useLocale();
+  const { locale, setLocale } = useLocale();
+  const content = useRef<HTMLDivElement>(null);
   const t = copy[locale];
-  if (!configured) return <LoginSetupRequired t={t} />;
-  return <PrivyLogin t={t} />;
+  return <main className={styles.page} lang={locale === "pt" ? "pt-BR" : locale}>
+    <div className={styles.shell}>
+      <Link className={styles.skipLink} href="/login#access-content" prefetch={false} onClick={() => content.current?.focus()}>{t.skip}</Link>
+      <header className={styles.header}>
+        <Link className={styles.brand} href="/" aria-label={t.home}><BrandLockup /></Link>
+        <div className={styles.headerActions}><Link className={styles.textLink} href="/guide">{t.guide}</Link><LanguageToggle locale={locale} onChange={setLocale} compact /></div>
+      </header>
+      <div id="access-content" ref={content} tabIndex={-1} className={`${styles.content} ${styles.hero}`}>
+        <div>
+          <h1 className={styles.title}>{t.title}</h1><p className={styles.lede}>{t.text}</p>
+          {configured ? <PrivyLogin t={t} /> : <p className={styles.status} role="status">{t.unavailable}</p>}
+          <p className={styles.note}>{t.boundary}</p>
+          <div className={styles.help}><Link href="/connect-chatgpt">{t.connect}</Link><span className={styles.recommended}>{t.recommended}</span></div>
+        </div>
+        <aside className={styles.panel} aria-labelledby="login-account-title">
+          <p className={styles.kicker}>Stellar Testnet</p><h2 id="login-account-title">{t.includes}</h2>
+          <ul className={styles.exampleList}>{t.steps.map(step => <li key={step}>{step}</li>)}</ul><p className={styles.note}>{t.note}</p>
+        </aside>
+      </div>
+    </div>
+  </main>;
 }
 
 type LoginCopy = (typeof copy)["en"];
-
-function LoginSetupRequired({ t }: { t: LoginCopy }) {
-  return (
-    <section className="login-shell shell">
-      <div className="login-copy"><p className="eyebrow">{t.setupEyebrow}</p><h1>{t.setupTitle}</h1><p>{t.setupText}</p></div>
-      <aside className="login-card"><strong>{t.missing}</strong><code>NEXT_PUBLIC_PRIVY_APP_ID</code></aside>
-    </section>
-  );
-}
 
 function PrivyLogin({ t }: { t: LoginCopy }) {
   const { ready, authenticated, login } = usePrivy();
@@ -46,17 +72,5 @@ function PrivyLogin({ t }: { t: LoginCopy }) {
     if (ready && authenticated) router.replace("/agent");
   }, [authenticated, ready, router]);
 
-  return (
-    <section className="login-shell shell">
-      <div className="login-copy">
-        <p className="eyebrow">{t.eyebrow}</p><h1>{t.title}</h1><p>{t.text}</p>
-        <button className="agent-primary" disabled={!ready} onClick={() => login()}>{ready ? t.ready : t.loading}</button>
-        <small>{t.boundary}</small>
-      </div>
-      <aside className="login-card">
-        <header><span>{t.includes}</span><b>STELLAR TESTNET</b></header>
-        <ol>{t.steps.map((step, index) => <li key={step}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol>
-      </aside>
-    </section>
-  );
+  return <button type="button" className={styles.primary} disabled={!ready} onClick={() => login()}>{ready ? t.ready : t.loading}</button>;
 }

@@ -9,24 +9,24 @@ import { ConnectionEnvironmentProvider } from "./connect-chatgpt/connection-envi
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://carmelita.browns.studio"),
-  title: "Carmelita | Wallets and market, in one conversation",
+  title: "Carmelita, your personal agent in ChatGPT",
   description:
-    "Ask about your Testnet wallets, token prices and network TVL in English, Spanish or Portuguese.",
+    "Connect Carmelita with ChatGPT to consult your own Testnet wallets, Stellar Testnet activation and market data. Choose the permissions you share. Application connections are in development.",
   openGraph: {
-    title: "Carmelita | Wallets and market, in one conversation",
+    title: "Carmelita, your personal agent in ChatGPT",
     description:
-      "Check Testnet wallets and Mainnet market data with Carmelita.",
+      "Ask about your Stellar Testnet account and market data in ChatGPT. Connect manually and authorize your account. Application connections are in development.",
     url: "https://carmelita.browns.studio",
     siteName: "Carmelita",
-    images: [{ url: "/og.png", width: 1536, height: 1024, alt: "Carmelita action flow" }],
+    images: [{ url: "/brand/carmelita-landing-social.png", width: 1200, height: 630, alt: "Carmelita, your personal agent in ChatGPT. Illustrative Stellar Testnet query. Application connections are in development." }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Carmelita | Wallets and market, in one conversation",
+    title: "Carmelita, your personal agent in ChatGPT",
     description:
-      "Check Testnet wallets and Mainnet market data with Carmelita.",
-    images: ["/og.png"],
+      "Ask about your Stellar Testnet account and market data in ChatGPT. Connect manually and authorize your account. Application connections are in development.",
+    images: ["/brand/carmelita-landing-social.png"],
   },
 };
 

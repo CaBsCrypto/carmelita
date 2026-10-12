@@ -20,10 +20,13 @@ import { type Locale, useLocale } from "../language-toggle";
 import { sessionCloseCopy, useSessionClose } from "../use-session-close";
 import { requestTravelSearch } from "./travel-search-request";
 import { requestWalletBootstrap } from "./session-request";
+import AgentAccessEntry from "./agent-access-entry";
+import accessStyles from "../account-access.module.css";
 
 const onboardingUi = {
   en: {
     loading: "Preparing secure sign-in...",
+    timeout: "Preparation took too long. Retry to check your existing wallets.",
     entryEyebrow: "WORK WITH CARMELITA",
     entryTitle: "Sign in once. Your test wallets arrive with you.",
     entryText: "Continue with email, Google or a passkey. Your Stellar, EVM and Solana wallets belong to you. Enabled EVM test networks share one address.",
@@ -50,6 +53,7 @@ const onboardingUi = {
   },
   es: {
     loading: "Preparando ingreso seguro...",
+    timeout: "La preparación tardó demasiado. Puedes reintentar; se revisarán las billeteras existentes.",
     entryEyebrow: "TRABAJA CON CARMELITA",
     entryTitle: "Ingresa una vez. Tus wallets de prueba llegan contigo.",
     entryText: "Continúa con email, Google o passkey. Tus wallets Stellar, EVM y Solana te pertenecen. Las redes EVM de prueba habilitadas comparten una dirección.",
@@ -76,6 +80,7 @@ const onboardingUi = {
   },
   pt: {
     loading: "Preparando login seguro...",
+    timeout: "A preparação demorou demais. Tente novamente; as carteiras existentes serão verificadas.",
     entryEyebrow: "CONHEÇA CARMELITA",
     entryTitle: "Entre uma vez. Suas wallets de teste acompanham você.",
     entryText: "Continue com email, Google ou passkey. Suas wallets Stellar, EVM e Solana pertencem a você. As redes EVM de teste habilitadas compartilham um endereço.",
@@ -196,16 +201,7 @@ export default function AgentOnboarding({
 }
 
 function PrivySetupRequired({ locale }: { locale: Locale }) {
-  const t = workspaceCopy[locale];
-  const text = {
-    es: "El ingreso no está disponible temporalmente. Puedes consultar la guía y volver a intentarlo más tarde.",
-    en: "Sign-in is temporarily unavailable. You can read the guide and try again later.",
-    pt: "O acesso está temporariamente indisponível. Consulte o guia e tente novamente mais tarde.",
-  }[locale];
-  return <section className="agent-visitor shell">
-    <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} signInAvailable={false} /></header>
-    <div className="visitor-chat"><h1>{t.welcome}</h1><p role="status">{text}</p><Link href="/guide">{t.guide}</Link></div>
-  </section>;
+  return <AgentAccessEntry locale={locale} unavailable />;
 }
 
 function PrivyAgent({
@@ -254,7 +250,8 @@ function PrivyWorkspace({
   const { refreshUser } = useUser();
   const [result, setResult] = useState<BootstrapResult | null>(null);
   const [status, setStatus] = useState<"idle" | "creating" | "ready" | "error">("idle");
-  const [error, setError] = useState<string | null>(null);
+  // Localize failures while rendering so language changes do not cancel preparation.
+  const [error, setError] = useState<{ timedOut: boolean; message: string | null } | null>(null);
   const [activationRetryAt, setActivationRetryAt] = useState(0);
   const [activationRetryNow, setActivationRetryNow] = useState(0);
   const [travelResult, setTravelResult] = useState<TravelSearchResult | null>(null);
@@ -299,12 +296,10 @@ function PrivyWorkspace({
         return;
       }
       bootstrappedFor.current = null;
-      setError(caught instanceof Error && caught.name === "TimeoutError"
-        ? locale === "es" ? "La preparación tardó demasiado. Puedes reintentar; se revisarán las billeteras existentes." : locale === "pt" ? "A preparação demorou demais. Tente novamente; as carteiras existentes serão verificadas." : "Preparation took too long. Retry to check your existing wallets."
-        : caught instanceof Error ? caught.message : "Wallet bootstrap failed");
+      setError({ timedOut: caught instanceof Error && caught.name === "TimeoutError", message: caught instanceof Error ? caught.message : null });
       setStatus("error");
     }
-  }, [getAccessToken, refreshUser, userId, locale]);
+  }, [getAccessToken, refreshUser, userId]);
 
   useEffect(() => {
     if (!autoLogin || !ready || authenticated || loginStarted.current) return;
@@ -371,20 +366,13 @@ function PrivyWorkspace({
   }
 
   if (!ready) {
-    return (
-      <section className="agent-entry shell agent-loading">
-        <i />
-        <strong>{t.loading}</strong>
-      </section>
-    );
+    return <AgentAccessEntry locale={locale} loading />;
   }
 
   if (!authenticated) {
-    return <section className="agent-visitor shell">
-      <header className="workspace-header"><Link className="brand" href="/"><BrandLockup /></Link><span className="workspace-testnet">Testnet</span><LanguageControl compact /><ChatGPTConnection locale={locale} /></header>
-      <div className="visitor-chat"><h1>{w.welcome}</h1><p>{w.welcomeText}</p><p>{t.stellarFunding}</p><button className="workspace-button" disabled={session.closing || session.state === "failed"} onClick={() => login()}>{w.signIn}</button><Link href="/guide">{w.guide}</Link></div>
-      {session.state === "failed" && <p role="alert">{sessionCloseCopy[locale].failed} <button onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></p>}
-    </section>;
+    return <AgentAccessEntry locale={locale} onSignIn={() => login()} signInDisabled={session.closing || session.state === "failed"}>
+      {session.state === "failed" && <div role="alert" className={accessStyles.error}><p>{sessionCloseCopy[locale].failed}</p><button type="button" className={accessStyles.secondary} onClick={() => void session.close()}>{sessionCloseCopy[locale].retry}</button></div>}
+    </AgentAccessEntry>;
   }
   const current = result?.user.id === userId ? result : null;
   const stellar = current?.wallet ?? null;
@@ -405,11 +393,11 @@ function PrivyWorkspace({
           <button onClick={() => setPanel("account")}>{w.account}</button>
         </nav>
       </header>
-      {session.state === "failed" && <p role="alert" className="workspace-notice">{sessionCloseCopy[locale].failed}</p>}
-      {status === "creating" && <p role="status" className="workspace-notice">{w.preparing}</p>}
-      {status === "error" && <div role="alert" className="workspace-notice workspace-warning"><span>{w.failed}</span><button onClick={() => void bootstrap(true)}>{w.retry}</button></div>}
-      {partial && status !== "creating" && <div role="status" className="workspace-notice workspace-warning"><span>{w.partial}</span>{Object.values(current.preparation).some(item => item.retryable) && <button onClick={() => void bootstrap(true)}>{w.retry}</button>}</div>}
-      {stellarPrepared && status !== "creating" && <div className={`workspace-notice${activationPending ? " workspace-warning" : ""}`}>
+      {session.state === "failed" && <p role="alert" className={`workspace-notice ${accessStyles.notice} ${accessStyles.noticeError}`}>{sessionCloseCopy[locale].failed}</p>}
+      {status === "creating" && <p role="status" className={`workspace-notice ${accessStyles.notice}`}>{w.preparing}</p>}
+      {status === "error" && <div role="alert" className={`workspace-notice workspace-warning ${accessStyles.notice} ${accessStyles.noticeError}`}><span>{w.failed}</span><button onClick={() => void bootstrap(true)}>{w.retry}</button></div>}
+      {partial && status !== "creating" && <div role="status" className={`workspace-notice workspace-warning ${accessStyles.notice} ${accessStyles.noticeWarning}`}><span>{w.partial}</span>{Object.values(current.preparation).some(item => item.retryable) && <button onClick={() => void bootstrap(true)}>{w.retry}</button>}</div>}
+      {stellarPrepared && status !== "creating" && <div className={`workspace-notice ${accessStyles.notice}${activationPending ? ` workspace-warning ${accessStyles.noticeWarning}` : ""}`}>
         <span role="status">{activationPending ? t.stellarPending : t.stellarReady}{current?.testnetActivation?.fundsMoved === null && <> {t.stellarUncertain}</>}</span>
         {activationPending && activationRetryable && <button type="button" disabled={activationRetrySeconds > 0} onClick={() => void bootstrap(true)}>
           {activationRetrySeconds > 0 ? t.retryActivationWait.replace("{seconds}", String(activationRetrySeconds)) : t.retryActivation}
@@ -444,7 +432,7 @@ function PrivyWorkspace({
           <h3>{w.commands}</h3><p>{w.exampleNote}</p><Link href="/developers">{w.developers}</Link>{workspaceCommands.map(command => <button key={command} onClick={() => suggest(command)}><code>{command}</code></button>)}
           <details><summary>{w.diagnostics}</summary><WebMcpInspector locale={locale} getAccessToken={getAccessToken} /></details>
           <details><summary>{w.credentials}</summary><AgentExternalAccess key={userId} locale={locale} getAccessToken={getAccessToken} /></details>
-          {status === "error" && <details><summary>{w.help}</summary><p>{error}</p></details>}
+          {status === "error" && <details><summary>{w.help}</summary><p>{error?.timedOut ? t.timeout : error?.message ?? t.error}</p></details>}
         </div>}
         {panel === "travel" && <section className="agent-travel"><p>{w.travelNote}</p><form onSubmit={searchTravel}>
           <label>{w.where}<input name="location" placeholder="Santiago, Chile" required minLength={2} /></label>

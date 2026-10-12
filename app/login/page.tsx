@@ -1,13 +1,10 @@
-import Link from "next/link";
-import BrandLockup from "../brand-lockup";
 import LoginPanel from "./login-panel";
-import { LanguageControl } from "../language-toggle";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Sign in | Carmelita",
-  description: "Access Carmelita, your Stellar wallet and saved activity securely with Privy.",
+  description: "Sign in or create your Carmelita account. Connect with ChatGPT and query your own Stellar Testnet information with the permissions you authorize.",
 };
 
 export default function LoginPage() {
@@ -16,15 +13,5 @@ export default function LoginPage() {
       process.env.PRIVY_APP_ID?.trim(),
   );
 
-  return (
-    <main className="login-page">
-      <nav className="demo-nav shell">
-        <Link className="brand" href="/">
-          <BrandLockup />
-        </Link>
-        <div className="lab-nav-actions"><LanguageControl compact /><Link className="login-back" href="/guide">Guide</Link><Link className="login-back" href="/">Home</Link></div>
-      </nav>
-      <LoginPanel configured={configured} />
-    </main>
-  );
+  return <LoginPanel configured={configured} />;
 }

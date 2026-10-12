@@ -132,4 +132,6 @@ La evidencia local, incluidas las pruebas del formulario/POST reales sobre almac
 
 ## Publicación
 
+La revisión de ingreso, autorización y entrada a Carmelita con inglés principal se documenta en [Diseño de acceso](access-design.md). Conserva ES/PT, los flujos de identidad y permisos, y el control de publicación local.
+
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.
