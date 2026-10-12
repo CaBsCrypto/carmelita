@@ -1,0 +1,241 @@
+{
+  "version": 1,
+  "brand": {
+    "green": "#153F32",
+    "coral": "#FF5B3A",
+    "paper": "#F7F2E8",
+    "white": "#FFFDF8",
+    "ink": "#20211E"
+  },
+  "sourceCommit": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "videos": [
+    {
+      "id": "usuarios-60s-horizontal",
+      "campaign": "usuarios",
+      "duration": 60,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/usuarios-60s-horizontal",
+      "output": "renders/carmelita-usuarios-60s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-usuarios-60s-horizontal.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "usuarios-60s-vertical",
+      "campaign": "usuarios",
+      "duration": 60,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/usuarios-60s-vertical",
+      "output": "renders/carmelita-usuarios-60s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-usuarios-60s-vertical.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "usuarios-15s-horizontal",
+      "campaign": "usuarios",
+      "duration": 15,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/usuarios-15s-horizontal",
+      "output": "renders/carmelita-usuarios-15s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-usuarios-15s-horizontal.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    },
+    {
+      "id": "usuarios-15s-vertical",
+      "campaign": "usuarios",
+      "duration": 15,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/usuarios-15s-vertical",
+      "output": "renders/carmelita-usuarios-15s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-usuarios-15s-vertical.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    },
+    {
+      "id": "conexion-60s-horizontal",
+      "campaign": "conexion",
+      "duration": 60,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/conexion-60s-horizontal",
+      "output": "renders/carmelita-conexion-60s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-conexion-60s-horizontal.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "conexion-60s-vertical",
+      "campaign": "conexion",
+      "duration": 60,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/conexion-60s-vertical",
+      "output": "renders/carmelita-conexion-60s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-conexion-60s-vertical.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "conexion-15s-horizontal",
+      "campaign": "conexion",
+      "duration": 15,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/conexion-15s-horizontal",
+      "output": "renders/carmelita-conexion-15s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-conexion-15s-horizontal.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    },
+    {
+      "id": "conexion-15s-vertical",
+      "campaign": "conexion",
+      "duration": 15,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/conexion-15s-vertical",
+      "output": "renders/carmelita-conexion-15s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-conexion-15s-vertical.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    },
+    {
+      "id": "empresas-60s-horizontal",
+      "campaign": "empresas",
+      "duration": 60,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/empresas-60s-horizontal",
+      "output": "renders/carmelita-empresas-60s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-empresas-60s-horizontal.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "empresas-60s-vertical",
+      "campaign": "empresas",
+      "duration": 60,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/empresas-60s-vertical",
+      "output": "renders/carmelita-empresas-60s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-empresas-60s-vertical.png",
+      "midpoints": [
+        2.5,
+        9,
+        17.5,
+        27,
+        37,
+        47,
+        56
+      ]
+    },
+    {
+      "id": "empresas-15s-horizontal",
+      "campaign": "empresas",
+      "duration": 15,
+      "format": "horizontal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "dir": "compositions/empresas-15s-horizontal",
+      "output": "renders/carmelita-empresas-15s-horizontal.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-empresas-15s-horizontal.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    },
+    {
+      "id": "empresas-15s-vertical",
+      "campaign": "empresas",
+      "duration": 15,
+      "format": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "dir": "compositions/empresas-15s-vertical",
+      "output": "renders/carmelita-empresas-15s-vertical.mp4",
+      "thumbnail": "delivery/miniaturas/carmelita-empresas-15s-vertical.png",
+      "midpoints": [
+        2,
+        7,
+        12.5
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Carmelita mark</title>
+  <desc id="desc">A faceted letter C opening toward a permission diamond.</desc>
+  <path
+    d="M47 14 41 8H23L8 23v18l15 15h18l6-6"
+    fill="none"
+    stroke="#153F32"
+    stroke-linecap="square"
+    stroke-linejoin="bevel"
+    stroke-width="10"
+  />
+  <path fill="#FF5B3A" d="m52 24 8 8-8 8-8-8 8-8Z"/>
+</svg>

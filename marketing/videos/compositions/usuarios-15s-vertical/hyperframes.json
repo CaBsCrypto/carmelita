@@ -1,0 +1,9 @@
+{
+  "name": "usuarios-15s-vertical",
+  "entry": "index.html",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "duration": 15,
+  "skill": "product-launch-video"
+}

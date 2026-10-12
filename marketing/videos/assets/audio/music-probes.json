@@ -1,0 +1,46 @@
+{
+  "composition": "Carmelita — Conversación abierta",
+  "license": "CC0-1.0",
+  "origin": "Original procedural synthesis: pads, plucks, bass and percussion; no third-party samples.",
+  "seed": 1128354381,
+  "bpm": 90,
+  "sampleRate": 48000,
+  "channels": 2,
+  "sampleFormat": "PCM signed 16-bit little-endian",
+  "fades": {
+    "inSeconds": 0.5,
+    "outSeconds": 2
+  },
+  "normalization": {
+    "integratedLufs": -18,
+    "truePeakLimitDbtp": -1,
+    "lraTargetLu": 7
+  },
+  "ffmpegVersion": "ffmpeg version 8.1.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "files": [
+    {
+      "file": "brand-bed-60s.wav",
+      "durationSeconds": 60,
+      "bytes": 11520078,
+      "codec": "pcm_s16le",
+      "sampleRate": 48000,
+      "channels": 2,
+      "integratedLufs": -18,
+      "truePeakDbtp": -6.69,
+      "loudnessRangeLu": 1,
+      "sha256": "dfa46b5c6d73a6261d82d225840e508c388109cd212cdd23d619680301059971"
+    },
+    {
+      "file": "brand-bed-15s.wav",
+      "durationSeconds": 15,
+      "bytes": 2880078,
+      "codec": "pcm_s16le",
+      "sampleRate": 48000,
+      "channels": 2,
+      "integratedLufs": -18,
+      "truePeakDbtp": -6.91,
+      "loudnessRangeLu": 2.8,
+      "sha256": "8d77f974f709f22bc4399241f22173884d9abb533d4f84aaa394263d076137cd"
+    }
+  ]
+}

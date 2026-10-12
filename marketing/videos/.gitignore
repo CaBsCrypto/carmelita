@@ -1,0 +1,13 @@
+node_modules/
+renders/
+snapshots/
+delivery/
+.hyperframes/
+.media/
+.browser/
+*.log
+compositions/*/.hyperframes/
+compositions/*/snapshots/
+compositions/*/renders/
+compositions/*/.media/
+compositions/*/assets/

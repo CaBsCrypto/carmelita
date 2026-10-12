@@ -1,0 +1,9 @@
+{
+  "name": "conexion-60s-vertical",
+  "entry": "index.html",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "duration": 60,
+  "skill": "product-launch-video"
+}

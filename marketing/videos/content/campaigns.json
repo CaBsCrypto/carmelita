@@ -1,0 +1,294 @@
+[
+  {
+    "id": "usuarios",
+    "title": "Tus wallets, en una conversación",
+    "description": "Invitación a conectar Carmelita con ChatGPT y consultar wallets propias en redes de prueba y desarrollo.",
+    "ctaLabel": "Conecta Carmelita con ChatGPT",
+    "ctaUrl": "https://carmelita.browns.studio/connect-chatgpt",
+    "longScenes": [
+      {
+        "id": "usuarios-hook",
+        "duration": 5,
+        "label": "CONOCE CARMELITA",
+        "title": "Tus wallets.\nUna conversación.",
+        "body": "Carmelita, dentro de ChatGPT.",
+        "kind": "statement"
+      },
+      {
+        "id": "usuarios-beneficio",
+        "duration": 8,
+        "label": "CONSULTA TUS DATOS",
+        "title": "Menos búsquedas.\nMás claridad.",
+        "body": "Consulta qué wallets están vinculadas a tu cuenta.",
+        "kind": "statement"
+      },
+      {
+        "id": "usuarios-conversacion",
+        "duration": 9,
+        "label": "ASÍ EMPIEZA",
+        "title": "Pregunta\ncon tus palabras.",
+        "body": "Ejemplo ilustrativo. Tus datos aparecen tras autorizar.",
+        "kind": "chat",
+        "prompt": "@Carmelita, muéstrame mis wallets.",
+        "reply": "Consulta tus wallets registradas y sus redes de prueba."
+      },
+      {
+        "id": "usuarios-redes",
+        "duration": 10,
+        "label": "TESTNET / DEVNET",
+        "title": "Cinco redes.\nUn mismo lugar.",
+        "body": "Wallets en redes de prueba y desarrollo.",
+        "kind": "wallets",
+        "items": ["Avalanche Fuji", "Base Sepolia", "BNB Testnet", "Solana Devnet", "Stellar Testnet"]
+      },
+      {
+        "id": "usuarios-conexion",
+        "duration": 10,
+        "label": "CONEXIÓN MANUAL",
+        "title": "Conecta\ntu cuenta.",
+        "body": "Añade el conector MCP y autoriza con OAuth.",
+        "kind": "steps",
+        "items": ["Abre la guía", "Añade Carmelita en ChatGPT", "Autoriza tu cuenta Carmelita"]
+      },
+      {
+        "id": "usuarios-compatibilidad",
+        "duration": 10,
+        "label": "ANTES DE EMPEZAR",
+        "title": "Tú preguntas.\nCarmelita consulta.",
+        "body": "Necesitas una cuenta ChatGPT con conectores personalizados habilitados.",
+        "kind": "statement"
+      },
+      {
+        "id": "usuarios-cta",
+        "duration": 8,
+        "label": "TU PRIMERA CONSULTA",
+        "title": "Empieza con\nuna pregunta.",
+        "body": "Abre la guía de conexión y sigue los pasos.",
+        "kind": "cta"
+      }
+    ],
+    "shortScenes": [
+      {
+        "id": "usuarios-short-hook",
+        "duration": 4,
+        "label": "CARMELITA + CHATGPT",
+        "title": "Tus wallets.\nUna conversación.",
+        "body": "Conoce Carmelita.",
+        "kind": "statement"
+      },
+      {
+        "id": "usuarios-short-conversacion",
+        "duration": 6,
+        "label": "TESTNET / DEVNET",
+        "title": "Pregunta por\ntus wallets.",
+        "body": "Requiere conectores personalizados y autorización.",
+        "kind": "chat",
+        "prompt": "Muéstrame mis wallets.",
+        "reply": "Consulta tus wallets registradas."
+      },
+      {
+        "id": "usuarios-short-cta",
+        "duration": 5,
+        "label": "GUÍA PASO A PASO",
+        "title": "Conecta Carmelita\ncon ChatGPT.",
+        "body": "Empieza con la guía de conexión.",
+        "kind": "cta"
+      }
+    ]
+  },
+  {
+    "id": "conexion",
+    "title": "Cómo conectar Carmelita con ChatGPT",
+    "description": "Tutorial de instalación manual: guía, URL MCP, autorización de Carmelita y primera consulta de wallets.",
+    "ctaLabel": "Abre la guía de conexión",
+    "ctaUrl": "https://carmelita.browns.studio/connect-chatgpt",
+    "longScenes": [
+      {
+        "id": "conexion-hook",
+        "duration": 5,
+        "label": "EMPIEZA AQUÍ",
+        "title": "Tu próxima consulta\nempieza aquí.",
+        "body": "Conecta Carmelita con ChatGPT.",
+        "kind": "statement"
+      },
+      {
+        "id": "conexion-guia",
+        "duration": 8,
+        "label": "PASO 1",
+        "title": "Abre la guía\nde conexión.",
+        "body": "Copia la URL MCP de Carmelita desde la guía.",
+        "kind": "statement"
+      },
+      {
+        "id": "conexion-mcp",
+        "duration": 9,
+        "label": "PASO 2 · CONEXIÓN MANUAL",
+        "title": "Añade Carmelita\nen ChatGPT.",
+        "body": "Tu cuenta debe permitir conectores personalizados.",
+        "kind": "steps",
+        "items": ["Abre tus conectores", "Añade un MCP personalizado", "Pega la URL y elige OAuth"]
+      },
+      {
+        "id": "conexion-autorizacion",
+        "duration": 10,
+        "label": "PASO 3",
+        "title": "Autoriza\ntu cuenta Carmelita.",
+        "body": "Revisa qué permisos quieres compartir.",
+        "kind": "steps",
+        "items": ["Inicia sesión o crea tu cuenta", "Revisa los permisos", "Autoriza y vuelve a ChatGPT"]
+      },
+      {
+        "id": "conexion-consulta",
+        "duration": 10,
+        "label": "PASO 4",
+        "title": "Haz tu\nprimera consulta.",
+        "body": "Ejemplo ilustrativo de una consulta autorizada.",
+        "kind": "chat",
+        "prompt": "@Carmelita, muéstrame mis wallets.",
+        "reply": "Revisa las wallets vinculadas a tu cuenta."
+      },
+      {
+        "id": "conexion-redes",
+        "duration": 10,
+        "label": "TESTNET / DEVNET",
+        "title": "Reconoce\ntus cinco redes.",
+        "body": "Avalanche, Base y BNB comparten una dirección EVM.",
+        "kind": "wallets",
+        "items": ["Avalanche Fuji", "Base Sepolia", "BNB Testnet", "Solana Devnet", "Stellar Testnet"]
+      },
+      {
+        "id": "conexion-cta",
+        "duration": 8,
+        "label": "GUÍA COMPLETA",
+        "title": "Ya tienes\npor dónde empezar.",
+        "body": "Consulta el recorrido paso a paso.",
+        "kind": "cta"
+      }
+    ],
+    "shortScenes": [
+      {
+        "id": "conexion-short-hook",
+        "duration": 4,
+        "label": "CARMELITA + CHATGPT",
+        "title": "Conectar.\nAutorizar. Consultar.",
+        "body": "Tu primera consulta empieza aquí.",
+        "kind": "statement"
+      },
+      {
+        "id": "conexion-short-pasos",
+        "duration": 6,
+        "label": "CONEXIÓN MANUAL",
+        "title": "Tres pasos\npara comenzar.",
+        "body": "Testnet/Devnet. Requiere conectores personalizados.",
+        "kind": "steps",
+        "items": ["Copia la URL MCP", "Añade Carmelita y autoriza", "Pregunta por tus wallets"]
+      },
+      {
+        "id": "conexion-short-cta",
+        "duration": 5,
+        "label": "GUÍA PASO A PASO",
+        "title": "Sigue la guía\nde conexión.",
+        "body": "Conecta Carmelita con ChatGPT.",
+        "kind": "cta"
+      }
+    ]
+  },
+  {
+    "id": "empresas",
+    "title": "Tu servicio, una nueva conversación",
+    "description": "Invitación a empresas y desarrolladores a conocer la visión de Carmelita y preparar una integración piloto.",
+    "ctaLabel": "Conoce Carmelita y prepara tu integración piloto",
+    "ctaUrl": "https://carmelita.browns.studio/",
+    "longScenes": [
+      {
+        "id": "empresas-hook",
+        "duration": 5,
+        "label": "EMPRESAS Y DESARROLLADORES",
+        "title": "¿Tu servicio\npodría conversar?",
+        "body": "Conoce la visión de Carmelita.",
+        "kind": "statement"
+      },
+      {
+        "id": "empresas-vision",
+        "duration": 8,
+        "label": "VISIÓN EN DESARROLLO",
+        "title": "Una pasarela\npara aplicaciones.",
+        "body": "Queremos conectar servicios con asistentes.",
+        "kind": "vision",
+        "roadmap": ["Descubrir un servicio", "Autorizar el acceso", "Consultar desde el chat"]
+      },
+      {
+        "id": "empresas-evidencia",
+        "duration": 9,
+        "label": "EL PRIMER PASO",
+        "title": "Conexión y lectura.\nUn flujo demostrado.",
+        "body": "Prueba externa: autorizar y consultar wallets propias.",
+        "kind": "chat",
+        "prompt": "@Carmelita, muéstrame mis wallets.",
+        "reply": "Consulta de wallets propias tras autorizar."
+      },
+      {
+        "id": "empresas-recorrido",
+        "duration": 10,
+        "label": "VISIÓN EN DESARROLLO",
+        "title": "Del catálogo\na la conexión.",
+        "body": "Próxima fase: validar un servicio de principio a fin.",
+        "kind": "vision",
+        "roadmap": ["Descubrir", "Autorizar", "Consultar", "Recuperar el resultado"]
+      },
+      {
+        "id": "empresas-identidad",
+        "duration": 10,
+        "label": "VISIÓN EN DESARROLLO",
+        "title": "Una identidad.\nVarios puntos de acceso.",
+        "body": "Objetivo: conservar permisos y resultados entre asistentes y Carmelita.",
+        "kind": "vision",
+        "roadmap": ["Cuenta Carmelita", "Servicio autorizado", "Acceso desde el chat"]
+      },
+      {
+        "id": "empresas-piloto",
+        "duration": 10,
+        "label": "INTEGRACIÓN PILOTO",
+        "title": "Construyamos\nel primer piloto.",
+        "body": "El alta pública, Bazaar y la ejecución de servicios aún no están disponibles.",
+        "kind": "steps",
+        "items": ["Un proveedor", "Un caso de uso", "Una prueba real"]
+      },
+      {
+        "id": "empresas-cta",
+        "duration": 8,
+        "label": "CONOCE EL PROYECTO",
+        "title": "Tu aplicación.\nUna nueva conversación.",
+        "body": "Conoce Carmelita y prepara tu integración piloto.",
+        "kind": "cta"
+      }
+    ],
+    "shortScenes": [
+      {
+        "id": "empresas-short-hook",
+        "duration": 4,
+        "label": "VISIÓN EN DESARROLLO",
+        "title": "Tu servicio.\nUna conversación.",
+        "body": "Conoce la visión de Carmelita.",
+        "kind": "statement"
+      },
+      {
+        "id": "empresas-short-piloto",
+        "duration": 6,
+        "label": "INTEGRACIÓN PILOTO",
+        "title": "Preparemos\nun piloto.",
+        "body": "Integración y ejecución aún en desarrollo.",
+        "kind": "steps",
+        "items": ["Un servicio", "Una autorización", "Una consulta real"]
+      },
+      {
+        "id": "empresas-short-cta",
+        "duration": 5,
+        "label": "VISIÓN EN DESARROLLO",
+        "title": "Conoce\nCarmelita.",
+        "body": "Prepara tu integración piloto.",
+        "kind": "cta"
+      }
+    ]
+  }
+]
