@@ -33,7 +33,7 @@
 .steps :is(h3, h4) { margin: 0 0 12px; color: var(--connect-green); font-size: 20px; font-weight: 600; line-height: 1.4; letter-spacing: -.02em; }
 .steps p { margin: 10px 0; font-size: 16px; }
 .steps .note { font-size: 14px; }
-.fullPage .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 24px; }
+.fullPage .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 24px; }
 .fullPage .steps > li { display: block; padding: 24px; }
 .fullPage .stepNumber { margin-bottom: 20px; }
 .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; max-width: 100%; padding: 10px 16px; margin-top: 12px; border: 1px solid #a5bcae; border-radius: 8px; background: #eef4ef; color: var(--connect-green); font-size: 14px; font-weight: 600; line-height: 1.5; text-align: center; text-decoration: none; }
