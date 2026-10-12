@@ -74,6 +74,18 @@ El CTA mantiene su destino `/connect-chatgpt`, con «Recomendado» asociado medi
 
 La evidencia local está en `work/hero-conversation-qa/`, excluida de Git. Se comprobaron quince combinaciones de idioma y ancho (320, 390, 768, 1024 y 1440 px), sin desbordamiento y con texto visible de al menos 14 px; cero canvas en todos los casos. Reflujo equivalente al 200 %, destino del CTA y regreso a la portada aprobados. Las capturas documentan escritorio y móvil. El build local y los checks requeridos se registran por separado; esta revisión no certifica una nueva conexión OAuth ni publicación hospedada.
 
+## Continuidad de la landing · 12 de octubre de 2026
+
+La apertura aprobada de «Conversación protagonista» se conserva. El resto sigue su paleta, tipografía y superficies claras, con este orden: beneficios ligeros, caso Stellar, pasos de conexión, preguntas frecuentes, visión de aplicaciones en desarrollo e invitación final. La franja de beneficios tiene un título accesible y tres subtítulos; la jerarquía visible reserva los títulos principales para las secciones.
+
+Stellar es el primer ejemplo desarrollado, dentro de un panel blanco con pregunta y respuesta ilustrativa. No muestra saldos, direcciones ni una activación inventada. Conserva la condición de confirmación de red y la posibilidad de un estado pendiente. Los pasos comparten un contenedor con una lista accesible; las FAQ ofrecen foco visible dentro de su panel. La visión usa un diagrama simple de aplicaciones → Carmelita → ChatGPT, expresamente marcado como desarrollo y con compras/ejecución pendientes. El CTA final repite el acceso recomendado a la guía y conserva ingreso directo como alternativa.
+
+Se mantienen español, inglés y portugués; contratos de identidad, MCP y wallets intactos. Los destinos nuevos sólo usan `/guide#chatgpt` y `/guide`, ya existentes. No se añaden dependencias ni GPU.
+
+Evidencia en `work/landing-continuity-qa/`, excluida de Git: 21 combinaciones de idioma y ancho (320, 390, 768, 899, 900, 1024 y 1440 px), sin desbordamiento, un H1, texto visible ≥14 px y enlaces/summary de al menos 44 px. Las cinco FAQ se abren con Enter, manteniendo foco de 3 px dentro del panel. Con todas abiertas, 79 pares de texto tienen contraste mínimo 5,73:1. Reflujo equivalente al 200 % y enlace Stellar a la guía con regreso a la portada aprobados. Zoom nativo y dispositivos físicos no se certifican. `qa:local` completó tooling Graphify, lint, 1.048 pruebas aprobadas (2 omitidas), TypeScript y build. Graphify se actualizó mediante AST: 3.873 nodos y 9.504 aristas.
+
+Esta revisión queda en un commit local de la misma rama. Las capturas y el manifiesto identifican la candidata; no hay push, fusión ni publicación hospedada.
+
 ## Publicación
 
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.

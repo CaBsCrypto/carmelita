@@ -17,6 +17,7 @@ const copy = {
     question: "¿Qué puedo consultar de mi cuenta Stellar?", answer: "Tu dirección, la activación en la red y tu saldo XLM.",
     explorerHint: "También puedes abrir el explorador de Stellar Testnet.",
     preview: "Tus datos aparecen después de autorizar. Los fondos de este ejemplo son de prueba.",
+    benefitsTitle: "Un agente vinculado a tu identidad", usageGuide: "Guía de uso",
     benefits: [
       ["Una cuenta tuya", "Accede a la información vinculada a la identidad que autorizas."],
       ["Permisos claros", "El acceso se limita a los permisos que revisas y autorizas."],
@@ -25,6 +26,8 @@ const copy = {
     stellarLabel: "Nuestro primer caso de uso", stellarTitle: "Empezamos con Stellar.",
     stellarQuestion: "«¿Está activa mi cuenta Stellar Testnet?»",
     stellarDescription: "El primer recorrido vincula tu identidad con una cuenta Stellar Testnet. Consulta su registro, activación y saldo XLM. La activación se confirma en la red y los fondos de este ejemplo son de prueba.",
+    stellarReply: "Puedo consultar el registro y el estado de activación de tu cuenta en la red.",
+    stellarNote: "La cuenta sólo aparece activa tras confirmación de Stellar. Si la red no responde, el estado puede quedar pendiente.",
     stepsTitle: "Conecta una vez. Empieza a preguntar.", stepsIntro: "La guía te acompaña. La conexión se añade manualmente en ChatGPT.",
     steps: [
       ["Abre la guía", "Copia la URL de Carmelita y abre la sección de conectores de ChatGPT."],
@@ -44,6 +47,8 @@ const copy = {
     vision: "Queremos que puedas conectar las aplicaciones y los servicios que usas a Carmelita, con una misma identidad y permisos claros.",
     visionStatus: "Estamos desarrollando esa pasarela con empresas y desarrolladores. Cada integración debe validarse antes de ofrecerse; las compras y la ejecución de servicios siguen pendientes.",
     visionLink: "Conocer la integración piloto", footer: "Construida en Latinoamérica.",
+    visionFlow: ["Aplicaciones y servicios", "Carmelita", "ChatGPT"], visionFlowLabel: "Visión de integración en desarrollo: aplicaciones y servicios, Carmelita y ChatGPT",
+    closingTitle: "Tu primera conversación empieza aquí.", closingDescription: "Abre la guía, añade Carmelita y empieza por tu cuenta Stellar Testnet.",
   },
   en: {
     home: "Carmelita home", footerNav: "Carmelita links", skip: "Skip to content", guide: "Connection guide", developers: "Developers",
@@ -55,6 +60,7 @@ const copy = {
     question: "What can I check about my Stellar account?", answer: "Your address, activation on the network and your XLM balance.",
     explorerHint: "You can also open the Stellar Testnet explorer.",
     preview: "Your data appears after authorization. Funds in this example are test funds.",
+    benefitsTitle: "An agent linked to your identity", usageGuide: "User guide",
     benefits: [
       ["Your own account", "Access information linked to the identity you authorize."],
       ["Clear permissions", "Access is limited to the permissions you review and authorize."],
@@ -63,6 +69,8 @@ const copy = {
     stellarLabel: "Our first use case", stellarTitle: "We start with Stellar.",
     stellarQuestion: "“Is my Stellar Testnet account active?”",
     stellarDescription: "The first flow links your identity to a Stellar Testnet account. Check its registration, activation and XLM balance. Activation is confirmed on the network, and funds in this example are test funds.",
+    stellarReply: "I can check your account’s registration and activation status on the network.",
+    stellarNote: "The account is shown as active only after Stellar confirms it. If the network does not respond, its status may remain pending.",
     stepsTitle: "Connect once. Start asking.", stepsIntro: "The guide walks you through it. You add the connection manually in ChatGPT.",
     steps: [
       ["Open the guide", "Copy Carmelita’s URL and open the connectors section in ChatGPT."],
@@ -82,6 +90,8 @@ const copy = {
     vision: "We want you to connect the applications and services you use to Carmelita, with one identity and clear permissions.",
     visionStatus: "We are developing this gateway with businesses and developers. Each integration must be validated before it is offered; purchases and service execution are still pending.",
     visionLink: "Learn about the integration pilot", footer: "Built in Latin America.",
+    visionFlow: ["Applications and services", "Carmelita", "ChatGPT"], visionFlowLabel: "Integration vision in development: applications and services, Carmelita and ChatGPT",
+    closingTitle: "Your first conversation starts here.", closingDescription: "Open the guide, add Carmelita and start with your Stellar Testnet account.",
   },
   pt: {
     home: "Início da Carmelita", footerNav: "Links da Carmelita", skip: "Ir para o conteúdo", guide: "Guia de conexão", developers: "Desenvolvedores",
@@ -93,6 +103,7 @@ const copy = {
     question: "O que posso consultar sobre minha conta Stellar?", answer: "Seu endereço, a ativação na rede e seu saldo XLM.",
     explorerHint: "Você também pode abrir o explorador da Stellar Testnet.",
     preview: "Seus dados aparecem após a autorização. Os fundos deste exemplo são de teste.",
+    benefitsTitle: "Um agente vinculado à sua identidade", usageGuide: "Guia de uso",
     benefits: [
       ["Uma conta sua", "Acesse as informações vinculadas à identidade que autoriza."],
       ["Permissões claras", "O acesso se limita às permissões que você confere e autoriza."],
@@ -101,6 +112,8 @@ const copy = {
     stellarLabel: "Nosso primeiro caso de uso", stellarTitle: "Começamos com Stellar.",
     stellarQuestion: "“Minha conta Stellar Testnet está ativa?”",
     stellarDescription: "O primeiro fluxo vincula sua identidade a uma conta Stellar Testnet. Consulte seu registro, ativação e saldo XLM. A ativação é confirmada na rede e os fundos deste exemplo são de teste.",
+    stellarReply: "Posso consultar o registro e o estado de ativação da sua conta na rede.",
+    stellarNote: "A conta só aparece ativa após a confirmação da Stellar. Se a rede não responder, o estado pode ficar pendente.",
     stepsTitle: "Conecte uma vez. Comece a perguntar.", stepsIntro: "O guia acompanha você. A conexão é adicionada manualmente no ChatGPT.",
     steps: [
       ["Abra o guia", "Copie a URL da Carmelita e abra a seção de conectores do ChatGPT."],
@@ -120,6 +133,8 @@ const copy = {
     vision: "Queremos que você conecte os aplicativos e serviços que usa à Carmelita, com uma mesma identidade e permissões claras.",
     visionStatus: "Estamos desenvolvendo essa plataforma com empresas e desenvolvedores. Cada integração deve ser validada antes de ser oferecida; compras e execução de serviços ainda estão pendentes.",
     visionLink: "Conhecer a integração piloto", footer: "Criada na América Latina.",
+    visionFlow: ["Aplicativos e serviços", "Carmelita", "ChatGPT"], visionFlowLabel: "Visão de integração em desenvolvimento: aplicativos e serviços, Carmelita e ChatGPT",
+    closingTitle: "Sua primeira conversa começa aqui.", closingDescription: "Abra o guia, adicione a Carmelita e comece pela sua conta Stellar Testnet.",
   },
 };
 
@@ -127,6 +142,14 @@ function ExplorerIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 3h7v7m0-7-11 11M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
+    </svg>
+  );
+}
+
+function BenefitIcon({ kind }: { kind: number }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {kind === 0 ? <><circle cx="12" cy="8" r="3" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></> : kind === 1 ? <><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z" /><path d="m8 12 3 3 5-6" /></> : <path d="M21 11a8 8 0 0 1-8 8H5l-3 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8ZM7 10h10m-10 4h7" />}
     </svg>
   );
 }
@@ -179,36 +202,35 @@ export default function HomeExperience() {
           </figcaption>
         </figure>
       </section>
-      <div className={styles.benefits}>
-        {t.benefits.map(([title, description]) => (
-          <div key={title}><h2>{title}</h2><p>{description}</p></div>
+      <section className={styles.benefits} aria-labelledby="home-benefits-title">
+        <h2 id="home-benefits-title" className={styles.accessibleTitle}>{t.benefitsTitle}</h2>
+        {t.benefits.map(([title, description], index) => (
+          <article key={title}>
+            <span className={styles.benefitIcon}><BenefitIcon kind={index} /></span>
+            <div><h3>{title}</h3><p>{description}</p></div>
+          </article>
         ))}
-      </div>
-      <section className={styles.vision} aria-labelledby="home-vision-title">
-        <div>
-          <p className={styles.development}><span aria-hidden="true" />{t.development}</p>
-          <h2 id="home-vision-title">{t.visionTitle}</h2>
-        </div>
-        <div className={styles.visionBody}>
-          <p>{t.vision}</p><p>{t.visionStatus}</p>
-          <Link href="/developers" className={styles.textLink}>{t.visionLink}</Link>
-        </div>
       </section>
       <section className={styles.stellarUse} aria-labelledby="home-stellar-title">
-        <div>
-          <p className={styles.development}><span aria-hidden="true" />{t.stellarLabel}</p>
+        <div className={styles.stellarIntro}>
+          <p className={styles.sectionKicker}>{t.stellarLabel}</p>
           <h2 id="home-stellar-title">{t.stellarTitle}</h2>
-        </div>
-        <div>
-          <blockquote className={styles.stellarQuestion}>{t.stellarQuestion}</blockquote>
           <p className={styles.stellarDescription}>{t.stellarDescription}</p>
+          <Link href="/guide#chatgpt" className={styles.textLink}>{t.usageGuide}</Link>
+        </div>
+        <div className={styles.stellarConversation}>
+          <p className={styles.stellarCaption}>{t.example}</p>
+          <blockquote className={styles.stellarQuestion}>{t.stellarQuestion}</blockquote>
+          <span className={styles.replyIdentity}>Carmelita</span>
+          <p className={styles.stellarReply}>{t.stellarReply}</p>
+          <p className={styles.stellarNote}>{t.stellarNote}</p>
         </div>
       </section>
       <section className={styles.steps} aria-labelledby="home-steps-title">
         <div className={styles.sectionHeading}>
           <h2 id="home-steps-title">{t.stepsTitle}</h2><p>{t.stepsIntro}</p>
         </div>
-        <ol>
+        <ol role="list">
           {t.steps.map(([title, description], index) => (
             <li key={title}>
               <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
@@ -228,10 +250,37 @@ export default function HomeExperience() {
           ))}
         </div>
       </section>
+      <section className={styles.vision} aria-labelledby="home-vision-title">
+        <div>
+          <p className={styles.development}><span aria-hidden="true" />{t.development}</p>
+          <h2 id="home-vision-title">{t.visionTitle}</h2>
+          <p className={styles.visionIntro}>{t.vision}</p>
+          <Link href="/developers" className={styles.textLink}>{t.visionLink}</Link>
+        </div>
+        <div className={styles.visionBody}>
+          <ul className={styles.visionFlow} role="list" aria-label={t.visionFlowLabel}>
+            {t.visionFlow.map((label, index) => (
+              <li key={label}>
+                <span className={index === 1 ? styles.flowAgent : styles.flowNode}>{label}</span>
+                {index < 2 && <span className={styles.flowArrow} aria-hidden="true">→</span>}
+              </li>
+            ))}
+          </ul>
+          <p>{t.visionStatus}</p>
+        </div>
+      </section>
+      <section className={styles.closing} aria-labelledby="home-closing-title">
+        <div><h2 id="home-closing-title">{t.closingTitle}</h2><p>{t.closingDescription}</p></div>
+        <div className={styles.closingActions}>
+          <span id="home-closing-recommendation" className={styles.recommended}>{t.recommended}</span>
+          <Link href="/connect-chatgpt" className={styles.primary} aria-describedby="home-closing-recommendation">{t.connect}</Link>
+          <Link href="/agent?connect=privy" className={styles.closingSignIn}>{t.signIn}</Link>
+        </div>
+      </section>
       <footer className={styles.footer}>
         <div><BrandLockup /><p>{t.footer}</p></div>
         <nav aria-label={t.footerNav}>
-          <Link href="/connect-chatgpt">{t.guide}</Link><Link href="/developers">{t.developers}</Link>
+          <Link href="/connect-chatgpt">{t.guide}</Link><Link href="/guide">{t.usageGuide}</Link><Link href="/developers">{t.developers}</Link>
         </nav>
       </footer>
     </main>
