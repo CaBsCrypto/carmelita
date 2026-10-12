@@ -3,7 +3,7 @@ import GuideClient from "./guide-client";
 export const metadata = {
   title: "Getting started | Carmelita",
   description:
-    "Connect Carmelita with ChatGPT, authorize your account and ask about Stellar Testnet. Follow the manual connection guide or sign in to Carmelita directly.",
+    "Connect your personal agent with ChatGPT and explore your multichain test accounts, recent Carmelita activity and market quotes. Follow the manual guide and authorize read-only access.",
 };
 
 export default function GuidePage() {

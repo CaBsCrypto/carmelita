@@ -20,24 +20,31 @@ const queryExamples = [
 const copy = {
   es: {
     kicker: "Para empresas y desarrolladores",
-    title: "Propón tu servicio para Carmelita.",
-    lede: "Cuéntanos qué ofrece tu servicio y qué podría consultar una persona desde Carmelita. El equipo revisará la propuesta para preparar una integración piloto.",
+    title: "Lleva tu servicio a un agente multichain.",
+    lede: "Propón cómo conectar tu API o MCP con Carmelita: una consulta útil junto a las cuentas onchain, la actividad reciente en Carmelita y los datos de mercado del usuario. El equipo revisará el alcance antes de preparar un piloto.",
     development: "Integraciones en desarrollo", prepare: "Proponer mi servicio", try: "Probar Carmelita en ChatGPT",
     routeTitle: "La visión de integración", service: "Tu servicio", serviceText: "API o MCP del proveedor",
-    carmelitaText: "Identidad y permisos del usuario", chatgptText: "Una conversación con su agente",
-    routeNote: "Puedes enviar una propuesta para revisión. Publicar o activar la integración requiere validación; la ejecución general de servicios sigue en desarrollo.",
+    carmelitaText: "Una identidad y permisos por cuenta", chatgptText: "Una conversación con su agente",
+    routeNote: "Visión en desarrollo: conectar servicios alrededor de una identidad. Cada propuesta pasa por revisión y un piloto que debe exigir autorización privada por cuenta.",
     proposalTitle: "Envía tu propuesta.", proposalText: "Tres datos para una primera revisión. No necesitas tener la integración terminada para presentar tu servicio.",
     reviewTitle: "Qué sucede después", reviewSteps: ["Guardamos tu propuesta en la bandeja privada del equipo.", "Revisamos el caso de uso y los requisitos de la integración.", "Si avanzamos, usaremos el correo que indicas para definir contigo el piloto."],
-    reviewNote: "Enviar no implica aprobación ni publicación automática. El piloto empieza con una consulta de lectura.",
+    reviewNote: "Enviar no implica aprobación ni publicación automática. El piloto empieza con una consulta de lectura; compras y ejecución de servicios requieren otra validación.",
     pilotTitle: "Un piloto pequeño, un resultado comprobable.",
     pilotText: "Define el contrato antes de ampliar el alcance. La documentación sirve como punto de partida para preparar y revisar la integración.",
     pilotSteps: [
       { title: "Elige una consulta", text: "Define qué dato devuelve tu servicio, qué entrada necesita y cuál es su fuente. Empieza con una API o un MCP oficial y una lectura concreta.", link: "Preparar el análisis de integración", file: "NEW_PRODUCT_INTEGRATION_AGENT_PROMPT.md" },
-      { title: "Vincula identidad y permisos", text: "Especifica cómo autoriza el usuario y a qué datos puede acceder. Las credenciales se conservan en el servidor y la información privada se vincula al propietario verificado.", link: "Revisar el contrato técnico", file: "developer-guide.md" },
+      { title: "Define acceso por cuenta", text: "Diseña la activación y autorización para cada cuenta Carmelita. El piloto debe comprobar que las credenciales quedan en el servidor y que cada usuario sólo consulta su información privada. Aprobar el servicio no autoriza a sus usuarios.", link: "Revisar el contrato técnico", file: "developer-guide.md" },
       { title: "Valida el recorrido real", text: "Comprueba resultados, aislamiento, errores y recuperación. Un registro en el catálogo no demuestra que un proveedor esté disponible ni que el servicio pueda ejecutarse.", link: "Consultar la matriz de aceptación", file: "channel-parity-acceptance.md" },
     ],
-    inspectTitle: "Qué puedes inspeccionar hoy",
-    inspectText: "El MCP personal expone consultas con autorización del usuario. La guía de conexión te permite probar el recorrido demostrado de ChatGPT y wallets propias.",
+    contextTitle: "Tu servicio, junto al contexto del usuario.",
+    contextText: "La base de Carmelita reúne cuentas de varias redes y consultas de datos. Las nuevas integraciones se revisan como pilotos con permisos explícitos.",
+    contextCards: [
+      { title: "Stellar, Solana y EVM", text: "Cinco redes de prueba: Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia y BNB Testnet.", note: "Las tres redes EVM comparten dirección, con saldos y exploradores propios. Registro, activación y saldo son comprobaciones separadas." },
+      { title: "Actividad y datos de mercado", text: "Eventos recientes registrados en Carmelita y cotizaciones con fuente y hora de consulta. CoinGecko es la fuente principal y CoinMarketCap, la alternativa.", note: "La actividad registrada no equivale a un historial onchain completo. Las cotizaciones Mainnet no valoran los fondos Testnet." },
+      { title: "Servicios en piloto", text: "Un piloto de UNBLCK para consultar créditos, días disponibles y reservas de una cuenta del servicio ya vinculada.", note: "Validación de acceso pendiente. Crear una cuenta Carmelita no conecta ni autoriza automáticamente otros servicios." },
+    ],
+    inspectTitle: "Inspecciona el agente personal",
+    inspectText: "El MCP personal expone consultas con autorización del usuario. La guía permite probar la conexión con ChatGPT y consultar las wallets propias en las cinco redes Testnet/Devnet.",
     endpointTitle: "Agente personal",
     endpointLabel: { production: "Endpoint de producción", qa: "Endpoint de QA", unavailable: "Endpoint no disponible" },
     unavailable: "Este entorno aún no tiene un endpoint MCP configurado. No lo uses para conectar un cliente hasta completar su configuración.",
@@ -48,7 +55,7 @@ const copy = {
     sourceText: "Precios y TVL son datos Mainnet. Las wallets del recorrido de conexión son Testnet/Devnet; sus fondos de prueba no se valoran como dinero real.",
     examplesTitle: "Explorar ejemplos de consulta",
     examplesText: "Estos enlaces sólo rellenan un borrador en Carmelita. Revisa el comando y envíalo con tu sesión; abrirlo no crea una autorización ni ejecuta una transacción.",
-    exampleTitles: ["Mis wallets", "Precios de SOL, AVAX y BNB", "TVL de redes y capitalización de tokens", "Reservas Aave en Avalanche Fuji", "Catálogo de funciones"],
+    exampleTitles: ["Mis wallets en cinco redes", "Precios de SOL, AVAX y BNB", "TVL de redes y capitalización de tokens", "Reservas Aave en Avalanche Fuji", "Catálogo de funciones"],
     tool: "Herramienta MCP", draft: "Abrir borrador", command: "Comando de consulta",
     docsTitle: "Contratos y evidencia, a mano.",
     docsText: "Consulta los parámetros y los límites de cada superficie. El estado de una implementación, la conexión de un usuario y la aceptación real del proveedor son comprobaciones distintas.",
@@ -72,24 +79,31 @@ const copy = {
   },
   en: {
     kicker: "For businesses and developers",
-    title: "Propose your service for Carmelita.",
-    lede: "Tell us what your service offers and what someone could query through Carmelita. The team will review your proposal to prepare a pilot integration.",
+    title: "Bring your service to a multichain agent.",
+    lede: "Propose how to connect your API or MCP with Carmelita: one useful query alongside a user's onchain accounts, recent Carmelita activity and market data. The team will review the scope before preparing a pilot.",
     development: "Integrations in development", prepare: "Propose my service", try: "Try Carmelita in ChatGPT",
     routeTitle: "The integration vision", service: "Your service", serviceText: "The provider's API or MCP",
-    carmelitaText: "User identity and permissions", chatgptText: "A conversation with their agent",
-    routeNote: "You can submit a proposal for review. Publishing or activating the integration requires validation; general service execution is still in development.",
+    carmelitaText: "One identity, permissions per account", chatgptText: "A conversation with their agent",
+    routeNote: "Vision in development: connect services around one identity. Each proposal goes through review and a pilot that must require private authorization per account.",
     proposalTitle: "Submit your proposal.", proposalText: "Three details for an initial review. Your integration does not need to be finished to propose your service.",
     reviewTitle: "What happens next", reviewSteps: ["We save your proposal in the team’s private inbox.", "We review the use case and integration requirements.", "If we move forward, we will use the email you provide to define the pilot with you."],
-    reviewNote: "Submitting does not imply approval or automatic publication. The pilot starts with one read query.",
+    reviewNote: "Submitting does not imply approval or automatic publication. The pilot starts with one read query; purchases and service execution require separate validation.",
     pilotTitle: "A focused pilot. A verifiable result.",
     pilotText: "Define the contract before expanding the scope. Use the documentation to prepare and review the integration.",
     pilotSteps: [
       { title: "Choose one query", text: "Define the data your service returns, its input and its source. Start with an official API or MCP and one specific read operation.", link: "Prepare the integration analysis", file: "NEW_PRODUCT_INTEGRATION_AGENT_PROMPT.md" },
-      { title: "Bind identity and permissions", text: "Specify how the user authorizes access and which data they can read. Keep credentials on the server and bind private information to the verified owner.", link: "Review the technical contract", file: "developer-guide.md" },
+      { title: "Define access per account", text: "Design activation and authorization for each Carmelita account. The pilot must verify that credentials stay on the server and each user can only query their own private information. Approving the service does not authorize its users.", link: "Review the technical contract", file: "developer-guide.md" },
       { title: "Validate the real flow", text: "Check results, account isolation, errors and recovery. A catalog entry does not prove that a provider is available or that a service can execute.", link: "Read the acceptance matrix", file: "channel-parity-acceptance.md" },
     ],
-    inspectTitle: "What you can inspect today",
-    inspectText: "The personal MCP exposes queries with user authorization. The connection guide lets you try the demonstrated ChatGPT and personal-wallet flow.",
+    contextTitle: "Your service, alongside user context.",
+    contextText: "Carmelita's foundation brings together accounts across networks and data queries. New integrations are reviewed as pilots with explicit permissions.",
+    contextCards: [
+      { title: "Stellar, Solana and EVM", text: "Five test networks: Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia and BNB Testnet.", note: "The three EVM networks share an address, with their own balances and explorers. Registration, activation and balance are separate checks." },
+      { title: "Activity and market data", text: "Recent events recorded in Carmelita and quotes with their source and query time. CoinGecko is the primary source and CoinMarketCap is the alternative.", note: "Recorded activity is not a complete onchain history. Mainnet quotes do not value Testnet funds." },
+      { title: "Services in pilot", text: "A UNBLCK pilot for querying credits, open days and bookings for an already linked service account.", note: "Access validation pending. Creating a Carmelita account does not automatically connect or authorize other services." },
+    ],
+    inspectTitle: "Inspect the personal agent",
+    inspectText: "The personal MCP exposes queries with user authorization. The guide lets you try the ChatGPT connection and query your own wallets on the five Testnet/Devnet networks.",
     endpointTitle: "Personal agent",
     endpointLabel: { production: "Production endpoint", qa: "QA endpoint", unavailable: "Endpoint unavailable" },
     unavailable: "This environment does not have a configured MCP endpoint yet. Complete its configuration before using it to connect a client.",
@@ -100,7 +114,7 @@ const copy = {
     sourceText: "Prices and TVL are Mainnet data. Wallets in the connection flow are Testnet/Devnet; their test funds are not valued as real money.",
     examplesTitle: "Explore query examples",
     examplesText: "These links only fill a draft in Carmelita. Review the command and send it with your session; opening it does not create an authorization or execute a transaction.",
-    exampleTitles: ["My wallets", "SOL, AVAX and BNB prices", "Network TVL and token market cap", "Aave reserves on Avalanche Fuji", "Feature catalog"],
+    exampleTitles: ["My wallets across five networks", "SOL, AVAX and BNB prices", "Network TVL and token market cap", "Aave reserves on Avalanche Fuji", "Feature catalog"],
     tool: "MCP tool", draft: "Open draft", command: "Query command",
     docsTitle: "Contracts and evidence within reach.",
     docsText: "Check each surface's parameters and boundaries. Implementation status, a user's connection and real provider acceptance are separate checks.",
@@ -124,24 +138,31 @@ const copy = {
   },
   pt: {
     kicker: "Para empresas e desenvolvedores",
-    title: "Proponha seu serviço para a Carmelita.",
-    lede: "Conte o que seu serviço oferece e o que alguém poderia consultar pela Carmelita. A equipe revisará a proposta para preparar uma integração piloto.",
+    title: "Leve seu serviço para um agente multichain.",
+    lede: "Proponha como conectar sua API ou MCP à Carmelita: uma consulta útil junto às contas onchain, à atividade recente na Carmelita e aos dados de mercado do usuário. A equipe revisará o escopo antes de preparar um piloto.",
     development: "Integrações em desenvolvimento", prepare: "Propor meu serviço", try: "Experimentar Carmelita no ChatGPT",
     routeTitle: "A visão de integração", service: "Seu serviço", serviceText: "API ou MCP do provedor",
-    carmelitaText: "Identidade e permissões do usuário", chatgptText: "Uma conversa com seu agente",
-    routeNote: "Pode enviar uma proposta para revisão. Publicar ou ativar a integração exige validação; a execução geral de serviços segue em desenvolvimento.",
+    carmelitaText: "Uma identidade e permissões por conta", chatgptText: "Uma conversa com seu agente",
+    routeNote: "Visão em desenvolvimento: conectar serviços em torno de uma identidade. Cada proposta passa por revisão e um piloto que deve exigir autorização privada por conta.",
     proposalTitle: "Envie sua proposta.", proposalText: "Três informações para uma primeira revisão. Sua integração não precisa estar pronta para apresentar o serviço.",
     reviewTitle: "O que acontece depois", reviewSteps: ["Salvamos sua proposta na caixa de entrada privada da equipe.", "Revisamos o caso de uso e os requisitos da integração.", "Se avançarmos, usaremos o e-mail informado para definir o piloto com você."],
-    reviewNote: "O envio não implica aprovação nem publicação automática. O piloto começa com uma consulta de leitura.",
+    reviewNote: "O envio não implica aprovação nem publicação automática. O piloto começa com uma consulta de leitura; compras e execução de serviços exigem outra validação.",
     pilotTitle: "Um piloto pequeno, um resultado verificável.",
     pilotText: "Defina o contrato antes de ampliar o escopo. A documentação serve como ponto de partida para preparar e revisar a integração.",
     pilotSteps: [
       { title: "Escolha uma consulta", text: "Defina o dado que seu serviço retorna, a entrada necessária e sua fonte. Comece com uma API ou um MCP oficial e uma leitura específica.", link: "Preparar a análise de integração", file: "NEW_PRODUCT_INTEGRATION_AGENT_PROMPT.md" },
-      { title: "Vincule identidade e permissões", text: "Especifique como o usuário autoriza o acesso e quais dados pode consultar. Mantenha as credenciais no servidor e vincule as informações privadas ao proprietário verificado.", link: "Revisar o contrato técnico", file: "developer-guide.md" },
+      { title: "Defina o acesso por conta", text: "Planeje a ativação e autorização para cada conta Carmelita. O piloto deve verificar que as credenciais ficam no servidor e cada usuário só consulta suas informações privadas. Aprovar o serviço não autoriza seus usuários.", link: "Revisar o contrato técnico", file: "developer-guide.md" },
       { title: "Valide o fluxo real", text: "Confira resultados, isolamento de contas, erros e recuperação. Um registro no catálogo não comprova a disponibilidade do provedor nem a execução do serviço.", link: "Consultar a matriz de aceitação", file: "channel-parity-acceptance.md" },
     ],
-    inspectTitle: "O que você pode inspecionar hoje",
-    inspectText: "O MCP pessoal expõe consultas com autorização do usuário. O guia de conexão permite testar o fluxo demonstrado de ChatGPT e carteiras próprias.",
+    contextTitle: "Seu serviço, junto ao contexto do usuário.",
+    contextText: "A base da Carmelita reúne contas de várias redes e consultas de dados. Novas integrações são revisadas como pilotos com permissões explícitas.",
+    contextCards: [
+      { title: "Stellar, Solana e EVM", text: "Cinco redes de teste: Stellar Testnet, Solana Devnet, Avalanche Fuji, Base Sepolia e BNB Testnet.", note: "As três redes EVM compartilham endereço, com saldos e exploradores próprios. Registro, ativação e saldo são verificações separadas." },
+      { title: "Atividade e dados de mercado", text: "Eventos recentes registrados na Carmelita e cotações com fonte e hora da consulta. CoinGecko é a fonte principal e CoinMarketCap, a alternativa.", note: "A atividade registrada não equivale a um histórico onchain completo. As cotações Mainnet não atribuem valor aos fundos Testnet." },
+      { title: "Serviços em piloto", text: "Um piloto da UNBLCK para consultar créditos, dias disponíveis e reservas de uma conta do serviço já vinculada.", note: "Validação de acesso pendente. Criar uma conta Carmelita não conecta nem autoriza outros serviços automaticamente." },
+    ],
+    inspectTitle: "Inspecione o agente pessoal",
+    inspectText: "O MCP pessoal expõe consultas com autorização do usuário. O guia permite testar a conexão com ChatGPT e consultar suas carteiras nas cinco redes Testnet/Devnet.",
     endpointTitle: "Agente pessoal",
     endpointLabel: { production: "Endpoint de produção", qa: "Endpoint de QA", unavailable: "Endpoint indisponível" },
     unavailable: "Este ambiente ainda não tem um endpoint MCP configurado. Conclua sua configuração antes de usá-lo para conectar um cliente.",
@@ -152,7 +173,7 @@ const copy = {
     sourceText: "Preços e TVL são dados Mainnet. As carteiras do fluxo de conexão são Testnet/Devnet; seus fundos de teste não são avaliados como dinheiro real.",
     examplesTitle: "Explorar exemplos de consulta",
     examplesText: "Estes links apenas preenchem um rascunho na Carmelita. Revise o comando e envie com sua sessão; abri-lo não cria uma autorização nem executa uma transação.",
-    exampleTitles: ["Minhas carteiras", "Preços de SOL, AVAX e BNB", "TVL de redes e capitalização de tokens", "Reservas Aave na Avalanche Fuji", "Catálogo de funções"],
+    exampleTitles: ["Minhas carteiras em cinco redes", "Preços de SOL, AVAX e BNB", "TVL de redes e capitalização de tokens", "Reservas Aave na Avalanche Fuji", "Catálogo de funções"],
     tool: "Ferramenta MCP", draft: "Abrir rascunho", command: "Comando de consulta",
     docsTitle: "Contratos e evidências ao alcance.",
     docsText: "Confira os parâmetros e limites de cada superfície. O estado da implementação, a conexão de um usuário e a aceitação real do provedor são verificações distintas.",
@@ -276,6 +297,18 @@ export default function DeveloperPortal() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className={styles.section} aria-labelledby="user-context-title">
+        <header className={styles.sectionHead}><h2 id="user-context-title">{t.contextTitle}</h2><p>{t.contextText}</p></header>
+        <div className={styles.queryCards}>
+          {t.contextCards.map(card => (
+            <article className={styles.panel} key={card.title}>
+              <h3 className={styles.panelTitle}>{card.title}</h3>
+              <p>{card.text}</p><p className={styles.muted}>{card.note}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className={styles.section} id="personal-mcp" aria-labelledby="inspect-title">
