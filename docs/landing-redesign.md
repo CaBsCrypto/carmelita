@@ -114,6 +114,14 @@ Verificación local: tooling Graphify (7 pruebas), lint sin warnings y suite con
 
 El build local renderizado pasó 21 combinaciones ES/EN/PT × 320, 390, 768, 899, 900, 1024 y 1440 px: sin desbordamiento, un H1, texto visible ≥14 px, Stellar primero y UNBLCK dentro de la visión. Se revisaron capturas a 320 y 900 px. Salto al contenido y siguiente Tab al CTA conservaron foco; las seis FAQ se abrieron con Enter y foco visible de 3 px. Se comprobaron 98 pares de contraste con mínimo 5,73:1. El reflujo equivalente al 200 % pasó a 720 × 450; zoom nativo y dispositivos físicos siguen pendientes. El CTA abre `/connect-chatgpt`; inicio de sesión, guía y desarrolladores conservan sus destinos. No hubo errores de consola en la portada. Graphify actualizado por AST: 3.871 nodos, 10.019 aristas, 170 comunidades; la dependencia de extracción SQL sigue ausente. No se cambia la certificación operativa de proveedores.
 
+## FAQ para integrar un servicio · 12 de octubre de 2026
+
+La FAQ añade «¿Cómo hago para que mi servicio aparezca en Carmelita?» en ES/EN/PT. Explica la preparación de un piloto: describir el servicio y una consulta concreta, reunir documentación API/MCP si existe, definir autorización y preparar la validación de resultados, permisos, aislamiento y errores. El enlace «Preparar mi integración» abre `/developers#pilot`, la sección existente de preparación. La FAQ pasa a titularse «Preguntas frecuentes» para incluir tanto conexión de usuarios como integración de servicios.
+
+La incorporación requiere revisión y validación; el alta pública y automática sigue en desarrollo. Esta página no promete recepción de solicitudes ni un registro de proveedores habilitado: actualmente no hay formulario de solicitud montado en el portal. La revisión modifica únicamente copia y presentación de la FAQ; no implementa alta, pagos ni ejecución.
+
+Validación enfocada en `work/landing-service-faq-qa/`: lint y build/TypeScript locales aprobados; ES/EN/PT a 320, 720 y 1440 px (nueve casos), sin desbordamiento, texto mínimo de 15 px y tres pasos numerados. Apertura con Enter y enlace al piloto comprobados en el navegador. Graphify actualizado por AST (3.871 nodos, 10.019 aristas), con la limitación SQL ya documentada. La suite de aplicación de la revisión anterior no se repitió para este cambio de copia y presentación. Sin push, fusión ni publicación Vercel.
+
 ## Publicación
 
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.

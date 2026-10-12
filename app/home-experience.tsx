@@ -43,7 +43,18 @@ const copy = {
       ["Empieza a preguntar", "Habilita Carmelita en una conversación. Puedes empezar con: «¿Está activa mi cuenta Stellar Testnet?»."],
     ],
     stepsLink: "Abrir la guía paso a paso",
-    faqTitle: "Antes de conectar.", faqIntro: "Lo que necesitas saber para empezar con tu cuenta.",
+    faqTitle: "Preguntas frecuentes.", faqIntro: "Para conectar tu cuenta o preparar una integración.",
+    providerFaq: {
+      question: "¿Cómo hago para que mi servicio aparezca en Carmelita?",
+      intro: "Empieza preparando una integración piloto:",
+      steps: [
+        "Describe tu servicio y la primera consulta que quieres ofrecer a través de Carmelita.",
+        "Reúne la documentación de tu API o MCP, si dispone de uno, y define cómo autoriza el usuario el acceso.",
+        "Prepara la validación de resultados, permisos, aislamiento de cuentas y manejo de errores con la guía para desarrolladores.",
+      ],
+      note: "La integración debe revisarse y validarse antes de presentarla como disponible. El alta pública y automática de servicios sigue en desarrollo.",
+      link: "Preparar mi integración",
+    },
     faqs: [
       ["¿Necesito cuentas en todos los proveedores?", "Las consultas de mercado no requieren una cuenta propia en CoinGecko o CoinMarketCap. UNBLCK requiere una cuenta del servicio ya vinculada y la validación del acceso sigue pendiente. Crear tu cuenta Carmelita no conecta automáticamente otros servicios."],
       ["¿Necesito crear una cuenta Carmelita antes?", "Puedes crear tu cuenta Carmelita o iniciar sesión durante la autorización desde ChatGPT. Si ya tienes cuenta, utiliza la misma identidad para conservar tus wallets."],
@@ -95,7 +106,18 @@ const copy = {
       ["Start asking", "Enable Carmelita in a conversation. You can start with: “Is my Stellar Testnet account active?”."],
     ],
     stepsLink: "Open the step-by-step guide",
-    faqTitle: "Before you connect.", faqIntro: "What you need to know to get started with your account.",
+    faqTitle: "Frequently asked questions.", faqIntro: "For connecting your account or preparing an integration.",
+    providerFaq: {
+      question: "How can I get my service into Carmelita?",
+      intro: "Start by preparing a pilot integration:",
+      steps: [
+        "Describe your service and the first query you want to offer through Carmelita.",
+        "Gather documentation for your API or MCP, if you have one, and define how users authorize access.",
+        "Use the developer guide to prepare validation of results, permissions, account isolation and error handling.",
+      ],
+      note: "The integration must be reviewed and validated before it is presented as available. Public, automatic service enrollment is still in development.",
+      link: "Prepare my integration",
+    },
     faqs: [
       ["Do I need accounts with every provider?", "Market queries do not require your own CoinGecko or CoinMarketCap account. UNBLCK requires an already linked service account and access validation is still pending. Creating your Carmelita account does not automatically connect other services."],
       ["Do I need a Carmelita account first?", "You can create your Carmelita account or sign in during authorization from ChatGPT. If you already have an account, use the same identity to keep your wallets."],
@@ -147,7 +169,18 @@ const copy = {
       ["Comece a perguntar", "Ative a Carmelita em uma conversa. Você pode começar com: “Minha conta Stellar Testnet está ativa?”."],
     ],
     stepsLink: "Abrir o guia passo a passo",
-    faqTitle: "Antes de conectar.", faqIntro: "O que você precisa saber para começar com sua conta.",
+    faqTitle: "Perguntas frequentes.", faqIntro: "Para conectar sua conta ou preparar uma integração.",
+    providerFaq: {
+      question: "Como faço para que meu serviço apareça na Carmelita?",
+      intro: "Comece preparando uma integração piloto:",
+      steps: [
+        "Descreva seu serviço e a primeira consulta que deseja oferecer pela Carmelita.",
+        "Reúna a documentação da sua API ou MCP, se houver, e defina como o usuário autoriza o acesso.",
+        "Use o guia para desenvolvedores para preparar a validação de resultados, permissões, isolamento de contas e tratamento de erros.",
+      ],
+      note: "A integração deve ser revisada e validada antes de ser apresentada como disponível. O cadastro público e automático de serviços segue em desenvolvimento.",
+      link: "Preparar minha integração",
+    },
     faqs: [
       ["Preciso de contas em todos os provedores?", "As consultas de mercado não exigem uma conta própria na CoinGecko ou CoinMarketCap. A UNBLCK exige uma conta do serviço já vinculada e a validação do acesso segue pendente. Criar sua conta Carmelita não conecta outros serviços automaticamente."],
       ["Preciso criar uma conta Carmelita antes?", "Você pode criar sua conta Carmelita ou entrar durante a autorização pelo ChatGPT. Se já tem uma conta, use a mesma identidade para manter suas carteiras."],
@@ -322,6 +355,15 @@ export default function HomeExperience() {
           {t.faqs.map(([question, answer]) => (
             <details key={question}><summary>{question}</summary><p>{answer}</p></details>
           ))}
+          <details id="service-integration-faq">
+            <summary>{t.providerFaq.question}</summary>
+            <div className={styles.faqAnswer}>
+              <p>{t.providerFaq.intro}</p>
+              <ol role="list">{t.providerFaq.steps.map(step => <li key={step}>{step}</li>)}</ol>
+              <p>{t.providerFaq.note}</p>
+              <Link href="/developers#pilot" className={styles.textLink}>{t.providerFaq.link}</Link>
+            </div>
+          </details>
         </div>
       </section>
       <section className={styles.closing} aria-labelledby="home-closing-title">

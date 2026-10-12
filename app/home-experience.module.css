@@ -147,6 +147,11 @@
 .faqList summary::after { content: "+"; flex-shrink: 0; font-size: 24px; font-weight: 400; line-height: 1; }
 .faqList details[open] summary::after { content: "−"; }
 .faqList details p { margin: 0; padding: 0 24px 24px; color: var(--home-muted); font-size: 15px; line-height: 1.75; }
+.faqAnswer { padding: 0 24px 24px; color: var(--home-muted); font-size: 15px; line-height: 1.75; }
+.faqList .faqAnswer p { padding: 0; }
+.faqAnswer ol { margin: 16px 0; padding-left: 22px; list-style: decimal; }
+.faqAnswer li { margin-block: 10px; padding-left: 4px; }
+.faqAnswer > a { margin-top: 12px; font-size: 15px; }
 
 .vision { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 64px; padding-block: 56px 64px; border-top: 1px solid var(--home-line); }
 .development { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; color: var(--home-green); font-size: 14px; font-weight: 600; }
@@ -236,6 +241,7 @@
   .steps li { gap: 8px 14px; padding: 22px 18px; }
   .faqList summary { gap: 14px; padding: 20px; }
   .faqList details p { padding: 0 20px 20px; }
+  .faqAnswer { padding-inline: 20px; }
   .vision { padding-block: 36px; }
   .vision h2 { font-size: 30px; }
   .visionBody { padding: 24px 20px; }
