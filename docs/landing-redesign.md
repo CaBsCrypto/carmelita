@@ -1,12 +1,14 @@
-# Carmelita como complemento de ChatGPT
+# Carmelita, tu agente personal en ChatGPT
 
 Rama: `codex/landing-redesign`. Base: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`.
 
-La portada explica qué es Carmelita y qué permite consultar: información de la cuenta autorizada, wallets y estado de red, y datos de mercado mediante los adaptadores de lectura existentes. Presenta el recorrido de añadir Carmelita manualmente en ChatGPT y autorizar una identidad. Mantiene el CTA recomendado, ofrece ingreso directo y separa la visión de servicios bajo «En desarrollo». Español, inglés y portugués conservan el selector y la persistencia existentes.
+La portada presenta a Carmelita como agente personal en ChatGPT: una cuenta propia, información y permisos que el usuario controla. Presenta el recorrido de añadir Carmelita manualmente en ChatGPT y autorizar una identidad. Mantiene el CTA recomendado y ofrece ingreso directo. Español, inglés y portugués conservan el selector y el recorrido existentes.
 
-El usuario eligió el enfoque «Complemento de ChatGPT: qué es y qué permite consultar» frente a las otras dos propuestas. La revisión sustituye el titular centrado en wallets y la tabla de direcciones del hero por una conversación ilustrativa con tres tipos de consultas. Stellar es el primer caso de uso en una sección propia y encabeza las redes de la FAQ. No hay datos personales ni resultados de activación inventados.
+Tras elegir el enfoque de complemento de ChatGPT, el usuario pidió recuperar la definición amplia de agente personal del README y la narrativa del producto. El titular es «Carmelita, tu agente personal en ChatGPT». La visión de conectar aplicaciones y servicios aparece después de los beneficios, marcada «Nuestra visión · En desarrollo». Cada integración necesita su propia validación.
 
-No se anuncian Bazaar, compras, ejecución de servicios ni historial completo como prestaciones disponibles. Stellar distingue preparación de wallets y confirmación de activación por la red; XLM es nativo y no requiere trustline. La guía compartida permite crear identidad durante OAuth y propone comprobar Stellar como consulta posterior. Las consultas de mercado son de lectura y dependen de fuentes disponibles; esta revisión de interfaz no certifica la disponibilidad actual de cada proveedor ni muestra cotizaciones en vivo.
+Stellar es el primer ejemplo para la presentación a una conferencia: figura en la apertura, la conversación ilustrativa y la sección «Empezamos con Stellar». La demostración describe consultas de registro, estado de activación y saldo XLM con enlace al explorador. No muestra datos personales, importes, direcciones ni resultados de activación inventados. Las otras cuatro redes conservan su explicación en la FAQ.
+
+No se anuncian compras, ejecución general de servicios ni historial completo como prestaciones disponibles. Stellar distingue preparación de wallets y confirmación de activación por la red; XLM es nativo y no requiere trustline. La guía compartida permite crear identidad durante OAuth y propone comprobar Stellar como consulta posterior. Esta revisión de interfaz no certifica nuevos proveedores ni presenta aceptación de la conferencia. El README conserva referencias históricas que no se trasladan a promesas actuales de producción.
 
 ## Reproducir localmente
 
@@ -31,15 +33,15 @@ Verificación de la revisión elegida del 11 de octubre de 2026 (Santiago), incl
 | Suite de aplicación | 1.048 aprobadas, 2 omitidas, 0 fallidas |
 | Build y TypeScript | Aprobados |
 | ES/EN/PT a 320, 390, 768, 1024 y 1440 px | 15 combinaciones, sin desbordamiento ni texto visible menor de 14 px |
-| Contraste renderizado | 73 pares de texto, incluidas FAQ abiertas; mínimo 5,49:1; sin fallos |
+| Contraste renderizado | 74 pares de texto, incluidas FAQ abiertas; mínimo 5,49:1; sin fallos |
 | Teclado | Salto al contenido, acceso al CTA, foco visible y apertura/cierre de FAQ |
 | Navegación | Guía, documentación de desarrolladores e ingreso directo conservan sus destinos; comprobados desde la portada renderizada |
-| Regreso tras el salto al contenido | Corregido con NextLink; Volver restaura la portada y Avanzar restaura la guía |
+| Regreso tras el salto al contenido | NextLink con destino absoluto `/#home-content` y foco explícito mediante ref; dos activaciones conservan URL y foco, y Volver/Avanzar restauran portada y guía |
 | Reflujo equivalente al 200 % | Sin desbordamiento a 720 × 450, equivalente a una ventana 1440 × 900 ampliada |
 
 El controlador del navegador interno no aplica zoom real mediante el atajo de teclado; la comprobación manual al 200 % sigue pendiente. El servidor local no tiene credenciales Privy: el destino de ingreso muestra su aviso de indisponibilidad esperado. Esta revisión no repite el alta ni OAuth contra producción, ni certifica nuevos flujos de wallets.
 
-Capturas y mediciones de la revisión elegida quedan en `work/landing-qa-companion/`, sin datos privados y excluidas de Git; `work/landing-qa/` conserva la revisión anterior. Se guardaron vistas completas y recortes del hero de escritorio y móvil en ES/EN/PT. La revisión independiente comprobó estilos heredados, traducciones, React y la imagen social. Graphify se actualizó con AST (3.851 nodos, 9.981 aristas), sin llamadas LLM; su extractor SQL sigue sin modelar algunas migraciones porque no está instalado tree_sitter_sql.
+Capturas y mediciones de la revisión de agente personal quedan en `work/landing-qa-personal-agent/`, sin datos privados y excluidas de Git; `work/landing-qa/` y `work/landing-qa-companion/` conservan las revisiones anteriores. Se guardaron vistas completas y recortes del hero de escritorio y móvil en ES/EN/PT, además de una vista de 320 px. La revisión independiente comprobó estilos heredados, traducciones, React y la imagen social. Graphify se actualizó con AST (3.851 nodos, 9.982 aristas), sin llamadas LLM; su extractor SQL sigue sin modelar algunas migraciones porque no está instalado tree_sitter_sql.
 
 ## Publicación
 

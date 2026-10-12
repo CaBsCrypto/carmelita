@@ -28,11 +28,11 @@ const background = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1
 layers.push({ input: background, left: 0, top: 0 });
 layers.push({ input: await sharp(await readFile("public/brand/carmelita-mark.svg")).resize(38, 38).png().toBuffer(), left: 56, top: 35 });
 await text("Carmelita", 108, 40, 28, "#153f32", "bold");
-await text("Carmelita,", 52, 176, 76, "#153f32", "semibold");
-await text("in ChatGPT.", 52, 262, 76, "#153f32", "semibold");
-await text("Your account and Web3 data.", 56, 365, 26, "#53665d");
+await text("Your personal", 52, 176, 64, "#153f32", "semibold");
+await text("agent in ChatGPT.", 52, 252, 64, "#153f32", "semibold");
+await text("Your account, activity and information.", 56, 355, 24, "#53665d");
 await text("Connect Carmelita with ChatGPT", 80, 431, 22, "white", "semibold");
-await text("Start with Stellar Testnet.", 80, 510, 23, "#53665d");
+await text("Application connections: in development.", 80, 510, 20, "#53665d");
 await text("Illustrative example", 741, 189, 22, "#d1e5d8");
 await text("Is my Stellar Testnet", 762, 257, 23, "#153f32", "semibold");
 await text("account active?", 762, 287, 23, "#153f32", "semibold");

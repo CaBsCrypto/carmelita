@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import HomeExperience from "./home-experience";
 
 export const metadata: Metadata = {
-  title: "Carmelita, in ChatGPT",
-  description: "Connect Carmelita with ChatGPT to consult your account, wallet balances and status, and Web3 market data. Start with Stellar Testnet.",
+  title: "Carmelita, your personal agent in ChatGPT",
+  description: "Consult your Carmelita account, activity and Web3 data from ChatGPT. Start with an illustrative Stellar Testnet query. Application connections are in development.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Carmelita, in ChatGPT",
-    description: "Your Carmelita account and Web3 data, in a conversation. Manual setup with a ChatGPT account that allows custom MCP connectors.",
+    title: "Carmelita, your personal agent in ChatGPT",
+    description: "Your account, activity and useful information, in a conversation. Connect manually with a ChatGPT account that allows custom MCP connectors.",
     url: "/", siteName: "Carmelita", type: "website",
-    images: [{ url: "/brand/carmelita-landing-social.png", width: 1200, height: 630, alt: "Carmelita, in ChatGPT. Your account and Web3 data, with an illustrative Stellar Testnet query." }],
+    images: [{ url: "/brand/carmelita-landing-social.png", width: 1200, height: 630, alt: "Carmelita, your personal agent in ChatGPT. Illustrative Stellar Testnet query. Application connections are in development." }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Carmelita, in ChatGPT",
-    description: "Ask about your Carmelita account, Stellar Testnet wallet status and Web3 market data from ChatGPT.",
+    title: "Carmelita, your personal agent in ChatGPT",
+    description: "Consult your account, activity and Web3 information in ChatGPT. Application connections are in development.",
     images: ["/brand/carmelita-landing-social.png"],
   },
 };
