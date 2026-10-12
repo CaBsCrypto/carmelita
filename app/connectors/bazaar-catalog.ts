@@ -7,20 +7,28 @@ import { bazaarServiceCardSchema } from "./stellar-bazaar";
 export const BAZAAR_CATALOG_ORIGIN = STELLAR_BAZAAR_DEFAULT_BASE_URL;
 export const BAZAAR_CATALOG_MAX_BYTES = 256 * 1024;
 export const BAZAAR_CATALOG_TIMEOUT_MS = 15_000;
-const allowedTools = ["list_workflow_bundles", "get_workflow_bundle", "get_bazaar_skills"] as const;
+const allowedTools = ["list_workflow_bundles", "get_workflow_bundle", "get_bazaar_skills", "get_service"] as const;
 const identifier = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,119}$/);
 const searchInput = z.object({
   query: z.string().trim().min(2).max(120).refine(value => !/[\u0000-\u001f\u007f]/.test(value)).optional(),
-  limit: z.number().int().min(1).max(50).default(20),
+  limit: z.number().int().min(1).max(20).default(20),
+  cursor: z.string().min(1).max(500).refine(value => !/[\u0000-\u001f\u007f]/.test(value)).optional(),
 }).strict();
-const resourcesSchema = z.object({
-  results: z.array(z.unknown()).max(200), partialResults: z.boolean(),
-  dynamicRegistry: z.enum(["available", "unavailable"]), cursor: z.string().max(500).nullable(),
+const declaredAvailability = z.object({
+  ready: z.boolean().optional(), reason: z.string().max(120).nullable().optional(),
+  leaseExpiresAt: z.string().max(100).optional(), pendingLimit: z.number().int().nonnegative().optional(),
+  dailyLimit: z.number().int().nonnegative().optional(), mode: z.string().max(80).optional(),
+  execution: z.string().max(100).optional(), payment: z.string().max(100).optional(),
 });
-const searchSchema = z.object({
-  results: z.array(z.object({ resource: z.unknown() })).max(200), partialResults: z.boolean(),
-  dynamicRegistry: z.enum(["available", "unavailable"]), nextCursor: z.string().max(500).nullable(),
+const purchaseDescriptor = z.object({ protocol: z.string().max(100), orderCreateUrl: z.string().url().max(1000),
+  paymentUrlTemplate: z.string().max(1000), statusUrlTemplate: z.string().max(1000), authentication: z.string().max(100), delivery: z.string().max(100) });
+const marketEntrySchema = z.object({ submissionId: z.string().min(1).max(200), card: z.unknown(),
+  cardHash: z.string().regex(/^[a-f0-9]{64}$/), status: z.string().min(1).max(100),
+  execution: z.string().min(1).max(100), availability: declaredAvailability.optional(), purchase: purchaseDescriptor.optional(),
+  score: z.number().finite().optional(), reasons: z.array(z.string().max(200)).max(20).optional(),
 });
+const marketSchema = z.object({ services: z.array(z.unknown()).max(20), nextCursor: z.string().max(500).nullable(),
+  partialResults: z.boolean(), paused: z.boolean(), purchasesEnabled: z.boolean(), purchaseAdmission: z.string().max(100) });
 const serviceSchema = bazaarServiceCardSchema.extend({
   id: identifier, availability: z.object({ execution: z.string().max(100).optional(), payment: z.string().max(100).optional() }).optional(),
 });
@@ -52,9 +60,11 @@ const skillSchema = z.object({
   requirements: z.array(z.string().max(200)).max(20),
 });
 
-export type BazaarCatalogOptions = { fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal };
+export type BazaarCatalogOptions = { fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal; refresh?: boolean };
 export type BazaarServiceListing = {
   id: string; name: string; description: string; provider: string; kind: "http" | "mcp";
+  cardHash: string; submissionId: string; declaredStatus: string; declaredExecution: string;
+  declaredAvailability: z.infer<typeof declaredAvailability> | null; purchaseDescriptor: z.infer<typeof purchaseDescriptor> | null;
   network: "stellar:testnet"; input: z.infer<typeof bazaarServiceCardSchema>["input"]; tags: string[];
   payment: z.infer<typeof bazaarServiceCardSchema>["payment"];
   delivery: z.infer<typeof bazaarServiceCardSchema>["delivery"] | null;
@@ -69,7 +79,7 @@ type ReadState = "ok" | "partial" | "unavailable" | "not_found";
 type ReadMetadata = ReturnType<typeof metadata>;
 export type BazaarServicesRead = ReadMetadata & {
   services: BazaarServiceListing[]; partialResults: boolean; dynamicRegistry: "available" | "unavailable" | "unknown";
-  rejectedCards: number; nextCursor: string | null;
+  rejectedCards: number; nextCursor: string | null; paused: boolean | null; purchasesEnabled: boolean | null; purchaseAdmission: string | null;
 };
 export type BazaarServiceRead = BazaarServicesRead & { service: BazaarServiceListing | null };
 export type BazaarSuitesRead = ReadMetadata & { suites: BazaarSuiteListing[]; partialResults: boolean; rejectedCards: number };
@@ -87,11 +97,17 @@ function safeCode(error: unknown) {
 }
 
 /** Only these fixed catalog paths are reachable; never dereference a card URL. */
-async function readJson(path: "/api/discovery/resources" | `/api/discovery/search?query=${string}` | "/api/mcp", options: BazaarCatalogOptions, body?: unknown): Promise<unknown> {
+const publicCache = new Map<string, { expires: number; body: unknown }>();
+const CACHE_TTL_MS = 60_000;
+
+async function readJson(path: `/api/market/catalog?${string}` | "/api/mcp", options: BazaarCatalogOptions, body?: unknown): Promise<unknown> {
   const config = getStellarBazaarConfig();
   if (!config.enabled) throw new Error(config.reason === "stellar_bazaar_disabled" ? "bazaar_disabled" : "bazaar_config_invalid");
   const url = new URL(path, BAZAAR_CATALOG_ORIGIN);
-  if (url.origin !== BAZAAR_CATALOG_ORIGIN || !["/api/discovery/resources", "/api/discovery/search", "/api/mcp"].includes(url.pathname)) throw new Error("bazaar_config_invalid");
+  if (url.origin !== BAZAAR_CATALOG_ORIGIN || !["/api/market/catalog", "/api/mcp"].includes(url.pathname)) throw new Error("bazaar_config_invalid");
+  const cacheKey = url.href;
+  const cacheable = url.pathname === "/api/market/catalog" && body === undefined && !options.fetcher && !options.refresh && !options.signal;
+  if (cacheable) { const cached = publicCache.get(cacheKey); if (cached && cached.expires > Date.now()) return structuredClone(cached.body); publicCache.delete(cacheKey); }
   const controller = new AbortController();
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -134,7 +150,9 @@ async function readJson(path: "/api/discovery/resources" | `/api/discovery/searc
       try { return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)); }
       catch { throw new Error("bazaar_json_invalid"); }
     })();
-    return await Promise.race([operation, deadline, cancelled]);
+    const value = await Promise.race([operation, deadline, cancelled]);
+    if (cacheable && marketSchema.safeParse(value).success) { if (publicCache.size >= 32) publicCache.delete(publicCache.keys().next().value!); publicCache.set(cacheKey, { expires: Date.now() + CACHE_TTL_MS, body: structuredClone(value) }); }
+    return value;
   } catch (error) { throw new Error(safeCode(error)); }
   finally { if (timer) clearTimeout(timer); options.signal?.removeEventListener("abort", abort); controller.abort(); }
 }
@@ -154,52 +172,70 @@ async function readTool(name: (typeof allowedTools)[number], args: Record<string
   }
   if (result.isError) {
     const error = z.object({ code: z.string() }).safeParse(data);
-    throw new Error(error.success && ["BUNDLE_NOT_FOUND", "RESOURCE_NOT_FOUND"].includes(error.data.code) ? "bazaar_not_found" :
+    throw new Error(error.success && ["BUNDLE_NOT_FOUND", "RESOURCE_NOT_FOUND", "NOT_FOUND", "SERVICE_NOT_FOUND"].includes(error.data.code) ? "bazaar_not_found" :
       error.success && error.data.code === "REGISTRY_UNAVAILABLE" ? "bazaar_registry_unavailable" : "bazaar_rpc_tool_error");
   }
   return data;
 }
 
-function normalizeService(card: z.infer<typeof serviceSchema>): BazaarServiceListing {
+function normalizeService(card: z.infer<typeof serviceSchema>, entry: z.infer<typeof marketEntrySchema>): BazaarServiceListing {
   return { id: card.id, name: card.name, description: card.description, provider: card.provider.name,
+    cardHash: entry.cardHash, submissionId: entry.submissionId, declaredStatus: entry.status, declaredExecution: entry.execution,
+    declaredAvailability: entry.availability ?? null, purchaseDescriptor: entry.purchase ?? null,
     kind: card.kind, network: card.network, input: card.input, tags: card.tags, payment: card.payment, delivery: card.delivery ?? null,
-    readiness: evaluateBazaarServiceReadiness({ published: true, providerAvailability: card.availability?.execution, kind: "service" }),
+    readiness: evaluateBazaarServiceReadiness({ published: entry.status === "activated", providerAvailability: entry.availability?.ready === false ? "unavailable" : entry.availability?.execution, kind: "service" }),
     consumable: false, executionEnabled: false };
 }
-
-/** Compatibility search shares the same origin, limits and complete deadline. */
-export function readBazaarPublicSearch(query: string, options: BazaarCatalogOptions = {}) {
-  const parsed = searchInput.parse({ query });
-  return readJson(`/api/discovery/search?query=${encodeURIComponent(parsed.query!)}`, options);
+async function readMarket(input: z.infer<typeof searchInput>, options: BazaarCatalogOptions) {
+  const params = new URLSearchParams({ limit: String(input.limit) });
+  if (input.query) params.set("q", input.query);
+  if (input.cursor) params.set("cursor", input.cursor);
+  const parsed = marketSchema.safeParse(await readJson(`/api/market/catalog?${params}`, options));
+  if (!parsed.success) throw new Error("bazaar_schema_invalid");
+  return parsed.data;
 }
-
+/** Legacy search consumers receive their existing normalized envelope, fetched
+ * from the current market route. No provider URL is contacted or executed. */
+export async function readBazaarPublicSearch(query: string, options: BazaarCatalogOptions = {}) {
+  const input = searchInput.parse({ query });
+  const market = await readMarket(input, options);
+  return { ok: true, query: input.query!, ranking: { version: "market-catalog-v1", method: "market-declared-ranking", ai: false },
+    results: market.services.map(raw => { const entry = marketEntrySchema.safeParse(raw); return { resource: entry.success && entry.data.status === "activated" ? entry.data.card : {}, score: entry.success ? entry.data.score ?? 0 : 0, reasons: entry.success ? entry.data.reasons ?? [] : [] }; }),
+    // The old consumer cannot paginate. Signal partial data whenever another
+    // market page exists rather than pretending the first page is exhaustive.
+    nextCursor: null, partialResults: market.partialResults || market.nextCursor !== null,
+    dynamicRegistry: market.partialResults ? "unavailable" : "available" };
+}
 export async function listBazaarServices(input: z.input<typeof searchInput> = {}, options: BazaarCatalogOptions = {}): Promise<BazaarServicesRead> {
   const request = searchInput.parse(input);
   try {
-    const body = await readJson(request.query ? `/api/discovery/search?query=${encodeURIComponent(request.query)}` : "/api/discovery/resources", options);
-    const parsed = request.query ? searchSchema.safeParse(body) : resourcesSchema.safeParse(body);
-    if (!parsed.success) throw new Error("bazaar_schema_invalid");
-    const rawCards = parsed.data.results.map(item => request.query ? (item as { resource: unknown }).resource : item);
+    const market = await readMarket(request, options);
     const services: BazaarServiceListing[] = []; const seen = new Set<string>(); let rejectedCards = 0;
-    for (const raw of rawCards) {
-      const card = serviceSchema.safeParse(raw);
-      if (!card.success || seen.has(card.data.id)) { rejectedCards++; continue; }
-      seen.add(card.data.id); services.push(normalizeService(card.data));
+    for (const raw of market.services) {
+      const entry = marketEntrySchema.safeParse(raw);
+      const card = entry.success ? serviceSchema.safeParse(entry.data.card) : null;
+      if (!entry.success || !card?.success || entry.data.status !== "activated" || seen.has(card.data.id)) { rejectedCards++; continue; }
+      seen.add(card.data.id); services.push(normalizeService(card.data, entry.data));
     }
-    if (rawCards.length > 0 && services.length === 0) throw new Error("bazaar_schema_invalid");
-    const nextCursor = "nextCursor" in parsed.data ? parsed.data.nextCursor : parsed.data.cursor;
-    const partialResults = parsed.data.partialResults || parsed.data.dynamicRegistry === "unavailable" || rejectedCards > 0 || services.length > request.limit || nextCursor !== null;
-    return { ...metadata(partialResults ? "partial" : "ok"), services: services.slice(0, request.limit), partialResults,
-      dynamicRegistry: parsed.data.dynamicRegistry, rejectedCards, nextCursor };
-  } catch (error) { return { ...metadata("unavailable", safeCode(error)), services: [], partialResults: true, dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null }; }
+    if (market.services.length > 0 && services.length === 0) throw new Error("bazaar_schema_invalid");
+    const partialResults = market.partialResults || rejectedCards > 0 || market.nextCursor !== null;
+    return { ...metadata(partialResults ? "partial" : "ok"), services, partialResults,
+      dynamicRegistry: market.partialResults ? "unavailable" : "available", rejectedCards, nextCursor: market.nextCursor,
+      paused: market.paused, purchasesEnabled: market.purchasesEnabled, purchaseAdmission: market.purchaseAdmission };
+  } catch (error) { return { ...metadata("unavailable", safeCode(error)), services: [], partialResults: true, dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null, paused: null, purchasesEnabled: null, purchaseAdmission: null }; }
 }
-
 export async function getBazaarService(id: string, options: BazaarCatalogOptions = {}): Promise<BazaarServiceRead> {
   identifier.parse(id);
-  const result = await listBazaarServices({ limit: 50 }, options);
-  const service = result.services.find(item => item.id === id) ?? null;
-  // Absence from a partial registry never establishes that a service was removed.
-  return { ...result, ...(service || result.status === "unavailable" ? {} : metadata(result.partialResults ? "unavailable" : "not_found", result.partialResults ? "bazaar_registry_unavailable" : "bazaar_not_found")), service };
+  try {
+    const raw = await readTool("get_service", { id }, options);
+    const detail = z.object({ resource: z.unknown() }).safeParse(raw);
+    const entry = marketEntrySchema.safeParse(detail.success ? { ...(raw as Record<string, unknown>), card: detail.data.resource } : raw);
+    const card = entry.success ? serviceSchema.safeParse(entry.data.card) : null;
+    if (!entry.success || !card?.success || card.data.id !== id) throw new Error("bazaar_schema_invalid");
+    if (entry.data.status !== "activated") throw new Error("bazaar_not_found");
+    const service = normalizeService(card.data, entry.data);
+    return { ...metadata("ok"), services: [service], service, partialResults: false, dynamicRegistry: "available", rejectedCards: 0, nextCursor: null, paused: null, purchasesEnabled: null, purchaseAdmission: null };
+  } catch (error) { const code = safeCode(error); return { ...metadata(code === "bazaar_not_found" ? "not_found" : "unavailable", code), services: [], service: null, partialResults: code !== "bazaar_not_found", dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null, paused: null, purchasesEnabled: null, purchaseAdmission: null }; }
 }
 
 export async function listBazaarSuites(options: BazaarCatalogOptions = {}): Promise<BazaarSuitesRead> {

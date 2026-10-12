@@ -2,6 +2,8 @@ import { readQueryDefinitions } from "@/app/queries/registry";
 import { executeMcpReadQuery } from "@/app/queries/adapters";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { registerPersonalAppTools } from "@/app/apps/mcp";
+import { projectNativeBazaarRead } from "@/app/bazaar/native-catalog";
 import { createGatewayPlan } from "@/app/agent-gateway/service";
 import { getGatewayCapability } from "@/app/agent-gateway/catalog";
 import { createNativeGatewayPlan, projectNativeAvalanchePlan } from "@/app/bazaar/native-channel-boundary";
@@ -37,13 +39,14 @@ let handler: ReturnType<typeof createMcpHandler> | null = null;
 function getHandler() {
   return (handler ??= createMcpHandler(
     (server) => {
+      registerPersonalAppTools(server);
       for (const query of readQueryDefinitions) {
         server.registerTool(query.toolName, {
           title: query.title, description: query.description,
           inputSchema: query.inputSchema,
           annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
         }, async (input, extra) => {
-          try { return ok(await executeMcpReadQuery(query.id, input, extra.authInfo)); }
+          try { const value = await executeMcpReadQuery(query.id, input, extra.authInfo); return ok(query.id.startsWith("bazaar.") || query.id === "stellar.bazaar.discovery" ? projectNativeBazaarRead(value) : value); }
           catch (error) { return fail(error); }
         });
       }
@@ -98,7 +101,8 @@ function getHandler() {
       streamableHttpEndpoint: "/api/mcp/agent",
       maxDuration: 60,
       disableSse: true,
-      verboseLogs: process.env.NODE_ENV !== "production",
+      // App permissions contain UI-only nonces. Keep endpoint audit, not payload logs.
+      verboseLogs: false,
     },
   ));
 }

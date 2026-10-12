@@ -1,8 +1,10 @@
+import { registerHooks } from "node:module";
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+registerHooks({ load(url, context, next) { return url.endsWith(".module.css") ? { format: "module", source: "export default {details: 'review-details'};", shortCircuit: true } : next(url, context); } });
 const table = { createdAt: "created_at" };
 const operations: string[] = [];
 let accessDenied = false;
@@ -66,6 +68,9 @@ mock.module(new URL("../app/integrations/storage.ts", import.meta.url).href, {
     },
   },
 });
+mock.module(new URL("../app/integrations/review.ts", import.meta.url).href, { namedExports: { proposalStatusLabel: (status: string) => status === "new" ? "Pending review" : status === "accepted_for_pilot" ? "Accepted for pilot" : status } });
+mock.module(new URL("../app/admin/integrations/review-controls.tsx", import.meta.url).href, { defaultExport: () => createElement("button", null, "Save review") });
+
 mock.module("next/link", {
   defaultExport: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) =>
     createElement("a", { href, className }, children),
@@ -111,7 +116,8 @@ test("authenticated inbox renders proposed service details and safe pending-revi
     createdAt: new Date("2026-10-12T12:00:00.000Z"),
   }];
   const html = await renderPage();
-  assert.deepEqual(operations, ["auth", "available", "schema", "db", "select", "from", "query"]);
+  assert.deepEqual(operations, ["auth", "available", "db", "select", "from", "query"]);
+  assert.ok(!operations.includes("schema"), "GET cannot initialize or migrate storage");
   assert.match(html, /Synthetic booking service/);
   assert.match(html, /Service proposal · ES · Pending review/);
   assert.match(html, /Query my bookings\. &lt;script&gt;untrusted\(\)&lt;\/script&gt;/);
@@ -140,10 +146,20 @@ test("legacy recommendation retains its classification and missing-use-case fall
   assert.match(html, /No use case provided/);
 });
 
+test("accepted proposals display only private review evidence and never an activation or install control", async () => {
+  rows = [{ id: "synthetic-reviewed-id", integrationName: "Synthetic pilot", email: "pilot@example.test", useCase: "Private read-only pilot", locale: "en", source: "developers", status: "accepted_for_pilot", reviewVersion: 1, reviewReason: "Check adapter <script>untrusted()</script>", reviewActor: "password:synthetic-reviewer", reviewedAt: new Date("2026-10-18T14:30:00Z"), createdAt: new Date("2026-10-18T12:00:00Z") }];
+  const html = await renderPage();
+  assert.match(html, /Accepted for pilot/);
+  assert.match(html, /password:synthetic-reviewer/);
+  assert.match(html, /2026-10-18T14:30:00\.000Z/);
+  assert.match(html, /Check adapter &lt;script&gt;untrusted\(\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script\b|Install app|Activate integration|Publish service/);
+  assert.ok(!operations.includes("schema"));
+});
 test("an empty loaded queue is represented only after a successful storage read", async () => {
   rows = [];
   const html = await renderPage();
-  assert.deepEqual(operations, ["auth", "available", "schema", "db", "select", "from", "query"]);
+  assert.deepEqual(operations, ["auth", "available", "db", "select", "from", "query"]);
   assert.match(html, /No proposals or integration recommendations yet/);
   assert.match(html, /0 proposals and recommendations saved/);
   assert.doesNotMatch(html, /storage is unavailable|<article\b/);
@@ -160,13 +176,13 @@ test("unconfigured storage cannot masquerade as an empty inbox", async () => {
   }
 });
 
-test("schema and query failures render a private unavailable message without exposing contacts or transport details", async () => {
-  for (const stage of ["schema", "query"] as const) {
+test("query failures render a private unavailable message without exposing contacts or transport details", async () => {
+  for (const stage of ["query"] as const) {
     failure = stage;
     try {
       const html = await renderPage();
       assert.equal(operations[0], "auth");
-      if (stage === "schema") assert.deepEqual(operations, ["auth", "available", "schema"]);
+      assert.ok(!operations.includes("schema"), "GET cannot initialize or migrate storage");
       assertUnavailable(html);
     } finally {
       failure = null;

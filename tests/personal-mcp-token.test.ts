@@ -15,10 +15,16 @@ test("personal MCP credentials use a recognizable high-entropy prefix and SHA-25
 });
 test("personal MCP scopes are allowlisted and deduplicated", () => {
   assert.deepEqual(validatePersonalMcpScopes(), ["agent:read"]);
+  assert.deepEqual(validatePersonalMcpScopes([]), ["agent:read"]);
   assert.deepEqual(validatePersonalMcpScopes(["agent:read", "agent:read", "agent:plan", "agent:context", "agent:conversation"]), ["agent:read", "agent:plan", "agent:context", "agent:conversation"]);
   assert.throws(() => validatePersonalMcpScopes(["agent:chat"]), /personal_mcp_scope_invalid/);
   assert.throws(() => validatePersonalMcpScopes(["wallet:secret:read"]), /personal_mcp_scope_invalid/);
-  assert.deepEqual(PERSONAL_MCP_SCOPES, ["agent:read", "agent:plan", "agent:context", "agent:conversation"]);
+  assert.deepEqual(PERSONAL_MCP_SCOPES, ["agent:read", "agent:plan", "agent:context", "agent:conversation", "agent:services:manage"]);
+  assert.deepEqual(validatePersonalMcpScopes(["agent:read", "agent:services:manage", "agent:services:manage"]), ["agent:read", "agent:services:manage"]);
+  // Installation changes require explicit opt-in; the new allowlisted scope
+  // does not widen existing or default read credentials.
+  assert.ok(!validatePersonalMcpScopes().includes("agent:services:manage"));
+  assert.ok(!validatePersonalMcpScopes(["agent:read"]).includes("agent:services:manage"));
 });
 test("personal MCP token API is Privy authenticated, same-origin and no-store", async () => {
   const collection = await readFile(new URL("../app/api/agent/mcp-tokens/route.ts", import.meta.url), "utf8");

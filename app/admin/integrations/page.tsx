@@ -3,7 +3,9 @@ import { desc } from "drizzle-orm";
 import { requireAdminPage } from "@/app/admin/auth";
 import BrandLockup from "@/app/brand-lockup";
 import { getDb, hasDatabase } from "@/db";
-import { ensureIntegrationRecommendationSchema } from "@/app/integrations/storage";
+import { proposalStatusLabel } from "@/app/integrations/review";
+import ProposalReviewControls from "./review-controls";
+import styles from "./review-controls.module.css";
 import { integrationRecommendations } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +31,6 @@ export default async function IntegrationDemandPage() {
   let recommendations: (typeof integrationRecommendations.$inferSelect)[] = [];
   try {
     if (hasDatabase()) {
-      await ensureIntegrationRecommendationSchema();
       recommendations = await getDb()
         .select()
         .from(integrationRecommendations)
@@ -70,6 +71,7 @@ export default async function IntegrationDemandPage() {
           </div>
           <div className="admin-heading-actions">
             <Link href="/developers#proposal">Open proposal form</Link>
+            <Link href="/admin/apps">Review registered applications</Link>
             {storageReady && <small>{recommendations.length} proposals and recommendations saved</small>}
           </div>
         </section>
@@ -93,13 +95,15 @@ export default async function IntegrationDemandPage() {
             <article key={recommendation.id}>
               <div>
                 <strong>{recommendation.integrationName}</strong>
-                <small>{recommendation.source === "developers" ? "Service proposal" : "Integration recommendation"} · {recommendation.locale.toUpperCase()} · {recommendation.status === "new" ? "Pending review" : recommendation.status}</small>
+                <small>{recommendation.source === "developers" ? "Service proposal" : "Integration recommendation"} · {recommendation.locale.toUpperCase()} · {proposalStatusLabel(recommendation.status)}</small>
               </div>
               <p>{recommendation.useCase || "No use case provided."}</p>
               <a href={"mailto:" + recommendation.email}>{recommendation.email}</a>
               <time dateTime={recommendation.createdAt.toISOString()}>
                 {formatDate(recommendation.createdAt)}
               </time>
+              {recommendation.reviewedAt && <div className={styles.details}><p><strong>Last review:</strong> <time dateTime={recommendation.reviewedAt.toISOString()}>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(recommendation.reviewedAt)} UTC</time> by {recommendation.reviewActor}</p><p><strong>Private reason:</strong> {recommendation.reviewReason}</p></div>}
+              <ProposalReviewControls id={recommendation.id} version={recommendation.reviewVersion} status={recommendation.status} />
             </article>
           ))}
         </section>

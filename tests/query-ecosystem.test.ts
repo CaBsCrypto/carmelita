@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createEcosystemQueries, type EcosystemDependencies } from "../app/queries/ecosystem";
 import { executeQueryDefinition, type QueryDefinition } from "../app/queries/types";
+import { executeWebReadQuery, executeMcpReadQuery } from "../app/queries/adapters";
 import { readFujiNftVenue } from "../app/queries/ecosystem-venue";
 
 const principal = { userId: "owner-a", scopes: ["agent:read"] };
@@ -196,7 +197,7 @@ test("Travala missing prices remain unavailable, while a genuine zero is retaine
 test("Bazaar remains absent when disabled and only searches the catalog when enabled", async () => {
   let calls = 0;
   assert.equal(createEcosystemQueries({ bazaarEnabled: () => false }).some((row) => row.id === "stellar.bazaar.discovery"), false);
-  const read = query("stellar.bazaar.discovery", { bazaarEnabled: () => true, bazaar: async (term) => { calls++; return { query: term, offers: [], partialResults: true }; } });
+  const read = query("stellar.bazaar.discovery", { bazaarAccess: async userId => { assert.equal(userId, principal.userId); }, bazaarEnabled: () => true, bazaar: async (term) => { calls++; return { query: term, offers: [], partialResults: true }; } });
   assert.deepEqual(await executeQueryDefinition(read, { query: "report" }, principal), { query: "report", offers: [], partialResults: true });
   await assert.rejects(executeQueryDefinition(read, { query: "report", consume: true }, principal));
   assert.equal(calls, 1);
@@ -218,4 +219,44 @@ test("NFT venue uses eth_getCode and distinguishes unavailable probes from false
   assert.equal(failed.status, "unavailable");
   assert.equal(failed.seaport1_6.deployed, null);
   assert.equal(failed.joepegs.strategyWhitelisted, null);
+});
+
+test("managed Bazaar reads require the authenticated owner's active installation before every catalog provider", async () => {
+  let providerCalls=0; const owners:string[]=[];
+  const provider=async()=>{providerCalls++;return {status:"ok"} as never};
+  const overrides:Partial<EcosystemDependencies>={bazaarEnabled:()=>true,bazaarAccess:async userId=>{owners.push(userId);throw new Error("app_installation_required:private-installation-detail")},bazaar:provider,bazaarServices:provider,bazaarService:provider,bazaarSuites:provider,bazaarSuite:provider,bazaarSkills:provider};
+  const definitions=createEcosystemQueries(overrides).filter(row=>row.id.startsWith("bazaar.")||row.id==="stellar.bazaar.discovery");
+  assert.equal(definitions.length,6);
+  for(const definition of definitions){const input=definition.id.endsWith("detail")?{id:"service-example"}:definition.id==="stellar.bazaar.discovery"?{query:"Stellar report"}:{};
+    const result=await executeQueryDefinition(definition,input,principal) as Record<string,unknown>;
+    assert.equal(result.status,"connection_required");assert.equal(result.code,"app_installation_required");assert.equal(result.appId,"bazaar");assert.equal(result.readOnly,true);
+    assert.doesNotMatch(JSON.stringify(result),/private-installation-detail|https:|handoff|credential|token/i);
+    await assert.rejects(executeQueryDefinition(definition,{...input,userId:"owner-b"},principal));
+    await assert.rejects(executeQueryDefinition(definition,input,undefined));
+    await assert.rejects(executeQueryDefinition(definition,input,{userId:"owner-a",scopes:["agent:context"]}));
+  }
+  assert.equal(providerCalls,0);assert.deepEqual(owners,Array(6).fill("owner-a"));
+});
+test("a provider being published cannot install Bazaar or grant its reads to another owner",async()=>{
+  const calls:string[]=[];const read=query("stellar.bazaar.discovery",{bazaarEnabled:()=>true,bazaarAccess:async owner=>{if(owner!=="owner-a")throw new Error("app_installation_required")},bazaar:async term=>{calls.push(term);return {published:true,readOnly:true}}});
+  assert.deepEqual(await executeQueryDefinition(read,{query:"service"},principal),{published:true,readOnly:true});
+  const denied=await executeQueryDefinition(read,{query:"service"},{userId:"owner-b",scopes:["agent:read"]}) as Record<string,unknown>;
+  assert.equal(denied.code,"app_installation_required");assert.deepEqual(calls,["service"]);
+});
+test("installed Bazaar list forwards bounded cursor/limit while invalid input exits before access and network",async()=>{
+  let access=0,providerCalls=0;const read=query("bazaar.services.list",{bazaarAccess:async userId=>{assert.equal(userId,"owner-a");access++},bazaarServices:async input=>{providerCalls++;return input as never}});
+  assert.deepEqual(await executeQueryDefinition(read,{query:"service",limit:20,cursor:"opaque-page"},principal),{query:"service",limit:20,cursor:"opaque-page"});
+  for(const input of [{limit:21},{cursor:"x".repeat(501)},{ownerId:"owner-b"}])await assert.rejects(executeQueryDefinition(read,input,principal));
+  assert.equal(access,1);assert.equal(providerCalls,1);
+});
+
+test("installed and uninstalled Bazaar reads share the same owner-bound result in web and MCP",async()=>{
+  const calls:string[]=[];let installed=true;
+  const definitions=createEcosystemQueries({bazaarAccess:async owner=>{assert.equal(owner,"owner-a");if(!installed)throw new Error("app_installation_required")},bazaarServices:async()=>{calls.push("provider");return {status:"ok",services:[{id:"published-service",cardHash:"a".repeat(64),consumable:false,executionEnabled:false}],readOnly:true} as never}});
+  const auth={token:"synthetic",clientId:"synthetic-client",scopes:["agent:read"],extra:{subjectType:"user",userId:"owner-a"}};
+  const web=await executeWebReadQuery("bazaar.services.list",{},"owner-a","en",definitions),mcp=await executeMcpReadQuery("read_bazaar_services_list",{},auth,definitions);
+  assert.deepEqual(web,mcp);assert.equal(calls.length,2);
+  installed=false;
+  const blockedWeb=await executeWebReadQuery("bazaar.services.list",{},"owner-a","en",definitions),blockedMcp=await executeMcpReadQuery("read_bazaar_services_list",{},auth,definitions);
+  assert.deepEqual(blockedWeb,blockedMcp);assert.equal((blockedWeb as Record<string,unknown>).code,"app_installation_required");assert.equal(calls.length,2);
 });

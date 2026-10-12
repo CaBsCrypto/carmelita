@@ -8,6 +8,7 @@ export const STYTCH_AGENT_SCOPES = [
   "agent:plan",
   "agent:context",
   "agent:conversation",
+  "agent:services:manage",
 ] as const;
 export type StytchAgentScope = (typeof STYTCH_AGENT_SCOPES)[number];
 

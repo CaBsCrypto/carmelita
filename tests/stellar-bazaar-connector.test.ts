@@ -29,9 +29,14 @@ import {
   type BazaarServiceCard,
 } from "../app/connectors/stellar-bazaar";
 import {
-  bazaarSearchResponse,
+  bazaarSearchResponse as oldSearchFixture,
   bazaarWebsiteIntelligenceCard,
 } from "./stellar-bazaar-fixtures";
+
+function bazaarSearchResponse(input: Parameters<typeof oldSearchFixture>[0] = {}) {
+  const old = oldSearchFixture(input);
+  return { services: old.results.map(item => ({ submissionId: "synthetic-submission", card: item.resource, cardHash: "a".repeat(64), status: "activated", execution: "seller-mcp-task", score: item.score, reasons: item.reasons })), nextCursor: null, partialResults: old.partialResults, paused: false, purchasesEnabled: false, purchaseAdmission: "owner-allowlist" };
+}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -57,7 +62,7 @@ test("searchStellarBazaar parses the pinned catalog once and never calls a provi
   };
   const result = await searchStellarBazaar("informe", { fetcher });
   assert.equal(calls.length, 1);
-  assert.ok(calls[0].startsWith("https://bazaar.browns.studio/api/discovery/search?query="));
+  assert.ok(calls[0].startsWith("https://bazaar.browns.studio/api/market/catalog?limit=20&q="));
   assert.equal(result.source, "stellar-bazaar");
   assert.equal(result.offers.length, 1);
   assert.equal(result.rejectedCards, 0);
@@ -96,7 +101,7 @@ test("searchStellarBazaar rejects malformed catalog envelopes", async () => {
   const fetcher: typeof fetch = async () => jsonResponse({ unexpected: true });
   await assert.rejects(
     () => searchStellarBazaar("informe", { fetcher }),
-    /stellar_bazaar_invalid_response/,
+    /stellar_bazaar_unavailable/,
   );
 });
 

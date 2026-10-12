@@ -1277,7 +1277,7 @@ export default function AgentChat({
               <small>{ui.controlled}</small>
             </div>
           </div>
-          <span className="agent-chat-memory">{ui.memory}</span>
+          <span className="agent-chat-memory"><a href="/apps" style={{ display: "inline-flex", alignItems: "center", minHeight: 44 }}>{locale === "es" ? "Mis aplicaciones" : locale === "pt" ? "Meus aplicativos" : "My apps"}</a> · {ui.memory}</span>
         </header>
         {x402Payment && !x402Open && !x402View?.fullyVerified && <div className="agent-connection-notice" role="status"><span>{xrecovery.payment}: {xrecovery.states[x402Payment.paymentState ?? "uncertain"]} · {xrecovery.delivery}: {xrecovery.states[x402Payment.deliveryState ?? "pending"]}</span><button type="button" onClick={() => { setDefindexOpen(false); setSoroswapOpen(false); setX402Open(true); }}>{xrecovery.query}</button></div>}
 

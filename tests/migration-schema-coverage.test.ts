@@ -17,10 +17,10 @@ test("journal migrations cover every runtime table, column and named index", asy
   }
   const indexes = new Set([...migrations.matchAll(/CREATE (?:UNIQUE )?INDEX(?: IF NOT EXISTS)? "([^"]+)"/g)]
     .map((match) => match[1]));
-  const definitions = [...schema.matchAll(/pgTable\("([^"]+)",\{([\s\S]*?)\},t=>\[([^\n]*?)\]\);/g)];
+  const definitions = [...schema.matchAll(/pgTable\("([^"]+)",\{([\s\S]*?)\}(?:,t=>\[([^\n]*?)\])?\);/g)];
   assert.equal(definitions.length, [...schema.matchAll(/pgTable\(/g)].length, "update coverage parser for the new schema declaration format");
   assert.ok(definitions.length > 0, "schema table inventory is empty");
-  for (const [, name, columns, tableIndexes] of definitions) {
+  for (const [, name, columns, tableIndexes = ""] of definitions) {
     assert.ok(tables.has(name), `journal migrations do not create ${name}`);
     for (const [, column] of columns.matchAll(/(?:text|timestamp|numeric|jsonb|integer|boolean)\("([^"]+)"/g)) {
       assert.ok(tables.get(name)?.has(column), `journal migrations do not create ${name}.${column}`);
