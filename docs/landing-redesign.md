@@ -66,6 +66,14 @@ Evidencia local en `work/landing-qa-depth/`, excluida de Git:
 
 La preferencia OS del fixture sólo simula `matchMedia`; no prueba el CSS de una configuración nativa de sistema. La verificación manual de esa preferencia, zoom real al 200 % y dispositivos físicos sigue pendiente. Los contadores no certifican liberación física de VRAM. Los checks requeridos y las capturas del build final se registran en el manifiesto local asociado al commit entregado.
 
+## Conversación protagonista · 12 de octubre de 2026
+
+Tras comparar tres alternativas, se aplica la apertura «Conversación protagonista». Conserva el título de agente personal en ChatGPT y Stellar como primer ejemplo. La tarjeta clara presenta una pregunta y una respuesta explicativa, sin dirección, saldo numérico ni estado inventado. El explorador aparece como texto ilustrativo, sin simular un enlace a una cuenta real. La nota Testnet ilustrativa queda dentro de la tarjeta; los fondos de prueba y la autorización se explican debajo.
+
+El CTA mantiene su destino `/connect-chatgpt`, con «Recomendado» asociado mediante `aria-describedby` fuera del botón. El ingreso directo conserva `/agent?connect=privy`. Se reduce el texto inicial y se mantienen ES/EN/PT. La portada ya no importa `LandingDepthStage`: las órbitas y el control de efectos se retiran de esta apertura, y la profundidad se resuelve con una inclinación CSS estática que desaparece en móvil y con movimiento reducido. Los archivos de la exploración Three.js se conservan en la rama; no se inicializa WebGL en esta variante.
+
+La evidencia local está en `work/hero-conversation-qa/`, excluida de Git. Se comprobaron quince combinaciones de idioma y ancho (320, 390, 768, 1024 y 1440 px), sin desbordamiento y con texto visible de al menos 14 px; cero canvas en todos los casos. Reflujo equivalente al 200 %, destino del CTA y regreso a la portada aprobados. Las capturas documentan escritorio y móvil. El build local y los checks requeridos se registran por separado; esta revisión no certifica una nueva conexión OAuth ni publicación hospedada.
+
 ## Publicación
 
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.

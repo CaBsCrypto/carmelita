@@ -1,22 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import BrandLockup from "./brand-lockup";
 import LanguageToggle, { useLocale } from "./language-toggle";
-import LandingDepthStage from "./landing-depth-stage";
 import styles from "./home-experience.module.css";
 
 const copy = {
   es: {
     home: "Inicio de Carmelita", footerNav: "Enlaces de Carmelita", skip: "Ir al contenido", guide: "Guía de conexión", developers: "Desarrolladores",
     title: "Carmelita,", titleEnd: "tu agente personal en ChatGPT.",
-    description: "Conecta tu cuenta y consulta tu información desde una conversación. Revisa los permisos y decide si autorizas el acceso.",
+    description: "Conecta tu cuenta y consulta tu información desde una conversación.",
     connect: "Conectar Carmelita con ChatGPT", recommended: "Recomendado", signIn: "Iniciar sesión en Carmelita",
-    alternative: "También puedes entrar directamente", scope: "Primer caso de uso: Stellar Testnet.",
-    example: "Ejemplo · Stellar Testnet", question: "¿Está activa mi cuenta Stellar Testnet?", answer: "Consulta tu cuenta con los permisos que autorizas.",
-    queries: ["Registro de tu cuenta", "Estado de activación en la red", "Saldo XLM y enlace al explorador"],
-    preview: "Ejemplo ilustrativo en Stellar Testnet. Tus datos aparecen después de autorizar.", reduceEffects: "Reducir efectos",
+    scope: "Primer caso de uso: Stellar Testnet.",
+    example: "Ejemplo ilustrativo · Stellar Testnet", conversationTitle: "En ChatGPT",
+    question: "¿Qué puedo consultar de mi cuenta Stellar?", answer: "Tu dirección, la activación en la red y tu saldo XLM.",
+    explorerHint: "También puedes abrir el explorador de Stellar Testnet.",
+    preview: "Tus datos aparecen después de autorizar. Los fondos de este ejemplo son de prueba.",
     benefits: [
       ["Una cuenta tuya", "Accede a la información vinculada a la identidad que autorizas."],
       ["Permisos claros", "El acceso se limita a los permisos que revisas y autorizas."],
@@ -48,12 +48,13 @@ const copy = {
   en: {
     home: "Carmelita home", footerNav: "Carmelita links", skip: "Skip to content", guide: "Connection guide", developers: "Developers",
     title: "Carmelita,", titleEnd: "your personal agent in ChatGPT.",
-    description: "Connect your account and check your information from a conversation. Review the permissions and decide whether to authorize access.",
+    description: "Connect your account and check your information from a conversation.",
     connect: "Connect Carmelita with ChatGPT", recommended: "Recommended", signIn: "Sign in to Carmelita",
-    alternative: "You can also sign in directly", scope: "First use case: Stellar Testnet.",
-    example: "Example · Stellar Testnet", question: "Is my Stellar Testnet account active?", answer: "Check your account with the permissions you authorize.",
-    queries: ["Your account’s registration", "Activation status on the network", "XLM balance and explorer link"],
-    preview: "Illustrative Stellar Testnet example. Your data appears after authorization.", reduceEffects: "Reduce effects",
+    scope: "First use case: Stellar Testnet.",
+    example: "Illustrative example · Stellar Testnet", conversationTitle: "In ChatGPT",
+    question: "What can I check about my Stellar account?", answer: "Your address, activation on the network and your XLM balance.",
+    explorerHint: "You can also open the Stellar Testnet explorer.",
+    preview: "Your data appears after authorization. Funds in this example are test funds.",
     benefits: [
       ["Your own account", "Access information linked to the identity you authorize."],
       ["Clear permissions", "Access is limited to the permissions you review and authorize."],
@@ -85,12 +86,13 @@ const copy = {
   pt: {
     home: "Início da Carmelita", footerNav: "Links da Carmelita", skip: "Ir para o conteúdo", guide: "Guia de conexão", developers: "Desenvolvedores",
     title: "Carmelita,", titleEnd: "seu agente pessoal no ChatGPT.",
-    description: "Conecte sua conta e consulte suas informações em uma conversa. Confira as permissões e decida se autoriza o acesso.",
+    description: "Conecte sua conta e consulte suas informações em uma conversa.",
     connect: "Conectar a Carmelita ao ChatGPT", recommended: "Recomendado", signIn: "Entrar na Carmelita",
-    alternative: "Você também pode entrar diretamente", scope: "Primeiro caso de uso: Stellar Testnet.",
-    example: "Exemplo · Stellar Testnet", question: "Minha conta Stellar Testnet está ativa?", answer: "Consulte sua conta com as permissões que autoriza.",
-    queries: ["Registro da sua conta", "Estado de ativação na rede", "Saldo XLM e link do explorador"],
-    preview: "Exemplo ilustrativo na Stellar Testnet. Seus dados aparecem após a autorização.", reduceEffects: "Reduzir efeitos",
+    scope: "Primeiro caso de uso: Stellar Testnet.",
+    example: "Exemplo ilustrativo · Stellar Testnet", conversationTitle: "No ChatGPT",
+    question: "O que posso consultar sobre minha conta Stellar?", answer: "Seu endereço, a ativação na rede e seu saldo XLM.",
+    explorerHint: "Você também pode abrir o explorador da Stellar Testnet.",
+    preview: "Seus dados aparecem após a autorização. Os fundos deste exemplo são de teste.",
     benefits: [
       ["Uma conta sua", "Acesse as informações vinculadas à identidade que autoriza."],
       ["Permissões claras", "O acesso se limita às permissões que você confere e autoriza."],
@@ -121,12 +123,10 @@ const copy = {
   },
 };
 
-function QueryIcon({ kind }: { kind: number }) {
+function ExplorerIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      {kind === 0 ? <><rect x="3" y="5" width="18" height="15" rx="2" /><path d="M3 9h18m0 3h-5v5h5" /><circle cx="18" cy="14.5" r=".7" /></> :
-        kind === 1 ? <path d="M2 12h4l3-8 4 16 3-8h6" /> :
-          <path d="M4 4v16h16M8 16v-4m4 4V8m4 8V5" />}
+      <path d="M14 3h7v7m0-7-11 11M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
     </svg>
   );
 }
@@ -134,7 +134,6 @@ function QueryIcon({ kind }: { kind: number }) {
 export default function HomeExperience() {
   const { locale, setLocale } = useLocale();
   const contentRef = useRef<HTMLElement>(null);
-  const [reducedEffects, setReducedEffects] = useState(false);
   const t = copy[locale];
 
   return (
@@ -152,33 +151,31 @@ export default function HomeExperience() {
           <h1 id="home-title">{t.title}<br />{t.titleEnd}</h1>
           <p className={styles.description}>{t.description}</p>
           <div className={styles.actions}>
-            <Link href="/connect-chatgpt" className={styles.primary}>
-              <span>{t.connect}</span><span className={styles.recommended}>{t.recommended}</span>
-            </Link>
+            <div className={styles.primaryAction}>
+              <span id="home-connect-recommendation" className={styles.recommended}>{t.recommended}</span>
+              <Link href="/connect-chatgpt" className={styles.primary} aria-describedby="home-connect-recommendation">{t.connect}</Link>
+            </div>
             <div className={styles.alternative}>
-              <span>{t.alternative}</span><Link href="/agent?connect=privy">{t.signIn}</Link>
+              <Link href="/agent?connect=privy">{t.signIn}</Link>
             </div>
           </div>
           <p className={styles.scope}><span aria-hidden="true" />{t.scope}</p>
         </div>
         <figure className={styles.demo} aria-label={t.example}>
-          <LandingDepthStage reduced={reducedEffects}>
+          <div className={styles.conversationStage}>
           <div className={styles.conversation}>
-            <header><BrandLockup /><span>{t.example}</span></header>
+            <header><BrandLockup /><span>{t.conversationTitle}</span></header>
             <p className={styles.question}>{t.question}</p>
             <div className={styles.response}>
+              <span className={styles.replyIdentity}>Carmelita</span>
               <p className={styles.answer}>{t.answer}</p>
-              <ul className={styles.queryList}>
-                {t.queries.map((query, index) => (
-                  <li key={query}><QueryIcon kind={index} /><span>{query}</span></li>
-                ))}
-              </ul>
+              <p className={styles.explorerHint}><ExplorerIcon /><span>{t.explorerHint}</span></p>
             </div>
+            <p className={styles.exampleLabel}>{t.example}</p>
           </div>
-          </LandingDepthStage>
+          </div>
           <figcaption className={styles.previewNote}>
             <p>{t.preview}</p>
-            <button type="button" className={styles.effectsToggle} aria-pressed={reducedEffects} onClick={() => setReducedEffects((value) => !value)}>{t.reduceEffects}</button>
           </figcaption>
         </figure>
       </section>
