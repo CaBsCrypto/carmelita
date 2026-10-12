@@ -86,6 +86,20 @@ Evidencia en `work/landing-continuity-qa/`, excluida de Git: 21 combinaciones de
 
 Esta revisión queda en un commit local de la misma rama. Las capturas y el manifiesto identifican la candidata; no hay push, fusión ni publicación hospedada.
 
+## Fuentes y conexiones · 12 de octubre de 2026
+
+Se retiran «Nuestro primer caso de uso» y sus variantes EN/PT. La sección se presenta como «Una conversación. Varias conexiones»: Stellar sigue como ejemplo destacado, seguido de datos de mercado de CoinGecko/CoinMarketCap y el piloto UNBLCK. La apertura, la invitación final, una FAQ sobre cuentas de proveedores y los metadatos reflejan ese alcance. Se preservan el título de agente personal, el botón recomendado y la línea visual clara.
+
+La revisión de afirmaciones públicas usa el registry y evidencia existente:
+
+- Stellar: lectura de cuenta Testnet, registro, activación y XLM. No se inventan una cuenta activa, dirección ni saldo; la red debe confirmar la activación.
+- Mercado: `app/queries/market.ts` y `app/market-data/service.ts` implementan búsqueda y cotizaciones, con CoinGecko principal y CoinMarketCap alternativo. La matriz de canales registra mercado real del 1 de octubre; `docs/pilot-provider-diagnosis-2026-10-04.md` conserva un diagnóstico de metadata de CMC. No se convierte ese diagnóstico en aceptación actual de cotizaciones CMC, ni se afirma alianza comercial. Precios Mainnet no valoran fondos Testnet.
+- UNBLCK: `offchain.unblck.hub_state` lee créditos, días abiertos y reservas del propietario con identidad ya vinculada. La última matriz registra timeout web / 403 ChatGPT; se muestra «Integración piloto» y validación de acceso pendiente, también en metadatos sociales. No se anuncian vinculación automática, reservas o cancelaciones desde ChatGPT.
+
+La inspección local de `evaluateQueryAcceptance` dejó mercado y lecturas personales pendientes por `implementation_fingerprint_changed`; UNBLCK permanece pendiente por `real_channel_acceptance_missing`. Es estado de certificación y no un interruptor de ejecución en el registry. La evidencia histórica y sus hashes se conservan sin reescribir. Esta edición no cambia runtime, contratos, scopes, fuentes ni manifiestos de aceptación y no realiza nuevas consultas autenticadas al proveedor.
+
+Las capturas y verificaciones están en `work/landing-connections-qa/`, excluidas de Git: 21 combinaciones de idioma/ancho, sin desbordamiento, un H1, texto visible mínimo de 14 px y Stellar primero en todos los casos. Las seis FAQ se abren con Enter y conservan foco visible. Con todas abiertas, 94 pares de texto tienen contraste mínimo 5,73:1; reflujo equivalente al 200 % sin desbordamiento. Zoom nativo, dispositivos físicos y una nueva aceptación operativa de proveedores siguen fuera de esta revisión visual. Los checks y el build local se registran en el manifiesto de la candidata final.
+
 ## Publicación
 
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.
