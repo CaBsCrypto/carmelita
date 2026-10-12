@@ -71,7 +71,7 @@ for (const campaign of campaigns) {
     await fs.mkdir(dir,{recursive:true});
     const scenes=duration===60?campaign.longScenes:campaign.shortScenes;
     await fs.cp(path.join(project,'assets'),path.join(dir,'assets'),{recursive:true});
-    await fs.writeFile(path.join(dir,'index.html'),compose(campaign,scenes,width,height,duration,id).replaceAll('../../assets/','assets/'));
+    await fs.writeFile(path.join(dir,'index.html'),compose(campaign,scenes,width,height,duration,id).replaceAll('../../assets/','assets/').replace(/[ \t]+$/gm,''));
     await fs.writeFile(path.join(dir,'hyperframes.json'),JSON.stringify({name:id,entry:'index.html',width,height,fps:30,duration,skill:'product-launch-video'},null,2)+'\n');
     rows.push({id,campaign:campaign.id,duration,format,width,height,fps:30,dir:`compositions/${id}`,output:`renders/carmelita-${id}.mp4`,thumbnail:`delivery/miniaturas/carmelita-${id}.png`,midpoints:scenes.reduce((a,s)=>{const start=a.cursor;a.times.push(Number((start+s.duration/2).toFixed(2)));a.cursor+=s.duration;return a;},{cursor:0,times:[]}).times});
   }

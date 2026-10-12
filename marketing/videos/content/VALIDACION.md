@@ -33,7 +33,7 @@ Se conserva una observación editorial menor: las tarjetas genéricas de escenas
 
 La música es instrumental original, sintetizada localmente sin locución ni muestras de terceros. Las fuentes WAV son estéreo, PCM de 16 bits a 48 kHz. `assets/audio/music-probes.json` registra **−18 LUFS** para ambas duraciones y picos verdaderos de −6,69 dBTP (60 s) y −6,91 dBTP (15 s).
 
-La aceptación de los AAC contenidos en los MP4 queda pendiente del verificador final. `scripts/verify.mjs` comprueba duración, resolución, 30 fps, H.264, AAC estéreo, decodificación completa, volumen y hashes, y produce `delivery/media-verification.json`. Este documento no declara que los doce renders finales ni la subida a Drive hayan terminado.
+Los doce MP4 finales fueron verificados: 60/15 segundos, Full HD horizontal/vertical, H.264 yuv420p, AAC estéreo a 48 kHz, 30 fps y decodificación completa sin errores. El audio final mide −19,95 LUFS y conserva picos inferiores a −1 dBTP. `scripts/verify.mjs` comprueba duración, resolución, 30 fps, H.264, AAC estéreo, decodificación completa, volumen y hashes, y produce `delivery/media-verification.json`. Los doce renders y doce miniaturas están completos; la confirmación de subida a Drive se registra por separado en su manifiesto.
 
 ## Aislamiento y fuentes recuperables
 
