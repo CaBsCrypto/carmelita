@@ -10,7 +10,7 @@ const copy = {
   es: {
     home: "Inicio de Carmelita", footerNav: "Enlaces de Carmelita", skip: "Ir al contenido", guide: "Guía de conexión", developers: "Desarrolladores",
     title: "Carmelita,", titleEnd: "tu agente personal en ChatGPT.",
-    description: "Conecta tu cuenta y consulta información personal y datos de mercado desde una conversación.",
+    description: "Consulta tu información y datos de mercado desde una conversación. Conecta tu cuenta y elige los permisos que compartes.",
     connect: "Conectar Carmelita con ChatGPT", recommended: "Recomendado", signIn: "Iniciar sesión en Carmelita",
     scope: "Stellar Testnet y datos de mercado con fuentes identificadas.",
     example: "Ejemplo ilustrativo · Stellar Testnet", conversationTitle: "En ChatGPT",
@@ -23,16 +23,20 @@ const copy = {
       ["Permisos claros", "El acceso se limita a los permisos que revisas y autorizas."],
       ["Desde tu conversación", "Utiliza Carmelita en ChatGPT y pregunta con tus propias palabras."],
     ],
-    connectionsTitle: "Una conversación. Varias conexiones.", connectionsIntro: "Tu cuenta Stellar, datos de mercado y servicios vinculados, con fuentes y permisos claros.",
-    stellarLabel: "Stellar Testnet", stellarTitle: "Tu cuenta Stellar, en contexto.",
-    stellarQuestion: "«¿Está activa mi cuenta Stellar Testnet?»",
-    stellarDescription: "Consulta tu dirección, el estado de tu cuenta y el saldo XLM con la identidad que autorizas. Este ejemplo utiliza Stellar Testnet y fondos de prueba.",
-    stellarReply: "Puedo consultar el registro y el estado de activación de tu cuenta en la red.",
+    queriesTitle: "Pregunta. Carmelita consulta por ti.", queriesIntro: "Tu información personal y datos de mercado, en el mismo chat.",
+    stellarQuestion: "¿Cómo está mi cuenta Stellar?",
+    stellarDescription: "Pregunta por la cuenta vinculada a tu identidad. Este ejemplo utiliza Stellar Testnet y fondos de prueba.",
+    stellarReply: "Puedo revisar estos datos de tu cuenta:",
+    stellarResults: [
+      ["Tu dirección", "La cuenta Stellar vinculada a tu identidad."],
+      ["Activación en la red", "El estado que confirma Stellar Testnet."],
+      ["Saldo XLM", "Los fondos de prueba de tu cuenta."],
+    ],
     stellarNote: "La cuenta sólo aparece activa tras confirmación de Stellar. Si la red no responde, el estado puede quedar pendiente.",
-    marketSources: "CoinGecko y CoinMarketCap", marketTitle: "Cotizaciones y activos", marketDescription: "Busca activos y consulta datos de mercado en USD. Los resultados identifican la fuente, la fecha y la información disponible.",
-    marketQuestion: "«¿Cuál es el precio de XLM en USD?»", marketNote: "CoinGecko es la fuente principal y CoinMarketCap una alternativa. Los precios de mercado no valoran tus fondos Testnet.",
-    serviceTitle: "Tu cuenta de UNBLCK", serviceDescription: "Lectura de créditos, días disponibles y reservas de una cuenta UNBLCK ya vinculada.", serviceQuestion: "«Muéstrame mis créditos y reservas en UNBLCK.»", pilot: "Integración piloto", serviceNote: "Requiere una cuenta vinculada; la validación del acceso está pendiente.",
-    stepsTitle: "Conecta una vez. Empieza a preguntar.", stepsIntro: "La guía te acompaña. La conexión se añade manualmente en ChatGPT.",
+    marketSources: "Fuentes: CoinGecko (principal) y CoinMarketCap (alternativa).", marketDescription: "Busca activos y consulta su precio sin salir de la conversación.",
+    marketQuestion: "¿Cuál es el precio de XLM?", marketExample: "Ejemplo ilustrativo · Datos de mercado", marketReply: "Una cotización en USD, con la fuente y el momento de la consulta.", marketNote: "Los precios de mercado se consultan por separado y no valoran tus fondos Testnet.",
+    serviceDescription: "Piloto de consulta de créditos, días disponibles y reservas de una cuenta UNBLCK ya vinculada.", pilot: "Integración piloto", serviceNote: "Validación de acceso pendiente. Requiere una cuenta UNBLCK vinculada.",
+    stepsTitle: "Conéctala y empieza a conversar.", stepsIntro: "Tres pasos para empezar. Añades Carmelita manualmente en ChatGPT.",
     steps: [
       ["Abre la guía", "Copia la URL de Carmelita y abre la sección de conectores de ChatGPT."],
       ["Añade Carmelita y autoriza", "Crea tu cuenta Carmelita o inicia sesión durante la autorización. Revisa los permisos antes de aceptar."],
@@ -48,17 +52,17 @@ const copy = {
       ["¿Qué redes puedo consultar?", "Empezamos por Stellar Testnet. También puedes consultar tus wallets en Solana Devnet, Avalanche Fuji, Base Sepolia y BNB Testnet. Las tres redes EVM comparten una dirección; cada red mantiene su propio saldo y actividad."],
       ["¿Son fondos reales o de prueba?", "Las wallets de este recorrido usan Testnet o Devnet. Sus fondos sirven para pruebas y no se convierten en fondos Mainnet. Los datos de mercado se consultan por separado y no dan valor real a los fondos Testnet. XLM es el activo nativo de Stellar y no necesita una trustline."],
     ],
-    development: "Nuestra visión · En desarrollo", visionTitle: "Tus aplicaciones, en una misma conversación.",
+    development: "Nuestra visión · En desarrollo", visionTitle: "Estamos conectando más aplicaciones a tu agente.",
     vision: "Queremos ampliar las conexiones de Carmelita para reunir las aplicaciones y los servicios que usas, con una misma identidad y permisos claros.",
     visionStatus: "Estamos desarrollando esa pasarela con empresas y desarrolladores. Cada integración debe validarse antes de ofrecerse; las compras y la ejecución de servicios siguen pendientes.",
-    visionLink: "Conocer la integración piloto", footer: "Construida en Latinoamérica.",
+    visionLink: "Conocer la visión para desarrolladores", footer: "Construida en Latinoamérica.",
     visionFlow: ["Aplicaciones y servicios", "Carmelita", "ChatGPT"], visionFlowLabel: "Visión de integración en desarrollo: aplicaciones y servicios, Carmelita y ChatGPT",
     closingTitle: "Tu próxima conversación empieza aquí.", closingDescription: "Abre la guía, añade Carmelita y pregunta por tu cuenta o por datos de mercado.",
   },
   en: {
     home: "Carmelita home", footerNav: "Carmelita links", skip: "Skip to content", guide: "Connection guide", developers: "Developers",
     title: "Carmelita,", titleEnd: "your personal agent in ChatGPT.",
-    description: "Connect your account and check personal information and market data from a conversation.",
+    description: "Check your information and market data from a conversation. Connect your account and choose the permissions you share.",
     connect: "Connect Carmelita with ChatGPT", recommended: "Recommended", signIn: "Sign in to Carmelita",
     scope: "Stellar Testnet and market data with identified sources.",
     example: "Illustrative example · Stellar Testnet", conversationTitle: "In ChatGPT",
@@ -71,16 +75,20 @@ const copy = {
       ["Clear permissions", "Access is limited to the permissions you review and authorize."],
       ["From your conversation", "Use Carmelita in ChatGPT and ask in your own words."],
     ],
-    connectionsTitle: "One conversation. Multiple connections.", connectionsIntro: "Your Stellar account, market data and linked services, with clear sources and permissions.",
-    stellarLabel: "Stellar Testnet", stellarTitle: "Your Stellar account, in context.",
-    stellarQuestion: "“Is my Stellar Testnet account active?”",
-    stellarDescription: "Check your address, account status and XLM balance with the identity you authorize. This example uses Stellar Testnet and test funds.",
-    stellarReply: "I can check your account’s registration and activation status on the network.",
+    queriesTitle: "Ask. Carmelita checks for you.", queriesIntro: "Your personal information and market data, in the same chat.",
+    stellarQuestion: "How is my Stellar account doing?",
+    stellarDescription: "Ask about the account linked to your identity. This example uses Stellar Testnet and test funds.",
+    stellarReply: "I can check these details about your account:",
+    stellarResults: [
+      ["Your address", "The Stellar account linked to your identity."],
+      ["Network activation", "The status confirmed by Stellar Testnet."],
+      ["XLM balance", "The test funds in your account."],
+    ],
     stellarNote: "The account is shown as active only after Stellar confirms it. If the network does not respond, its status may remain pending.",
-    marketSources: "CoinGecko and CoinMarketCap", marketTitle: "Quotes and assets", marketDescription: "Look up assets and USD market data. Results identify the source, date and available information.",
-    marketQuestion: "“What is the XLM price in USD?”", marketNote: "CoinGecko is the primary source and CoinMarketCap an alternative. Market prices do not value your Testnet funds.",
-    serviceTitle: "Your UNBLCK account", serviceDescription: "Read credits, open days and bookings for an already linked UNBLCK account.", serviceQuestion: "“Show my UNBLCK credits and bookings.”", pilot: "Pilot integration", serviceNote: "A linked account is required; access validation is pending.",
-    stepsTitle: "Connect once. Start asking.", stepsIntro: "The guide walks you through it. You add the connection manually in ChatGPT.",
+    marketSources: "Sources: CoinGecko (primary) and CoinMarketCap (alternative).", marketDescription: "Look up assets and check their price within the conversation.",
+    marketQuestion: "What is the price of XLM?", marketExample: "Illustrative example · Market data", marketReply: "A USD quote, with its source and the time of the query.", marketNote: "Market prices are queried separately and do not value your Testnet funds.",
+    serviceDescription: "A pilot for checking credits, open days and bookings for an already linked UNBLCK account.", pilot: "Pilot integration", serviceNote: "Access validation pending. A linked UNBLCK account is required.",
+    stepsTitle: "Connect and start a conversation.", stepsIntro: "Three steps to get started. You add Carmelita manually in ChatGPT.",
     steps: [
       ["Open the guide", "Copy Carmelita’s URL and open the connectors section in ChatGPT."],
       ["Add Carmelita and authorize", "Create your Carmelita account or sign in during authorization. Review the permissions before accepting."],
@@ -96,17 +104,17 @@ const copy = {
       ["Which networks can I ask about?", "Start with Stellar Testnet. You can also check your wallets on Solana Devnet, Avalanche Fuji, Base Sepolia and BNB Testnet. The three EVM networks share an address; each network keeps its own balance and activity."],
       ["Are these real funds or test funds?", "The wallets in this flow use Testnet or Devnet. Their funds are for testing and do not become Mainnet funds. Market data is queried separately and does not give Testnet funds real value. XLM is Stellar’s native asset and does not need a trustline."],
     ],
-    development: "Our vision · In development", visionTitle: "Your applications, in one conversation.",
+    development: "Our vision · In development", visionTitle: "We’re connecting more applications to your agent.",
     vision: "We want to expand Carmelita’s connections to bring together the applications and services you use, with one identity and clear permissions.",
     visionStatus: "We are developing this gateway with businesses and developers. Each integration must be validated before it is offered; purchases and service execution are still pending.",
-    visionLink: "Learn about the integration pilot", footer: "Built in Latin America.",
+    visionLink: "Explore the vision for developers", footer: "Built in Latin America.",
     visionFlow: ["Applications and services", "Carmelita", "ChatGPT"], visionFlowLabel: "Integration vision in development: applications and services, Carmelita and ChatGPT",
     closingTitle: "Your next conversation starts here.", closingDescription: "Open the guide, add Carmelita and ask about your account or market data.",
   },
   pt: {
     home: "Início da Carmelita", footerNav: "Links da Carmelita", skip: "Ir para o conteúdo", guide: "Guia de conexão", developers: "Desenvolvedores",
     title: "Carmelita,", titleEnd: "seu agente pessoal no ChatGPT.",
-    description: "Conecte sua conta e consulte informações pessoais e dados de mercado em uma conversa.",
+    description: "Consulte suas informações e dados de mercado em uma conversa. Conecte sua conta e escolha as permissões que compartilha.",
     connect: "Conectar a Carmelita ao ChatGPT", recommended: "Recomendado", signIn: "Entrar na Carmelita",
     scope: "Stellar Testnet e dados de mercado com fontes identificadas.",
     example: "Exemplo ilustrativo · Stellar Testnet", conversationTitle: "No ChatGPT",
@@ -119,16 +127,20 @@ const copy = {
       ["Permissões claras", "O acesso se limita às permissões que você confere e autoriza."],
       ["Na sua conversa", "Use a Carmelita no ChatGPT e pergunte com suas próprias palavras."],
     ],
-    connectionsTitle: "Uma conversa. Várias conexões.", connectionsIntro: "Sua conta Stellar, dados de mercado e serviços vinculados, com fontes e permissões claras.",
-    stellarLabel: "Stellar Testnet", stellarTitle: "Sua conta Stellar, em contexto.",
-    stellarQuestion: "“Minha conta Stellar Testnet está ativa?”",
-    stellarDescription: "Consulte seu endereço, o estado da conta e o saldo XLM com a identidade que autoriza. Este exemplo usa Stellar Testnet e fundos de teste.",
-    stellarReply: "Posso consultar o registro e o estado de ativação da sua conta na rede.",
+    queriesTitle: "Pergunte. A Carmelita consulta por você.", queriesIntro: "Suas informações pessoais e dados de mercado, no mesmo chat.",
+    stellarQuestion: "Como está minha conta Stellar?",
+    stellarDescription: "Pergunte sobre a conta vinculada à sua identidade. Este exemplo usa Stellar Testnet e fundos de teste.",
+    stellarReply: "Posso consultar estes dados da sua conta:",
+    stellarResults: [
+      ["Seu endereço", "A conta Stellar vinculada à sua identidade."],
+      ["Ativação na rede", "O estado confirmado pela Stellar Testnet."],
+      ["Saldo XLM", "Os fundos de teste da sua conta."],
+    ],
     stellarNote: "A conta só aparece ativa após a confirmação da Stellar. Se a rede não responder, o estado pode ficar pendente.",
-    marketSources: "CoinGecko e CoinMarketCap", marketTitle: "Cotações e ativos", marketDescription: "Busque ativos e consulte dados de mercado em USD. Os resultados identificam a fonte, a data e as informações disponíveis.",
-    marketQuestion: "“Qual é o preço do XLM em USD?”", marketNote: "A CoinGecko é a fonte principal e a CoinMarketCap uma alternativa. Os preços de mercado não atribuem valor aos seus fundos Testnet.",
-    serviceTitle: "Sua conta UNBLCK", serviceDescription: "Leitura de créditos, dias disponíveis e reservas de uma conta UNBLCK já vinculada.", serviceQuestion: "“Mostre meus créditos e reservas na UNBLCK.”", pilot: "Integração piloto", serviceNote: "É necessária uma conta vinculada; a validação do acesso está pendente.",
-    stepsTitle: "Conecte uma vez. Comece a perguntar.", stepsIntro: "O guia acompanha você. A conexão é adicionada manualmente no ChatGPT.",
+    marketSources: "Fontes: CoinGecko (principal) e CoinMarketCap (alternativa).", marketDescription: "Busque ativos e consulte seu preço sem sair da conversa.",
+    marketQuestion: "Qual é o preço do XLM?", marketExample: "Exemplo ilustrativo · Dados de mercado", marketReply: "Uma cotação em USD, com a fonte e o momento da consulta.", marketNote: "Os preços de mercado são consultados separadamente e não atribuem valor aos seus fundos Testnet.",
+    serviceDescription: "Piloto de consulta de créditos, dias disponíveis e reservas de uma conta UNBLCK já vinculada.", pilot: "Integração piloto", serviceNote: "Validação de acesso pendente. É necessária uma conta UNBLCK vinculada.",
+    stepsTitle: "Conecte e comece a conversar.", stepsIntro: "Três passos para começar. Você adiciona a Carmelita manualmente no ChatGPT.",
     steps: [
       ["Abra o guia", "Copie a URL da Carmelita e abra a seção de conectores do ChatGPT."],
       ["Adicione a Carmelita e autorize", "Crie sua conta Carmelita ou entre durante a autorização. Confira as permissões antes de aceitar."],
@@ -144,10 +156,10 @@ const copy = {
       ["Quais redes posso consultar?", "Comece pela Stellar Testnet. Você também pode consultar suas carteiras na Solana Devnet, Avalanche Fuji, Base Sepolia e BNB Testnet. As três redes EVM compartilham um endereço; cada rede mantém seu próprio saldo e atividade."],
       ["São fundos reais ou de teste?", "As carteiras deste fluxo usam Testnet ou Devnet. Seus fundos servem para testes e não se tornam fundos Mainnet. Dados de mercado são consultados separadamente e não dão valor real aos fundos Testnet. XLM é o ativo nativo da Stellar e não precisa de uma trustline."],
     ],
-    development: "Nossa visão · Em desenvolvimento", visionTitle: "Seus aplicativos, em uma mesma conversa.",
+    development: "Nossa visão · Em desenvolvimento", visionTitle: "Estamos conectando mais aplicativos ao seu agente.",
     vision: "Queremos ampliar as conexões da Carmelita para reunir os aplicativos e serviços que usa, com uma mesma identidade e permissões claras.",
     visionStatus: "Estamos desenvolvendo essa plataforma com empresas e desenvolvedores. Cada integração deve ser validada antes de ser oferecida; compras e execução de serviços ainda estão pendentes.",
-    visionLink: "Conhecer a integração piloto", footer: "Criada na América Latina.",
+    visionLink: "Conhecer a visão para desenvolvedores", footer: "Criada na América Latina.",
     visionFlow: ["Aplicativos e serviços", "Carmelita", "ChatGPT"], visionFlowLabel: "Visão de integração em desenvolvimento: aplicativos e serviços, Carmelita e ChatGPT",
     closingTitle: "Sua próxima conversa começa aqui.", closingDescription: "Abra o guia, adicione a Carmelita e pergunte sobre sua conta ou dados de mercado.",
   },
@@ -226,39 +238,41 @@ export default function HomeExperience() {
           </article>
         ))}
       </section>
-      <section className={styles.connections} aria-labelledby="home-connections-title">
+      <section className={styles.queries} aria-labelledby="home-queries-title">
         <div className={styles.sectionHeading}>
-          <h2 id="home-connections-title">{t.connectionsTitle}</h2><p>{t.connectionsIntro}</p>
+          <h2 id="home-queries-title">{t.queriesTitle}</h2><p>{t.queriesIntro}</p>
         </div>
-        <article className={styles.stellarUse} aria-labelledby="home-stellar-title">
-        <div className={styles.stellarIntro}>
-          <p className={styles.sectionKicker}>{t.stellarLabel}</p>
-          <h3 id="home-stellar-title">{t.stellarTitle}</h3>
-          <p className={styles.stellarDescription}>{t.stellarDescription}</p>
-          <Link href="/guide#chatgpt" className={styles.textLink}>{t.usageGuide}</Link>
-        </div>
-        <div className={styles.stellarConversation}>
-          <p className={styles.stellarCaption}>{t.example}</p>
-          <blockquote className={styles.stellarQuestion}>{t.stellarQuestion}</blockquote>
-          <span className={styles.replyIdentity}>Carmelita</span>
-          <p className={styles.stellarReply}>{t.stellarReply}</p>
-          <p className={styles.stellarNote}>{t.stellarNote}</p>
-        </div>
-        </article>
-        <div className={styles.sourceGrid}>
-          <article className={styles.sourceCard} aria-labelledby="home-market-title">
-            <p className={styles.sourceLabel}>{t.marketSources}</p>
-            <h3 id="home-market-title">{t.marketTitle}</h3>
-            <p className={styles.sourceDescription}>{t.marketDescription}</p>
-            <blockquote className={styles.queryExample}>{t.marketQuestion}</blockquote>
-            <p className={styles.sourceNote}>{t.marketNote}</p>
+        <div className={styles.queryPanel}>
+          <article className={styles.stellarQuery} aria-labelledby="home-stellar-title">
+            <div className={styles.queryPrompt}>
+              <p className={styles.queryCaption}>{t.example}</p>
+              <h3 id="home-stellar-title">{t.stellarQuestion}</h3>
+              <p className={styles.queryDescription}>{t.stellarDescription}</p>
+              <Link href="/guide#chatgpt" className={styles.textLink}>{t.usageGuide}</Link>
+            </div>
+            <div className={styles.queryResponse}>
+              <span className={styles.replyIdentity}>Carmelita</span>
+              <p className={styles.queryReply}>{t.stellarReply}</p>
+              <dl className={styles.stellarResults}>
+                {t.stellarResults.map(([label, description]) => (
+                  <div key={label}><dt>{label}</dt><dd>{description}</dd></div>
+                ))}
+              </dl>
+              <p className={styles.queryNote}>{t.stellarNote}</p>
+            </div>
           </article>
-          <article className={styles.sourceCard} aria-labelledby="home-unblck-title">
-            <p className={styles.sourceLabel}>UNBLCK<span className={styles.pilotTag}>{t.pilot}</span></p>
-            <h3 id="home-unblck-title">{t.serviceTitle}</h3>
-            <p className={styles.sourceDescription}>{t.serviceDescription}</p>
-            <blockquote className={styles.queryExample}>{t.serviceQuestion}</blockquote>
-            <p className={styles.sourceNote}>{t.serviceNote}</p>
+          <article className={styles.marketQuery} aria-labelledby="home-market-title">
+            <div className={styles.queryPrompt}>
+              <p className={styles.queryCaption}>{t.marketExample}</p>
+              <h3 id="home-market-title">{t.marketQuestion}</h3>
+              <p className={styles.queryDescription}>{t.marketDescription}</p>
+            </div>
+            <div className={styles.queryResponse}>
+              <span className={styles.replyIdentity}>Carmelita</span>
+              <p className={styles.queryReply}>{t.marketReply}</p>
+              <p className={styles.marketSources}>{t.marketSources}</p>
+              <p className={styles.queryNote}>{t.marketNote}</p>
+            </div>
           </article>
         </div>
       </section>
@@ -275,16 +289,6 @@ export default function HomeExperience() {
           ))}
         </ol>
         <Link href="/connect-chatgpt" className={styles.textLink}>{t.stepsLink}</Link>
-      </section>
-      <section className={styles.faq} aria-labelledby="home-faq-title">
-        <div className={styles.sectionHeading}>
-          <h2 id="home-faq-title">{t.faqTitle}</h2><p>{t.faqIntro}</p>
-        </div>
-        <div className={styles.faqList}>
-          {t.faqs.map(([question, answer]) => (
-            <details key={question}><summary>{question}</summary><p>{answer}</p></details>
-          ))}
-        </div>
       </section>
       <section className={styles.vision} aria-labelledby="home-vision-title">
         <div>
@@ -303,6 +307,21 @@ export default function HomeExperience() {
             ))}
           </ul>
           <p>{t.visionStatus}</p>
+          <article className={styles.pilot} aria-labelledby="home-unblck-title">
+            <div className={styles.pilotHeading}><h3 id="home-unblck-title">UNBLCK</h3><span className={styles.pilotTag}>{t.pilot}</span></div>
+            <p>{t.serviceDescription}</p>
+            <p className={styles.pilotNote}>{t.serviceNote}</p>
+          </article>
+        </div>
+      </section>
+      <section className={styles.faq} aria-labelledby="home-faq-title">
+        <div className={styles.sectionHeading}>
+          <h2 id="home-faq-title">{t.faqTitle}</h2><p>{t.faqIntro}</p>
+        </div>
+        <div className={styles.faqList}>
+          {t.faqs.map(([question, answer]) => (
+            <details key={question}><summary>{question}</summary><p>{answer}</p></details>
+          ))}
         </div>
       </section>
       <section className={styles.closing} aria-labelledby="home-closing-title">
