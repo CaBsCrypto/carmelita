@@ -79,6 +79,12 @@
 .sectionHead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 48px; margin-bottom: 28px; }
 .sectionHead h2 { margin: 0; color: var(--public-green); font-size: clamp(28px, 3vw, 36px); font-weight: 600; line-height: 1.2; letter-spacing: -.035em; }
 .sectionHead p { margin: 0; color: var(--public-muted); font-size: 16px; line-height: 1.7; max-width: 60ch; }
+.proposalLayout { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 40px; align-items: start; }
+.proposalReview { min-width: 0; color: var(--public-muted); }
+.proposalReview h3 { margin: 0 0 18px; color: var(--public-green); font-size: 22px; font-weight: 600; line-height: 1.4; }
+.proposalReview ol { margin: 0; padding-left: 22px; list-style: decimal; font-size: 16px; }
+.proposalReview li { padding-left: 4px; margin-block: 14px; }
+.proposalReview p { margin: 24px 0 0; font-size: 14px; }
 .columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
 .queryCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .panel { min-width: 0; padding: 28px; border: 1px solid var(--public-line); border-radius: 16px; background: white; }
@@ -120,6 +126,7 @@
   .heroTitle { max-width: 20ch; }
   .heroAside { max-width: 620px; }
   .sectionHead { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .proposalLayout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .steps { grid-template-columns: minmax(0, 1fr); gap: 26px; }
   .queryCards { grid-template-columns: minmax(0, 1fr); }
   .steps > li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 16px; }

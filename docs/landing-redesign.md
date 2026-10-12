@@ -122,6 +122,14 @@ La incorporación requiere revisión y validación; el alta pública y automáti
 
 Validación enfocada en `work/landing-service-faq-qa/`: lint y build/TypeScript locales aprobados; ES/EN/PT a 320, 720 y 1440 px (nueve casos), sin desbordamiento, texto mínimo de 15 px y tres pasos numerados. Apertura con Enter y enlace al piloto comprobados en el navegador. Graphify actualizado por AST (3.871 nodos, 10.019 aristas), con la limitación SQL ya documentada. La suite de aplicación de la revisión anterior no se repitió para este cambio de copia y presentación. Sin push, fusión ni publicación Vercel.
 
+## Proponer servicios desde desarrolladores · 12 de octubre de 2026
+
+`/developers` pasa a invitar a proponer un servicio. Su acción principal abre `/developers#proposal`: nombre, correo, descripción y consentimiento de contacto. Conserva ES/EN/PT, los pasos del piloto y la documentación técnica. La FAQ de la portada dirige ahora al formulario y explica revisión, validación y ausencia de publicación automática.
+
+Se reutilizan la API, la tabla de recomendaciones y la bandeja privada existentes, con `source=developers`. La bandeja diferencia propuestas de servicios, muestra «Pending review» y distingue base no disponible de cola vacía. No se crean integraciones ni se envían mensajes automáticos. Los detalles de persistencia, permisos y reproducción se documentan en [Propuestas de servicios](service-proposals.md).
+
+La evidencia local, incluidas las pruebas del formulario/POST reales sobre almacenamiento simulado y datos sintéticos, queda en `work/service-proposal-qa/`, excluida de Git. La vista de revisión en la aplicación usa un servidor sin base productiva: una respuesta de indisponibilidad es esperada y no se presenta como envío completado. No hay nuevas migraciones ni aceptación hospedada; contratos MCP, wallets y permisos financieros se conservan.
+
 ## Publicación
 
 El 12 de octubre se verificaron `previewDeploymentsDisabled: true` y el Ignored Build Step que omite ramas distintas de `main`. El proyecto conserva máquina Standard fija y concurrencia adicional desactivada. El PR se entrega como borrador para revisión en GitHub: no fusionar ni publicar sin la decisión posterior prevista en la política de costes. Esta tarea no crea despliegues Vercel ni cambia configuración hospedada.

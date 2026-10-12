@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { useLocale } from "../language-toggle";
 import { useConnectionEnvironment } from "../connect-chatgpt/connection-environment";
 import PublicPageShell from "../public-page-shell";
+import ServiceProposalForm from "../service-proposal-form";
 import styles from "../public-pages.module.css";
 
 const docsBase = "https://github.com/CaBsCrypto/carmelita/blob/main/docs/";
@@ -19,12 +20,15 @@ const queryExamples = [
 const copy = {
   es: {
     kicker: "Para empresas y desarrolladores",
-    title: "Prepara tu integración con Carmelita.",
-    lede: "Queremos que las personas consulten sus aplicaciones desde una conversación con su agente personal. Prepara una integración piloto, empezando por una operación de lectura.",
-    development: "En desarrollo", prepare: "Preparar mi integración", try: "Probar Carmelita en ChatGPT",
+    title: "Propón tu servicio para Carmelita.",
+    lede: "Cuéntanos qué ofrece tu servicio y qué podría consultar una persona desde Carmelita. El equipo revisará la propuesta para preparar una integración piloto.",
+    development: "Integraciones en desarrollo", prepare: "Proponer mi servicio", try: "Probar Carmelita en ChatGPT",
     routeTitle: "La visión de integración", service: "Tu servicio", serviceText: "API o MCP del proveedor",
     carmelitaText: "Identidad y permisos del usuario", chatgptText: "Una conversación con su agente",
-    routeNote: "Este recorrido representa la visión del producto. El alta pública de proveedores y la ejecución de servicios todavía no forman parte de esta entrega.",
+    routeNote: "Puedes enviar una propuesta para revisión. Publicar o activar la integración requiere validación; la ejecución general de servicios sigue en desarrollo.",
+    proposalTitle: "Envía tu propuesta.", proposalText: "Tres datos para una primera revisión. No necesitas tener la integración terminada para presentar tu servicio.",
+    reviewTitle: "Qué sucede después", reviewSteps: ["Guardamos tu propuesta en la bandeja privada del equipo.", "Revisamos el caso de uso y los requisitos de la integración.", "Si avanzamos, usaremos el correo que indicas para definir contigo el piloto."],
+    reviewNote: "Enviar no implica aprobación ni publicación automática. El piloto empieza con una consulta de lectura.",
     pilotTitle: "Un piloto pequeño, un resultado comprobable.",
     pilotText: "Define el contrato antes de ampliar el alcance. La documentación sirve como punto de partida para preparar y revisar la integración.",
     pilotSteps: [
@@ -68,12 +72,15 @@ const copy = {
   },
   en: {
     kicker: "For businesses and developers",
-    title: "Prepare your integration with Carmelita.",
-    lede: "Our vision is for people to query their applications through a conversation with their personal agent. Prepare a pilot integration, starting with one read operation.",
-    development: "In development", prepare: "Prepare my integration", try: "Try Carmelita in ChatGPT",
+    title: "Propose your service for Carmelita.",
+    lede: "Tell us what your service offers and what someone could query through Carmelita. The team will review your proposal to prepare a pilot integration.",
+    development: "Integrations in development", prepare: "Propose my service", try: "Try Carmelita in ChatGPT",
     routeTitle: "The integration vision", service: "Your service", serviceText: "The provider's API or MCP",
     carmelitaText: "User identity and permissions", chatgptText: "A conversation with their agent",
-    routeNote: "This flow represents the product vision. Public provider enrollment and service execution are not part of this delivery yet.",
+    routeNote: "You can submit a proposal for review. Publishing or activating the integration requires validation; general service execution is still in development.",
+    proposalTitle: "Submit your proposal.", proposalText: "Three details for an initial review. Your integration does not need to be finished to propose your service.",
+    reviewTitle: "What happens next", reviewSteps: ["We save your proposal in the team’s private inbox.", "We review the use case and integration requirements.", "If we move forward, we will use the email you provide to define the pilot with you."],
+    reviewNote: "Submitting does not imply approval or automatic publication. The pilot starts with one read query.",
     pilotTitle: "A focused pilot. A verifiable result.",
     pilotText: "Define the contract before expanding the scope. Use the documentation to prepare and review the integration.",
     pilotSteps: [
@@ -117,12 +124,15 @@ const copy = {
   },
   pt: {
     kicker: "Para empresas e desenvolvedores",
-    title: "Prepare sua integração com a Carmelita.",
-    lede: "Queremos que as pessoas consultem seus aplicativos em uma conversa com seu agente pessoal. Prepare uma integração piloto, começando com uma operação de leitura.",
-    development: "Em desenvolvimento", prepare: "Preparar minha integração", try: "Experimentar Carmelita no ChatGPT",
+    title: "Proponha seu serviço para a Carmelita.",
+    lede: "Conte o que seu serviço oferece e o que alguém poderia consultar pela Carmelita. A equipe revisará a proposta para preparar uma integração piloto.",
+    development: "Integrações em desenvolvimento", prepare: "Propor meu serviço", try: "Experimentar Carmelita no ChatGPT",
     routeTitle: "A visão de integração", service: "Seu serviço", serviceText: "API ou MCP do provedor",
     carmelitaText: "Identidade e permissões do usuário", chatgptText: "Uma conversa com seu agente",
-    routeNote: "Este fluxo representa a visão do produto. O cadastro público de provedores e a execução de serviços ainda não fazem parte desta entrega.",
+    routeNote: "Pode enviar uma proposta para revisão. Publicar ou ativar a integração exige validação; a execução geral de serviços segue em desenvolvimento.",
+    proposalTitle: "Envie sua proposta.", proposalText: "Três informações para uma primeira revisão. Sua integração não precisa estar pronta para apresentar o serviço.",
+    reviewTitle: "O que acontece depois", reviewSteps: ["Salvamos sua proposta na caixa de entrada privada da equipe.", "Revisamos o caso de uso e os requisitos da integração.", "Se avançarmos, usaremos o e-mail informado para definir o piloto com você."],
+    reviewNote: "O envio não implica aprovação nem publicação automática. O piloto começa com uma consulta de leitura.",
     pilotTitle: "Um piloto pequeno, um resultado verificável.",
     pilotText: "Defina o contrato antes de ampliar o escopo. A documentação serve como ponto de partida para preparar e revisar a integração.",
     pilotSteps: [
@@ -174,6 +184,7 @@ export default function DeveloperPortal() {
   const providerRef = useRef<HTMLElement>(null);
   const productRef = useRef<HTMLAnchorElement>(null);
   const pilotRef = useRef<HTMLElement>(null);
+  const proposalRef = useRef<HTMLElement>(null);
   const publicEndpoint = mcpUrl ? new URL("/api/mcp", mcpUrl).href : null;
   const t = copy[locale];
 
@@ -221,7 +232,7 @@ export default function DeveloperPortal() {
           <p className={styles.lede}>{t.lede}</p>
           <span className={styles.badge}>{t.development}</span>
           <div className={styles.actions}>
-            <Link className={styles.primary} href="/developers#pilot" prefetch={false} onClick={() => pilotRef.current?.focus()}>{t.prepare}</Link>
+            <Link className={styles.primary} href="/developers#proposal" prefetch={false} onClick={() => proposalRef.current?.focus()}>{t.prepare}</Link>
             <Link className={styles.secondary} href="/connect-chatgpt">{t.try}</Link>
           </div>
         </div>
@@ -239,6 +250,18 @@ export default function DeveloperPortal() {
           </div>
         </aside>
       </header>
+
+      <section className={styles.section} id="proposal" ref={proposalRef} tabIndex={-1} aria-labelledby="proposal-title">
+        <header className={styles.sectionHead}><h2 id="proposal-title">{t.proposalTitle}</h2><p>{t.proposalText}</p></header>
+        <div className={styles.proposalLayout}>
+          <aside className={styles.proposalReview} aria-labelledby="proposal-review-title">
+            <h3 id="proposal-review-title">{t.reviewTitle}</h3>
+            <ol role="list">{t.reviewSteps.map(step => <li key={step}>{step}</li>)}</ol>
+            <p>{t.reviewNote}</p>
+          </aside>
+          <ServiceProposalForm locale={locale} />
+        </div>
+      </section>
 
       <section className={styles.section} id="pilot" ref={pilotRef} tabIndex={-1} aria-labelledby="pilot-title">
         <header className={styles.sectionHead}><h2 id="pilot-title">{t.pilotTitle}</h2><p>{t.pilotText}</p></header>

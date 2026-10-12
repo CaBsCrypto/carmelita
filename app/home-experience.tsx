@@ -46,14 +46,14 @@ const copy = {
     faqTitle: "Preguntas frecuentes.", faqIntro: "Para conectar tu cuenta o preparar una integración.",
     providerFaq: {
       question: "¿Cómo hago para que mi servicio aparezca en Carmelita?",
-      intro: "Empieza preparando una integración piloto:",
+      intro: "Envía una propuesta para revisión y prepara una integración piloto:",
       steps: [
-        "Describe tu servicio y la primera consulta que quieres ofrecer a través de Carmelita.",
-        "Reúne la documentación de tu API o MCP, si dispone de uno, y define cómo autoriza el usuario el acceso.",
-        "Prepara la validación de resultados, permisos, aislamiento de cuentas y manejo de errores con la guía para desarrolladores.",
+        "Completa el formulario con el nombre del servicio, tu correo y la consulta que quieres ofrecer. Puedes incluir documentación pública.",
+        "El equipo revisa la propuesta y sus requisitos. Si avanzamos, definimos contigo el alcance del piloto.",
+        "Prepara la validación de resultados, permisos, aislamiento de cuentas y errores antes de habilitar la integración.",
       ],
-      note: "La integración debe revisarse y validarse antes de presentarla como disponible. El alta pública y automática de servicios sigue en desarrollo.",
-      link: "Preparar mi integración",
+      note: "Enviar una propuesta no publica ni activa tu servicio. La integración debe validarse antes de presentarla como disponible.",
+      link: "Proponer mi servicio",
     },
     faqs: [
       ["¿Necesito cuentas en todos los proveedores?", "Las consultas de mercado no requieren una cuenta propia en CoinGecko o CoinMarketCap. UNBLCK requiere una cuenta del servicio ya vinculada y la validación del acceso sigue pendiente. Crear tu cuenta Carmelita no conecta automáticamente otros servicios."],
@@ -109,14 +109,14 @@ const copy = {
     faqTitle: "Frequently asked questions.", faqIntro: "For connecting your account or preparing an integration.",
     providerFaq: {
       question: "How can I get my service into Carmelita?",
-      intro: "Start by preparing a pilot integration:",
+      intro: "Submit a proposal for review and prepare a pilot integration:",
       steps: [
-        "Describe your service and the first query you want to offer through Carmelita.",
-        "Gather documentation for your API or MCP, if you have one, and define how users authorize access.",
-        "Use the developer guide to prepare validation of results, permissions, account isolation and error handling.",
+        "Fill in the form with the service name, your email and the query you want to offer. You may include public documentation.",
+        "The team reviews the proposal and its requirements. If we move forward, we define the pilot’s scope with you.",
+        "Prepare validation of results, permissions, account isolation and errors before enabling the integration.",
       ],
-      note: "The integration must be reviewed and validated before it is presented as available. Public, automatic service enrollment is still in development.",
-      link: "Prepare my integration",
+      note: "Submitting a proposal does not publish or activate your service. The integration must be validated before it is presented as available.",
+      link: "Propose my service",
     },
     faqs: [
       ["Do I need accounts with every provider?", "Market queries do not require your own CoinGecko or CoinMarketCap account. UNBLCK requires an already linked service account and access validation is still pending. Creating your Carmelita account does not automatically connect other services."],
@@ -172,14 +172,14 @@ const copy = {
     faqTitle: "Perguntas frequentes.", faqIntro: "Para conectar sua conta ou preparar uma integração.",
     providerFaq: {
       question: "Como faço para que meu serviço apareça na Carmelita?",
-      intro: "Comece preparando uma integração piloto:",
+      intro: "Envie uma proposta para revisão e prepare uma integração piloto:",
       steps: [
-        "Descreva seu serviço e a primeira consulta que deseja oferecer pela Carmelita.",
-        "Reúna a documentação da sua API ou MCP, se houver, e defina como o usuário autoriza o acesso.",
-        "Use o guia para desenvolvedores para preparar a validação de resultados, permissões, isolamento de contas e tratamento de erros.",
+        "Preencha o formulário com o nome do serviço, seu e-mail e a consulta que quer oferecer. Pode incluir documentação pública.",
+        "A equipe revisa a proposta e seus requisitos. Se avançarmos, definimos o escopo do piloto com você.",
+        "Prepare a validação de resultados, permissões, isolamento de contas e erros antes de ativar a integração.",
       ],
-      note: "A integração deve ser revisada e validada antes de ser apresentada como disponível. O cadastro público e automático de serviços segue em desenvolvimento.",
-      link: "Preparar minha integração",
+      note: "Enviar uma proposta não publica nem ativa seu serviço. A integração precisa ser validada antes de ser apresentada como disponível.",
+      link: "Propor meu serviço",
     },
     faqs: [
       ["Preciso de contas em todos os provedores?", "As consultas de mercado não exigem uma conta própria na CoinGecko ou CoinMarketCap. A UNBLCK exige uma conta do serviço já vinculada e a validação do acesso segue pendente. Criar sua conta Carmelita não conecta outros serviços automaticamente."],
@@ -361,7 +361,7 @@ export default function HomeExperience() {
               <p>{t.providerFaq.intro}</p>
               <ol role="list">{t.providerFaq.steps.map(step => <li key={step}>{step}</li>)}</ol>
               <p>{t.providerFaq.note}</p>
-              <Link href="/developers#pilot" className={styles.textLink}>{t.providerFaq.link}</Link>
+              <Link href="/developers#proposal" className={styles.textLink}>{t.providerFaq.link}</Link>
             </div>
           </details>
         </div>

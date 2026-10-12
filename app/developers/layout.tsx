@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: "Desarrolladores | Carmelita",
-  description: "Prepara una integración piloto de lectura con Carmelita. Revisa el MCP personal, los permisos, los ejemplos de consulta y la evidencia disponible.",
+  description: "Propón tu servicio a Carmelita con un formulario sencillo y envíalo a revisión. Prepara un piloto de lectura con permisos claros; el envío no publica automáticamente la integración.",
 };
 
 export default function DevelopersLayout({ children }: { children: ReactNode }) {
