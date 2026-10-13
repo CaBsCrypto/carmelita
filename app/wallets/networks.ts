@@ -9,6 +9,16 @@ export type WalletNetwork = {
   family: WalletFamily;
   name: string;
   nativeAsset: string;
+  balanceKind?: "native" | "tip20";
+  feeModel?: "native" | "tip20";
+  readOnly?: boolean;
+  balanceToken?: {
+    standard: "TIP-20";
+    address: `0x${string}`;
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
   testnet: true;
   rpcUrl: string;
   explorerUrl: string;
@@ -16,6 +26,20 @@ export type WalletNetwork = {
   testUsdcAddress?: `0x${string}`;
   chainId: number | null;
   rollout: "active" | "experimental" | "planned";
+};
+
+export const TEMPO_MODERATO_CHAIN_ID = 42431 as const;
+export const TEMPO_MODERATO_CAIP2 = "eip155:42431" as const;
+export const TEMPO_MODERATO_RPC_URL = "https://rpc.moderato.tempo.xyz";
+export const TEMPO_MODERATO_EXPLORER_URL = "https://explore.testnet.tempo.xyz";
+// Faucet docs call this pathUSD; Moderato name()/symbol() return PathUSD.
+// Reads verify this metadata against Moderato rather than the mainnet asset.
+export const TEMPO_MODERATO_TOKEN = {
+  standard: "TIP-20" as const,
+  address: "0x20c0000000000000000000000000000000000000" as const,
+  name: "PathUSD",
+  symbol: "PathUSD",
+  decimals: 6,
 };
 
 export const WALLET_NETWORKS: Record<WalletNetworkId, WalletNetwork> = {
@@ -54,13 +78,31 @@ export const WALLET_NETWORKS: Record<WalletNetworkId, WalletNetwork> = {
     explorerUrl: "https://testnet.bscscan.com", chainId: 97,
     rollout: "planned",
   },
+  "tempo:moderato": {
+    id: "tempo:moderato", family: "evm", name: "Tempo Testnet (Moderato)",
+    // Compatibility display label only: Tempo has no native gas asset.
+    nativeAsset: "USD", balanceKind: "tip20", feeModel: "tip20", readOnly: true,
+    balanceToken: TEMPO_MODERATO_TOKEN, testnet: true,
+    rpcUrl: TEMPO_MODERATO_RPC_URL, explorerUrl: TEMPO_MODERATO_EXPLORER_URL,
+    faucetUrl: "https://tempo.xyz/developers/docs/quickstart/faucet",
+    chainId: TEMPO_MODERATO_CHAIN_ID, rollout: "planned",
+  },
 };
 
 export function getWalletNetwork(input: string) {
   const network = WALLET_NETWORKS[walletNetworkIdSchema.parse(input)];
-  return isEvmExpansionNetwork(network.id) && isEvmExpansionEnabled()
+  return (isEvmExpansionNetwork(network.id) && isEvmExpansionEnabled())
+    || (network.id === "tempo:moderato" && isTempoTestnetEnabled())
     ? { ...network, rollout: "experimental" as const }
     : network;
+}
+
+export function isTempoTestnetEnabled(env: Record<string, string | undefined> = process.env) {
+  if (env.CARMELITA_TEMPO_TESTNET_ENABLED !== "true"
+    || env.CARMELITA_PREVIEW_ISOLATED !== "true"
+    || env.VERCEL_TARGET_ENV === "production") return false;
+  if (env.VERCEL_ENV === "preview") return true;
+  return env.VERCEL_ENV === undefined && env.NODE_ENV !== "production";
 }
 
 export function isEvmExpansionNetwork(input: string) {
@@ -89,7 +131,7 @@ export function enabledWalletNetworks() {
 export function enabledEvmNetworks() {
   return enabledWalletNetworks().filter((network) => network.family === "evm")
     .sort((left, right) => {
-      const order = ["avalanche:fuji", "bnb:testnet", "base:sepolia"];
+      const order = ["avalanche:fuji", "bnb:testnet", "base:sepolia", "tempo:moderato"];
       return order.indexOf(left.id) - order.indexOf(right.id);
     });
 }

@@ -17,7 +17,8 @@ export async function ensureEvmTestnetWallet(
   if (wallet.family !== "evm" || wallet.chainType !== "ethereum" || wallet.owner !== "user") {
     throw new Error("privy_invalid_evm_wallet_response");
   }
-  const networks = enabledEvmNetworks();
+  // Tempo is associated only by an explicit request after a verified RPC reading.
+  const networks = enabledEvmNetworks().filter((network) => !network.readOnly && network.balanceKind !== "tip20");
   const persisted = await dependencies.persistNetworks({ ...input, wallet, networks: networks.map((network) => network.id) });
   return {
     wallet: persisted,

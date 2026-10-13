@@ -45,6 +45,10 @@ async function rpc<T>(
   params: unknown[],
   fetcher: typeof fetch = fetch,
 ) {
+  // Tempo has TIP-20 fees and its own verified, read-only adapter.
+  if (network.id === "tempo:moderato" || network.readOnly || network.balanceKind === "tip20" || network.feeModel === "tip20") {
+    throw new Error("evm_network_read_only");
+  }
   if (network.family !== "evm" || network.chainId === null) {
     throw new Error("evm_network_required");
   }

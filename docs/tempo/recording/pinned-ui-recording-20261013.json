@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "actor": "tempo_wallet",
+  "provider": "public JSON-RPC",
+  "label": "A product UI recording",
+  "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+  "requestedBlock": "39375318",
+  "uiReference": {
+    "queriedAt": "2026-10-13T06:14:27.476Z",
+    "block": "39375318",
+    "tokenSymbol": "PathUSD",
+    "balance": "0",
+    "source": "Supplied live product UI reference; UI not controlled by this collector."
+  },
+  "rpcUrl": "https://rpc.moderato.tempo.xyz",
+  "sourceReader": "app/wallets/tempo.ts#readTempoWallet",
+  "credentialsUsed": false,
+  "walletCreations": 0,
+  "faucetCalls": 0,
+  "transactionsSubmitted": 0,
+  "grantsSubmitted": 0,
+  "buildsTriggered": 0,
+  "scope": "Historical public RPC comparison only; does not prove a fresh ChatGPT MCP reading or authenticate an owner.",
+  "status": "available",
+  "network": "tempo:moderato",
+  "caip2": "eip155:42431",
+  "testnet": true,
+  "chainId": 42431,
+  "queriedAt": "2026-10-13T06:25:23.084Z",
+  "completedAt": "2026-10-13T06:25:25.203Z",
+  "code": "0xef",
+  "codeReadAtRequestedBlock": true,
+  "token": {
+    "standard": "TIP-20",
+    "address": "0x20c0000000000000000000000000000000000000",
+    "name": "PathUSD",
+    "symbol": "PathUSD",
+    "decimals": 6,
+    "balanceAtomic": "0",
+    "balance": "0",
+    "metadataVerified": true
+  },
+  "block": {
+    "number": "39375318",
+    "hash": "0x473a491bdb3bba3456f43a713e64c0b04b00c3053948868c524eab9dbf6667fc",
+    "timestamp": "1791872066",
+    "timeUtc": "2026-10-13T06:14:26.000Z"
+  },
+  "matchesSuppliedUiBlockAndBalance": true,
+  "uiQueryAfterBlockTimestamp": true
+}

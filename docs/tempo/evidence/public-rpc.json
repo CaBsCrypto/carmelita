@@ -1,0 +1,31 @@
+{
+  "testedSha": "6c07143e897f32619365ab027aed65d5acaa4135",
+  "environment": "local public RPC; no authenticated ownership or MCP acceptance",
+  "fundsMoved": false,
+  "signingRequired": false,
+  "reading": {
+    "network": "tempo:moderato",
+    "caip2": "eip155:42431",
+    "testnet": true,
+    "address": "0x0000000000000000000000000000000000000000",
+    "queriedAt": "2026-10-13T00:51:31.307Z",
+    "explorerUrl": "https://explore.testnet.tempo.xyz/address/0x0000000000000000000000000000000000000000",
+    "status": "available",
+    "chainId": 42431,
+    "block": {
+      "number": "39343638",
+      "hash": "0x95111ded19455fa105ef253d6fe485fcad0d95fc73cce24a4258dc58baa93033",
+      "timestamp": "1791852690"
+    },
+    "token": {
+      "standard": "TIP-20",
+      "address": "0x20c0000000000000000000000000000000000000",
+      "name": "PathUSD",
+      "symbol": "PathUSD",
+      "decimals": 6,
+      "balanceAtomic": "40000000000000",
+      "balance": "40000000",
+      "metadataVerified": true
+    }
+  }
+}
