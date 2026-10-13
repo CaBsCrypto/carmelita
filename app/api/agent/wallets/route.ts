@@ -8,6 +8,7 @@ import { walletNetworkIdSchema } from "@/app/wallets/types";
 import { hasDatabase } from "@/db";
 import { readWalletListPanel, withPersonalPanelReadDeadline } from "@/app/queries/personal-panels";
 import { publicMcpErrorCode } from "@/app/mcp/auth";
+import { ensureTempoTestnetWallet } from "@/app/wallets/tempo-onboarding";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 const activationSchema = z.object({
   network: walletNetworkIdSchema,
   explicitUserConfirmation: z.literal(true),
-});
+}).strict();
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
@@ -65,6 +66,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "network_not_available", network: network.id }, { status: 409 });
     }
 
+    if (network.id === "tempo:moderato") {
+      const result = await ensureTempoTestnetWallet({ ...user, signal: request.signal });
+      return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
+    }
+
     const wallet = await getOrCreateUserWallet(user.userId, network.family);
     await persistActivatedWallet({
       userId: user.userId,
@@ -91,18 +97,29 @@ export async function POST(request: Request) {
     }, { status: wallet.created ? 201 : 200 });
   } catch (error) {
     const invalidInput = error instanceof z.ZodError;
-    const code = invalidInput
-      ? "invalid_wallet_activation"
-      : error instanceof Error
-        ? error.message.split(":")[0]
-        : "wallet_activation_failed";
+    // Provider/transport exception text can contain URLs or credentials. Expose only known codes.
+    const safeCodes = new Set([
+      "invalid_privy_user_id", "invalid_wallet_networks", "invalid_wallet_status", "wallet_identity_conflict",
+      "wallet_ownership_conflict", "wallet_response_mismatch", "privy_evm_wallet_ambiguous",
+      "privy_stellar_wallet_ambiguous", "privy_solana_wallet_ambiguous", "privy_invalid_wallet_response",
+      "privy_not_configured", "database_not_configured", "wallet_persistence_unavailable",
+      "existing_evm_wallet_required", "tempo_disabled", "tempo_configuration_incomplete", "tempo_wrong_chain",
+      "tempo_rpc_timeout", "tempo_rpc_unavailable", "tempo_rpc_invalid_response", "tempo_token_metadata_mismatch",
+      "tempo_invalid_address",
+    ]);
+    const proposed = error instanceof Error ? error.message : "";
+    const code = invalidInput || error instanceof SyntaxError ? "invalid_wallet_activation"
+      : safeCodes.has(proposed) ? proposed : "wallet_activation_failed";
     const status = invalidInput || code.startsWith("invalid_")
       ? 400
-      : code.includes("conflict") || code === "privy_evm_wallet_ambiguous"
+      : code.includes("conflict") || code.includes("wallet_ambiguous") || code === "existing_evm_wallet_required"
         ? 409
-      : code === "privy_not_configured" || code === "database_not_configured"
+      : code === "privy_not_configured" || code === "database_not_configured" || code === "wallet_persistence_unavailable"
+        || code === "tempo_disabled" || code === "tempo_configuration_incomplete"
         ? 503
+      : code.startsWith("tempo_") || code === "wallet_response_mismatch"
+        ? 502
         : 401;
-    return NextResponse.json({ error: code }, { status });
+    return NextResponse.json({ error: code, ...(code === "existing_evm_wallet_required" ? { next: "create_evm_testnet_wallet" } : {}) }, { status, headers: { "Cache-Control": "no-store" } });
   }
 }

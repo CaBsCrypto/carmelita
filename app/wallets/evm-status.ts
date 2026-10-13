@@ -29,7 +29,7 @@ export function createEvmStatusHandler(dependencies: Dependencies = {
       return respond({ error: "invalid_evm_network" }, 400);
     }
     const network = getWalletNetwork(networkId.data);
-    if (network.family !== "evm" || !network.testnet) return respond({ error: "invalid_evm_network" }, 400);
+    if (network.family !== "evm" || !network.testnet || network.readOnly || network.balanceKind === "tip20") return respond({ error: "invalid_evm_network" }, 400);
     if (!isWalletNetworkEnabled(network.id)) return respond({ error: "network_not_available" }, 409);
 
     let wallets: WalletRow[];
