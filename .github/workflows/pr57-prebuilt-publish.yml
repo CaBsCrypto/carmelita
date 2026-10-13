@@ -1,250 +1,74 @@
-# Prepared evidence only: no workflow installation, environment creation or token configuration.
-name: PR57 approved QA prebuilt publication
+name: PR57 prebuilt read-only credential diagnostic
 on:
   push:
     branches: [codex/pr57-prebuilt-publish]
 permissions:
   contents: read
-  actions: read
 concurrency:
   group: pr57-qa-publication-598bb3f
   cancel-in-progress: false
 jobs:
-  preflight:
+  diagnose:
     if: github.repository == 'CaBsCrypto/carmelita' && github.ref == 'refs/heads/codex/pr57-prebuilt-publish' && github.run_attempt == 1
+    environment: pr57-qa-publication
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Require existing human approval protection and exact artifact provenance
-        env:
-          GH_READ_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-          async function get(relative) {
-            const response = await fetch(`https://api.github.com/repos/CaBsCrypto/carmelita/${relative}`, {
-              redirect: 'error', signal: AbortSignal.timeout(20_000),
-              headers: { Authorization: `Bearer ${process.env.GH_READ_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
-            });
-            if (!response.ok) throw new Error('publication_preflight_metadata_unavailable');
-            return response.json();
-          }
-          const protection = await get('environments/pr57-qa-publication');
-          assert.equal(protection.name, 'pr57-qa-publication');
-          const reviewers = protection.protection_rules?.find(rule => rule.type === 'required_reviewers');
-          assert.ok(reviewers?.reviewers?.length > 0, 'Human approval protection must exist before workflow installation');
-          const run = await get('actions/runs/38358117623');
-          assert.equal(run.conclusion, 'success');
-          assert.equal(run.head_sha, '0ec31b8be0858e5a6e7d356012fc7ef3ca1a1234');
-          assert.equal(run.head_branch, 'codex/pr57-prebuilt-qa');
-          const artifact = await get('actions/artifacts/11793776538');
-          assert.equal(artifact.expired, false);
-          assert.equal(artifact.name, 'pr57-prebuilt-linux-598bb3f-38358117623-1');
-          assert.equal(artifact.workflow_run.id, 38358117623);
-          assert.equal(artifact.digest, 'sha256:f9016d57899db3fd271a34baa1e17f7233c7211e053f7bbe65f43a75c6c9122d');
-          const pull = await get('pulls/57');
-          assert.equal(pull.state, 'open');
-          assert.equal(pull.head.sha, '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5');
-          assert.equal(pull.head.ref, 'codex/landing-redesign');
-          assert.equal(pull.head.repo.full_name, 'CaBsCrypto/carmelita');
-          console.log('Approval protection and fixed artifact metadata verified; no deployment submitted.');
-          NODE
-  publish:
-    needs: preflight
-    if: github.repository == 'CaBsCrypto/carmelita' && github.ref == 'refs/heads/codex/pr57-prebuilt-publish' && github.run_attempt == 1
-    environment:
-      name: pr57-qa-publication
-    runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    steps:
-      - name: Check out the preserved application candidate
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          repository: CaBsCrypto/carmelita
-          ref: 598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5
-          path: source
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Use the artifact runtime
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - name: Use the pinned runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24.14.0
-      - name: Download only the fixed preparation artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          github-token: ${{ github.token }}
-          repository: CaBsCrypto/carmelita
-          run-id: 38358117623
-          name: pr57-prebuilt-linux-598bb3f-38358117623-1
-          path: artifact
-      - name: Verify archive and extract only safe Linux Build Output
-        shell: bash
-        run: |
-          python3 <<'PY'
-          import hashlib, json, pathlib, posixpath, subprocess, tarfile
-          root = pathlib.Path.cwd()
-          artifact = root / 'artifact'
-          source = root / 'source'
-          archive = artifact / 'pr57-prebuilt-linux-598bb3f.tar.gz'
-          expected = 'd154762ada8963fee364f98d9d726b4d25cf0935fc6a0ae43c742cba299320c7'
-          def sha_file(file):
-              digest = hashlib.sha256()
-              with file.open('rb') as stream:
-                  for chunk in iter(lambda: stream.read(1024 * 1024), b''): digest.update(chunk)
-              return digest.hexdigest()
-          if sha_file(archive) != expected: raise RuntimeError('fixed_archive_digest_mismatch')
-          manifest = json.loads((artifact / 'manifest.json').read_text())
-          required = {'sourceSha': '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5', 'sourceTree': '89fbdff589ebd589b603db227e9eefd86006782f', 'sourceBranch': 'codex/landing-redesign', 'platform': 'linux', 'architecture': 'x64', 'node': 'v24.14.0', 'vercelCli': '58.9.4', 'archiveSha256': expected}
-          if any(manifest.get(key) != value for key, value in required.items()): raise RuntimeError('artifact_provenance_mismatch')
-          sums = dict((line.split('  ', 1)[1], line.split('  ', 1)[0]) for line in (artifact / 'SHA256SUMS').read_text().splitlines())
-          if sums != {archive.name: expected, 'manifest.json': sha_file(artifact / 'manifest.json')}: raise RuntimeError('artifact_checksum_manifest_mismatch')
-          output = source / '.vercel' / 'output'
-          if output.exists(): raise RuntimeError('output_must_be_absent_before_extraction')
-          allowed_root = '.vercel/output'
-          with tarfile.open(archive, 'r:gz') as bundle:
-              seen = set()
-              for member in bundle.getmembers():
-                  name = member.name.rstrip('/')
-                  if name in seen: raise RuntimeError('duplicate_archive_member')
-                  seen.add(name)
-                  if '\\' in name or name.startswith('/') or '..' in name.split('/') or not (name == allowed_root or name.startswith(allowed_root + '/')): raise RuntimeError('unsafe_archive_path')
-                  if member.mode & 0o6000 or not (member.isdir() or member.isfile() or member.issym() or member.islnk()): raise RuntimeError('unsafe_archive_type')
-                  if member.issym() or member.islnk():
-                      link = member.linkname
-                      target = posixpath.normpath(link if member.islnk() else posixpath.join(posixpath.dirname(name), link))
-                      if '\\' in link or link.startswith('/') or not target.startswith(allowed_root + '/'): raise RuntimeError('unsafe_archive_link')
-          subprocess.run(['tar', '-xzf', str(archive), '--no-same-owner', '--same-permissions', '--keep-old-files', '-C', str(source)], check=True, timeout=300)
-          files = {}
-          for file in output.rglob('*'):
-              if file.is_symlink():
-                  target = file.resolve(strict=True)
-                  if not target.is_relative_to(output.resolve()): raise RuntimeError('extracted_link_leaves_output')
-                  files[file.relative_to(output).as_posix()] = ('symlink', hashlib.sha256(str(file.readlink()).encode()).hexdigest())
-              elif file.is_file(): files[file.relative_to(output).as_posix()] = ('file', sha_file(file))
-          recorded = {entry['path']: (entry['type'], entry['sha256']) for entry in manifest['fileHashes']}
-          if files != recorded or len(files) != 4568: raise RuntimeError('extracted_file_hash_mismatch')
-          config = json.loads((output / 'config.json').read_text())
-          build = json.loads((output / 'builds.json').read_text())
-          if config.get('version') != 3 or build.get('target') != 'preview' or build.get('cliVersion') != '58.9.4': raise RuntimeError('prebuilt_target_mismatch')
-          print('Fixed archive, source provenance, safe TAR and 4568 output hashes verified. No build performed.')
-          PY
-      - name: Prepare public project link and pinned CLI without publication credentials
-        working-directory: source
+      - name: Install the public pinned CLI without credentials
         shell: bash
         run: |
           node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
           import fs from 'node:fs';
           import path from 'node:path';
-          import { execFileSync } from 'node:child_process';
-          const userConfig = path.join(process.env.RUNNER_TEMP, 'pr57-publication-npm-user');
-          const globalConfig = path.join(process.env.RUNNER_TEMP, 'pr57-publication-npm-global');
-          fs.writeFileSync(userConfig, ''); fs.writeFileSync(globalConfig, '');
-          const env = { PATH: process.env.PATH, CI: 'true', LANG: 'C.UTF-8', NPM_CONFIG_USERCONFIG: userConfig, NPM_CONFIG_GLOBALCONFIG: globalConfig, NPM_CONFIG_AUDIT: 'false', NPM_CONFIG_FUND: 'false' };
-          const call = (file, args) => execFileSync(file, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 }).trim();
-          assert.equal(call('git', ['rev-parse', 'HEAD']), '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5');
-          assert.equal(call('git', ['rev-parse', 'HEAD^{tree}']), '89fbdff589ebd589b603db227e9eefd86006782f');
-          assert.equal(call('git', ['status', '--porcelain']), '');
-          assert.ok(fs.statSync('.git').isDirectory());
-          assert.ok(['https://github.com/CaBsCrypto/carmelita', 'https://github.com/CaBsCrypto/carmelita.git'].includes(call('git', ['remote', 'get-url', 'origin'])));
-          call('git', ['checkout', '-b', 'codex/landing-redesign']);
-          fs.mkdirSync('.vercel', { recursive: true });
-          fs.writeFileSync('.vercel/project.json', JSON.stringify({ projectId: 'prj_UQnTOdi1AWU6soTr04ACsqNo7YDu', orgId: 'team_XjolcoWJ9V9yamVnCdpC7EMY', projectName: 'agente-asistente' }));
-          const tools = path.join(process.env.RUNNER_TEMP, 'pr57-publication-tools');
-          try { execFileSync('npm', ['install', '--global', '--prefix', tools, 'npm@11.6.1', 'vercel@58.9.4', '--no-audit', '--no-fund'], { env, stdio: 'inherit', timeout: 1_200_000 }); }
-          catch { throw new Error('publication_tool_install_failed'); }
-          const configured = { ...env, PATH: `${path.join(tools, 'bin')}:${env.PATH}` };
-          assert.equal(execFileSync('npm', ['--version'], { env: configured, encoding: 'utf8' }).trim(), '11.6.1');
+          import {execFileSync} from 'node:child_process';
+          const userConfig=path.join(process.env.RUNNER_TEMP,'pr57-diag-npm-user');
+          const globalConfig=path.join(process.env.RUNNER_TEMP,'pr57-diag-npm-global');
+          fs.writeFileSync(userConfig,''); fs.writeFileSync(globalConfig,'');
+          const env={PATH:process.env.PATH,CI:'true',NPM_CONFIG_USERCONFIG:userConfig,NPM_CONFIG_GLOBALCONFIG:globalConfig,NPM_CONFIG_AUDIT:'false',NPM_CONFIG_FUND:'false'};
+          execFileSync('npm',['install','--global','--prefix',path.join(process.env.RUNNER_TEMP,'pr57-diag-tools'),'vercel@58.9.4','--no-audit','--no-fund'],{env,stdio:'inherit',timeout:300_000});
           NODE
-      - name: Submit one approved QA prebuilt publication
-        working-directory: source
+      - name: Read only authentication metadata and CLI whoami
         env:
           CARMELITA_QA_VERCEL_TOKEN: ${{ secrets.CARMELITA_QA_VERCEL_TOKEN }}
-          GH_READ_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
           import fs from 'node:fs';
           import path from 'node:path';
-          import { execFileSync } from 'node:child_process';
-          const token = process.env.CARMELITA_QA_VERCEL_TOKEN;
-          if (!token || !/^[\x21-\x7e]{16,4096}$/.test(token)) throw new Error('publication_token_missing_or_invalid');
-          async function metadata(url, credential) {
-            const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(20_000), headers: { Authorization: `Bearer ${credential}`, Accept: 'application/json' } });
-            if (!response.ok) throw new Error('publication_metadata_preflight_unavailable');
-            return response.json();
+          import {execFileSync} from 'node:child_process';
+          const token=process.env.CARMELITA_QA_VERCEL_TOKEN;
+          if(!token || !/^[\x21-\x7e]{16,4096}$/.test(token)) throw new Error('diagnostic_credential_missing_or_invalid');
+          const safeCode = value => typeof value==='string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) ? value : null;
+          const proof={readOnly:true,deploymentCommandInvoked:false,tokenMatchesCliSyntax:! /\W/.test(token),checkedAt:new Date().toISOString(),requests:[],whoami:null};
+          for(const pathname of ['/v2/user','/v1/teams','/v2/teams/team_XjolcoWJ9V9yamVnCdpC7EMY']) {
+            const response=await fetch(`https://api.vercel.com${pathname}`,{redirect:'error',signal:AbortSignal.timeout(15_000),headers:{Authorization:`Bearer ${token}`}});
+            const body=await response.json();
+            proof.requests.push({pathname,status:response.status,errorCode:safeCode(body.error?.code),userPresent:Boolean(body.user?.uid),teamPresent:Boolean(body.id),teamCount:Array.isArray(body.teams)?body.teams.length:null});
           }
-          const projectId = 'prj_UQnTOdi1AWU6soTr04ACsqNo7YDu';
-          const teamId = 'team_XjolcoWJ9V9yamVnCdpC7EMY';
-          const project = await metadata(`https://api.vercel.com/v9/projects/${projectId}?teamId=${teamId}`, token);
-          assert.equal(project.id, projectId); assert.equal(project.name, 'agente-asistente');
-          assert.equal(project.accountId, teamId);
-          assert.equal(project.resourceConfig.buildMachineType, 'standard');
-          assert.equal(project.resourceConfig.buildMachineSelection, 'fixed');
-          assert.equal(project.resourceConfig.elasticConcurrencyEnabled, false);
-          assert.equal(project.link?.type, 'github');
-          assert.equal(project.link?.org, 'CaBsCrypto'); assert.equal(project.link?.repo, 'carmelita');
-          assert.equal(project.link?.productionBranch ?? 'main', 'main');
-          assert.equal(project.commandForIgnoringBuildStep, '[ "$VERCEL_GIT_COMMIT_REF" = "main" ] && exit 1 || exit 0');
-          assert.equal(project.ssoProtection?.deploymentType, 'prod_deployment_urls_and_all_previews');
-          const stored = await metadata(`https://api.vercel.com/v10/projects/${projectId}/env?teamId=${teamId}`, token);
-          const expectedKeys = ['ADMIN_EMAILS', 'CARMELITA_ADMIN_EMAILS', 'ADMIN_USERNAME', 'CARMELITA_PROPOSAL_EMAIL_TO', 'CARMELITA_PROPOSAL_EMAIL_FROM', 'CARMELITA_PROPOSAL_EMAIL_ENABLED', 'CARMELITA_PUBLIC_ORIGIN', 'CARMELITA_PREVIEW_DEPLOYMENT', 'CARMELITA_PREVIEW_ORIGIN', 'CARMELITA_PREVIEW_DATABASE_HOST', 'CARMELITA_PREVIEW_ISOLATED', 'RESEND_API_KEY', 'ADMIN_PASSWORD_HASH', 'ADMIN_SESSION_SECRET', 'CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED', 'CARMELITA_PREVIEW_PGPASSWORD', 'CARMELITA_PREVIEW_POSTGRES_HOST', 'CARMELITA_PREVIEW_NEON_PROJECT_ID', 'CARMELITA_PREVIEW_PGHOST_UNPOOLED', 'CARMELITA_PREVIEW_POSTGRES_URL_NON_POOLING', 'CARMELITA_PREVIEW_POSTGRES_URL_NO_SSL', 'CARMELITA_PREVIEW_POSTGRES_PRISMA_URL', 'CARMELITA_PREVIEW_PGHOST', 'CARMELITA_PREVIEW_PGUSER', 'CARMELITA_PREVIEW_POSTGRES_USER', 'CARMELITA_PREVIEW_POSTGRES_URL', 'CARMELITA_PREVIEW_POSTGRES_DATABASE', 'CARMELITA_PREVIEW_DATABASE_URL', 'CARMELITA_PREVIEW_PGDATABASE', 'CARMELITA_PREVIEW_POSTGRES_PASSWORD'];
-          const privateKeys = new Set(['RESEND_API_KEY', 'ADMIN_PASSWORD_HASH', 'ADMIN_SESSION_SECRET', ...expectedKeys.filter(key => /(?:DATABASE_URL|PGPASSWORD|POSTGRES_|NEON_PROJECT_ID|PGHOST|PGUSER|PGDATABASE)/.test(key))]);
-          for (const key of expectedKeys) {
-            const found = stored.envs.filter(item => item.key === key && item.gitBranch === 'codex/landing-redesign');
-            assert.equal(found.length, 1, `Missing or duplicate branch QA setting: ${key}`);
-            assert.deepEqual(found[0].target, ['preview']);
-            if (privateKeys.has(key)) assert.equal(found[0].type, 'sensitive');
-          }
-          const pull = await metadata('https://api.github.com/repos/CaBsCrypto/carmelita/pulls/57', process.env.GH_READ_TOKEN);
-          assert.equal(pull.state, 'open'); assert.equal(pull.head.sha, '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5');
-          assert.equal(pull.head.ref, 'codex/landing-redesign');
-          console.log('Exact open PR, fixed Standard project, protection and 30 branch-scoped QA key names verified. No values printed.');
-          const tools = path.join(process.env.RUNNER_TEMP, 'pr57-publication-tools');
-          const emptyConfig = path.join(process.env.RUNNER_TEMP, 'pr57-publication-global-config');
-          fs.mkdirSync(emptyConfig, { recursive: true });
-          const env = { PATH: `${path.join(tools, 'bin')}:${process.env.PATH}`, CI: 'true', LANG: 'C.UTF-8', VERCEL_TOKEN: token, VERCEL_TELEMETRY_DISABLED: '1' };
-          const receipt = { sourceSha: '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5', sourceBranch: 'codex/landing-redesign', archiveSha256: 'd154762ada8963fee364f98d9d726b4d25cf0935fc6a0ae43c742cba299320c7', submittedAt: new Date().toISOString(), target: 'preview', prebuilt: true, submissionAttempted: true, outcome: 'unknown', id: null, url: null, readyState: null, applicationBuildRequested: false, retryAuthorized: false };
-          fs.mkdirSync('../publication-receipt', { recursive: true });
-          const receiptFile = '../publication-receipt/receipt.json';
-          fs.writeFileSync(receiptFile, JSON.stringify(receipt, null, 2));
-          const args = ['deploy', '--prebuilt', '--archive=tgz', '--target', 'preview', '--project', 'prj_UQnTOdi1AWU6soTr04ACsqNo7YDu', '--scope', 'team_XjolcoWJ9V9yamVnCdpC7EMY', '--meta', 'githubDeployment=1', '--meta', 'githubCommitRef=codex/landing-redesign', '--meta', 'githubCommitSha=598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5', '--meta', 'githubOrg=CaBsCrypto', '--meta', 'githubRepo=carmelita', '--meta', 'carmelitaReviewedCommit=598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5', '--meta', 'carmelitaArtifactSha256=d154762ada8963fee364f98d9d726b4d25cf0935fc6a0ae43c742cba299320c7', '--no-wait', '--non-interactive', '--yes', '--json', '--global-config', emptyConfig];
-          function sanitizedDeployment(payload) {
-            const result = payload.deployment ?? payload;
-            assert.match(result.id, /^dpl_[A-Za-z0-9]+$/);
-            assert.equal(typeof result.url, 'string');
-            const url = new URL(result.url.startsWith('https://') ? result.url : `https://${result.url}`);
-            assert.equal(url.protocol, 'https:');
-            assert.ok(url.hostname.endsWith('.vercel.app') && !url.username && !url.password && !url.search && !url.hash && !url.port && url.pathname === '/');
-            assert.ok(result.target === null || result.target === 'preview');
-            return { id: result.id, url: url.href, readyState: typeof result.readyState === 'string' ? result.readyState : null };
-          }
-          // --yes here confirms this approved deploy; there is no build/pull command.
-          // --skip-domain is incompatible with Preview and is deliberately omitted.
+          const config=path.join(process.env.RUNNER_TEMP,'pr57-diag-global-config');
+          fs.mkdirSync(config,{recursive:true});
+          const env={PATH:`${path.join(process.env.RUNNER_TEMP,'pr57-diag-tools/bin')}:${process.env.PATH}`,CI:'true',LANG:'C.UTF-8',VERCEL_TOKEN:token,VERCEL_TELEMETRY_DISABLED:'1'};
+          function parsedSafe(raw) {try {const value=JSON.parse(raw);return {status:safeCode(value.status),errorCode:safeCode(value.error?.code)};}catch{return null;}}
           try {
-            const raw = execFileSync('vercel', args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 300_000, maxBuffer: 1_048_576 });
-            const payload = JSON.parse(raw);
-            if (payload.status !== undefined) assert.equal(payload.status, 'ok');
-            const result = sanitizedDeployment(payload);
-            receipt.outcome = 'submitted'; receipt.id = result.id; receipt.url = result.url; receipt.readyState = result.readyState;
-            fs.writeFileSync(receiptFile, JSON.stringify(receipt, null, 2));
-            console.log(JSON.stringify({ outcome: receipt.outcome, id: receipt.id, url: receipt.url, readyState: receipt.readyState, target: receipt.target }));
-          } catch (error) {
-            try {
-              const result = sanitizedDeployment(JSON.parse(String(error.stdout ?? '')));
-              receipt.id = result.id; receipt.url = result.url; receipt.readyState = result.readyState;
-              fs.writeFileSync(receiptFile, JSON.stringify(receipt, null, 2));
-            } catch { /* Preserve unknown status; never print raw output or resubmit. */ }
-            throw new Error('publication_result_unknown_inspect_only_do_not_resubmit');
+            const raw=execFileSync('vercel',['whoami','--scope','team_XjolcoWJ9V9yamVnCdpC7EMY','--non-interactive','--json','--global-config',config],{env,encoding:'utf8',stdio:['ignore','pipe','pipe'],timeout:30_000,maxBuffer:1_048_576});
+            proof.whoami={exitCode:0,result:parsedSafe(raw)};
+          } catch(error) {
+            const combined=String(error.stdout??'')+'\n'+String(error.stderr??'');
+            proof.whoami={exitCode:typeof error.status==='number'?error.status:null,result:parsedSafe(String(error.stdout??'')),reason:/No existing credentials|No token found|not logged/i.test(combined)?'credentials_missing':/scope.*(not found|not exist)|not.*(found|exist).*scope/i.test(combined)?'scope_unavailable':/forbidden|not authorized|not allowed/i.test(combined)?'access_denied':/Invalid token|invalid.*token/i.test(combined)?'invalid_token':null};
           }
+          fs.mkdirSync('diagnostic-proof',{recursive:true});
+          fs.writeFileSync('diagnostic-proof/metadata.json',JSON.stringify(proof,null,2));
+          console.log(JSON.stringify(proof));
           NODE
-      - name: Retain only the sanitized publication receipt
+      - name: Retain sanitized diagnostic metadata only
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pr57-qa-publication-receipt-${{ github.run_id }}
-          path: publication-receipt/receipt.json
+          name: pr57-prebuilt-readonly-diagnostic-${{ github.run_id }}
+          path: diagnostic-proof/metadata.json
           if-no-files-found: ignore
           retention-days: 2
