@@ -1,0 +1,169 @@
+# QA artifact preparation only. No deploys or application secrets.
+name: PR57 Linux prebuilt preparation
+on:
+  push:
+    branches: [codex/pr57-prebuilt-qa]
+permissions:
+  contents: read
+concurrency:
+  group: pr57-prebuilt-598bb3f
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.repository == 'CaBsCrypto/carmelita' && github.ref == 'refs/heads/codex/pr57-prebuilt-qa'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact application source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: CaBsCrypto/carmelita
+          ref: 598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Use the reviewed Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.14.0
+      - name: Verify source and build without application credentials
+        working-directory: source
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { execFileSync } from 'node:child_process';
+          const sourceSha = '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5';
+          const sourceTree = '89fbdff589ebd589b603db227e9eefd86006782f';
+          const publicOrigin = 'https://carmelita-pr57-qa-21e6997.vercel.app';
+          assert.equal(process.platform, 'linux');
+          assert.equal(process.arch, 'x64');
+          assert.equal(process.version, 'v24.14.0');
+          assert.ok(path.isAbsolute(process.env.RUNNER_TEMP ?? ''));
+          const taskTools = path.join(process.env.RUNNER_TEMP, 'pr57-build-tools');
+          const taskGlobalConfig = path.join(process.env.RUNNER_TEMP, 'pr57-empty-vercel-config');
+          fs.mkdirSync(taskTools, { recursive: true });
+          fs.mkdirSync(taskGlobalConfig, { recursive: true });
+          const taskNpmUserConfig = path.join(process.env.RUNNER_TEMP, 'pr57-user.npmrc');
+          const taskNpmGlobalConfig = path.join(process.env.RUNNER_TEMP, 'pr57-global.npmrc');
+          fs.writeFileSync(taskNpmUserConfig, '');
+          fs.writeFileSync(taskNpmGlobalConfig, '');
+          // An explicit allowlist excludes Actions tokens, application secrets and auth config.
+          const cleanEnv = {
+            PATH: process.env.PATH, LANG: 'C.UTF-8', TZ: 'UTC', CI: 'true',
+            NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1', VERCEL_TELEMETRY_DISABLED: '1',
+            NPM_CONFIG_USERCONFIG: taskNpmUserConfig, NPM_CONFIG_GLOBALCONFIG: taskNpmGlobalConfig,
+            NPM_CONFIG_CACHE: path.join(process.env.RUNNER_TEMP, 'pr57-npm-cache'),
+            NPM_CONFIG_INCLUDE: 'dev', NPM_CONFIG_AUDIT: 'false', NPM_CONFIG_FUND: 'false',
+            VERCEL_ENV: 'preview', CARMELITA_PUBLIC_ORIGIN: publicOrigin,
+            CARMELITA_PROPOSAL_EMAIL_ENABLED: 'false',
+          };
+          const call = (file, args, timeout = 60_000) => execFileSync(file, args, {
+            env: cleanEnv, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout,
+          }).trim();
+          const sourceCheck = () => {
+            assert.equal(call('git', ['rev-parse', 'HEAD']), sourceSha);
+            assert.equal(call('git', ['rev-parse', 'HEAD^{tree}']), sourceTree);
+            assert.equal(call('git', ['status', '--porcelain']), '');
+          };
+          sourceCheck();
+          assert.ok(fs.statSync('.git').isDirectory());
+          assert.ok(fs.existsSync('.git/config'));
+          const remote = call('git', ['remote', 'get-url', 'origin']);
+          assert.ok(['https://github.com/CaBsCrypto/carmelita', 'https://github.com/CaBsCrypto/carmelita.git'].includes(remote));
+          call('git', ['checkout', '-b', 'codex/landing-redesign']);
+          assert.equal(call('git', ['branch', '--show-current']), 'codex/landing-redesign');
+          fs.mkdirSync('.vercel', { recursive: true });
+          const publicProject = {
+            projectId: 'prj_UQnTOdi1AWU6soTr04ACsqNo7YDu', orgId: 'team_XjolcoWJ9V9yamVnCdpC7EMY',
+            projectName: 'agente-asistente', settings: {
+              framework: 'nextjs', devCommand: null,
+              installCommand: 'npm ci --include=dev --no-audit --no-fund',
+              buildCommand: 'npm run build', outputDirectory: null, rootDirectory: null, nodeVersion: '24.x',
+            },
+          };
+          fs.writeFileSync('.vercel/project.json', JSON.stringify(publicProject, null, 2));
+          const run = (file, args, timeout) => {
+            try { execFileSync(file, args, { env: cleanEnv, stdio: 'inherit', timeout }); }
+            catch { throw new Error('prebuilt_step_failed_no_automatic_retry'); }
+          };
+          run('npm', ['install', '--global', '--prefix', taskTools, 'npm@11.6.1', 'vercel@58.9.4', '--no-audit', '--no-fund'], 1_200_000);
+          cleanEnv.PATH = `${path.join(taskTools, 'bin')}:${cleanEnv.PATH}`;
+          assert.equal(call('npm', ['--version']), '11.6.1');
+          // No --yes (automatic pull), --id (secret fetch), --project (remote lookup), or deploy.
+          run('vercel', ['build', '--target', 'preview', '--standalone', '--non-interactive', '--global-config', taskGlobalConfig], 1_500_000);
+          sourceCheck();
+          assert.equal(call('git', ['branch', '--show-current']), 'codex/landing-redesign');
+          NODE
+      - name: Package only Build Output and its provenance
+        working-directory: source
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { createHash } from 'node:crypto';
+          import { execFileSync } from 'node:child_process';
+          const output = path.resolve('.vercel/output');
+          const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+          assert.equal(JSON.parse(fs.readFileSync(path.join(output, 'config.json'), 'utf8')).version, 3);
+          const target = JSON.parse(fs.readFileSync(path.join(output, 'builds.json'), 'utf8'));
+          assert.equal(target.target, 'preview');
+          assert.equal(target.cliVersion, '58.9.4');
+          const fileHashes = [];
+          const templateHash = sha256(fs.readFileSync('.env.example'));
+          const walk = directory => {
+            for (const name of fs.readdirSync(directory).sort()) {
+              const file = path.join(directory, name);
+              const relative = path.relative(output, file).split(path.sep).join('/');
+              const stat = fs.lstatSync(file);
+              if (path.basename(relative) === '.env.example') {
+                assert.ok(stat.isFile(), 'Template must be a regular file');
+                assert.equal(sha256(fs.readFileSync(file)), templateHash, 'Only the exact public source template is permitted');
+              } else {
+                assert.ok(!/(^|\/)(?:\.env(?:\.|$)|\.git(?:\/|$)|\.npmrc$|project\.json$)/.test(relative), 'Unapproved configuration file in Build Output');
+              }
+              if (stat.isSymbolicLink()) {
+                const destination = fs.realpathSync(file);
+                assert.ok(destination.startsWith(output + path.sep), 'Standalone symlink leaves Build Output');
+                fileHashes.push({ path: relative, type: 'symlink', sha256: sha256(fs.readlinkSync(file)) });
+              } else if (stat.isDirectory()) walk(file);
+              else { assert.ok(stat.isFile()); fileHashes.push({ path: relative, type: 'file', sha256: sha256(fs.readFileSync(file)) }); }
+            }
+          };
+          walk(output);
+          const delivery = path.resolve('../delivery');
+          fs.mkdirSync(delivery, { recursive: true });
+          const archive = path.join(delivery, 'pr57-prebuilt-linux-598bb3f.tar.gz');
+          execFileSync('tar', ['--sort=name', '--owner=0', '--group=0', '--numeric-owner', '-czf', archive, '-C', process.cwd(), '.vercel/output'], { stdio: 'inherit', timeout: 300_000 });
+          const archiveHash = sha256(fs.readFileSync(archive));
+          const manifest = {
+            schemaVersion: 1, sourceSha: '598bb3f232ffaa7f3c1cc107a26f24bad94a6ad5',
+            sourceTree: '89fbdff589ebd589b603db227e9eefd86006782f', sourceBranch: 'codex/landing-redesign',
+            workflowTriggerBranch: 'codex/pr57-prebuilt-qa', runner: 'ubuntu-24.04', platform: process.platform,
+            architecture: process.arch, node: process.version, npm: '11.6.1', vercelCli: '58.9.4',
+            publicOrigin: 'https://carmelita-pr57-qa-21e6997.vercel.app', proposalMailEnabledAtBuild: false,
+            applicationSecretsProvided: false, environmentPullPerformed: false, vercelDeploymentCreated: false,
+            allowedTrackedTemplate: '.env.example', allowedTrackedTemplateSha256: templateHash,
+            hostedAcceptance: 'pending', accountAndPrivyPrerenderAcceptance: 'pending',
+            archive: path.basename(archive), archiveSha256: archiveHash, fileHashes,
+          };
+          const manifestPath = path.join(delivery, 'manifest.json');
+          fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+          fs.writeFileSync(path.join(delivery, 'SHA256SUMS'), `${archiveHash}  ${path.basename(archive)}\n${sha256(fs.readFileSync(manifestPath))}  manifest.json\n`);
+          NODE
+      - name: Upload the reviewed preparation artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        timeout-minutes: 25
+        with:
+          name: pr57-prebuilt-linux-598bb3f-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            delivery/pr57-prebuilt-linux-598bb3f.tar.gz
+            delivery/manifest.json
+            delivery/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
