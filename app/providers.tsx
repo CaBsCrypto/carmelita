@@ -9,12 +9,14 @@ export default function Providers({
   clientId,
   evmExpansionEnabled = false,
   tempoTestnetEnabled = false,
+  existingWalletsOnly = false,
 }: {
   children: React.ReactNode;
   appId?: string;
   clientId?: string;
   evmExpansionEnabled?: boolean;
   tempoTestnetEnabled?: boolean;
+  existingWalletsOnly?: boolean;
 }) {
   if (!appId) return children;
 
@@ -24,6 +26,11 @@ export default function Providers({
       clientId={clientId || undefined}
       config={{
         loginMethods: ["email", "google", "passkey"],
+        ...(existingWalletsOnly ? { embeddedWallets: {
+          ethereum: { createOnLogin: "off" as const },
+          solana: { createOnLogin: "off" as const },
+          disableAutomaticMigration: true,
+        } } : {}),
         defaultChain: avalancheFuji,
         supportedChains: [
           avalancheFuji,

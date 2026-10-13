@@ -5,8 +5,9 @@ import { useState } from "react";
 import WalletAcceptancePanel from "./wallet-panel";
 import ReceiptAcceptancePanel from "./receipt-panel";
 import { sessionCloseCopy, useSessionClose } from "@/app/use-session-close";
+import RegistryWalletPanel from "@/app/agent/registry-wallet-panel";
 
-export default function AcceptancePanel() {
+export default function AcceptancePanel({ tempoTestnetEnabled = false }: { tempoTestnetEnabled?: boolean }) {
   const { ready, authenticated, user, login, getAccessToken } = usePrivy();
   const session = useSessionClose();
   const [otherId, setOtherId] = useState("");
@@ -15,7 +16,7 @@ export default function AcceptancePanel() {
   const [otherMemory, setOtherMemory] = useState("");
   const [report, setReport] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<"wallets" | "isolation" | "receipts">("wallets");
+  const [mode, setMode] = useState<"wallets" | "isolation" | "receipts" | "tempo">("wallets");
   async function run() {
     setBusy(true);
     setReport(null);
@@ -58,8 +59,13 @@ export default function AcceptancePanel() {
     {session.state === "closed" && !authenticated && <p role="status">{sessionCloseCopy.es.closed}</p>}
     {!authenticated ? <button disabled={!ready || session.closing || session.state === "failed"} onClick={() => login()}>Iniciar sesión de prueba</button> : <>
       <button disabled={busy || session.closing} onClick={async () => { if (await session.close()) setReport(null); }}>{session.closing ? sessionCloseCopy.es.closing : "Cerrar ambas sesiones"}</button>
-      <p><label>Modo de aceptación <select value={mode} disabled={busy} onChange={(event) => setMode(event.target.value as typeof mode)}><option value="wallets">Solo billeteras multichain</option><option value="isolation">Aislamiento de chat y memoria ficticios</option><option value="receipts">Aislamiento de recibos Stellar</option></select></label></p>
+      <p><label>Modo de aceptación <select value={mode} disabled={busy} onChange={(event) => setMode(event.target.value as typeof mode)}><option value="wallets">Solo billeteras multichain</option><option value="isolation">Aislamiento de chat y memoria ficticios</option><option value="receipts">Aislamiento de recibos Stellar</option>{tempoTestnetEnabled && <option value="tempo">Tempo Moderato: asociación y lectura</option>}</select></label></p>
       {mode === "wallets" && user?.id && <WalletAcceptancePanel key={user.id} userId={user.id} getAccessToken={getAccessToken} />}
+      {mode === "tempo" && tempoTestnetEnabled && ready && user?.id && !session.closing && session.state !== "failed" && <section aria-labelledby="tempo-acceptance-title">
+        <h2 id="tempo-acceptance-title">Tempo Moderato testnet · 42431</h2>
+        <p>Inicia sesión con una cuenta de prueba que ya tenga billetera EVM. Pulsa «Conectar Tempo Testnet» para confirmar su asociación. Repite y vuelve a iniciar sesión para comprobar que la dirección se conserva. Las consultas no crean billeteras ni solicitan fondos.</p>
+        <RegistryWalletPanel key={user.id} locale="es" getAccessToken={getAccessToken} allowTempoReconfirmation />
+      </section>}
       {mode === "receipts" && ready && user?.id && !session.closing && session.state !== "failed" && <ReceiptAcceptancePanel key={user.id} ready={ready} authenticated={authenticated} userId={user.id} getAccessToken={getAccessToken} />}
       {mode === "isolation" && <>
       <p>Consulta datos propios e intenta pausar una memoria ficticia ajena: debe ser rechazado. Las consultas pueden actualizar metadatos de sesión. Este modo no crea billeteras, fondos ni pagos.</p>

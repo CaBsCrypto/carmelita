@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Locale } from "../language-toggle";
 import { registryNetworkRows, type RegistryResult } from "./registry-wallet-model";
 import { readWorkspaceQuery } from "./workspace-queries";
@@ -9,15 +9,16 @@ import type { TempoWalletReading } from "../wallets/types";
 import { sessionAbortable, withSessionDeadline } from "./session-request";
 
 const tempoLoadingText = { en: "Reading Tempo…", es: "Consultando Tempo…", pt: "Consultando Tempo…" };
+const tempoReconfirmationText = { en: "Confirm existing association", es: "Confirmar asociación existente", pt: "Confirmar associação existente" };
 
 const tempoCopy = {
-  en: { register: "Connect Tempo Testnet", registering: "Connecting…", note: "Reuse your existing EVM wallet on Moderato. This checks the network and registers the address; no funds move.", required: "Sign in again to prepare your EVM wallet before connecting Tempo.", failed: "Tempo is unavailable. Retry the connection or balance query.", block: "Block", time: "Read at", zero: "A zero balance does not imply previous activity. Test tokens have no real value." },
-  es: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutiliza tu wallet EVM en Moderato. Se comprueba la red y se registra la dirección; no se mueven fondos.", required: "Vuelve a iniciar sesión para preparar tu wallet EVM antes de conectar Tempo.", failed: "Tempo no está disponible. Reintenta la conexión o consulta de saldo.", block: "Bloque", time: "Consultado", zero: "Un saldo cero no implica actividad previa. Los tokens de prueba no tienen valor real." },
-  pt: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutilize sua wallet EVM no Moderato. A rede é verificada e o endereço registrado; nenhum saldo é transferido.", required: "Entre novamente para preparar sua wallet EVM antes de conectar Tempo.", failed: "Tempo indisponível. Tente a conexão ou consulta de saldo novamente.", block: "Bloco", time: "Consultado", zero: "Saldo zero não implica atividade anterior. Tokens de teste não têm valor real." },
+  en: { register: "Connect Tempo Testnet", registering: "Connecting…", note: "Reuse your existing EVM wallet on Moderato. This checks the network and registers the address; no funds move.", required: "An existing EVM wallet belonging to this account is required to connect Tempo.", failed: "Tempo is unavailable. Retry the connection or balance query.", block: "Block", time: "Read at", zero: "A zero balance does not imply previous activity. Test tokens have no real value." },
+  es: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutiliza tu wallet EVM en Moderato. Se comprueba la red y se registra la dirección; no se mueven fondos.", required: "Para conectar Tempo necesitas una wallet EVM existente que pertenezca a esta cuenta.", failed: "Tempo no está disponible. Reintenta la conexión o consulta de saldo.", block: "Bloque", time: "Consultado", zero: "Un saldo cero no implica actividad previa. Los tokens de prueba no tienen valor real." },
+  pt: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutilize sua wallet EVM no Moderato. A rede é verificada e o endereço registrado; nenhum saldo é transferido.", required: "Para conectar Tempo, é necessária uma wallet EVM existente que pertença a esta conta.", failed: "Tempo indisponível. Tente a conexão ou consulta de saldo novamente.", block: "Bloco", time: "Consultado", zero: "Saldo zero não implica atividade anterior. Tokens de teste não têm valor real." },
 };
 
-export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBalances }: {
-  locale: Locale; getAccessToken: () => Promise<string | null>; onQueryBalances: () => void;
+export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBalances, allowTempoReconfirmation = false }: {
+  locale: Locale; getAccessToken: () => Promise<string | null>; onQueryBalances?: () => void; allowTempoReconfirmation?: boolean;
 }) {
   const t = workspaceCopy[locale];
   const tempoText = tempoCopy[locale];
@@ -27,10 +28,16 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const connectionRequest = useRef<AbortController | null>(null);
+  const readRequest = useRef<AbortController | null>(null);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => () => connectionRequest.current?.abort(), []);
+  // Abort at the owner-switch commit, before a late SDK token can start a request.
+  useLayoutEffect(() => () => {
+    connectionRequest.current?.abort();
+    readRequest.current?.abort();
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
+    readRequest.current = controller;
     async function load() {
       try {
         const result = await readWorkspaceQuery<RegistryResult>("personal.wallets", getAccessToken, locale, controller.signal);
@@ -68,7 +75,7 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
       }
     }
     void load();
-    return () => controller.abort();
+    return () => { controller.abort(); if (readRequest.current === controller) readRequest.current = null; };
   }, [getAccessToken, locale, attempt]);
 
   async function connectTempo() {
@@ -118,9 +125,13 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
             {state.rows.some(item => item.family === "evm" && item.address) ? <button type="button" disabled={connecting} onClick={() => void connectTempo()}>{connecting ? tempoText.registering : tempoText.register}</button> : <p>{tempoText.required}</p>}
             {connectionError && <p role="alert">{tempoText.failed}</p>}
           </>}
+          {row.address && allowTempoReconfirmation && <>
+            <button type="button" disabled={connecting} onClick={() => void connectTempo()}>{connecting ? tempoText.registering : tempoReconfirmationText[locale]}</button>
+            {connectionError && <p role="alert">{tempoText.failed}</p>}
+          </>}
         </>}
       </article>)}
     </div>
-    {state.status === "ready" && <><p>{t.exampleNote}</p><button type="button" className="workspace-button" onClick={onQueryBalances}>{t.balance}</button></>}
+    {state.status === "ready" && onQueryBalances && <><p>{t.exampleNote}</p><button type="button" className="workspace-button" onClick={onQueryBalances}>{t.balance}</button></>}
   </section>;
 }

@@ -39,6 +39,8 @@ export function normalizeOAuthAuthenticationError(error: unknown): Error {
 
 export function publicOAuthError(error: unknown, operation: "authorize" | "preflight") {
   const code = error instanceof Error ? error.message : "";
+  if (code === "oauth_existing_wallets_required") return { code, status: 409 };
+  if (code === "oauth_existing_wallets_unavailable" || code.startsWith("preview_isolation_")) return { code: "oauth_existing_wallets_unavailable", status: 503 };
   if (["oauth_wallet_preparation_incomplete", "wallet_persistence_unavailable", "database_not_configured"].includes(code)) return { code: "oauth_wallet_preparation_incomplete", status: 503 };
   if (code === "wallet_identity_conflict" || code === "privy_identity_mismatch") return { code: "wallet_identity_conflict", status: 409 };
   if (code === "invalid_origin") return { code, status: 403 };
