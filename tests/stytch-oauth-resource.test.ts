@@ -67,7 +67,7 @@ async function tokenWithKey(input: { issuer?: string; audience?: string; scope?:
   return { token, publicKey };
 }
 
-test("RFC 9728 metadata is feature-flagged and publishes only non-executing agent scopes", async () => {
+test("RFC 9728 metadata is feature-flagged and separates association from financial execution", async () => {
   const previous = process.env.CARMELITA_OAUTH_RESOURCE_SERVER_ENABLED;
   delete process.env.CARMELITA_OAUTH_RESOURCE_SERVER_ENABLED;
   try {
@@ -82,7 +82,8 @@ test("RFC 9728 metadata is feature-flagged and publishes only non-executing agen
   assert.deepEqual(metadata.authorization_servers, ["https://carmelita-auth.customers.stytch.com"]);
   assert.deepEqual(metadata.scopes_supported, STYTCH_AGENT_SCOPES);
   assert.deepEqual(metadata.bearer_methods_supported, ["header"]);
-  assert.doesNotMatch(JSON.stringify(metadata), /sign|submit|execute|wallet/i);
+  assert.ok(metadata.scopes_supported.includes("agent:wallet:associate"));
+  assert.doesNotMatch(JSON.stringify(metadata), /sign|submit|execute|wallet:create|fund|pay/i);
 });
 
 test("OAuth challenge is inert while disabled and advertises exact PRM only while enabled", () => {

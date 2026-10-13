@@ -7,6 +7,9 @@ import { getGatewayCapability } from "@/app/agent-gateway/catalog";
 import { createNativeGatewayPlan, projectNativeAvalanchePlan } from "@/app/bazaar/native-channel-boundary";
 import { createGatewayAudit } from "@/app/agent-gateway/operations";
 import { avalancheCapabilityIdSchema, planAvalancheCapability } from "@/app/avalanche/capability-registry";
+import { readTempoExistingWallet, tempoExistingWalletInputSchema } from "@/app/mcp/tempo-existing-wallet";
+import { associateTempoWallet, tempoWalletAssociationInputSchema } from "@/app/mcp/tempo-wallet-association";
+import { agentOAuthBearerChallenge } from "@/app/mcp/stytch-oauth";
 import {
   authenticateMcp,
   requireMcpSubject,
@@ -47,6 +50,42 @@ function getHandler() {
           catch (error) { return fail(error); }
         });
       }
+      server.registerTool(
+        "read_tempo_existing_evm_wallet",
+        {
+          title: "Use my existing EVM wallet to read Tempo",
+          description: "Read Tempo Moderato testnet (42431) using the authenticated owner's existing canonical EVM wallet, verified against Privy. Use this even if discovery returns no registered Tempo association. Returns the existing address and real PathUSD contract, exact atomic/formatted balance, block/hash/time, or a genuine error. No address or owner can be selected by input. Does not create a wallet, persist an association, move funds, sign, or establish a registered Tempo binding; tempoRegistrationChecked=false. Requires only agent:read. To save a Tempo association, use associate_tempo_testnet_wallet with the user's explicit instruction and its separate OAuth permission.",
+          inputSchema: tempoExistingWalletInputSchema,
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+          _meta: { securitySchemes: [{ type: "oauth2", scopes: ["agent:read"] }] },
+        },
+        async (input, extra) => {
+          try { return ok(await readTempoExistingWallet(input, extra.authInfo, { signal: extra.signal })); }
+          catch (error) { return fail(error); }
+        },
+      );
+      server.registerTool(
+        "associate_tempo_testnet_wallet",
+        {
+          title: "Associate my existing EVM wallet with Tempo",
+          description: "Save an idempotent Tempo Moderato testnet (42431) association for the authenticated owner's canonical existing EVM wallet. Call only after the user explicitly asks to connect or save this association in the chat; set explicitUserConfirmation=true for that instruction. Requires agent:read and the separate OAuth grant agent:wallet:associate. Verify SQL and Privy ownership and a successful real PathUSD RPC reading before saving. Return address, contract, exact balance, block/hash/time and the saved association. Never create a wallet, change its address, fund, sign or send a transaction. No owner, address, wallet ID, network or RPC URL may be supplied. Feature may be disabled; never silently substitute a read-only result for a saved association.",
+          inputSchema: tempoWalletAssociationInputSchema,
+          annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+          _meta: { securitySchemes: [{ type: "oauth2", scopes: ["agent:read", "agent:wallet:associate"] }] },
+        },
+        async (input, extra) => {
+          try { return ok(await associateTempoWallet(input, extra.authInfo, { signal: extra.signal })); }
+          catch (error) {
+            const requiredScope = error instanceof Error && error.message === "mcp_scope_required:agent:wallet:associate"
+              ? "agent:wallet:associate" : error instanceof Error && error.message === "mcp_scope_required:agent:read" ? "agent:read" : undefined;
+            if (!requiredScope) return fail(error);
+            return { ...fail(error), _meta: { "mcp/www_authenticate": [agentOAuthBearerChallenge({
+              error: "insufficient_scope", requiredScope,
+              errorDescription: "Authorize reading and associating your existing EVM wallet with Tempo to continue.",
+            })] } };
+          }
+        },
+      );
       server.registerTool(
         "plan_avalanche_capability",
         {

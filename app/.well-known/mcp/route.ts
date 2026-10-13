@@ -20,11 +20,22 @@ export function GET(request: Request) {
       personalAgent: {
         endpoint: origin + "/api/mcp/agent",
         authentication: "OAuth bearer authorization bound to the existing Privy identity, or scoped personal diagnostic token",
-        scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation"],
+        scopes: ["agent:read", "agent:plan", "agent:context", "agent:conversation", "agent:wallet:associate"],
         purpose:
           "Read authenticated context and conversation, discover capabilities, query Mainnet market prices and chain TVL, and create non-executable Testnet plans.",
         marketReadTools: ["search_market_assets", "get_market_quotes", "compare_chains"],
         readQueries: listReadQueries(),
+        additionalReadTools: [{
+          toolName: "read_tempo_existing_evm_wallet", scope: "agent:read", network: "tempo:moderato",
+          purpose: "Read PathUSD using the authenticated owner's canonical existing EVM wallet without requiring or writing a Tempo registration.",
+          registryChanged: false, walletCreation: false, funding: false, signing: false,
+        }],
+        walletAssociationTools: [{
+          toolName: "associate_tempo_testnet_wallet", scopes: ["agent:read", "agent:wallet:associate"], network: "tempo:moderato",
+          purpose: "Explicitly save the owner's existing EVM association after verifying ownership and a real Tempo reading.",
+          explicitUserConfirmation: true, enabledBy: "CARMELITA_TEMPO_CHAT_ASSOCIATION_ENABLED",
+          registryChanged: true, walletCreation: false, funding: false, signing: false,
+        }],
         webQueryEndpoint: origin + "/api/agent/queries",
         toolCatalogRefresh: "Internal changes share one server. Tool or parameter changes require refreshing ChatGPT discovery and validating the returned catalog.",
       },
