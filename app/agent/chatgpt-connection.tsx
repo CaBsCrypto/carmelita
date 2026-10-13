@@ -29,7 +29,6 @@ const copy = {
     moreQueriesNote: "La actividad muestra eventos registrados en Carmelita. Las cotizaciones incluyen su fuente y hora de consulta; la activación de Stellar necesita confirmación de la red.",
     networksTitle: "Una cuenta, cinco redes de prueba.", networksText: "Tus billeteras registradas quedan asociadas a la misma identidad Carmelita. Cada red tiene su propio explorador y saldo.",
     networks: [{ name: "Stellar Testnet", description: "Tu dirección Stellar. La activación se muestra sólo cuando la red la confirma." }, { name: "Solana Devnet", description: "Tu dirección Solana, con su propio explorador de red." }, { name: "Redes EVM de prueba", description: "Avalanche Fuji, Base Sepolia y BNB Testnet comparten una dirección. Sus saldos se consultan por separado." }],
-    test: "La prueba termina cuando ChatGPT responde con tus datos. Copiar la URL o registrar OAuth no confirma por sí solo esta conexión.",
     account: "¿Aún no tienes cuenta Carmelita?", accountHelp: "Puedes crearla durante la autorización; no necesitas ingresar antes en esta web. Si prefieres preparar tu cuenta ahora, usa el mismo correo e identidad cuando vuelvas a ChatGPT.",
     missing: "No encuentro cómo añadir Carmelita", help: "Empieza en ChatGPT en la web. Si no aparece la opción de añadir un servidor MCP, consulta las políticas de tu espacio de trabajo y la ayuda oficial. Crear una cuenta no garantiza este permiso. Puedes usar Carmelita directamente mientras lo revisas.",
     accountLink: "Crear cuenta o ingresar a ChatGPT", permissionsTitle: "Tu identidad y tus permisos.",
@@ -55,7 +54,6 @@ const copy = {
     moreQueriesNote: "Activity shows events recorded in Carmelita. Market quotes include their source and query time; Stellar activation needs network confirmation.",
     networksTitle: "One account, five test networks.", networksText: "Your registered wallets stay associated with the same Carmelita identity. Each network has its own explorer and balance.",
     networks: [{ name: "Stellar Testnet", description: "Your Stellar address. Activation is shown only after the network confirms it." }, { name: "Solana Devnet", description: "Your Solana address, with its own network explorer." }, { name: "EVM test networks", description: "Avalanche Fuji, Base Sepolia and BNB Testnet share an address. Their balances are queried separately." }],
-    test: "The test finishes when ChatGPT returns your own data. Copying the URL or recording OAuth does not by itself verify this connection.",
     account: "Need a Carmelita account?", accountHelp: "You can create one during authorization; you do not need to sign in on this website first. If you prefer to prepare your account now, use the same email and identity when you return to ChatGPT.",
     missing: "I cannot find how to add Carmelita", help: "Start in ChatGPT on the web. If the option to add an MCP server is missing, check your workspace policies and official help. Creating an account does not guarantee this permission. You can use Carmelita directly while checking.",
     accountLink: "Create an account or sign in to ChatGPT", permissionsTitle: "Your identity and permissions.",
@@ -81,7 +79,6 @@ const copy = {
     moreQueriesNote: "A atividade mostra eventos registrados na Carmelita. As cotações incluem sua fonte e hora da consulta; a ativação Stellar precisa de confirmação da rede.",
     networksTitle: "Uma conta, cinco redes de teste.", networksText: "Suas carteiras registradas ficam associadas à mesma identidade Carmelita. Cada rede tem seu próprio explorador e saldo.",
     networks: [{ name: "Stellar Testnet", description: "Seu endereço Stellar. A ativação aparece apenas depois da confirmação da rede." }, { name: "Solana Devnet", description: "Seu endereço Solana, com seu próprio explorador de rede." }, { name: "Redes EVM de teste", description: "Avalanche Fuji, Base Sepolia e BNB Testnet compartilham um endereço. Seus saldos são consultados separadamente." }],
-    test: "O teste termina quando o ChatGPT retorna seus próprios dados. Copiar a URL ou registrar OAuth não verifica essa conexão por si só.",
     account: "Ainda não tem conta Carmelita?", accountHelp: "Você pode criá-la durante a autorização; não precisa entrar neste site antes. Se preferir preparar sua conta agora, use o mesmo email e identidade ao voltar ao ChatGPT.",
     missing: "Não encontro como adicionar Carmelita", help: "Comece pelo ChatGPT na web. Se não aparecer a opção de adicionar um servidor MCP, confira as políticas do espaço e a ajuda oficial. Criar uma conta não garante essa permissão. Você pode usar Carmelita diretamente enquanto verifica.",
     accountLink: "Criar conta ou entrar no ChatGPT", permissionsTitle: "Sua identidade e permissões.",
@@ -138,7 +135,7 @@ export function ConnectionSteps({ locale, onExternalDialog, fullPage = false }: 
       <ol className={styles.steps} role="list">
         <li><span className={styles.stepNumber} aria-hidden="true">1</span><div><Heading>{t.pluginTitle}</Heading><p>{t.plugin}</p><a className={styles.secondaryAction} href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">{t.action}</a></div></li>
         <li><span className={styles.stepNumber} aria-hidden="true">2</span><div><Heading>{t.consentTitle}</Heading><p>{t.consent}</p></div></li>
-        <li><span className={styles.stepNumber} aria-hidden="true">3</span><div><Heading>{t.queryTitle}</Heading><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p className={styles.note}>{t.nextQuery}</p><p className={styles.note}>{t.test}</p><details className={styles.moreQueries}><summary>{t.moreQueriesTitle}</summary><ul>{t.moreQueries.map(question => <li key={question}>{question}</li>)}</ul><p className={styles.note}>{t.moreQueriesNote}</p></details></div></li>
+        <li><span className={styles.stepNumber} aria-hidden="true">3</span><div><Heading>{t.queryTitle}</Heading><p>{t.prompt}</p><blockquote className={styles.example}>{t.example}</blockquote><p className={styles.note}>{t.nextQuery}</p><details className={styles.moreQueries}><summary>{t.moreQueriesTitle}</summary><ul>{t.moreQueries.map(question => <li key={question}>{question}</li>)}</ul><p className={styles.note}>{t.moreQueriesNote}</p></details></div></li>
       </ol>
     </section>
     <section className={fullPage ? pages.section : styles.networkSection}>
