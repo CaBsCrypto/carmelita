@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "recordedBy": "root",
+  "provenance": {
+    "browserChatGPTAndUi": "Root observations of rendered browser UI; web conversation link retained, no raw transcript or video file exported",
+    "providerAndCanonicalBindings": "Root observations of authenticated Privy UI and guarded read-only QA SQL; canonical IDs published only as SHA256; final A/B SQL receipt was not separately saved",
+    "initialAProviderSqlReceiptLocal": "outputs/tempo/existing-user-a-preflight.json (earlier f573 preflight, not final association)",
+    "connectorReceiptLocal": "outputs/tempo/corrected-qa-mcp-a-positive.json",
+    "revocationReceiptLocal": "outputs/tempo/corrected-qa-revocation.json",
+    "windowReceiptsLocal": ["outputs/tempo/corrected-qa-window.json", "outputs/tempo/continued-qa-window.json"],
+    "independentPinnedRpcReceipt": "docs/tempo/evidence/pinned-rpc-20261013.json; actor tempo_wallet, public JSON-RPC only",
+    "secondBuildReceiptLocal": "outputs/tempo/corrected-preview-independent.json; independent QA",
+    "finalClosureChecks": "Independent tempo_qa tool observations in this chat; timestamps retained below, standalone raw receipt not exported",
+    "localReceiptsIgnoredByGit": true,
+    "stytchDcrSource": "https://stytch.com/docs/api-reference/consumer/api/connected-apps/application-management/dynamic-client-registration",
+    "stytchRevocationSource": "https://stytch.com/docs/connected-apps/resources/consent-management"
+  },
+  "status": "partial_acceptance",
+  "testedSha": "5a5fec953911292abc93973723c1bb76469d79f3",
+  "runtimeCommit": "b268649a8e4dc72b7bd5993bdc68da7d1e6b6862",
+  "baseSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "branch": "feat/tempo-testnet-mcp",
+  "pullRequest": "https://github.com/CaBsCrypto/carmelita/pull/58",
+  "deploymentId": "dpl_2fLJAdDjcxvtqkNccRwuFJ3GpEPL",
+  "immutableUrl": "https://agente-asistente-2rklylqyj-cabscryptocontacto-6028s-projects.vercel.app",
+  "resource": "https://carmelita-chat-first-qa.vercel.app/api/mcp/agent",
+  "databaseFingerprint": "bfd2efdf0f2fec5299c643ab9ef012c2648d8baa2d83297ff3f924b6bd123299",
+  "browserChatGPT": {
+    "conversationUrl": "https://chatgpt.com/c/6acdb6c2-413c-83e9-a081-e596f320a021",
+    "plugin": "Carmelita Tempo QA",
+    "ownerAlias": "A",
+    "firstReading": {
+      "status": "unavailable",
+      "code": "tempo_rpc_unavailable",
+      "queriedAtUtcSeconds": "2026-10-13T04:43:21Z",
+      "underlyingCause": "not established"
+    },
+    "singleReadingRetry": {
+      "status": "available",
+      "queriedAtUtcSeconds": "2026-10-13T04:44:01Z",
+      "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+      "chainId": 42431,
+      "token": {
+        "standard": "TIP-20",
+        "address": "0x20c0000000000000000000000000000000000000",
+        "name": "PathUSD",
+        "symbol": "PathUSD",
+        "decimals": 6,
+        "metadataVerified": true,
+        "balanceAtomic": "0",
+        "balance": "0"
+      },
+      "block": {
+        "number": "39366472",
+        "hash": "0x6be49000ded688f01d5c981f4678cddd43905945e9e32aba0513644b9fba6ca7",
+        "timestamp": "1791866640"
+      }
+    },
+    "historicalRpcComparison": {
+      "checkedAt": "2026-10-13T05:26:51.617Z",
+      "matches": true,
+      "code": "0xef",
+      "blockTimeUtc": "2026-10-13T04:44:00Z"
+    },
+    "transcriptSavedAsVideo": false
+  },
+  "authenticatedConnectorInThisConversation": {
+    "tool": "read_personal_wallets_balances",
+    "input": {
+      "networks": [
+        "tempo:moderato"
+      ]
+    },
+    "reading": {
+      "network": "tempo:moderato",
+      "caip2": "eip155:42431",
+      "testnet": true,
+      "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+      "queriedAt": "2026-10-13T04:44:31.979Z",
+      "explorerUrl": "https://explore.testnet.tempo.xyz/address/0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+      "status": "available",
+      "chainId": 42431,
+      "token": {
+        "standard": "TIP-20",
+        "address": "0x20c0000000000000000000000000000000000000",
+        "name": "PathUSD",
+        "symbol": "PathUSD",
+        "decimals": 6,
+        "metadataVerified": true,
+        "balanceAtomic": "0",
+        "balance": "0"
+      },
+      "block": {
+        "number": "39366523",
+        "hash": "0x7f18ec7d703f0d3437dcf064da09fafb5c612f50788585942c47f4e42cf45571",
+        "timestamp": "1791866671"
+      }
+    },
+    "historicalRpcMatches": true
+  },
+  "users": {
+    "A": {
+      "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+      "canonicalEvmCount": 1,
+      "tempoBindingCount": 1,
+      "canonicalIdSha256": "460fbbecfd060266e2016ffe34ed59ee9d3eddf6e7881b36cba630c1059880fd",
+      "associationRepeated": true,
+      "reloginSameAddress": true,
+      "finalUiReading": {
+        "queriedAt": "2026-10-13T05:25:13.896Z",
+        "block": "39370525",
+        "balance": "0",
+        "publicAliasWasProtected": true,
+        "historicalRpcComparedAt": "2026-10-13T05:39:26.020Z",
+        "historicalRpcMatchesUiBlockAddressAndBalance": true,
+        "rpcAddedBlockHash": "0x781e73d5a2108671665c563940e80d9ae0299934f13fc9f0a2aaa50d6293cc25",
+        "rpcAddedBlockTimestamp": "1791869112",
+        "rpcAddedFieldsAreNotSeparateUiObservations": true
+      }
+    },
+    "B": {
+      "address": "0xE4c4E0Bfa8B1F1Cdc94803987f4732d0A1B141D9",
+      "canonicalEvmCount": 1,
+      "tempoBindingCount": 1,
+      "canonicalIdSha256": "40d6135dea2b29efbec1695106fcc31d1d2c732a1c5aa59116fc943f8e11712b",
+      "associationRepeated": true,
+      "uiReading": {
+        "queriedAt": "2026-10-13T05:05:28.271Z",
+        "block": "39368582",
+        "hash": "0x9957f92662eefe780044e9eba62942e281403c78f75c50b9da50a784ffaefa38",
+        "blockTimestamp": "1791867927",
+        "chainId": 42431,
+        "tokenSymbol": "PathUSD",
+        "decimals": 6,
+        "balanceAtomic": "0",
+        "balance": "0"
+      },
+      "historicalRpcMatches": true,
+      "newOAuthConsentPerformed": false,
+      "mcpReadingProven": false,
+      "existingSevenScopeGrantPreserved": true
+    }
+  },
+  "uiSessionSequence": "A-B-A; final A wallet address and reading returned in existing controlled browser session after public alias protection was restored",
+  "explorer": {
+    "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+    "testnet": true,
+    "pathVerified": true,
+    "transactionsFound": 0,
+    "holdingsNotVerifiedFromExplorer": true
+  },
+  "revocation": {
+    "exactClient": "connected-app-test-7a38394d-e24d-47fc-960f-a3dbcf224667",
+    "subjectAlias": "A",
+    "legacyGrantInitiallyObserved": {
+      "scopes": [
+        "agent:read",
+        "openid",
+        "email",
+        "offline_access"
+      ],
+      "creationTimeAndActor": "unknown",
+      "originalResource": "unknown",
+      "revoked": true
+    },
+    "newQaGrantObservedScopes": [
+      "agent:read",
+      "agent:context"
+    ],
+    "networkLog": {
+      "timestamp": "2026-10-13T04:46:37.048Z",
+      "method": "POST",
+      "path": "/api/mcp/agent",
+      "status": 401,
+      "requestId": "mprcs-1791866797048-c9a0700fbc9b"
+    },
+    "correlation": "Single connector request after exact grant absence; no direct response requestId/token identity was exposed by connector",
+    "connectorReturnedWalletData": false,
+    "platformReauthenticationObserved": true,
+    "reauthenticatedGrantRevokedAgain": true,
+    "otherTwoObservedAGrantsPreserved": true,
+    "cannotAttributeInitialLegacyGrantExclusivelyToNewQaApp": true
+  },
+  "authBlocker": {
+    "sharedClientExistingBScopes": [
+      "agent:plan",
+      "agent:read",
+      "agent:context",
+      "agent:conversation",
+      "openid",
+      "email",
+      "offline_access"
+    ],
+    "sharedClientRevocationUnit": "Stytch subject and connected_app_id, not an individual ChatGPT App or resource",
+    "publicDcrDeduplicatesIdenticalMetadata": true,
+    "dedicatedPublicClientProposalPrepared": true,
+    "dedicatedClientRegistered": false,
+    "additionalPrivateAppCreated": false,
+    "expectedAudiencePin": {
+      "currentBranchInspectionAt": "2026-10-13T05:14:11.253Z",
+      "configuredInCurrentBranch": false,
+      "metadataKeyCountCurrent": 0,
+      "exactDeploymentRuntimePinNotProven": true,
+      "crossResourceNegativeTest": "not executed"
+    }
+  },
+  "windows": [
+    {
+      "startedAt": "2026-10-13T04:40:35.400Z",
+      "endsAt": "2026-10-13T05:00:35.400Z",
+      "exceptionClosedBeforeDeadline": true,
+      "privyBaselineVerifiedAt": "2026-10-13T04:59:26.772Z"
+    },
+    {
+      "startedAt": "2026-10-13T05:02:09.809Z",
+      "endsAt": "2026-10-13T05:22:09.809Z",
+      "exceptionRemovedAt": "2026-10-13T05:22:38.316Z",
+      "exceptionDelaySeconds": 28.507,
+      "privyExactUiRemovalTime": "not recorded",
+      "privyBaselineFirstVerifiedAfterRemovalAt": "2026-10-13T05:23:39.836Z"
+    }
+  ],
+  "finalIndependentChecks": {
+    "privyBaseline12AndQaOriginAbsentAt": "2026-10-13T05:25:06.571Z",
+    "publicHealthProtection302At": "2026-10-13T05:25:07.868Z",
+    "aliasExceptionAbsentAt": "2026-10-13T05:25:16.236Z",
+    "productionDeployment": "dpl_GpjPYjyeXDwhrwZMiwRzRRVcAaeH",
+    "productionAliasesUnchanged": 5,
+    "machine": "Standard 4 CPU fixed",
+    "extraConcurrency": false,
+    "ignoredBuildStep": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] && exit 1 || exit 0"
+  },
+  "environmentMetadata": {
+    "initialCount": 224,
+    "currentCount": 254,
+    "currentObservedAt": "2026-10-13T05:26:18.241Z",
+    "qaBranchCount": 10,
+    "qaBranchDigestUnchanged": true,
+    "globalDigestChanged": true,
+    "changesNotAttributed": true,
+    "initialFullSnapshotUnavailable": true
+  },
+  "builds": {
+    "hostedPreviewsAuthorizedAndUsed": 2,
+    "newBuildsDuringRenewal": 0,
+    "secondMachineTimeForBillingMs": 180000,
+    "secondCpuTimeForBillingMs": 720000,
+    "secondMachineMinutes": 3,
+    "secondCpuMinutes": 12,
+    "secondEquivalentUsdIfBillable": "0.042",
+    "totalMachineMinutes": 5,
+    "totalCpuMinutes": 20,
+    "totalEquivalentUsdIfBillable": "0.070",
+    "invoiceConfirmed": false,
+    "functionsSeparate": true
+  },
+  "verification": {
+    "testsPassed": 1112,
+    "testsFailed": 0,
+    "testsSkipped": 2,
+    "ci": "https://github.com/CaBsCrypto/carmelita/actions/runs/38344703439",
+    "ciStatus": "success",
+    "unitMocksSeparateFromLiveEvidence": true,
+    "noTransactions": true,
+    "noNewProviderWallets": true,
+    "noWalletApiKeysOrSignersCreated": true
+  },
+  "pending": [
+    "B MCP under independent QA grant with minimal scopes",
+    "live bidirectional manipulated-selector/context rejection",
+    "cross-resource audience validation",
+    "B relogin stability",
+    "direct token/request correlation if strict revocation gate required",
+    "hosted wrong-network negative and flag off/on rollback; local fixtures passed",
+    "complete Phase A acceptance and recorded 90-second video"
+  ]
+}
