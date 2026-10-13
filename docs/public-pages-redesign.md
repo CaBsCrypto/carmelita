@@ -1,5 +1,7 @@
 # Conexión, guía y desarrolladores
 
+Para el alcance multichain y el formulario/avisos actuales, consultar la [preparación del 13 de octubre](releases/landing-proposals-2026-10-13.md). Este documento conserva la evidencia histórica de la revisión inicial de páginas públicas.
+
 Rama: `codex/landing-redesign`. Esta revisión continúa desde `5b250102bac2297c3b99a4e5e8facfffbe6d6e87`, sin modificar `main` ni publicar en Vercel.
 
 Las tres páginas comparten `public-page-shell.tsx` y `public-pages.module.css`: navegación activa, idiomas ES/EN/PT, salto al contenido, Inter local y la identidad verde de la portada. Las tarjetas tienen relieve CSS estático; estas páginas no añaden una escena GPU.

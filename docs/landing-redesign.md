@@ -1,5 +1,7 @@
 # Carmelita, tu agente personal en ChatGPT
 
+Preparación actual: [candidata multichain y propuestas de servicios, 13 de octubre](releases/landing-proposals-2026-10-13.md). Las secciones siguientes conservan la evidencia y decisiones de las revisiones anteriores centradas en Stellar; no sustituyen el alcance ni los gates de la candidata actual.
+
 Rama: `codex/landing-redesign`. Base: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`.
 
 La portada presenta a Carmelita como agente personal en ChatGPT: una cuenta propia, información y permisos que el usuario controla. Presenta el recorrido de añadir Carmelita manualmente en ChatGPT y autorizar una identidad. Mantiene el CTA recomendado y ofrece ingreso directo. Español, inglés y portugués conservan el selector y el recorrido existentes.
