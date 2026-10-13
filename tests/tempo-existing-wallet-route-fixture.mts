@@ -3,17 +3,19 @@ import { mock } from "node:test";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
 
-type ToolResult = { isError?: boolean; content: { type: string; text: string }[] };
+type ToolResult = { isError?: boolean; content: { type: string; text: string }[]; _meta?: Record<string, unknown> };
 type ToolConfig = {
   description?: string;
   inputSchema?: unknown;
   annotations?: Record<string, boolean>;
   _meta?: { securitySchemes?: unknown };
 };
-type Callback = (input: unknown, extra: { authInfo?: AuthInfo }) => Promise<ToolResult>;
+type Callback = (input: unknown, extra: { authInfo?: AuthInfo; signal?: AbortSignal }) => Promise<ToolResult>;
 type RegisteredTool = { config: ToolConfig; callback: Callback };
 const registered = new Map<string, RegisteredTool>();
 const name = "read_tempo_existing_evm_wallet";
+const associationName = "associate_tempo_testnet_wallet";
+const associationScope = "agent:wallet:associate";
 const ownerA = "did:privy:synthetic-route-owner-a";
 const ownerB = "did:privy:synthetic-route-owner-b";
 const principal = (userId: string, scopes = ["agent:read"]): AuthInfo => ({
@@ -22,13 +24,19 @@ const principal = (userId: string, scopes = ["agent:read"]): AuthInfo => ({
 });
 const authA = principal(ownerA);
 const authB = principal(ownerB);
-const authorized = new Map<AuthInfo, string>([[authA, ownerA], [authB, ownerB]]);
+const writeA = principal(ownerA, ["agent:read", associationScope]);
+const writeB = principal(ownerB, ["agent:read", associationScope]);
+const writeOnly = principal(ownerA, [associationScope]);
+const authorized = new Map<AuthInfo, string>([[authA, ownerA], [authB, ownerB], [writeA, ownerA], [writeB, ownerB], [writeOnly, ownerA]]);
 let currentAuth: AuthInfo = authA;
 let rejectToken = false;
 let helperError: string | null = null;
-const calls = { helper: [] as { input: unknown; authInfo: AuthInfo }[], legacy: 0, mutation: 0, fetch: 0 };
+const calls = { helper: [] as { input: unknown; authInfo: AuthInfo; signal?: AbortSignal }[], legacy: 0, mutation: 0, fetch: 0 };
+const associationCalls: { input: unknown; authInfo: AuthInfo; signal?: AbortSignal }[] = [];
+const challengeCalls: { error?: string; requiredScope?: string }[] = [];
 const order: string[] = [];
 const schema = z.object({}).strict();
+const associationSchema = z.object({ explicitUserConfirmation: z.literal(true) }).strict();
 
 function unexpectedMutation() {
   calls.mutation++;
@@ -40,10 +48,11 @@ function requireFixtureSubject(authInfo: AuthInfo | undefined, type: string, key
   order.push("auth");
   assert.equal(type, "user");
   assert.equal(key, "userId");
-  assert.equal(scope, "agent:read", "this read must not acquire a mutation scope");
+  assert.ok(scope === "agent:read" || scope === associationScope);
   if (!authInfo || authInfo.extra?.subjectType !== "user") throw new Error("mcp_principal_required");
+  if (!authInfo.scopes.includes(scope)) throw new Error(`mcp_scope_required:${scope}`);
   const owner = authorized.get(authInfo);
-  if (!owner) throw new Error("mcp_scope_required");
+  if (!owner) throw new Error("mcp_principal_invalid");
   return owner;
 }
 function reset() {
@@ -51,6 +60,8 @@ function reset() {
   calls.legacy = 0;
   calls.mutation = 0;
   calls.fetch = 0;
+  associationCalls.length = 0;
+  challengeCalls.length = 0;
   order.length = 0;
   currentAuth = authA;
   rejectToken = false;
@@ -74,7 +85,7 @@ mock.module("mcp-handler", {
         const inputSchema = tool.config.inputSchema as z.ZodType;
         const parsed = inputSchema.safeParse(body.params.arguments);
         if (!parsed.success) return Response.json({ isError: true, content: [{ type: "text", text: JSON.stringify({ error: "invalid_tool_input" }) }] });
-        return Response.json(await tool.callback(parsed.data, { authInfo: request.auth }));
+        return Response.json(await tool.callback(parsed.data, { authInfo: request.auth, signal: request.signal }));
       };
     },
   },
@@ -106,24 +117,49 @@ mock.module(new URL("../app/mcp/auth.ts", import.meta.url).href, {
       catch { return Response.json({ error: "authentication_required" }, { status: 401 }); }
       return handler(request);
     },
-    publicMcpErrorCode: (error: unknown) => error instanceof Error && /^[a-z_]+$/.test(error.message) ? error.message : "mcp_request_failed",
+    publicMcpErrorCode: (error: unknown) => {
+      const code = error instanceof Error ? error.message.split(":", 1)[0] : "";
+      return /^[a-z_]+$/.test(code) ? code : "mcp_request_failed";
+    },
   },
+});
+mock.module(new URL("../app/mcp/stytch-oauth.ts", import.meta.url).href, {
+  namedExports: { agentOAuthBearerChallenge: (input: { error?: string; requiredScope?: string; errorDescription?: string }) => {
+    challengeCalls.push(input);
+    return `Bearer realm="synthetic-mcp", error="${input.error}", scope="${input.requiredScope}"`;
+  } },
 });
 mock.module(new URL("../app/mcp/tempo-existing-wallet.ts", import.meta.url).href, {
   namedExports: {
     tempoExistingWalletInputSchema: schema,
-    readTempoExistingWallet: async (input: unknown, authInfo: AuthInfo | undefined) => {
+    readTempoExistingWallet: async (input: unknown, authInfo: AuthInfo | undefined, dependencies: { signal?: AbortSignal } = {}) => {
       const owner = requireFixtureSubject(authInfo, "user", "userId", "agent:read");
       order.push("schema");
       schema.parse(input);
       assert.ok(authInfo);
-      calls.helper.push({ input, authInfo });
+      calls.helper.push({ input, authInfo, signal: dependencies.signal });
       order.push("helper");
       if (helperError) throw new Error(helperError);
       return {
         source: "existingEVM", evm: { address: `0x${(owner === ownerA ? "a" : "b").repeat(40)}`, family: "evm", chainType: "ethereum", ownershipVerified: true },
         tempo: { network: "tempo:moderato", chainId: 42431, testnet: true, status: "available", token: { symbol: "PathUSD", balanceAtomic: "0", balance: "0" } },
         registryChanged: false, walletCreated: false, fundsMoved: false, signingRequired: false, tempoRegistrationChecked: false,
+      };
+    },
+  },
+});
+mock.module(new URL("../app/mcp/tempo-wallet-association.ts", import.meta.url).href, {
+  namedExports: {
+    tempoWalletAssociationInputSchema: associationSchema,
+    associateTempoWallet: async (input: unknown, authInfo: AuthInfo | undefined, dependencies: { signal?: AbortSignal } = {}) => {
+      const owner = requireFixtureSubject(authInfo, "user", "userId", associationScope);
+      requireFixtureSubject(authInfo, "user", "userId", "agent:read");
+      associationSchema.parse(input);
+      assert.ok(authInfo);
+      associationCalls.push({ input, authInfo, signal: dependencies.signal });
+      return {
+        associated: true, association: { network: "tempo:moderato", address: `0x${(owner === ownerA ? "a" : "b").repeat(40)}` },
+        walletCreated: false, fundsMoved: false, signingRequired: false,
       };
     },
   },
@@ -148,9 +184,9 @@ mock.module(new URL("../app/avalanche/capability-registry.ts", import.meta.url).
 });
 
 const { POST } = await import("../app/api/mcp/agent/route");
-function request(input: unknown = {}, token = true, toolName = name) {
+function request(input: unknown = {}, token = true, toolName = name, signal?: AbortSignal) {
   return new Request("https://synthetic.example.test/api/mcp/agent", {
-    method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: "Bearer synthetic-route-token" } : {}) },
+    method: "POST", signal, headers: { "content-type": "application/json", ...(token ? { authorization: "Bearer synthetic-route-token" } : {}) },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: toolName, arguments: input } }),
   });
 }
@@ -159,6 +195,7 @@ function assertNoEffects() {
   assert.equal(calls.mutation, 0);
   assert.equal(calls.fetch, 0);
   assert.equal(calls.legacy, 0, "the standalone read must not invoke an association or another registry query");
+  assert.deepEqual(associationCalls, [], "readonly and denied requests must not invoke the association writer");
 }
 
 reset();
@@ -174,6 +211,11 @@ assert.match(tool.config.description ?? "", /tempoRegistrationChecked\s*=\s*fals
 assert.match(tool.config.description ?? "", /(?:does not|never|without)[^.]*persist/i);
 assert.ok(registered.has("read_personal_wallets_status"));
 assert.ok(registered.has("read_personal_wallets_balances"));
+const associationTool = registered.get(associationName);
+assert.ok(associationTool, "the real route must register the explicit association separately from reads");
+assert.equal(associationTool.config.inputSchema, associationSchema);
+assert.deepEqual(associationTool.config.annotations, { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true });
+assert.deepEqual(associationTool.config._meta?.securitySchemes, [{ type: "oauth2", scopes: ["agent:read", associationScope] }]);
 
 for (const input of [{ userId: ownerB }, { owner: ownerB }, { address: `0x${"b".repeat(40)}` }, { walletId: "synthetic-foreign-wallet" }, { network: "tempo:mainnet" }, { rpcUrl: "https://synthetic-attacker.example.test" }, { context: { userId: ownerB } }, null, []]) {
   reset();
@@ -227,4 +269,64 @@ assert.deepEqual(calls.helper, []);
 assert.equal(calls.mutation, 0);
 assert.equal(calls.fetch, 0);
 
-process.stdout.write(JSON.stringify({ registration: true, strictInput: true, authForwarding: true, ownerIsolation: true, noWrites: true }));
+for (const input of [{}, { explicitUserConfirmation: false }, { explicitUserConfirmation: "true" },
+  ...[{ userId: ownerB }, { owner: ownerB }, { address: `0x${"b".repeat(40)}` }, { walletId: "synthetic-foreign-wallet" },
+    { network: "tempo:moderato" }, { chainId: 4217 }, { rpcUrl: "https://synthetic-attacker.example.test" }, { context: { userId: ownerB } }]
+    .map(value => ({ explicitUserConfirmation: true, ...value }))]) {
+  reset(); currentAuth = writeA;
+  const response = await POST(request(input, true, associationName));
+  assert.equal((await response.json() as ToolResult).isError, true);
+  assert.deepEqual(calls.helper, []);
+  assertNoEffects();
+}
+for (const [authInfo, missingScope] of [[authA, associationScope], [writeOnly, "agent:read"]] as const) {
+  reset();
+  const result = await associationTool.callback({ explicitUserConfirmation: true }, { authInfo });
+  assert.equal(result.isError, true);
+  assert.deepEqual(resultData(result), { error: "mcp_scope_required" });
+  const challenges = result._meta?.["mcp/www_authenticate"];
+  assert.ok(Array.isArray(challenges));
+  assert.equal(challenges.length, 1);
+  assert.match(String(challenges[0]), /error="insufficient_scope"/);
+  assert.ok(String(challenges[0]).includes(`scope="${missingScope}"`));
+  assert.equal(challengeCalls.length, 1);
+  assert.equal(challengeCalls[0].requiredScope, missingScope);
+  assert.deepEqual(calls.helper, []);
+  assertNoEffects();
+}
+reset();
+for (const authInfo of [writeA, writeB, writeA]) {
+  currentAuth = authInfo;
+  const response = await POST(request({ explicitUserConfirmation: true }, true, associationName));
+  const result = await response.json() as ToolResult;
+  assert.notEqual(result.isError, true);
+  const data = resultData(result);
+  assert.equal(data.associated, true);
+  assert.deepEqual(data.association, { network: "tempo:moderato", address: `0x${(authInfo === writeA ? "a" : "b").repeat(40)}` });
+  for (const flag of ["walletCreated", "fundsMoved", "signingRequired"]) assert.equal(data[flag], false);
+  assert.equal(associationCalls.at(-1)?.authInfo, authInfo);
+  assert.deepEqual(associationCalls.at(-1)?.input, { explicitUserConfirmation: true });
+}
+assert.equal(associationCalls.length, 3, "the route forwards each principal without a shared owner cache");
+assert.deepEqual(calls.helper, []);
+assert.equal(calls.legacy, 0);
+assert.equal(calls.mutation, 0, "the explicit association must not invoke provisioning or unrelated mutations");
+assert.equal(calls.fetch, 0);
+assert.deepEqual(challengeCalls, []);
+
+for (const toolName of [name, associationName]) {
+  reset(); currentAuth = writeA;
+  const controller = new AbortController();
+  const pending = request(toolName === name ? {} : { explicitUserConfirmation: true }, true, toolName, controller.signal);
+  const response = await POST(pending);
+  assert.notEqual((await response.json() as ToolResult).isError, true);
+  const forwarded: { signal?: AbortSignal } | undefined = toolName === name ? calls.helper.at(-1) : associationCalls.at(-1);
+  assert.equal(forwarded?.signal, pending.signal, "both real callbacks must forward the MCP request cancellation signal");
+  controller.abort();
+  assert.equal(forwarded?.signal?.aborted, true);
+  assert.equal(calls.mutation, 0);
+  assert.equal(calls.fetch, 0);
+}
+
+process.stdout.write(JSON.stringify({ registration: true, strictInput: true, authForwarding: true, ownerIsolation: true,
+  readHasNoWrites: true, explicitAssociation: true, scopeChallenges: true }));
