@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-10-13T04:03:06Z",
+  "source": "https://vercel.com/docs/pricing#builds",
+  "sourceLastUpdated": "2026-09-14",
+  "freshOfficialPageReadDuringThisSession": true,
+  "standardBillingConditionQuote": "Builds on Standard build machines are only billed when on-demand concurrency is enabled or Elastic build machines are selected.",
+  "usdPerCpuMinute": "0.0035",
+  "standardCpuCores": 4,
+  "equivalentUsdPerMachineMinuteIfBillable": "0.014",
+  "firstPreviewCpuTimeForBillingMs": 480000,
+  "equivalentFirstPreviewUsdIfBillableBeforeCreditsAndTax": "0.028",
+  "actualInvoiceChargeConfirmed": false,
+  "functionsAndOtherServicesExcluded": true,
+  "doesNotAuthorizeAnotherBuildOrFinancialSettingsChange": true
+}

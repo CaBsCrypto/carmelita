@@ -1,0 +1,63 @@
+{
+ "status":"ui_live_pass_mcp_new_read_unproven_access_closed",
+ "authorization":"call_68549aeef7664821b54b3e9824972597 item0; A only, maximum06:19UTC",
+ "testedSha":"5a5fec953911292abc93973723c1bb76469d79f3",
+ "deployment":"dpl_2fLJAdDjcxvtqkNccRwuFJ3GpEPL",
+ "windowStartedAt":"2026-10-13T06:13:24.713Z",
+ "maximumEndAt":"2026-10-13T06:19:00.000Z",
+ "automaticAliasExceptionRemovedAt":"2026-10-13T06:18:08.860Z",
+ "aliasClosedBeforeMaximum":true,
+ "uiReading":{
+   "source":"root rendered product UI observation following explicit reconfirmation during authorized window",
+   "owner":"A",
+   "address":"0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+   "chainId":42431,
+   "tokenSymbol":"PathUSD",
+   "balanceFormatted":"0",
+   "block":"39375318",
+   "queriedAt":"2026-10-13T06:14:27.476Z",
+   "contractAtomicBalanceAndHashNotRenderedByUi":true
+ },
+ "oauth":{
+   "preflightAGrantCount":0,
+   "effectiveScopesObserved":["agent:context","agent:read"],
+   "newConsentExecuted":true,
+   "subsequentConnectorResult":"Authentication for Carmelita Tempo QA was requested and accepted. Retry this tool call now.",
+   "connectorReturnedNewWalletData":false,
+   "retriedAfterAliasClosure":false,
+   "aGrantRemovedObserved":true,
+   "otherTwoObservedAGrantsPreserved":true,
+   "bNotModified":true,
+   "exactUiRevocationTimeNotRecorded":true
+ },
+ "privy":{
+   "qaOriginRemovedObserved":true,
+   "exactUiRemovalTimeNotRecorded":true,
+   "baseline12VerifiedAt":"2026-10-13T06:23:34.117Z"
+ },
+ "completeGrantAndPrivyCleanupWithinAuthorizedMaximum":false,
+ "completeCleanupFirstVerifiedSecondsAfterMaximum":274.117,
+ "independentReadOnlyCloseout":{
+   "privyCheckedAt":"2026-10-13T06:26:11.395Z",
+   "privyBaseline12Match":true,
+   "qaOriginAbsent":true,
+   "healthCheckedAt":"2026-10-13T06:26:11.779Z",
+   "healthStatus":302,
+   "redirectHost":"vercel.com",
+   "vercelCheckedAt":"2026-10-13T06:26:30.845Z",
+   "qaAliasExceptionAbsent":true,
+   "previewShaUnchanged":true,
+   "standardFixedExtraConcurrencyOffMainOnlyFilter":true,
+   "productionDeploymentAndFiveAliasesUnchanged":true,
+   "grantAbsenceIndependentCheck":false,
+   "grantAbsenceSource":"root observed Stytch DOM after exact A grant revocation",
+   "writes":0
+ },
+ "newHostedBuilds":0,
+ "newWalletsOrKeys":0,
+ "fundingOrTransactions":0,
+ "recordingPlan":"Actual product UI reading06:14:27Z plus real recorded ChatGPT response04:44:01Z; clearly distinguish timestamps",
+ "newLocalAuthenticatedProductDemo":"blocked: required runtime credentials absent",
+ "videoRecorded":false,
+ "phaseAComplete":false
+}

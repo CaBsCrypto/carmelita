@@ -17,7 +17,7 @@ type PublicWallet = {
   status: string;
 };
 
-const MCP_WALLET_ORDER = ["stellar:testnet", "avalanche:fuji", "solana:devnet", "bnb:testnet", "base:sepolia"] as const;
+const MCP_WALLET_ORDER: readonly WalletNetworkId[] = ["stellar:testnet", "avalanche:fuji", "solana:devnet", "bnb:testnet", "base:sepolia", "tempo:moderato"];
 
 export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<typeof connectionConfiguration>[0] = {
   CARMELITA_PUBLIC_ORIGIN: process.env.CARMELITA_PUBLIC_ORIGIN,
@@ -53,6 +53,7 @@ export function buildMcpWalletContext(wallets: PublicWallet[], env: Parameters<t
     solanaDevnet: registered("solana:devnet"),
     bnbTestnet: registered("bnb:testnet"),
     baseSepolia: registered("base:sepolia"),
+    tempoModerato: registered("tempo:moderato"),
   };
   const missingNetworks = networks.filter((network) => !registered(network.id)).map((network) => network.id);
   const hasRegisteredWallets = visible.some((wallet) => wallet.registrationState === "registered");

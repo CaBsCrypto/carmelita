@@ -2,9 +2,15 @@ import { getWalletNetwork } from './wallets/networks';
 import { diagnoseEvmWallet } from './wallets/evm-rpc';
 import { getSolanaDevnetBalance } from './wallets/solana-client';
 import { getStellarTestnetAccount } from './privy-stellar';
+import { readTempoWallet } from './wallets/tempo';
 
 export async function readChatNativeBalance(network: string, address: string): Promise<string | null> {
   const config = getWalletNetwork(network);
+  if (config.id === 'tempo:moderato') {
+    const reading = await readTempoWallet(address);
+    if (reading.status !== 'available') throw new Error(reading.error.code);
+    return `${reading.token.balance} ${reading.token.symbol}`;
+  }
   if (config.family === 'evm') {
     const result = await diagnoseEvmWallet(config, address);
     return `${result.balance} ${result.nativeAsset}`;

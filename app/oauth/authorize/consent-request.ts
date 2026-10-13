@@ -2,7 +2,7 @@ export const CONSENT_TIMEOUT_MS = 20_000;
 export const AUTHORIZATION_TIMEOUT_MS = 60_000;
 const MAX_RESPONSE_BYTES = 64 * 1024;
 
-export type ConsentErrorCode = "session_unavailable" | "inspection_failed" | "inspection_timeout" | "authorization_failed" | "authorization_uncertain" | "wallet_preparation_failed" | "wallet_identity_conflict" | "redirect_invalid" | "cancelled";
+export type ConsentErrorCode = "session_unavailable" | "inspection_failed" | "inspection_timeout" | "authorization_failed" | "authorization_uncertain" | "wallet_preparation_failed" | "wallet_identity_conflict" | "existing_wallets_required" | "existing_wallets_unavailable" | "redirect_invalid" | "cancelled";
 export class ConsentRequestError extends Error {
   constructor(readonly code: ConsentErrorCode) { super(code); }
 }
@@ -79,6 +79,8 @@ async function request<T>(
         const code = (value as { error?: unknown } | null)?.error;
         if (authorization && code === "oauth_wallet_preparation_incomplete") throw new ConsentRequestError("wallet_preparation_failed");
         if (authorization && code === "wallet_identity_conflict") throw new ConsentRequestError("wallet_identity_conflict");
+        if (authorization && code === "oauth_existing_wallets_required") throw new ConsentRequestError("existing_wallets_required");
+        if (authorization && code === "oauth_existing_wallets_unavailable") throw new ConsentRequestError("existing_wallets_unavailable");
         throw new Error("invalid_response");
       }
       if (controller.signal.aborted) throw new ConsentRequestError("cancelled");

@@ -8,6 +8,7 @@ export const STYTCH_AGENT_SCOPES = [
   "agent:plan",
   "agent:context",
   "agent:conversation",
+  "agent:wallet:associate",
 ] as const;
 export type StytchAgentScope = (typeof STYTCH_AGENT_SCOPES)[number];
 
@@ -93,6 +94,7 @@ export function agentOAuthBearerChallenge(input: {
   env?: RuntimeEnv;
   error?: "invalid_token" | "insufficient_scope";
   requiredScope?: StytchAgentScope;
+  errorDescription?: string;
 } = {}) {
   const env = input.env ?? process.env;
   const fields = [`realm=${quoteChallenge("agent-assistant-mcp")}`];
@@ -100,6 +102,7 @@ export function agentOAuthBearerChallenge(input: {
   try {
     const config = readStytchOAuthResourceConfig(env);
     if (input.error) fields.push(`error=${quoteChallenge(input.error)}`);
+    if (input.errorDescription) fields.push(`error_description=${quoteChallenge(input.errorDescription)}`);
     if (input.requiredScope) fields.push(`scope=${quoteChallenge(input.requiredScope)}`);
     fields.push(`resource_metadata=${quoteChallenge(config.metadataUrl)}`);
   } catch {

@@ -28,6 +28,7 @@ test("MCP discovery publishes the same payment boundary", async () => {
     "agent:plan",
     "agent:context",
     "agent:conversation",
+    "agent:wallet:associate",
   ]);
   assert.equal(body.security.payments.commerceSandbox, "disabled");
   assert.deepEqual(body.surfaces.sandbox.tools, ["search_offers", "get_offer"]);

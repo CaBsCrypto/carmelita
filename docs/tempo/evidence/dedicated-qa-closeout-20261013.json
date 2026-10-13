@@ -1,0 +1,126 @@
+{
+  "status": "closed_early_app_creation_blocked",
+  "scope": "Dedicated QA client/App attempt only; prior QA windows and their limitations remain recorded separately",
+  "testedSha": "5a5fec953911292abc93973723c1bb76469d79f3",
+  "deploymentId": "dpl_2fLJAdDjcxvtqkNccRwuFJ3GpEPL",
+  "immutableUrl": "https://agente-asistente-2rklylqyj-cabscryptocontacto-6028s-projects.vercel.app",
+  "qaAlias": "carmelita-chat-first-qa.vercel.app",
+  "authorization": {
+    "source": "call_979536216ad040159dcc573c81248798 item 0, relayed by root",
+    "maximumWindowMinutes": 20,
+    "newHostedBuildsAuthorized": 0,
+    "deliveryDecisionSource": "call_523f6d6023774912ab0e2e5965605af3 item 0, relayed by root",
+    "deliveryDecision": "Deliver progress with the new App pending"
+  },
+  "window": {
+    "sourceKind": "root receipt reviewed by independent QA",
+    "sourceReceipt": "outputs/tempo/dedicated-qa-window.json",
+    "startedAt": "2026-10-13T05:51:05.504Z",
+    "maximumEndAt": "2026-10-13T06:11:05.504Z",
+    "aliasExceptionRemovedAt": "2026-10-13T05:54:32.906Z",
+    "removedBeforeMaximum": true,
+    "elapsedSecondsBeforeAliasClosure": 207.402,
+    "privyExactUiRemovalTime": "not recorded",
+    "privyBaselineFirstVerifiedByRootAt": "2026-10-13T05:55:40.940Z"
+  },
+  "independentReadOnlyChecks": {
+    "actor": "tempo_qa",
+    "publicPrivy": {
+      "sourceKind": "independent public GET, selected configuration fields only",
+      "checkedAt": "2026-10-13T05:58:09.086Z",
+      "httpStatus": 200,
+      "allowedOriginCount": 12,
+      "qaOriginPresent": false,
+      "baselineHash": "683da3a74d38c9438ed3646122b7cc11604983fc376fbe3c5010f9903ee40a4a",
+      "baselineHashMatches": true
+    },
+    "publicHealth": {
+      "sourceKind": "independent unauthenticated GET with redirects disabled",
+      "checkedAt": "2026-10-13T05:58:09.974Z",
+      "httpStatus": 302,
+      "redirectHost": "vercel.com",
+      "applicationHealthBodyRead": false
+    },
+    "vercelMetadata": {
+      "sourceKind": "independent existing-auth CLI API GETs; no environment values or bypass tokens read",
+      "checkedAt": "2026-10-13T05:58:21.303Z",
+      "deploymentState": "READY",
+      "deploymentTarget": null,
+      "shaMatchesTestedSha": true,
+      "aliasDeploymentMatches": true,
+      "aliasProtectionOverrideCount": 0,
+      "machineCores": 4,
+      "machinePurchaseType": "standard",
+      "machineSelection": "fixed",
+      "extraConcurrency": false,
+      "globalSsoProtection": "prod_deployment_urls_and_all_previews",
+      "ignoredBuildStep": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] && exit 1 || exit 0",
+      "productionDeploymentId": "dpl_GpjPYjyeXDwhrwZMiwRzRRVcAaeH",
+      "productionSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+      "productionAliasesVerified": [
+        "carmelita.browns.studio",
+        "agente-asistente.vercel.app",
+        "agente-asistente-git-main-cabscryptocontacto-6028s-projects.vercel.app",
+        "agente-asistente-cabscryptocontacto-6028s-projects.vercel.app",
+        "carmelita-agent.vercel.app"
+      ],
+      "productionAliasProtectionOverrideCount": 0
+    },
+    "deploymentList": {
+      "sourceKind": "independent CLI API GET /v6/deployments filtered to the project and time interval",
+      "checkedAt": "2026-10-13T06:00:02.693Z",
+      "from": "2026-10-13T05:51:05.504Z",
+      "until": "2026-10-13T05:59:59.941Z",
+      "newDeploymentCount": 0,
+      "newHostedBuildsObservedInThisAttempt": 0
+    }
+  },
+  "publicClient": {
+    "sourceKind": "root registration receipt reviewed locally by QA, not an independent provider GET",
+    "sourceReceipt": "outputs/tempo/dedicated-qa-client-registration.json",
+    "registeredAt": "2026-10-13T05:48:42.397Z",
+    "httpStatus": 201,
+    "clientId": "connected-app-test-502859eb-f3bb-4972-8423-4c08d7833a04",
+    "redirectUris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
+    "tokenEndpointAuthMethod": "none",
+    "clientSecretReturned": false,
+    "differsFromLegacyClient": true,
+    "remainsRegistered": true
+  },
+  "appAndGrantObservations": {
+    "sourceKind": "root authenticated ChatGPT/Stytch DOM observations relayed to QA and recorded in dedicated-qa-attempt-20261013.json",
+    "independentlyObservedByQaInBrowser": false,
+    "appCreationAttempted": true,
+    "appCreated": false,
+    "creationErrorObserved": "No se permiten aplicaciones personalizadas en este contexto. Comprueba tus permisos en el área de trabajo o los ajustes de seguridad",
+    "settingsContextObserved": "Personal",
+    "moreSpecificCause": "not established",
+    "newClientGrantCountAObservedByRoot": 0,
+    "newClientGrantCountBObservedByRoot": 0,
+    "newConsentExecuted": false,
+    "bLegacySevenScopeGrantPreserved": true,
+    "globalPermissionsChanged": false,
+    "fallbackClientOrAppUsed": false
+  },
+  "automaticCloseGuard": {
+    "sourceKind": "root receipt and root process-status observation",
+    "sourceReceipt": "outputs/tempo/dedicated-qa-window-guard-ready.json",
+    "readyReceiptAt": "2026-10-13T05:51:45.368Z",
+    "scheduledAliasCloseAt": "2026-10-13T06:10:05.504Z",
+    "scope": "Vercel exact alias exception only; Privy and grants require root cleanup",
+    "performedClosure": false,
+    "stoppedAfterManualVerifiedClosure": true,
+    "processStopIndependentlyVerifiedByQa": false
+  },
+  "limits": {
+    "phaseAComplete": false,
+    "bMcpMinimalGrantProven": false,
+    "crossResourceAudienceNegativeExecuted": false,
+    "earlierLateWindowNotReclassifiedAsOnTime": true,
+    "noBrowserOrOAuthActionsByQa": true,
+    "noSourceChangesOrCommitsByQa": true,
+    "noCredentialsExtractedOrPublishedByQa": true,
+    "privateAppCreationCauseNotInferredFromPersonalContext": true,
+    "futureAttemptRequiresResolvedCreationContextAndAuthorizedQaWindow": true
+  }
+}

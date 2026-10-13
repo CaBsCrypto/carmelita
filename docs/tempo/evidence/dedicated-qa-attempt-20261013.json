@@ -1,0 +1,62 @@
+{
+  "status": "client_created_app_rejected",
+  "authorizationSource": "call_979536216ad040159dcc573c81248798 item 0",
+  "deliveryDecision": "call_523f6d6023774912ab0e2e5965605af3 item 0: deliver progress with new App pending",
+  "testedSha": "5a5fec953911292abc93973723c1bb76469d79f3",
+  "deploymentId": "dpl_2fLJAdDjcxvtqkNccRwuFJ3GpEPL",
+  "publicClient": {
+    "registeredAt": "2026-10-13T05:48:42.397Z",
+    "httpStatus": 201,
+    "id": "connected-app-test-502859eb-f3bb-4972-8423-4c08d7833a04",
+    "name": "Carmelita Tempo QA isolated 20261013 5a5fec9",
+    "redirectUris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
+    "tokenEndpointAuthMethod": "none",
+    "secretReturned": false,
+    "differsFromLegacyClient": true,
+    "newClientGrantCountAObserved": 0,
+    "newClientGrantCountBObserved": 0,
+    "grantCountProvenance": "root authenticated Stytch user-detail DOM before App attempt and after access cleanup; no new consent executed"
+  },
+  "app": {
+    "intendedName": "Carmelita Tempo QA aislada",
+    "endpoint": "https://carmelita-chat-first-qa.vercel.app/api/mcp/agent",
+    "requestedScopes": ["agent:read", "agent:context"],
+    "oidc": false,
+    "created": false,
+    "creationAttempted": true,
+    "creationErrorObserved": "No se permiten aplicaciones personalizadas en este contexto. Comprueba tus permisos en el área de trabajo o los ajustes de seguridad",
+    "errorSource": "rendered ChatGPT creation dialog; no automatic approval-review rejection reported by tool",
+    "settingsContextObserved": "Personal",
+    "moreSpecificCause": "not established",
+    "globalPermissionsChanged": false,
+    "fallbackClientOrAppUsed": false
+  },
+  "window": {
+    "startedAt": "2026-10-13T05:51:05.504Z",
+    "maximumEndAt": "2026-10-13T06:11:05.504Z",
+    "aliasExceptionRemovedAt": "2026-10-13T05:54:32.906Z",
+    "removedBeforeMaximum": true,
+    "privyQaOriginRemoved": true,
+    "privyExactUiRemovalTimeRecorded": false,
+    "privyBaseline12VerifiedAt": "2026-10-13T05:55:40.940Z",
+    "earlyAliasCloseGuardPreparedAt": "2026-10-13T05:51:12.211Z",
+    "scheduledAliasCloseAt": "2026-10-13T06:10:05.504Z",
+    "guardPerformedClosure": false,
+    "closurePerformedBy": "root CLI; supervised guard stopped after verified early closure"
+  },
+  "bLegacyGrant": {
+    "clientId": "connected-app-test-7a38394d-e24d-47fc-960f-a3dbcf224667",
+    "scopes": ["agent:plan", "agent:read", "agent:context", "agent:conversation", "openid", "email", "offline_access"],
+    "preserved": true,
+    "newConsentExecuted": false
+  },
+  "newHostedBuilds": 0,
+  "newWallets": 0,
+  "newWalletKeysOrSigners": 0,
+  "transactionsSubmitted": 0,
+  "productionDeploymentChanges": 0,
+  "phaseAComplete": false,
+  "bMcpMinimalGrantProven": false,
+  "crossResourceAudienceNegativeExecuted": false,
+  "independentCloseoutReceipt": "dedicated-qa-closeout-20261013.json"
+}

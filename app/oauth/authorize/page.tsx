@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ConsentClient from "./consent-client";
+import { existingOAuthWalletsRequired } from "@/app/stytch/authorize-with-wallets";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function OAuthAuthorizePage() {
-  return <ConsentClient />;
+  return <ConsentClient existingWalletsOnly={existingOAuthWalletsRequired()} />;
 }
