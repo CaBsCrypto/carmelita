@@ -20,7 +20,7 @@ test("groups Stellar, EVM and Solana networks without duplicating the EVM family
   assert.equal(getWalletNetwork("solana:devnet").family, "solana");
   assert.deepEqual(
     networksForFamily("evm").map((network) => network.id),
-    ["base:sepolia", "avalanche:fuji", "bnb:testnet"],
+    ["base:sepolia", "avalanche:fuji", "bnb:testnet", "tempo:moderato"],
   );
   assert.throws(
     () => assertNetworkMatchesFamily("base:sepolia", "solana"),
