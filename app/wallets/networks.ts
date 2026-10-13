@@ -98,8 +98,15 @@ export function getWalletNetwork(input: string) {
 }
 
 export function isTempoTestnetEnabled(env: Record<string, string | undefined> = process.env) {
-  if (env.CARMELITA_TEMPO_TESTNET_ENABLED !== "true"
-    || env.CARMELITA_PREVIEW_ISOLATED !== "true"
+  if (env.CARMELITA_TEMPO_TESTNET_ENABLED !== "true") return false;
+  if (env.VERCEL_ENV === "production") {
+    return env.CARMELITA_TEMPO_PRODUCTION_READ_ENABLED === "true"
+      && env.CARMELITA_PREVIEW_ISOLATED !== "true"
+      && env.CARMELITA_PREVIEW_DATABASE_HOST === undefined
+      && env.CARMELITA_PREVIEW_DATABASE_URL === undefined
+      && env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED === undefined;
+  }
+  if (env.CARMELITA_PREVIEW_ISOLATED !== "true"
     || env.VERCEL_TARGET_ENV === "production") return false;
   if (env.VERCEL_ENV === "preview") return true;
   return env.VERCEL_ENV === undefined && env.NODE_ENV !== "production";

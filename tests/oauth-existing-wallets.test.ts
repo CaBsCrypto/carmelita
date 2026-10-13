@@ -168,6 +168,24 @@ test("raw Preview Tempo intent chooses validation even when isolation is incompl
   assert.equal(existingOAuthWalletsRequired({ VERCEL_ENV: "preview", CARMELITA_TEMPO_TESTNET_ENABLED: "false" }), false);
 });
 
+test("explicit production Tempo validates existing owner wallets without provisioning or profile writes", async () => {
+  const env = { VERCEL_ENV: "production", CARMELITA_TEMPO_TESTNET_ENABLED: "true", CARMELITA_TEMPO_PRODUCTION_READ_ENABLED: "true" };
+  let validated = false;
+  await prepareOAuthWallets(identity,
+    (async () => { throw new Error("must_not_provision"); }) as typeof provisionUserWallets,
+    async () => { throw new Error("must_not_write_profile"); },
+    { env, validateExisting: async (userId) => { assert.equal(userId, owner); validated = true; } });
+  assert.equal(validated, true);
+  for (const invalid of [{ ...env, CARMELITA_TEMPO_TESTNET_ENABLED: "false" }, { ...env, CARMELITA_PREVIEW_ISOLATED: "true" }, { ...env, CARMELITA_PREVIEW_DATABASE_URL: "" }]) {
+    assert.equal(existingOAuthWalletsRequired(invalid), true);
+    await assert.rejects(prepareOAuthWallets(identity,
+      (async () => { throw new Error("must_not_provision"); }) as typeof provisionUserWallets,
+      async () => { throw new Error("must_not_write_profile"); },
+      { env: invalid, validateExisting: async () => { throw new Error("must_not_validate_invalid_environment"); } }),
+      { message: "oauth_existing_wallets_unavailable" });
+  }
+});
+
 test("isolated Tempo consent validates existing identities without profile, provisioning or chain requests", async () => {
   const calls: string[] = [];
   await prepareOAuthWallets(identity,

@@ -9,6 +9,7 @@ import { hasDatabase } from "@/db";
 import { readWalletListPanel, withPersonalPanelReadDeadline } from "@/app/queries/personal-panels";
 import { publicMcpErrorCode } from "@/app/mcp/auth";
 import { ensureTempoTestnetWallet } from "@/app/wallets/tempo-onboarding";
+import { existingOAuthWalletsRequired } from "@/app/wallets/existing-wallet-mode";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,9 @@ export async function POST(request: Request) {
     const user = await authenticatedUser(request);
     if (!hasDatabase()) throw new Error("database_not_configured");
     const input = activationSchema.parse(await request.json());
+    if (existingOAuthWalletsRequired() && input.network !== "tempo:moderato") {
+      return NextResponse.json({ error: "existing_wallets_only" }, { status: 409, headers: { "Cache-Control": "no-store" } });
+    }
     const network = getWalletNetwork(input.network);
     if (network.rollout === "planned") {
       return NextResponse.json({ error: "network_not_available", network: network.id }, { status: 409 });

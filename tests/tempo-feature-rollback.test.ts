@@ -5,7 +5,7 @@ import { enabledEvmNetworks, enabledWalletNetworks, getWalletNetwork, isTempoTes
 
 const enabled = { CARMELITA_TEMPO_TESTNET_ENABLED: "true", CARMELITA_PREVIEW_ISOLATED: "true", VERCEL_ENV: "preview" };
 
-test("Tempo requires explicit isolated activation and always rejects production", () => {
+test("Tempo requires explicit isolated activation outside production", () => {
   assert.equal(isTempoTestnetEnabled({}), false);
   assert.equal(isTempoTestnetEnabled(enabled), true);
   assert.equal(isTempoTestnetEnabled({ ...enabled, VERCEL_ENV: undefined, NODE_ENV: "test" }), true);
@@ -16,6 +16,38 @@ test("Tempo requires explicit isolated activation and always rejects production"
     { VERCEL_TARGET_ENV: "production" },
     { VERCEL_ENV: undefined, NODE_ENV: "production" },
   ]) assert.equal(isTempoTestnetEnabled({ ...enabled, ...override }), false);
+});
+
+test("production Tempo reading requires both opt-ins and rejects Preview database configuration", async () => {
+  const production = {
+    VERCEL_ENV: "production", VERCEL_TARGET_ENV: "production", NODE_ENV: "production",
+    CARMELITA_TEMPO_TESTNET_ENABLED: "true", CARMELITA_TEMPO_PRODUCTION_READ_ENABLED: "true",
+  };
+  assert.equal(isTempoTestnetEnabled(production), true);
+  for (const key of ["CARMELITA_TEMPO_TESTNET_ENABLED", "CARMELITA_TEMPO_PRODUCTION_READ_ENABLED"]) {
+    for (const value of [undefined, "false", "TRUE", ""]) {
+      assert.equal(isTempoTestnetEnabled({ ...production, [key]: value }), false);
+    }
+  }
+  assert.equal(isTempoTestnetEnabled({ ...production, CARMELITA_PREVIEW_ISOLATED: "true" }), false);
+  for (const key of ["CARMELITA_PREVIEW_DATABASE_HOST", "CARMELITA_PREVIEW_DATABASE_URL", "CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED"]) {
+    for (const value of ["", "fixture-preview-value"]) {
+      assert.equal(isTempoTestnetEnabled({ ...production, [key]: value }), false);
+    }
+  }
+  await withTempoEnvironment(async () => {
+    delete process.env.CARMELITA_PREVIEW_ISOLATED;
+    Object.assign(process.env, production);
+    const network = getWalletNetwork("tempo:moderato");
+    assert.equal(network.chainId, 42431);
+    assert.equal(network.testnet, true);
+    assert.equal(network.readOnly, true);
+    assert.equal(network.rollout, "experimental");
+    assert.equal(isWalletNetworkEnabled("tempo:mainnet"), false);
+    assert.equal(isWalletNetworkEnabled("eip155:4217"), false);
+    assert.equal(getWalletNetwork("bnb:testnet").rollout, "planned");
+    assert.equal(getWalletNetwork("base:sepolia").rollout, "planned");
+  });
 });
 
 test("enabled Tempo advertises TIP-20 reading and no native gas assumption", async () => {
@@ -57,11 +89,15 @@ test("rollback hides Tempo without changing persisted identity or existing netwo
 });
 
 async function withTempoEnvironment(run: () => Promise<void>) {
-  const keys = ["CARMELITA_TEMPO_TESTNET_ENABLED", "CARMELITA_PREVIEW_ISOLATED", "VERCEL_ENV", "VERCEL_TARGET_ENV", "NODE_ENV", "CARMELITA_EVM_TESTNET_EXPANSION_ENABLED"];
+  const keys = ["CARMELITA_TEMPO_TESTNET_ENABLED", "CARMELITA_TEMPO_PRODUCTION_READ_ENABLED", "CARMELITA_PREVIEW_ISOLATED", "CARMELITA_PREVIEW_DATABASE_HOST", "CARMELITA_PREVIEW_DATABASE_URL", "CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED", "VERCEL_ENV", "VERCEL_TARGET_ENV", "NODE_ENV", "CARMELITA_EVM_TESTNET_EXPANSION_ENABLED"];
   const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   Object.assign(process.env, enabled);
   delete process.env.VERCEL_TARGET_ENV;
   delete process.env.CARMELITA_EVM_TESTNET_EXPANSION_ENABLED;
+  delete process.env.CARMELITA_TEMPO_PRODUCTION_READ_ENABLED;
+  delete process.env.CARMELITA_PREVIEW_DATABASE_HOST;
+  delete process.env.CARMELITA_PREVIEW_DATABASE_URL;
+  delete process.env.CARMELITA_PREVIEW_DATABASE_URL_UNPOOLED;
   try { await run(); } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete process.env[key];

@@ -39,3 +39,12 @@ const insecureOrigin = await POST(new Request("https://preview.test/api/agent/bo
 }));
 assert.equal(provisions, 1);
 assert.equal(insecureOrigin.status, 403);
+process.env.CARMELITA_TEMPO_PRODUCTION_READ_ENABLED = "true";
+process.env.CARMELITA_TEMPO_TESTNET_ENABLED = "true";
+process.env.VERCEL_ENV = "production";
+const existingOnly = await POST(new Request("https://production.test/api/agent/bootstrap", {
+  method: "POST", headers: { origin: "https://production.test", host: "production.test", authorization: "Bearer fixture" },
+}));
+assert.equal(existingOnly.status, 409);
+assert.deepEqual(await existingOnly.json(), { error: "existing_wallets_only", next: "/tempo" });
+assert.equal(provisions, 1, "production Tempo cannot call wallet provisioning or Friendbot through bootstrap");
