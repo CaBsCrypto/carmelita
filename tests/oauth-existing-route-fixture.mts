@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mock } from "node:test";
-import { createElement, type ReactNode } from "react";
+import { createElement, type ComponentType, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const owner = "did:privy:synthetic-existing-owner";
@@ -173,11 +173,14 @@ mock.module("@privy-io/react-auth", {
 });
 const { default: Providers } = await import("../app/providers");
 const { existingOAuthWalletsRequired } = await import("../app/stytch/authorize-with-wallets");
+// React.createElement injects children from its third argument; the fixture's
+// props omit that required field while retaining the real Providers component.
+const ProviderWithElementChildren = Providers as ComponentType<Omit<Parameters<typeof Providers>[0], "children">>;
 const child = createElement("span", null, "synthetic-provider-child");
-const existingMarkup = renderToStaticMarkup(createElement(Providers, {
+const existingMarkup = renderToStaticMarkup(createElement(ProviderWithElementChildren, {
   appId: "synthetic-public-app", clientId: "synthetic-public-client",
-  existingWalletsOnly: existingOAuthWalletsRequired(), tempoTestnetEnabled: true, children: child,
-}));
+  existingWalletsOnly: existingOAuthWalletsRequired(), tempoTestnetEnabled: true,
+}, child));
 assert.ok(existingMarkup.includes("synthetic-provider-child"));
 assert.equal(providerConfigurations.length, 1);
 assert.deepEqual(providerConfigurations[0].config.embeddedWallets, {
@@ -186,14 +189,14 @@ assert.deepEqual(providerConfigurations[0].config.embeddedWallets, {
 assert.equal(providerConfigurations[0].clientId, "synthetic-public-client");
 assert.deepEqual(providerConfigurations[0].config.supportedChains.map(chain => chain.id), [43113, 42431]);
 
-const legacyMarkup = renderToStaticMarkup(createElement(Providers, { appId: "synthetic-public-app", children: child }));
+const legacyMarkup = renderToStaticMarkup(createElement(ProviderWithElementChildren, { appId: "synthetic-public-app" }, child));
 assert.ok(legacyMarkup.includes("synthetic-provider-child"));
 assert.equal(providerConfigurations.length, 2);
 assert.equal(Object.hasOwn(providerConfigurations[1].config, "embeddedWallets"), false,
   "Legacy login must retain its configured embedded-wallet behavior");
 assert.deepEqual(providerConfigurations[1].config.supportedChains.map(chain => chain.id), [43113]);
 
-assert.equal(renderToStaticMarkup(createElement(Providers, { existingWalletsOnly: true, children: child })),
+assert.equal(renderToStaticMarkup(createElement(ProviderWithElementChildren, { existingWalletsOnly: true }, child)),
   "<span>synthetic-provider-child</span>");
 assert.equal(providerConfigurations.length, 2, "Missing AppID must not initialize a Privy provider");
 assertNoLegacyOrNetwork();

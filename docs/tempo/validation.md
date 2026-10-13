@@ -6,7 +6,7 @@ Estado de aceptación: **Fase A pendiente de prueba real desde ChatGPT conectado
 
 | Campo | Evidencia |
 | --- | --- |
-| Fecha de trabajo | 12 de octubre de 2026, Chile continental; horas técnicas registradas en UTC |
+| Fecha de trabajo | 12–13 de octubre de 2026, Chile continental; horas técnicas registradas en UTC |
 | Repositorio | CaBsCrypto/carmelita |
 | Base verificada después de fetch por el coordinador | `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542` |
 | Contratos integrados | `0f8780c4bf57d23f2bbf3718862cb1ddad9c015a` |
@@ -30,7 +30,7 @@ Accesos retirados: excepción Vercel a las `03:34:25.575Z`; origen Privy a las `
 
 Lectura de API de duración a las `03:52:26.253Z`: 120000 ms facturables de máquina y 480000 ms CPU. El equivalente a tarifa sería US$0,028 si facturable, antes de créditos/impuestos; no es cargo confirmado. [Pricing oficial](https://vercel.com/docs/pricing#builds) limita la facturación Standard a concurrencia on-demand o Elastic; ambos permanecen apagados. Functions aparte. Recibos sanitizados locales: `outputs/tempo/preview-inspect.json`, `qa-window.json`, `qa-alias-close.json`, `privy-qa-origin.json`, `existing-user-a-preflight.json`; no contienen tokens o credenciales.
 
-Corrección local `b268649`: valida SQL/Privy existentes y rechaza faltantes/conflictos sin perfil, provisionador, Horizon, activación ni Friendbot. Aislamiento inválido no permite fallback. SDK login fija creación Ethereum/Solana en off y migración automática desactivada solo en ese modo. `/preview-acceptance` reutiliza el panel de registro Tempo para asociación explícita y reconfirmación; cancela solicitudes durante cambio de cuenta. Tres especialistas revisaron sin pendientes; QA aplicó `vercel:react-best-practices` al consentimiento, Providers y paneles.
+Runtime de la corrección `b268649` (el fixture React se corrigió después, sin cambios de aplicación): valida SQL/Privy existentes y rechaza faltantes/conflictos sin perfil, provisionador, Horizon, activación ni Friendbot. Aislamiento inválido no permite fallback. SDK login fija creación Ethereum/Solana en off y migración automática desactivada solo en ese modo. `/preview-acceptance` reutiliza el panel de registro Tempo para asociación explícita y reconfirmación; cancela solicitudes durante cambio de cuenta. Tres especialistas revisaron sin pendientes; QA aplicó `vercel:react-best-practices` al consentimiento, Providers y paneles.
 
 Regresión final: `npm test` **1114 tests, 1112 PASS, 0 FAIL, 2 SKIP**, duración `104939.9718 ms`; 36 nuevos tests de OAuth existente y 28 Tempo. El fixture ejecuta la ruta OAuth real, aislamiento/orquestación/helper reales con el validador externo simulado, trampas del provisionador/perfil/fetch, y renderiza Providers real con SDK simulado. Comprueba que un fallo no vincula sujeto ni emite grant; no consulta Horizon ni red. No sustituye pruebas hospedadas. Lint/tipos/build local finales PASS; Next 16.2.6 compiló en 15.5 s. SWC encontró acceso denegado en sandbox Windows y se repitió el build únicamente local fuera del sandbox. Grafo AST actualizado: 3916 nodos, 10203 relaciones, 165 comunidades; 22 SQL no parseados. No segundo build hospedado ni ventana reabierta.
 
