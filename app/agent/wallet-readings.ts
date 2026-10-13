@@ -16,7 +16,7 @@ export type WalletReadings = {
   failures?: Record<string, { code: string; message: string }>;
 };
 
-const EVM_CHAINS: Record<string, number> = { "avalanche:fuji": 43113, "bnb:testnet": 97, "base:sepolia": 84532 };
+const EVM_CHAINS: Record<string, number> = { "avalanche:fuji": 43113, "bnb:testnet": 97, "base:sepolia": 84532, "tempo:moderato": 42431 };
 
 export function walletReadingPath(network: string) {
   if (network === "tempo:moderato") return "/api/agent/wallets/tempo";
@@ -47,7 +47,9 @@ export function readingMatchesWallet(wallet: WalletRow, reading: WalletReading) 
     ? wallet.address.toLowerCase() === reading.address?.toLowerCase()
     : wallet.address === reading.address;
   return sameAddress && reading.network === wallet.network && typeof reading.balance === "string"
-    && (wallet.network !== "tempo:moderato" || (reading.tempo !== undefined && tempoReadingToWalletReading(reading.tempo) !== null))
+    && (wallet.network !== "tempo:moderato" || (reading.tempo !== undefined
+      && reading.tempo.address.toLowerCase() === reading.address.toLowerCase()
+      && tempoReadingToWalletReading(reading.tempo) !== null))
     && (!Object.hasOwn(EVM_CHAINS, wallet.network) || reading.chainId === EVM_CHAINS[wallet.network]);
 }
 

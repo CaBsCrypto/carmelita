@@ -1,24 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Locale } from "../language-toggle";
 import { registryNetworkRows, type RegistryResult } from "./registry-wallet-model";
 import { readWorkspaceQuery } from "./workspace-queries";
 import { workspaceCopy } from "./workspace-copy";
+import type { TempoWalletReading } from "../wallets/types";
+
+const tempoCopy = {
+  en: { register: "Connect Tempo Testnet", registering: "Connecting…", note: "Reuse your existing EVM wallet on Moderato. This checks the network and registers the address; no funds move.", required: "Sign in again to prepare your EVM wallet before connecting Tempo.", failed: "Tempo is unavailable. Retry the connection or balance query.", block: "Block", time: "Read at", zero: "A zero balance does not imply previous activity. Test tokens have no real value." },
+  es: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutiliza tu wallet EVM en Moderato. Se comprueba la red y se registra la dirección; no se mueven fondos.", required: "Vuelve a iniciar sesión para preparar tu wallet EVM antes de conectar Tempo.", failed: "Tempo no está disponible. Reintenta la conexión o consulta de saldo.", block: "Bloque", time: "Consultado", zero: "Un saldo cero no implica actividad previa. Los tokens de prueba no tienen valor real." },
+  pt: { register: "Conectar Tempo Testnet", registering: "Conectando…", note: "Reutilize sua wallet EVM no Moderato. A rede é verificada e o endereço registrado; nenhum saldo é transferido.", required: "Entre novamente para preparar sua wallet EVM antes de conectar Tempo.", failed: "Tempo indisponível. Tente a conexão ou consulta de saldo novamente.", block: "Bloco", time: "Consultado", zero: "Saldo zero não implica atividade anterior. Tokens de teste não têm valor real." },
+};
 
 export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBalances }: {
   locale: Locale; getAccessToken: () => Promise<string | null>; onQueryBalances: () => void;
 }) {
   const t = workspaceCopy[locale];
+  const tempoText = tempoCopy[locale];
   const [state, setState] = useState<{ rows: ReturnType<typeof registryNetworkRows>; status: "loading" | "ready" | "error" }>({ rows: [], status: "loading" });
+  const [tempo, setTempo] = useState<TempoWalletReading | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
+  const connectionRequest = useRef<AbortController | null>(null);
   const [attempt, setAttempt] = useState(0);
+  useEffect(() => () => connectionRequest.current?.abort(), []);
   useEffect(() => {
     const controller = new AbortController();
     async function load() {
       try {
         const result = await readWorkspaceQuery<RegistryResult>("personal.wallets", getAccessToken, locale, controller.signal);
         controller.signal.throwIfAborted();
-        setState({ rows: registryNetworkRows(result), status: "ready" });
+        const rows = registryNetworkRows(result);
+        setState({ rows, status: "ready" });
+        setTempo(null);
+        if (rows.some(row => row.network === "tempo:moderato" && row.address)) {
+          try {
+            const status = await readWorkspaceQuery<{ wallets: Array<{ network: string; tempo?: TempoWalletReading }> }>("personal.wallets.status", getAccessToken, locale, controller.signal);
+            controller.signal.throwIfAborted();
+            setTempo(status.wallets.find(row => row.network === "tempo:moderato")?.tempo ?? null);
+          } catch {
+            if (!controller.signal.aborted) setTempo(null);
+          }
+        }
       } catch {
         if (!controller.signal.aborted) setState({ rows: [], status: "error" });
       }
@@ -26,6 +50,33 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
     void load();
     return () => controller.abort();
   }, [getAccessToken, locale, attempt]);
+
+  async function connectTempo() {
+    connectionRequest.current?.abort();
+    const controller = new AbortController();
+    connectionRequest.current = controller;
+    setConnecting(true);
+    setConnectionError(false);
+    try {
+      const token = await getAccessToken();
+      controller.signal.throwIfAborted();
+      if (!token) throw new Error("authentication_required");
+      const response = await fetch("/api/agent/wallets", {
+        method: "POST", cache: "no-store", signal: controller.signal,
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ network: "tempo:moderato", explicitUserConfirmation: true }),
+      });
+      if (!response.ok) throw new Error("tempo_connection_failed");
+      controller.signal.throwIfAborted();
+      setTempo(null);
+      setState({ rows: [], status: "loading" });
+      setAttempt(value => value + 1);
+    } catch {
+      if (!controller.signal.aborted) setConnectionError(true);
+    } finally {
+      if (!controller.signal.aborted) setConnecting(false);
+    }
+  }
   return <section className="registry-wallets">
     <p>{t.registryNote}</p>
     {state.status === "loading" && <p role="status">{t.registryLoading}</p>}
@@ -36,6 +87,17 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
         <dl><div><dt>{t.status}</dt><dd>{row.registrationState === "registered" ? t.registered : row.registrationState === null ? t.pending : t.unavailable}</dd></div>
           <div><dt>{t.address}</dt><dd><code>{row.address ?? "—"}</code></dd></div></dl>
         {row.explorerUrl && <a href={row.explorerUrl} target="_blank" rel="noreferrer">{t.explorer}</a>}
+        {row.network === "tempo:moderato" && <>
+          {row.address ? tempo?.status === "available" ? <>
+            <p>{tempo.token.balance} {tempo.token.symbol} · Testnet · {tempo.chainId}</p>
+            <p>{tempoText.block}: {tempo.block.number} · {tempoText.time}: <time dateTime={tempo.queriedAt}>{tempo.queriedAt}</time></p>
+            <p>{tempoText.zero}</p>
+          </> : <p role="status">{tempo?.status === "unavailable" || tempo?.status === "wrong_network" || tempo?.status === "misconfigured" || tempo?.status === "disabled" ? tempo.error.message : tempoText.failed}</p> : <>
+            <p>{tempoText.note}</p>
+            {state.rows.some(item => item.family === "evm" && item.address) ? <button type="button" disabled={connecting} onClick={() => void connectTempo()}>{connecting ? tempoText.registering : tempoText.register}</button> : <p>{tempoText.required}</p>}
+            {connectionError && <p role="alert">{tempoText.failed}</p>}
+          </>}
+        </>}
       </article>)}
     </div>
     {state.status === "ready" && <><p>{t.exampleNote}</p><button type="button" className="workspace-button" onClick={onQueryBalances}>{t.balance}</button></>}

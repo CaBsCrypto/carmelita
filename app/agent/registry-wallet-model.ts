@@ -16,8 +16,9 @@ export type RegistryResult = {
 const networkNames: Record<string, string> = {
   "stellar:testnet": "Stellar Testnet", "avalanche:fuji": "Avalanche Fuji",
   "bnb:testnet": "BNB Smart Chain Testnet", "base:sepolia": "Base Sepolia", "solana:devnet": "Solana Devnet",
+  "tempo:moderato": "Tempo Testnet (Moderato)",
 };
-const order = ["stellar:testnet", "avalanche:fuji", "bnb:testnet", "base:sepolia", "solana:devnet"];
+const order = ["stellar:testnet", "avalanche:fuji", "bnb:testnet", "base:sepolia", "tempo:moderato", "solana:devnet"];
 
 /** Only render networks and explorer links actually returned by the authoritative registry. */
 export function registryNetworkRows(result: RegistryResult) {
@@ -25,7 +26,7 @@ export function registryNetworkRows(result: RegistryResult) {
   return [...ids].sort((left, right) => order.indexOf(left) - order.indexOf(right)).map(network => {
     const wallet = result.wallets.find(item => item.network === network && item.status === "active")
       ?? result.wallets.find(item => item.network === network);
-    const family = ["avalanche:fuji", "bnb:testnet", "base:sepolia"].includes(network) ? "evm" : network.split(":")[0];
+    const family = ["avalanche:fuji", "bnb:testnet", "base:sepolia", "tempo:moderato"].includes(network) ? "evm" : network.split(":")[0];
     // An explicit backend state is authoritative. Only older DTOs need a status fallback.
     const registrationState = !wallet ? null : wallet.registrationState === undefined
       ? ["active", "pending", "registered"].includes(wallet.status) ? "registered" : "unknown"
