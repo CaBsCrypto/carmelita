@@ -2,6 +2,8 @@
 
 **Estado vigente: aceptación parcial; Fase A completa pendiente.** A obtuvo descubrimiento y saldo real desde ChatGPT conectado al Preview correcto. B completó login, asociación repetida y lectura real en UI. No se ejecutó su MCP con grant QA independiente. Faltan negativos reales entre propietarios y entre recursos OAuth. Fase B no iniciada; no hubo firma, fondeo, pagos ni wallets nuevas.
 
+Grabación: el PM autorizó después una ventana específica soloA, máximo06:19UTC. La UI obtuvo lectura nueva06:14:27.476Z, bloque39375318/0PathUSD; [RPC histórico independiente](recording/pinned-ui-recording-20261013.json) coincide. El conector devolvió solicitud de reautenticación/reintento, sin balance MCP nuevo. Excepción Vercel cerró automáticamente06:18:08.860Z; grant nuevoA y origen Privy se retiraron posteriormente al máximo, baseline12 verificada06:23:34.117Z (hora UI exacta desconocida). No cierre completo a tiempo ni B adicional probados. [Registro](recording/recording-window-20261013.json), [paquete grabable](recording/README-entrega.md).
+
 ## Entorno y revisión
 
 | Campo | Evidencia |
@@ -55,7 +57,9 @@ Después de revocar el grant QA nuevo de A, una única petición del conector de
 
 B ya tenía **siete scopes** en ese mismo cliente: plan/read/context/conversation/openid/email/offline_access. No se concedió ni revocó ese permiso. Stytch deduplica clientes DCR públicos con metadatos idénticos: crear otra App ChatGPT no garantiza otro client ID. La revocación afecta la pareja sujeto + connected_app_id, no una sola App ni un recurso. [Tipos de cliente](https://stytch.com/docs/connected-apps/oauth-learn-more/client-types), [DCR](https://stytch.com/docs/api-reference/consumer/api/connected-apps/application-management/dynamic-client-registration), [consentimiento](https://stytch.com/docs/connected-apps/resources/consent-management).
 
-Está preparada, **sin ejecutar**, la propuesta de un cliente público QA con metadatos únicos, callback soportado de ChatGPT, auth method none/PKCE y una App privada adicional **Carmelita Tempo QA aislada**. El manager de la App existente no permite cambiar su client ID. Antes de consentir debe comprobarse que el ID nuevo difiere de los existentes y no tiene grants A/B; usar solo read/context y revocar solo ese cliente al terminar. Crear ese acceso persistente necesita aprobación independiente según el encargo, sección 5; la ventana anterior está cerrada.
+El PM autorizó por separado un cliente público QA con metadatos únicos y otra App privada. Se registró `connected-app-test-502859eb-f3bb-4972-8423-4c08d7833a04` a `05:48:42.397Z` (HTTP201), distinto del compartido, callback soportado, auth method none/PKCE, sin secret. Root comprobó ausencia de grants A/B antes del intento y después del cierre. El formulario **Carmelita Tempo QA aislada** tenía el ID nuevo, read/context y OIDC off; ChatGPT rechazó crearlo con «No se permiten aplicaciones personalizadas en este contexto. Comprueba tus permisos en el área de trabajo o los ajustes de seguridad». No se creó App ni se consintió. Settings mostró Personal; la App QA anterior tiene scope USER. La causa específica no se determinó; no se cambiaron permisos globales ni se usó otro cliente como alternativa. [Recibo](evidence/dedicated-qa-attempt-20261013.json).
+
+El PM decidió **entregar el avance con la App nueva pendiente**. El cliente público queda como configuración sin grants; B conserva sus siete scopes previos. El manager de la App existente no permite editar su client ID. Una prueba futura necesita resolver el contexto de creación de ChatGPT y una ventana autorizada; el último acceso está cerrado.
 
 Limitación separada: `STYTCH_CONNECTED_APPS_EXPECTED_AUDIENCE` es opcional en el código; la inspección actual de la rama (`05:14:11.253Z`) lo encontró sin configurar, y el inventario actual no contiene esa clave. Eso no demuestra el valor runtime del deployment ni que otro recurso sea aceptado. La prueba negativa entre recursos **no se ejecutó**. Un client ID distinto separa grants/revocación; por sí solo no demuestra aislamiento de audiencia.
 
@@ -74,6 +78,7 @@ Standard 4 CPU fijo y concurrencia adicional/Elastic apagados se conservaron. [P
 - Primer f573: excepción abierta `03:16:52.884Z`, retirada `03:34:25.575Z`; origen Privy retirado `03:34:40.609Z`, dentro del límite.
 - Corregido: ventana `04:40:35.400Z–05:00:35.400Z`; excepción cerrada antes del límite y baseline Privy verificada `04:59:26.772Z`.
 - Renovación autorizada sin build: `05:02:09.809Z–05:22:09.809Z`; excepción retirada `05:22:38.316Z`, **28,507 segundos tarde**. El origen Privy se retiró después; hora UI exacta no registrada. Primera comprobación pública de los 12 orígenes originales: `05:23:39.836Z`.
+- Intento de App separada autorizado, sin build: `05:51:05.504Z–06:11:05.504Z` máximo. Cierre anticipado de excepción `05:54:32.906Z` tras el rechazo de creación. Origen Privy retirado, hora UI exacta no registrada; 12 orígenes originales verificados `05:55:40.940Z`. El guard de cierre temprano fue preparado y detenido tras el cierre manual verificado; no ejecutó la retirada.
 
 QA independiente confirmó a `05:25:06.571Z` baseline Privy de 12 y origen QA ausente; a `05:25:07.868Z`, health público 302 a protección; a `05:25:16.236Z`, excepción QA ausente, alias apuntando al Preview 5a y producción `dpl_GpjPYjyeXDwhrwZMiwRzRRVcAaeH` con sus cinco alias, protección general, máquina y filtro intactos. No se inició un tercer build, se fusionó main o se pausó producción.
 
@@ -103,7 +108,7 @@ La App antigua Carmelita QA apuntaba a otra URL y devolvió “Protected by Verc
 
 ## Pendientes de aceptación
 
-1. MCP real de B con grant QA separado y mínimo, sin tocar sus siete scopes previos; completar su relogin estable.
+1. Resolver el rechazo de creación de la App privada en ChatGPT; después MCP real de B con grant QA separado y mínimo, sin tocar sus siete scopes previos; completar su relogin estable.
 2. Negativos reales bidireccionales de owner/IDs/address/context entre A y B. La secuencia UI y tests sintéticos no sustituyen esos ataques.
 3. Validación real de audiencia/recurso entre entornos y efecto exacto de la configuración con Stytch.
 4. Repetición de revocación con correlación directa de la petición/token si se exige cerrar ese criterio estricto.

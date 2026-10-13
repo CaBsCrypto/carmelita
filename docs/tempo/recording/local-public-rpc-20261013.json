@@ -1,0 +1,29 @@
+{
+  "status": "available",
+  "sourceKind": "fresh local public RPC read; not authenticated product UI or MCP",
+  "actor": "root",
+  "codeSha": "cca7d26b63a372101163ee1e78e10fe6279f454b",
+  "applicationSourceMatchesPreviewSha": "5a5fec953911292abc93973723c1bb76469d79f3",
+  "queriedAt": "2026-10-13T06:08:34.917Z",
+  "network": "tempo:moderato",
+  "chainId": 42431,
+  "address": "0x7A33b72BddF1d6D01c279b6cC9049c5E751f9d07",
+  "token": {
+    "address": "0x20c0000000000000000000000000000000000000",
+    "name": "PathUSD",
+    "symbol": "PathUSD",
+    "decimals": 6,
+    "balanceAtomic": "0",
+    "balance": "0",
+    "metadataVerified": true
+  },
+  "block": {
+    "number": "39374745",
+    "hash": "0xaca1e747714fe3c17619581765b37b6ff974f142b28d371767ab7dfccba2811b",
+    "timestamp": "1791871715"
+  },
+  "fundsMoved": false,
+  "signingRequired": false,
+  "qaSessionUsed": false,
+  "noOwnershipClaimFromPublicRpc": true
+}

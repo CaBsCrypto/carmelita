@@ -1,6 +1,6 @@
 # Demo de Tempo — recorrido de 90 segundos
 
-Estado: **consulta real de A ejecutada desde ChatGPT; vídeo de 90 segundos no grabado**. Este recorrido muestra resultados registrados, no una consulta nueva ni aceptación completa de Fase A. B pasó login/asociación/lectura en UI; su MCP con grant QA independiente continúa bloqueado. Los accesos públicos temporales están retirados. [Validación](validation.md) y [datos sanitizados](evidence/preview-qa-20261013.json).
+Estado: **consulta real de A ejecutada desde ChatGPT; vídeo de 90 segundos no grabado**. Este recorrido muestra resultados registrados, no una consulta nueva ni aceptación completa de Fase A. B pasó login/asociación/lectura en UI; su MCP con grant QA independiente continúa bloqueado. El cliente separado ya existe sin grants, pero ChatGPT rechazó crear la App nueva; el PM decidió entregar con esa App pendiente. Los accesos públicos temporales están retirados. [Validación](validation.md) y [datos sanitizados](evidence/preview-qa-20261013.json).
 
 | Tiempo | Evidencia que se muestra | Narración |
 | --- | --- | --- |

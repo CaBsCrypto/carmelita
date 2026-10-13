@@ -194,8 +194,11 @@
     "sharedClientRevocationUnit": "Stytch subject and connected_app_id, not an individual ChatGPT App or resource",
     "publicDcrDeduplicatesIdenticalMetadata": true,
     "dedicatedPublicClientProposalPrepared": true,
-    "dedicatedClientRegistered": false,
+    "dedicatedClientRegistered": true,
     "additionalPrivateAppCreated": false,
+    "dedicatedClientAttemptReceipt": "docs/tempo/evidence/dedicated-qa-attempt-20261013.json",
+    "additionalAppBlockedByChatGptContext": true,
+    "pmDecisionDeliverProgressWithAppPending": true,
     "expectedAudiencePin": {
       "currentBranchInspectionAt": "2026-10-13T05:14:11.253Z",
       "configuredInCurrentBranch": false,
