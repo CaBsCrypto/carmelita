@@ -25,6 +25,11 @@ export function GET(request: Request) {
           "Read authenticated context and conversation, discover capabilities, query Mainnet market prices and chain TVL, and create non-executable Testnet plans.",
         marketReadTools: ["search_market_assets", "get_market_quotes", "compare_chains"],
         readQueries: listReadQueries(),
+        additionalReadTools: [{
+          toolName: "read_tempo_existing_evm_wallet", scope: "agent:read", network: "tempo:moderato",
+          purpose: "Read PathUSD using the authenticated owner's canonical existing EVM wallet without requiring or writing a Tempo registration.",
+          registryChanged: false, walletCreation: false, funding: false, signing: false,
+        }],
         webQueryEndpoint: origin + "/api/agent/queries",
         toolCatalogRefresh: "Internal changes share one server. Tool or parameter changes require refreshing ChatGPT discovery and validating the returned catalog.",
       },

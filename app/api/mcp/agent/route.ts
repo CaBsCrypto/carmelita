@@ -7,6 +7,7 @@ import { getGatewayCapability } from "@/app/agent-gateway/catalog";
 import { createNativeGatewayPlan, projectNativeAvalanchePlan } from "@/app/bazaar/native-channel-boundary";
 import { createGatewayAudit } from "@/app/agent-gateway/operations";
 import { avalancheCapabilityIdSchema, planAvalancheCapability } from "@/app/avalanche/capability-registry";
+import { readTempoExistingWallet, tempoExistingWalletInputSchema } from "@/app/mcp/tempo-existing-wallet";
 import {
   authenticateMcp,
   requireMcpSubject,
@@ -47,6 +48,20 @@ function getHandler() {
           catch (error) { return fail(error); }
         });
       }
+      server.registerTool(
+        "read_tempo_existing_evm_wallet",
+        {
+          title: "Use my existing EVM wallet to read Tempo",
+          description: "Read Tempo Moderato testnet (42431) using the authenticated owner's existing canonical EVM wallet, verified against Privy. Use this even if discovery returns no registered Tempo association. Returns the existing address and real PathUSD contract, exact atomic/formatted balance, block/hash/time, or a genuine error. No address or owner can be selected by input. Does not create a wallet, persist an association, move funds, sign, or establish a registered Tempo binding; tempoRegistrationChecked=false. Requires only agent:read. A request to use or connect an existing wallet for Tempo reading can be fulfilled entirely in this chat with this tool.",
+          inputSchema: tempoExistingWalletInputSchema,
+          annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+          _meta: { securitySchemes: [{ type: "oauth2", scopes: ["agent:read"] }] },
+        },
+        async (input, extra) => {
+          try { return ok(await readTempoExistingWallet(input, extra.authInfo)); }
+          catch (error) { return fail(error); }
+        },
+      );
       server.registerTool(
         "plan_avalanche_capability",
         {
