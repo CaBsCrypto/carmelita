@@ -1,13 +1,13 @@
 # Demo verificable de Tempo — 90 segundos
 
-Estado: **demo de punta a punta no grabada ni ejecutada**. El conector QA existente devolvió `Protected by Vercel Authentication`; no hay evidencia de consulta Tempo desde ChatGPT con este código. No mostrar una respuesta simulada como una llamada real. Las pruebas y límites actuales constan en `docs/tempo/validation.md`.
+Estado: **demo de punta a punta no grabada ni ejecutada**. El primer Preview f573 quedó READY y se creó la App privada QA, pero la revisión automática rechazó su consentimiento por posible Friendbot heredado; no hubo grant ni consulta autenticada Tempo desde ChatGPT. La corrección b268649 pasó validación local y está en la PR #58, todavía sin Preview actualizado. Los accesos temporales ya están retirados. No mostrar una respuesta simulada como una llamada real. Evidencia y límites: `docs/tempo/validation.md`.
 
 La demo completa se habilita cuando exista un Preview aislado autorizado con SHA identificado, un usuario de prueba autenticado y el plugin conectado a ese endpoint. No necesita fondos, firmas ni un pago.
 
 | Tiempo | Acción y evidencia visible | Narración |
 | --- | --- | --- |
 | 0–15 s | Mostrar URL y SHA del Preview correcto; login Privy de prueba ya iniciado y wallet EVM existente | «Esta es la rama Tempo en un Preview aislado. Reutilizamos la wallet EVM del usuario autenticado.» |
-| 15–30 s | Asociación explícita de Tempo en UI; mostrar dirección estable. Repetir asociación o mostrar registro validado sin duplicados | «Agregar Moderato conserva dirección e identidad. La asociación no crea otra wallet ni da permiso de firma.» |
+| 15–30 s | En `/preview-acceptance`, modo Tempo, asociar y reconfirmar explícitamente; mostrar dirección estable y una sola asociación | «Agregar Moderato conserva dirección e identidad. La asociación no crea otra wallet ni da permiso de firma.» |
 | 30–55 s | En ChatGPT conectado a ese Preview, descubrir wallets y ejecutar consulta actual de `tempo:moderato` | «ChatGPT consulta solo la wallet de esta sesión. Este resultado viene del servidor y del RPC de Moderato.» |
 | 55–75 s | Respuesta muestra testnet, 42431, misma dirección, PathUSD/contrato, balance bruto y decimal, bloque/hash y hora | «El token y sus seis decimales están verificados en el mismo bloque. Cero es un saldo leído; un fallo se presenta como no disponible.» |
 | 75–90 s | Abrir el enlace real de explorer de esa dirección; cerrar con alcance Fase A | «La dirección coincide. La ausencia de historial es válida. Entregamos lectura testnet; los pagos permanecen deshabilitados.» |

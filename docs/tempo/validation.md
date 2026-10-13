@@ -12,11 +12,27 @@ Estado de aceptación: **Fase A pendiente de prueba real desde ChatGPT conectado
 | Contratos integrados | `0f8780c4bf57d23f2bbf3718862cb1ddad9c015a` |
 | Rama QA | `codex/tempo-qa` |
 | Rama de entrega | `feat/tempo-testnet-mcp`; confirmar SHA integrado en el cierre |
-| SHA de código probado | `6c07143e897f32619365ab027aed65d5acaa4135`, fuente final y snapshot de runtime; pruebas focales QA en el mismo código antes del commit del snapshot |
+| SHA de código probado | `b268649a8e4dc72b7bd5993bdc68da7d1e6b6862`; corte anterior `6c07143e897f32619365ab027aed65d5acaa4135` preservado como histórico |
 | Runtime local | Node `v24.14.0`, npm `11.9.0`; manifest declara npm `11.6.1` |
-| Entorno hospedado probado | Ninguno para este incremento |
+| Entorno hospedado probado | Preview f573: health/metadata/MCP 401 y login A; corrección b268649 solo local, no desplegada |
 
-El QA es un agente distinto de los autores de Wallet/RPC y Backend/MCP. Escribió pruebas y este registro; no implementó el código revisado. No se descartaron cambios del árbol principal ni se copiaron secretos a los checkouts. No se publicaron builds hospedados, producción ni permisos nuevos persistentes.
+El QA es un agente distinto de los autores de Wallet/RPC y Backend/MCP. Escribió pruebas y el registro inicial; no implementó el código revisado. Root integra y actualiza la evidencia real. No se descartaron cambios del árbol principal ni se copiaron secretos a los checkouts. Se ejecutó un único build QA autorizado, sin producción. Se creó una App QA privada autorizada; grant pendiente. No se crearon claves de wallet, signers ni delegación de firma.
+
+## Estado verificado del primer Preview y corrección local
+
+El Preview `dpl_2fUtySGNT6d3YU6HnKCghL7H8Fne` quedó READY con SHA completo `f5731a6138e1c22dd727b162992de15eb41ba946`, rama `feat/tempo-testnet-mcp`, target Preview. Health comprobó la base QA separada y el SHA tanto en la URL inmutable como en `carmelita-chat-first-qa.vercel.app`. MCP público 401 incluyó el resource metadata correcto del alias QA. Estas comprobaciones de configuración no prueban lectura SQL ni wallet desde MCP.
+
+El usuario A inició sesión mediante Privy en `/preview-acceptance`. La relación real del proveedor se observó en el Dashboard autenticado; una consulta SQL de solo lectura a la base QA comprobó exactamente una identidad canónica de Ethereum, Stellar y Solana para A, con los mismos IDs/direcciones. El lector real de Horizon comprobó existencia de la cuenta Stellar; no hubo bootstrap, asociación Tempo ni fondeo. La evidencia actual no acredita usuario B, persistencia tras relógin o E2E.
+
+La App privada **Carmelita Tempo QA** fue creada por el flujo soportado de ChatGPT y DCR. URL real: `https://carmelita-chat-first-qa.vercel.app/api/mcp/agent`; consentimiento observado contra `/oauth/authorize` del mismo origen, scopes `agent:read agent:context`, sin OIDC. El issuer Stytch existente sigue compartido; no se cambió su configuración global. La revisión automática rechazó dos intentos de autorizar: el provisionador de f573 puede solicitar Friendbot si Horizon responde 404 más tarde. La concesión no ocurrió; no hay token/read MCP real. No se intentó una vía alternativa para eludir el rechazo.
+
+Accesos retirados: excepción Vercel a las `03:34:25.575Z`; origen Privy a las `03:34:40.609Z`, lista original de 12 orígenes restaurada. QA independiente verificó health público 302 a protección a las `03:37:49.168Z`, lista Privy original a las `03:37:52.112Z` y alias/proyecto sin excepción con configuración general intacta a las `03:37:56.226Z`. Producción conservó deployment `dpl_GpjPYjyeXDwhrwZMiwRzRRVcAaeH`, SHA base y sus cinco alias; Standard fijo, concurrencia adicional desactivada y filtro main-only intactos.
+
+Lectura de API de duración a las `03:52:26.253Z`: 120000 ms facturables de máquina y 480000 ms CPU. El equivalente a tarifa sería US$0,028 si facturable, antes de créditos/impuestos; no es cargo confirmado. [Pricing oficial](https://vercel.com/docs/pricing#builds) limita la facturación Standard a concurrencia on-demand o Elastic; ambos permanecen apagados. Functions aparte. Recibos sanitizados locales: `outputs/tempo/preview-inspect.json`, `qa-window.json`, `qa-alias-close.json`, `privy-qa-origin.json`, `existing-user-a-preflight.json`; no contienen tokens o credenciales.
+
+Corrección local `b268649`: valida SQL/Privy existentes y rechaza faltantes/conflictos sin perfil, provisionador, Horizon, activación ni Friendbot. Aislamiento inválido no permite fallback. SDK login fija creación Ethereum/Solana en off y migración automática desactivada solo en ese modo. `/preview-acceptance` reutiliza el panel de registro Tempo para asociación explícita y reconfirmación; cancela solicitudes durante cambio de cuenta. Tres especialistas revisaron sin pendientes; QA aplicó `vercel:react-best-practices` al consentimiento, Providers y paneles.
+
+Regresión final: `npm test` **1114 tests, 1112 PASS, 0 FAIL, 2 SKIP**, duración `104939.9718 ms`; 36 nuevos tests de OAuth existente y 28 Tempo. El fixture ejecuta la ruta OAuth real, aislamiento/orquestación/helper reales con el validador externo simulado, trampas del provisionador/perfil/fetch, y renderiza Providers real con SDK simulado. Comprueba que un fallo no vincula sujeto ni emite grant; no consulta Horizon ni red. No sustituye pruebas hospedadas. Lint/tipos/build local finales PASS; Next 16.2.6 compiló en 15.5 s. SWC encontró acceso denegado en sandbox Windows y se repitió el build únicamente local fuera del sandbox. Grafo AST actualizado: 3916 nodos, 10203 relaciones, 165 comunidades; 22 SQL no parseados. No segundo build hospedado ni ventana reabierta.
 
 ## Lecturas reales del RPC público
 
@@ -88,7 +104,7 @@ La revisión QA no encontró un fallo de seguridad bloqueante en el árbol revis
 
 La revisión React de `registry-wallet-panel.tsx` aplicó `vercel:react-best-practices`: se confirmó `key={userId}` en el padre, cleanup de AbortController en cambio de owner/unmount, comprobación de dirección antes de mostrar lectura y conservación de otras wallets ante fallo Tempo. El estado de carga se muestra sin anunciar fallo prematuro; la UI usa el GET Tempo específico y deadline de 12 s para token, fetch y JSON. El POST explícito de asociación tiene su propio deadline y no transmite transacciones. No se ejecutó aún una prueba visual con usuarios reales.
 
-## Plugin y Preview: bloqueo comprobado
+## Historial previo al primer Preview: conexión QA antigua
 
 Se inspeccionó el plugin QA de solo lectura usando `plugin-creator:update-plugin` y herramientas Plugin Creator:
 
@@ -98,9 +114,9 @@ Se inspeccionó el plugin QA de solo lectura usando `plugin-creator:update-plugi
 - Los schemas conectados de `read_personal_wallets_status` y `read_personal_wallets_balances` todavía enumeran cinco redes y no incluyen Tempo.
 - Tres intentos de `Carmelita QA.get_agent_context`: dos solicitaron reintento tras autenticación; el tercero devolvió **`McpServerError: Protected by Vercel Authentication`**, sin datos de wallet.
 
-No se desactivó protección de Vercel ni se amplió consentimiento. La siguiente validación necesita identificar la URL real de ese App, contrastar deployment/SHA y health del Preview aislado, publicar el incremento solo con autorización explícita, y actualizar el catálogo/conexión por su flujo soportado. Una llamada con `vc curl` o local no sustituye el resultado desde ChatGPT.
+En esta inspección inicial no se desactivó protección ni se amplió consentimiento. La URL antigua se identificó posteriormente y se conservó esa App; el primer Preview y la App nueva constan arriba. Una llamada con `vc curl` o local no sustituye el resultado desde ChatGPT.
 
-El coordinador leyó la configuración actual de Vercel por el CLI existente: Standard fijo, Elastic desactivado y filtro que ignora ramas distintas de `main` siguen configurados. La consulta específica de `feat/tempo-testnet-mcp` devolvió overrides de branch vacíos. Esto **no significa que falten valores genéricos de Preview**: existen nombres de configuración QA en scopes genéricos u otras ramas, cuyos valores no se leyeron para este registro. La configuración Tempo de un nuevo Preview aún no está acreditada. No se inició ningún despliegue ni se modificó el filtro o el plan.
+La lectura inicial de Vercel confirmó Standard fijo, Elastic desactivado y filtro que ignora ramas distintas de `main`. En ese momento los overrides de `feat/tempo-testnet-mcp` estaban vacíos; posteriormente se configuraron diez variables de esa rama QA y se creó el único Preview autorizado. No se modificó el filtro global ni el plan; la excepción de build fue específica de f573.
 
 No se ejecutaron los scripts heredados que crean PATs, perfiles o sesiones admin como efecto secundario: `gateway:preview:acceptance` crea y revoca credenciales persistentes; `wallets:preview:acceptance` requiere login admin. No son pruebas autorizadas de solo lectura.
 
