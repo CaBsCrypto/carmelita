@@ -7,23 +7,38 @@ import { bazaarServiceCardSchema } from "./stellar-bazaar";
 export const BAZAAR_CATALOG_ORIGIN = STELLAR_BAZAAR_DEFAULT_BASE_URL;
 export const BAZAAR_CATALOG_MAX_BYTES = 256 * 1024;
 export const BAZAAR_CATALOG_TIMEOUT_MS = 15_000;
+export const BAZAAR_CATALOG_DETAIL_MAX_PAGES = 5;
 const allowedTools = ["list_workflow_bundles", "get_workflow_bundle", "get_bazaar_skills"] as const;
 const identifier = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,119}$/);
+const cursorSchema = z.string().min(1).max(512).regex(/^[a-zA-Z0-9_-]+$/);
 const searchInput = z.object({
   query: z.string().trim().min(2).max(120).refine(value => !/[\u0000-\u001f\u007f]/.test(value)).optional(),
-  limit: z.number().int().min(1).max(50).default(20),
+  limit: z.number().int().min(1).max(20).default(20),
+  cursor: cursorSchema.optional(),
 }).strict();
-const resourcesSchema = z.object({
-  results: z.array(z.unknown()).max(200), partialResults: z.boolean(),
-  dynamicRegistry: z.enum(["available", "unavailable"]), cursor: z.string().max(500).nullable(),
-});
-const searchSchema = z.object({
-  results: z.array(z.object({ resource: z.unknown() })).max(200), partialResults: z.boolean(),
-  dynamicRegistry: z.enum(["available", "unavailable"]), nextCursor: z.string().max(500).nullable(),
-});
 const serviceSchema = bazaarServiceCardSchema.extend({
   id: identifier, availability: z.object({ execution: z.string().max(100).optional(), payment: z.string().max(100).optional() }).optional(),
 });
+const nativeAvailabilitySchema = z.object({
+  ready: z.boolean(), reason: z.enum(["SELLER_UNAVAILABLE", "SELLER_CAPACITY_EXHAUSTED", "CHECK_ON_ORDER"]).nullable(),
+  pendingLimit: z.number().int().min(0).max(1000), dailyLimit: z.number().int().min(0).max(1_000_000),
+  leaseExpiresAt: z.string().datetime().optional(), mode: z.literal("on-demand").optional(),
+}).strict();
+const nativeServiceSchema = z.object({
+  card: serviceSchema, cardHash: z.string().regex(/^[a-f0-9]{64}$/), submissionId: z.string().uuid(),
+  status: z.literal("activated"), execution: z.literal("seller-mcp-task"), availability: nativeAvailabilitySchema.optional(),
+  // Validate then discard purchase URLs. Catalog metadata cannot open execution.
+  purchase: z.object({ protocol: z.literal("x402-stellar-exact-v2"), orderCreateUrl: z.string().url().max(500),
+    paymentUrlTemplate: z.string().max(500), statusUrlTemplate: z.string().max(500),
+    authentication: z.literal("workspace-agent"), delivery: z.literal("recoverable-order"),
+  }).strict().optional(),
+  score: z.number().finite().optional(), reasons: z.array(z.string().max(200)).max(100).optional(),
+}).strict();
+const nativeCatalogSchema = z.object({
+  services: z.array(z.unknown()).max(20), nextCursor: cursorSchema.nullable(), partialResults: z.boolean(),
+  paused: z.boolean(), purchasesEnabled: z.boolean(), purchaseAdmission: z.enum(["public", "restricted"]),
+  query: z.string().max(200).optional(), ranking: z.object({ version: z.literal("lexical-v1"), ai: z.literal(false) }).strict().optional(),
+}).strict().refine(value => value.nextCursor === null || value.partialResults);
 const localized = z.object({ es: z.string().min(1).max(2000), en: z.string().min(1).max(2000) });
 const bundleStatus = z.enum(["draft", "ready", "running", "awaiting-approval", "partial", "complete", "failed"]);
 const aggregateStatus = z.enum(["estimate", "quoted", "partially-paid", "paid"]);
@@ -59,6 +74,7 @@ export type BazaarServiceListing = {
   payment: z.infer<typeof bazaarServiceCardSchema>["payment"];
   delivery: z.infer<typeof bazaarServiceCardSchema>["delivery"] | null;
   readiness: ReturnType<typeof evaluateBazaarServiceReadiness>; consumable: false; executionEnabled: false;
+  cardHash: string; registryStatus: "activated"; availability: z.infer<typeof nativeAvailabilitySchema> | null;
 };
 export type BazaarSuiteListing = z.infer<typeof suiteSummary> & {
   executable: false; executionEnabled: false; readiness: ReturnType<typeof evaluateBazaarServiceReadiness>;
@@ -70,6 +86,7 @@ type ReadMetadata = ReturnType<typeof metadata>;
 export type BazaarServicesRead = ReadMetadata & {
   services: BazaarServiceListing[]; partialResults: boolean; dynamicRegistry: "available" | "unavailable" | "unknown";
   rejectedCards: number; nextCursor: string | null;
+  paused: boolean | null;
 };
 export type BazaarServiceRead = BazaarServicesRead & { service: BazaarServiceListing | null };
 export type BazaarSuitesRead = ReadMetadata & { suites: BazaarSuiteListing[]; partialResults: boolean; rejectedCards: number };
@@ -87,11 +104,11 @@ function safeCode(error: unknown) {
 }
 
 /** Only these fixed catalog paths are reachable; never dereference a card URL. */
-async function readJson(path: "/api/discovery/resources" | `/api/discovery/search?query=${string}` | "/api/mcp", options: BazaarCatalogOptions, body?: unknown): Promise<unknown> {
+async function readJson(path: `/api/market/catalog?${string}` | `/api/discovery/search?query=${string}` | "/api/mcp", options: BazaarCatalogOptions, body?: unknown): Promise<unknown> {
   const config = getStellarBazaarConfig();
   if (!config.enabled) throw new Error(config.reason === "stellar_bazaar_disabled" ? "bazaar_disabled" : "bazaar_config_invalid");
   const url = new URL(path, BAZAAR_CATALOG_ORIGIN);
-  if (url.origin !== BAZAAR_CATALOG_ORIGIN || !["/api/discovery/resources", "/api/discovery/search", "/api/mcp"].includes(url.pathname)) throw new Error("bazaar_config_invalid");
+  if (url.origin !== BAZAAR_CATALOG_ORIGIN || !["/api/market/catalog", "/api/discovery/search", "/api/mcp"].includes(url.pathname)) throw new Error("bazaar_config_invalid");
   const controller = new AbortController();
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -160,10 +177,13 @@ async function readTool(name: (typeof allowedTools)[number], args: Record<string
   return data;
 }
 
-function normalizeService(card: z.infer<typeof serviceSchema>): BazaarServiceListing {
+function normalizeService(entry: z.infer<typeof nativeServiceSchema>, paused: boolean): BazaarServiceListing {
+  const { card } = entry;
+  const unavailable = paused || entry.availability?.ready === false && entry.availability.reason !== "CHECK_ON_ORDER";
   return { id: card.id, name: card.name, description: card.description, provider: card.provider.name,
     kind: card.kind, network: card.network, input: card.input, tags: card.tags, payment: card.payment, delivery: card.delivery ?? null,
-    readiness: evaluateBazaarServiceReadiness({ published: true, providerAvailability: card.availability?.execution, kind: "service" }),
+    readiness: evaluateBazaarServiceReadiness({ published: true, providerAvailability: unavailable ? "unavailable" : undefined, kind: "service" }),
+    cardHash: entry.cardHash, registryStatus: entry.status, availability: entry.availability ?? null,
     consumable: false, executionEnabled: false };
 }
 
@@ -176,30 +196,45 @@ export function readBazaarPublicSearch(query: string, options: BazaarCatalogOpti
 export async function listBazaarServices(input: z.input<typeof searchInput> = {}, options: BazaarCatalogOptions = {}): Promise<BazaarServicesRead> {
   const request = searchInput.parse(input);
   try {
-    const body = await readJson(request.query ? `/api/discovery/search?query=${encodeURIComponent(request.query)}` : "/api/discovery/resources", options);
-    const parsed = request.query ? searchSchema.safeParse(body) : resourcesSchema.safeParse(body);
+    const params = new URLSearchParams({ limit: String(request.limit) });
+    if (request.query) params.set("q", request.query);
+    if (request.cursor) params.set("cursor", request.cursor);
+    const parsed = nativeCatalogSchema.safeParse(await readJson(`/api/market/catalog?${params}`, options));
     if (!parsed.success) throw new Error("bazaar_schema_invalid");
-    const rawCards = parsed.data.results.map(item => request.query ? (item as { resource: unknown }).resource : item);
     const services: BazaarServiceListing[] = []; const seen = new Set<string>(); let rejectedCards = 0;
-    for (const raw of rawCards) {
-      const card = serviceSchema.safeParse(raw);
-      if (!card.success || seen.has(card.data.id)) { rejectedCards++; continue; }
-      seen.add(card.data.id); services.push(normalizeService(card.data));
+    for (const raw of parsed.data.services) {
+      const entry = nativeServiceSchema.safeParse(raw);
+      if (!entry.success || seen.has(entry.data.card.id)) { rejectedCards++; continue; }
+      seen.add(entry.data.card.id); services.push(normalizeService(entry.data, parsed.data.paused));
     }
-    if (rawCards.length > 0 && services.length === 0) throw new Error("bazaar_schema_invalid");
-    const nextCursor = "nextCursor" in parsed.data ? parsed.data.nextCursor : parsed.data.cursor;
-    const partialResults = parsed.data.partialResults || parsed.data.dynamicRegistry === "unavailable" || rejectedCards > 0 || services.length > request.limit || nextCursor !== null;
+    if (parsed.data.services.length > 0 && services.length === 0) throw new Error("bazaar_schema_invalid");
+    const nextCursor = parsed.data.nextCursor;
+    const partialResults = parsed.data.partialResults || rejectedCards > 0 || services.length > request.limit || nextCursor !== null || parsed.data.paused;
     return { ...metadata(partialResults ? "partial" : "ok"), services: services.slice(0, request.limit), partialResults,
-      dynamicRegistry: parsed.data.dynamicRegistry, rejectedCards, nextCursor };
-  } catch (error) { return { ...metadata("unavailable", safeCode(error)), services: [], partialResults: true, dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null }; }
+      dynamicRegistry: "available", rejectedCards, nextCursor, paused: parsed.data.paused };
+  } catch (error) { return { ...metadata("unavailable", safeCode(error)), services: [], partialResults: true, dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null, paused: null }; }
 }
 
 export async function getBazaarService(id: string, options: BazaarCatalogOptions = {}): Promise<BazaarServiceRead> {
   identifier.parse(id);
-  const result = await listBazaarServices({ limit: 50 }, options);
-  const service = result.services.find(item => item.id === id) ?? null;
-  // Absence from a partial registry never establishes that a service was removed.
-  return { ...result, ...(service || result.status === "unavailable" ? {} : metadata(result.partialResults ? "unavailable" : "not_found", result.partialResults ? "bazaar_registry_unavailable" : "bazaar_not_found")), service };
+  const startedAt = Date.now(); const seenCursors = new Set<string>();
+  let cursor: string | undefined; let incomplete = false;
+  for (let page = 0; page < BAZAAR_CATALOG_DETAIL_MAX_PAGES; page++) {
+    const remaining = Math.min(options.timeoutMs ?? BAZAAR_CATALOG_TIMEOUT_MS, BAZAAR_CATALOG_TIMEOUT_MS) - (Date.now() - startedAt);
+    if (remaining <= 0) return { ...metadata("unavailable", "bazaar_timeout"), services: [], partialResults: true,
+      dynamicRegistry: "unknown", rejectedCards: 0, nextCursor: null, paused: null, service: null };
+    const result = await listBazaarServices({ limit: 20, ...(cursor ? { cursor } : {}) }, { ...options, timeoutMs: Math.max(1, remaining) });
+    const service = result.services.find(item => item.id === id) ?? null;
+    if (service || result.status === "unavailable") return { ...result, service };
+    incomplete ||= result.rejectedCards > 0 || result.paused === true || result.partialResults && result.nextCursor === null;
+    // A bounded public scan cannot establish absence after a truncated/invalid page.
+    if (result.nextCursor === null || seenCursors.has(result.nextCursor) || page + 1 === BAZAAR_CATALOG_DETAIL_MAX_PAGES) {
+      const partial = incomplete || result.nextCursor !== null;
+      return { ...result, ...metadata(partial ? "unavailable" : "not_found", partial ? "bazaar_registry_unavailable" : "bazaar_not_found"), partialResults: partial, service: null };
+    }
+    seenCursors.add(result.nextCursor); cursor = result.nextCursor;
+  }
+  throw new Error("bazaar_registry_unavailable");
 }
 
 export async function listBazaarSuites(options: BazaarCatalogOptions = {}): Promise<BazaarSuitesRead> {
