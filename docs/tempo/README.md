@@ -6,6 +6,8 @@ Fase A: asociación explícita de la wallet EVM existente de Privy y lectura de 
 
 Rama nueva `feat/tempo-testnet-mcp` desde `origin/main`, verificado tras fetch: `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`. Se preservó el checkout original con cambios ajenos. Implementación mediante ramas separadas para contratos, wallet/RPC, backend y QA; commits/integración reservados al coordinador.
 
+Código probado y snapshot: `6c07143e897f32619365ab027aed65d5acaa4135`; los commits posteriores solo cierran documentación/evidencia. Regresión final: **1076 PASS, 0 FAIL, 2 probes opt-in omitidos**, además de 28 pruebas específicas, lint, tipos y build local. [Lectura pública reproducible](evidence/public-rpc.json): Moderato 42431, bloque 39343638, hora 2026-10-13T00:51:31.307Z. El resultado no demuestra propiedad ni conexión MCP/ChatGPT. La Fase A completa sigue pendiente de esa aceptación real.
+
 Manifest/lock y exports efectivamente instalados: Node 24.14.0, npm declarado 11.6.1 (entorno local 11.9.0), viem 2.52.0, Privy React 3.35.0 y Privy Node 0.26.0. `viem/chains` exporta `tempoModerato`; no se actualizan dependencias. La Fase A utiliza JSON-RPC de solo lectura y no depende de APIs recientes de `token.transfer`.
 
 ## Red y activo comprobados
@@ -46,7 +48,7 @@ Para la consulta pública local reproducible no hacen falta credenciales ni base
 ```powershell
 $env:CARMELITA_TEMPO_TESTNET_ENABLED='true'
 $env:CARMELITA_PREVIEW_ISOLATED='true'
-# VERCEL_ENV ausente y NODE_ENV distinto de production: desarrollo local explícito.
+# VERCEL_ENV ausente y NODE_ENV / VERCEL_TARGET_ENV distintos de production.
 npm exec -- tsx scripts/tempo-rpc-evidence.ts 0x0000000000000000000000000000000000000000
 ```
 
@@ -59,9 +61,11 @@ Este comando comprueba una dirección pública, **no** acredita propiedad Privy,
 3. El servidor resuelve usuario/wallet Privy, comprueba la cadena y lee PathUSD antes de persistir el vínculo idempotente. Si falta una wallet EVM utilizable, muestra un error y requiere el flujo existente de preparación de EVM. Agregar Tempo no crea una nueva wallet, no mueve fondos ni firma.
 4. UI y MCP usan la misma dirección persistida. `GET /api/agent/wallets/tempo` autentica y deriva la dirección de la asociación propia. El contexto MCP y `read_personal_wallets` descubren el registro; `read_personal_wallets_status` y `read_personal_wallets_balances`, con filtro opcional `networks=["tempo:moderato"]`, consultan la cadena realmente.
 
-Una lectura exitosa incluye `tempo.status=available`, testnet, chain ID verificado, CAIP-2, dirección, token/contrato/decimales/balance bruto y formateado, bloque con hash/timestamp, hora y enlace a la dirección. Los estados disabled, misconfigured, wrong_network y unavailable conservan token/bloque nulos y errores sanitizados. Un cero válido se devuelve como `"0"`; timeout o RPC caído jamás se convierte en cero. No se infiere actividad, wallet desplegada ni fondeo de un registro interno.
+Una lectura exitosa incluye testnet, chain ID verificado, CAIP-2, dirección, token/contrato/decimales/balance bruto y formateado, bloque con hash/timestamp, hora y enlace a la dirección. POST y MCP usan `tempo.status=available`; GET y el lector devuelven `status=available` en la raíz (el script lo envuelve en `reading`). En el tool status, `native.status=not_applicable`; en balances, `nativeBalanceStatus=not_applicable`. Los estados disabled, misconfigured, wrong_network y unavailable conservan token/bloque nulos y errores sanitizados. Un cero válido se devuelve como `"0"`; timeout o RPC caído jamás se convierte en cero. No se infiere actividad, wallet desplegada ni fondeo de un registro interno.
 
 No hay caché de lecturas compartida: peticiones `no-store`, dirección exclusivamente del propietario autenticado, señal y límite de tiempo. Los schemas de tools no aceptan IDs/direcciones/RPC/owner arbitrarios. El modelo existente SQL usa redes como texto y claves de propietario/identidad; este cambio no añade una migración.
+
+Las huellas de ejecución en `app/queries/acceptance-runtime.json` se regeneran determinísticamente para las dependencias actuales. Cambios en las raíces compartidas afectan los seis grupos de consultas. Los manifests y registros de aceptación real históricos se conservan sin alterar sus hashes, fechas, SHA o digests; las pruebas históricas no se presentan como equivalentes al código nuevo. La aceptación correspondiente requiere revalidación real y puede mostrarse pendiente. Actualizar el snapshot de código no demuestra aceptación desde ChatGPT.
 
 ## Preview, revisión y rollback
 
