@@ -121,6 +121,23 @@ function normalizeUserWallet(
   };
 }
 
+export type ExistingEvmWalletDependencies = {
+  canonicalEvmWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
+  listWallets?: (userId: string, family: "evm") => Promise<PrivyWalletCandidate[]>;
+};
+
+/** Association with another chain must never implicitly create a Privy wallet. */
+export async function getExistingUserEvmWallet(userId: string, dependencies: ExistingEvmWalletDependencies = {}) {
+  if (!userId.startsWith("did:privy:")) throw new Error("invalid_privy_user_id");
+  const canonical = await (dependencies.canonicalEvmWallet ?? getCanonicalEvmWallet)(userId);
+  const candidates = await (dependencies.listWallets ?? listUserWallets)(userId, "evm");
+  const existing = selectEvmWallet(candidates, {
+    userId, canonical, externalId: getPrivyUserWalletExternalId(userId, "evm"),
+  });
+  if (!existing?.id || !existing.address) throw new Error("existing_evm_wallet_required");
+  return normalizeUserWallet(existing as { id: string; address: string; chain_type: string }, "evm", false);
+}
+
 export async function getOrCreateUserWallet(userId: string, family: WalletFamily, dependencies?: {
   canonicalEvmWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
   canonicalSolanaWallet?: (userId: string) => Promise<CanonicalEvmIdentity | null>;
