@@ -1,5 +1,7 @@
 # Carmelita + Bazaar — cierre de MVP
 
+> **Documento histórico: corte del 5 de octubre de 2026.** Conserva el plan y las observaciones de esa fecha; no describe el estado actual de PR46 o producción. Consultar el [milestone ChatGPT vigente](./chatgpt-milestone.md) y la [política de builds](./vercel-build-policy.md). No ejecutar sus pasos de Preview, fusión o publicación hasta revisar Billing y acordar una publicación concreta.
+
 Inicio: 5 de octubre de 2026, 00:27 America/Santiago (03:27 UTC).
 Objetivo de trabajo: 72 horas desde el inicio. No es una aprobación automática de publicación.
 
