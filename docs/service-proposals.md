@@ -32,3 +32,19 @@ Las pruebas de la API y de la bandeja están en `tests/integration-recommendatio
 Verificación de esta candidata: `qa:local` aprobado (7 pruebas de tooling Graphify, lint, 1.053 pruebas de aplicación y 2 omitidas, TypeScript y build). Tras detectar el rechazo local de origen, las ocho pruebas enfocadas de propuestas/bandeja se repitieron con casos de NextRequest real; el build final se comprobó por separado. La revisión visual cubre 21 combinaciones de idioma y ancho, con texto visible ≥14 px y sin desbordamiento. El borde de los campos contrasta 3,74:1 contra su fondo. El navegador aislado comprobó guardado, duplicado, errores, respuesta inválida, espera de 20 segundos y recuperación sin otro registro; su evidencia permanece diferenciada de una aceptación de producción.
 
 En el build final, una petición del formulario desde `127.0.0.1:8143` llegó al control de almacenamiento y mostró su indisponibilidad esperada, conservando los datos y el reintento. El foco desde la acción principal pasa a la sección de propuesta y al primer campo con Tab. Se comprobó reflujo a 720 × 450; el zoom nativo y los dispositivos físicos siguen pendientes. Graphify se actualizó por AST: 3.874 nodos y 10.024 aristas, con la dependencia de extracción SQL ausente ya documentada. La prueba aislada se detuvo tras guardar la evidencia; la vista local sin DB sigue disponible para revisión.
+
+## Verificación del envío y la bandeja · 12 de octubre de 2026
+
+Se volvió a comprobar el recorrido sobre el código de `dba432dadf2c409e928e1ff597401a0c87b0147b`, en `codex/landing-redesign`. El fixture independiente usa el puerto local 8151 para conservar la vista de la aplicación en 8144. La evidencia está en `work/service-proposal-validation-dba432d/`, excluida de Git, con capturas y `validation.json`.
+
+- El formulario real envió una propuesta con un contacto sintético. El POST real devolvió `received` y guardó origen `developers`, idioma `en` y estado `new` en JSON local persistente.
+- El componente real de `/admin/integrations`, renderizado con identidad administrativa simulada y estilos QA, mostró una propuesta con «Service proposal · EN · Pending review» y el correo de contacto normalizado.
+- Reenviar el mismo servicio y correo con otra descripción devolvió `already_received`: se mantuvieron una sola fila y la descripción original.
+- Tras detener y reiniciar el servidor, la bandeja recuperó el mismo registro sin un nuevo envío. Se verificaron el ID y el SHA256 del archivo, sin cambios.
+- Las ocho pruebas existentes de esquema, POST y bandeja pasaron. Incluyen rechazo de acceso administrativo antes de consultar almacenamiento, duplicados y distinción entre cola vacía y almacenamiento indisponible.
+
+Esta prueba confirma el recorrido con almacenamiento QA e identidad administrativa simulada. No confirma PostgreSQL/Neon, una sesión administrativa real ni aceptación de producción. El proceso no carga `.env`, bloquea llamadas externas y acepta únicamente contactos sintéticos. No se modificó código de la aplicación, no hubo push ni se generaron builds en Vercel.
+
+### Correo de recepción
+
+No existe un correo receptor automático para estas propuestas. Se reciben en la bandeja privada `/admin/integrations`. El campo de email corresponde al desarrollador que propone el servicio; el enlace `mailto:` permite al equipo contactarlo manualmente. Ni recibir una propuesta ni abrir la bandeja envían un mensaje. Añadir avisos por correo requiere elegir el buzón destinatario y configurar por separado el proveedor de envío.
