@@ -5,6 +5,7 @@ import BrandLockup from "@/app/brand-lockup";
 import { getDb, hasDatabase } from "@/db";
 import { ensureIntegrationRecommendationSchema } from "@/app/integrations/storage";
 import { integrationRecommendations } from "@/db/schema";
+import { renderProposalEmailPanel } from "./proposal-email-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export default async function IntegrationDemandPage() {
     // The private inbox must distinguish unavailable storage from an empty queue.
     storageReady = false;
   }
+  const emailPanel = await renderProposalEmailPanel(storageReady);
 
   return (
     <main className="admin-page">
@@ -74,6 +76,8 @@ export default async function IntegrationDemandPage() {
           </div>
         </section>
 
+        {emailPanel}
+
         <section className="integration-demand-list">
           <header>
             <span>Integration</span>
@@ -90,7 +94,7 @@ export default async function IntegrationDemandPage() {
           )}
 
           {recommendations.map((recommendation) => (
-            <article key={recommendation.id}>
+            <article key={recommendation.id} id={`proposal-${recommendation.id}`}>
               <div>
                 <strong>{recommendation.integrationName}</strong>
                 <small>{recommendation.source === "developers" ? "Service proposal" : "Integration recommendation"} · {recommendation.locale.toUpperCase()} · {recommendation.status === "new" ? "Pending review" : recommendation.status}</small>

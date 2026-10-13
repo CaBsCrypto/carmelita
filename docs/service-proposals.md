@@ -8,11 +8,11 @@ La página `/developers#proposal` permite presentar un servicio para revisión m
 2. Autorizar el uso de esos datos para revisar la propuesta y contactar al remitente sobre ella.
 3. Enviar a `/api/integration-recommendations`. La interfaz confirma sólo `received` o `already_received` después de una respuesta válida; conserva el borrador ante error, indisponibilidad o vencimiento de los 20 segundos de espera.
 4. Un administrador autenticado revisa `/admin/integrations`, también accesible desde las operaciones de fundador. Las propuestas de esta página llevan `source=developers`, con estado inicial `new` presentado como «Pending review».
-5. El equipo decide si avanzar y definir un piloto de lectura. El contacto posterior se realiza manualmente: no se envían correos automáticos ni se promete plazo de respuesta.
+5. Cuando están configurados y habilitados, los avisos por correo notifican al equipo y enlazan a la bandeja privada. El equipo decide manualmente si avanzar y definir un piloto de lectura; no se promete plazo de respuesta ni se aprueba automáticamente el servicio.
 
 ## Persistencia y límites
 
-Se reutilizan `integration_recommendations` y su almacenamiento existente. No hay nuevas tablas ni migraciones en esta entrega. El registro necesita una conexión de base de datos configurada y el esquema existente; su preparación ya formaba parte del endpoint.
+Se reutilizan `integration_recommendations` y su almacenamiento existente. Los avisos opcionales añaden la tabla aislada `carmelita_proposal_email_jobs`, sin modificar el esquema global de wallets. El registro necesita una conexión de base de datos configurada y el esquema existente; su preparación ya formaba parte del endpoint. La [configuración de correo](service-proposal-email.md) describe activación, reintentos y límites.
 
 - Nombre: 2–100 caracteres. Correo válido, normalizado a minúsculas. Descripción de propuestas de desarrolladores: 10–500 caracteres después de recortar espacios.
 - Consentimiento requerido, límite real de cuerpo de 8.000 bytes y protección de origen. El origen se valida antes de acceder al almacenamiento. El guard de esta ruta contempla la normalización de `127.0.0.1`/`[::1]` a `localhost` que realiza NextRequest; conserva protocolo, puerto y coincidencia con `Host`, sin aceptar overrides de cabeceras forwarded ni cambiar las rutas de autenticación.
@@ -47,4 +47,4 @@ Esta prueba confirma el recorrido con almacenamiento QA e identidad administrati
 
 ### Correo de recepción
 
-No existe un correo receptor automático para estas propuestas. Se reciben en la bandeja privada `/admin/integrations`. El campo de email corresponde al desarrollador que propone el servicio; el enlace `mailto:` permite al equipo contactarlo manualmente. Ni recibir una propuesta ni abrir la bandeja envían un mensaje. Añadir avisos por correo requiere elegir el buzón destinatario y configurar por separado el proveedor de envío.
+Las propuestas se reciben en la bandeja privada `/admin/integrations`. El campo de email corresponde al desarrollador; el enlace `mailto:` permite contactarlo manualmente. Los avisos opcionales usan un buzón destinatario fijo configurado en el servidor y se mantienen deshabilitados por defecto. Abrir la bandeja no envía mensajes. La configuración del proveedor y la prueba real de entrega siguen siendo necesarias; la validación anterior no incluía correo.

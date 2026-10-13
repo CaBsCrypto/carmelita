@@ -4,6 +4,10 @@ import { getDb, hasDatabase } from "@/db";
 import { integrationRecommendations } from "@/db/schema";
 import { integrationRecommendationSchema } from "@/app/integrations/schema";
 import { ensureIntegrationRecommendationSchema } from "@/app/integrations/storage";
+import { hasSameProposalOrigin } from "@/app/integrations/request-origin";
+import { isProposalEmailEnabled } from "@/app/integrations/proposal-email";
+import { createProposalWithEmailJob } from "@/app/integrations/proposal-email-store";
+import { scheduleProposalEmailNotification } from "@/app/integrations/proposal-email-worker";
 
 const MAX_BODY_BYTES = 8_000;
 
@@ -12,33 +16,6 @@ const json = (body: Record<string, unknown>, status: number) =>
     status,
     headers: { "Cache-Control": "no-store" },
   });
-
-function hasSameProposalOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return false;
-
-  try {
-    const suppliedOrigin = new URL(origin);
-    const requestUrl = new URL(request.url);
-    if (!["http:", "https:"].includes(requestUrl.protocol)) return false;
-
-    const host = request.headers.get("host");
-    if (!host) return suppliedOrigin.origin === requestUrl.origin;
-    if (/[\\/?#@\s,]/.test(host)) return false;
-    const externalUrl = new URL(`${requestUrl.protocol}//${host}`);
-    if (externalUrl.host !== requestUrl.host) {
-      // NextRequest canonicalizes these loopback hosts to localhost. Keep the
-      // actual Host authority, scheme and port; do not trust forwarded headers.
-      const normalizedLoopback = requestUrl.hostname === "localhost"
-        && ["127.0.0.1", "[::1]"].includes(externalUrl.hostname)
-        && requestUrl.port === externalUrl.port;
-      if (!normalizedLoopback) return false;
-    }
-    return suppliedOrigin.origin === externalUrl.origin;
-  } catch {
-    return false;
-  }
-}
 
 async function readBoundedJson(request: Request) {
   const reader = request.body?.getReader();
@@ -106,6 +83,13 @@ export async function POST(request: Request) {
 
   try {
     await ensureIntegrationRecommendationSchema();
+
+    if (parsed.data.source === "developers" && isProposalEmailEnabled()) {
+      const created = await createProposalWithEmailJob({ id: randomUUID(), ...parsed.data });
+      // A duplicate can also wake due pending jobs. The durable queue owns retries.
+      scheduleProposalEmailNotification();
+      return json({ status: created ? "received" : "already_received" }, created ? 201 : 200);
+    }
 
     const [created] = await getDb()
       .insert(integrationRecommendations)

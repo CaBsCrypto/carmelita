@@ -5,12 +5,17 @@ import { NextRequest } from "next/server";
 const endpoint = "https://preview.example.test/api/integration-recommendations";
 const columns = { id: "id", email: "email", integrationName: "integrationName" };
 const rows = new Map<string, Record<string, unknown>>();
+const emailJobs = new Set<string>();
+process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
 let databaseAvailable = true;
 let schemaFailure = false;
 let writeFailure = false;
 let ensures = 0;
 let inserts = 0;
 let fetches = 0;
+let atomicInserts = 0;
+let atomicFailure = false;
+let emailSchedules = 0;
 const errorLogs: unknown[][] = [];
 mock.method(console, "error", (...args: unknown[]) => errorLogs.push(args));
 mock.method(globalThis, "fetch", async () => {
@@ -56,6 +61,32 @@ mock.module(new URL("../app/integrations/storage.ts", import.meta.url).href, {
     },
   },
 });
+mock.module(new URL("../app/integrations/proposal-email-store.ts", import.meta.url).href, {
+  namedExports: {
+    createProposalWithEmailJob: async (input: Record<string, unknown>) => {
+      atomicInserts++;
+      if (atomicFailure) throw new Error("private atomic storage details owner@example.test");
+      const key = input.email + "\0" + input.integrationName;
+      if (rows.has(key)) return undefined;
+      const stored = {
+        id: input.id,
+        integrationName: input.integrationName,
+        email: input.email,
+        useCase: input.useCase,
+        locale: input.locale,
+        source: input.source,
+      };
+      rows.set(key, stored);
+      emailJobs.add(String(input.id));
+      return input.id;
+    },
+  },
+});
+mock.module(new URL("../app/integrations/proposal-email-worker.ts", import.meta.url).href, {
+  namedExports: {
+    scheduleProposalEmailNotification: () => { emailSchedules++; },
+  },
+});
 
 const { POST } = await import("../app/api/integration-recommendations/route");
 const submission = {
@@ -95,6 +126,9 @@ test("proposal is normalized, persisted and only then acknowledged without echoi
   });
   assert.equal(ensures, 1);
   assert.equal(inserts, 1);
+  assert.equal(atomicInserts, 0);
+  assert.equal(emailSchedules, 0);
+  assert.equal(emailJobs.size, 0);
 });
 
 test("duplicate uses the same email/name conflict key and preserves the original proposal", async () => {
@@ -282,6 +316,81 @@ test("a failed body stream returns a safe error before touching storage", async 
     duplex: "half",
   } as RequestInit)), 400, "invalid_request");
   assert.deepEqual({ ensures, inserts }, before);
+});
+
+test("enabled developer proposals use the atomic outbox once and preserve duplicates", async () => {
+  process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "true";
+  const queuedSubmission = { ...submission, integrationName: "  Queue booking service  ", email: " QUEUE-OWNER@Example.test " };
+  const before = { inserts, atomicInserts, emailSchedules, rows: rows.size, jobs: emailJobs.size };
+  try {
+    await expectResponse(await POST(request(queuedSubmission)), 201, "received");
+    const stored = rows.get("queue-owner@example.test\0Queue booking service");
+    assert.ok(stored);
+    assert.match(String(stored.id), /^[a-f0-9-]{36}$/);
+    assert.equal(stored.source, "developers");
+    assert.equal(stored.useCase, "Consult my bookings. Docs: https://service.example.test/docs");
+    assert.equal(emailJobs.has(String(stored.id)), true);
+    await expectResponse(await POST(request({ ...queuedSubmission, useCase: "Changed duplicate" })), 200, "already_received");
+    assert.equal(rows.size, before.rows + 1);
+    assert.equal(emailJobs.size, before.jobs + 1);
+    assert.equal(rows.get("queue-owner@example.test\0Queue booking service"), stored);
+    assert.equal(stored.useCase, "Consult my bookings. Docs: https://service.example.test/docs");
+    assert.equal(inserts, before.inserts);
+    assert.equal(atomicInserts, before.atomicInserts + 2);
+    // Duplicates may wake an existing due job, but cannot create another job.
+    assert.equal(emailSchedules, before.emailSchedules + 2);
+  } finally {
+    process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
+  }
+});
+
+test("enabled email does not enqueue non-developer recommendations", async () => {
+  process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "true";
+  const before = { inserts, atomicInserts, emailSchedules, rows: rows.size, jobs: emailJobs.size };
+  try {
+    await expectResponse(await POST(request({ integrationName: "Landing service with email enabled", email: "legacy@example.test", consent: true, source: "landing" })), 201, "received");
+    assert.equal(rows.size, before.rows + 1);
+    assert.equal(inserts, before.inserts + 1);
+    assert.equal(atomicInserts, before.atomicInserts);
+    assert.equal(emailSchedules, before.emailSchedules);
+    assert.equal(emailJobs.size, before.jobs);
+  } finally {
+    process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
+  }
+});
+
+test("an atomic outbox failure cannot acknowledge or schedule a failed proposal", async () => {
+  process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "true";
+  atomicFailure = true;
+  const before = { inserts, atomicInserts, emailSchedules, rows: rows.size, jobs: emailJobs.size };
+  try {
+    await expectResponse(await POST(request({ ...submission, integrationName: "Failed synthetic queued service" })), 500, "storage_error");
+    assert.equal(inserts, before.inserts);
+    assert.equal(atomicInserts, before.atomicInserts + 1);
+    assert.equal(emailSchedules, before.emailSchedules);
+    assert.equal(rows.size, before.rows);
+    assert.equal(emailJobs.size, before.jobs);
+  } finally {
+    process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
+    atomicFailure = false;
+  }
+  assert.deepEqual(errorLogs, []);
+});
+
+test("enabling email cannot bypass honeypot, consent, origin or storage guards", async () => {
+  process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "true";
+  const before = { inserts, atomicInserts, emailSchedules, rows: rows.size, jobs: emailJobs.size };
+  try {
+    await expectResponse(await POST(request({ ...submission, website: "https://spam.example.test" })), 200, "ignored");
+    await expectResponse(await POST(request({ ...submission, consent: false })), 400, "invalid_request");
+    await expectResponse(await POST(request(submission, { origin: "https://foreign.example.test" })), 403, "invalid_origin");
+    databaseAvailable = false;
+    await expectResponse(await POST(request()), 503, "storage_unavailable");
+    assert.deepEqual({ inserts, atomicInserts, emailSchedules, rows: rows.size, jobs: emailJobs.size }, before);
+  } finally {
+    process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
+    databaseAvailable = true;
+  }
 });
 
 test("fixture performed no network requests or contact logging", () => {

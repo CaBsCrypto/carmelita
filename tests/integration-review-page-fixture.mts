@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
+import { registerHooks } from "node:module";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+
+// The fixture renders actual components; Node does not implement Next's CSS loader.
+registerHooks({ load(url, context, nextLoad) {
+  if (url.endsWith(".module.css")) return { format: "module", shortCircuit: true,
+    source: "export default {panel:'panel',heading:'heading',actions:'actions',jobs:'jobs'}" };
+  return nextLoad(url, context);
+} });
+process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
 
 const table = { createdAt: "created_at" };
 const operations: string[] = [];
