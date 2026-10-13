@@ -8,8 +8,9 @@ import { listPersistedUserWallets } from "@/app/multichain-account";
 import { resolveOAuthSubjectForPrivy } from "@/app/services/oauth-subject-link-store";
 import { StytchConnectedAppsClient, type ConnectedAppSummary } from "@/app/stytch/connected-apps-client";
 import { readStytchConnectedAppsConfig } from "@/app/stytch/connected-apps-config";
-import { getWalletNetwork, isWalletNetworkEnabled } from "@/app/wallets/networks";
-import { walletNetworkIdSchema } from "@/app/wallets/types";
+import { getWalletNetwork, isWalletNetworkEnabled, TEMPO_MODERATO_CAIP2, TEMPO_MODERATO_CHAIN_ID, TEMPO_MODERATO_EXPLORER_URL, TEMPO_MODERATO_TOKEN } from "@/app/wallets/networks";
+import { walletNetworkIdSchema, type TempoReadErrorCode, type TempoWalletReading } from "@/app/wallets/types";
+import { readTempoWallet } from "@/app/wallets/tempo";
 import { hasDatabase } from "@/db";
 import { getStellarTestnetAccount } from "@/app/privy-stellar";
 import { diagnoseEvmWallet, getErc20Balance } from "@/app/wallets/evm-rpc";
@@ -68,6 +69,7 @@ export type PersonalQueryDependencies = {
   evmDiagnostics: typeof diagnoseEvmWallet;
   erc20Balance: typeof getErc20Balance;
   solanaBalance: typeof getSolanaDevnetBalance;
+  tempoReading?: (address: string, options: { signal?: AbortSignal }) => Promise<TempoWalletReading>;
   now: () => number;
 };
 
@@ -92,6 +94,7 @@ const defaultDependencies: PersonalQueryDependencies = {
   solanaBalance: async (address, fetcher = fetch) => getSolanaDevnetBalance(address, (input, init) => fetcher(input, {
     ...init, cache: "no-store", signal: AbortSignal.timeout(10_000),
   })),
+  tempoReading: readTempoWallet,
   now: Date.now,
 };
 
@@ -99,6 +102,71 @@ const defaultDependencies: PersonalQueryDependencies = {
 export async function readOwnWalletRegistry(userId: string, listWallets: typeof listPersistedUserWallets = defaultDependencies.wallets) {
   const rows = (await listWallets(userId)).filter((wallet) => wallet.userId === userId && isWalletNetworkEnabled(wallet.network));
   return { rows, context: buildMcpWalletContext(rows) };
+}
+
+const tempoErrors: Record<TempoReadErrorCode, string> = {
+  tempo_disabled: "Tempo testnet is disabled in this environment.",
+  tempo_configuration_incomplete: "Tempo testnet configuration is incomplete.",
+  tempo_wrong_chain: "The RPC did not report Tempo Moderato chain 42431.",
+  tempo_rpc_timeout: "The Tempo testnet reading timed out.",
+  tempo_rpc_unavailable: "The Tempo testnet RPC is unavailable.",
+  tempo_rpc_invalid_response: "The Tempo testnet reading could not be verified.",
+  tempo_token_metadata_mismatch: "The Tempo testnet token metadata did not match its configuration.",
+  tempo_invalid_address: "The registered EVM address is invalid.",
+};
+const tempoErrorCodeSchema = z.enum(Object.keys(tempoErrors) as [TempoReadErrorCode, ...TempoReadErrorCode[]]);
+const tempoContextSchema = z.object({
+  network: z.literal("tempo:moderato"), caip2: z.literal(TEMPO_MODERATO_CAIP2), testnet: z.literal(true),
+  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/), queriedAt: z.iso.datetime(),
+});
+const tempoReadingSchema = z.discriminatedUnion("status", [
+  tempoContextSchema.extend({
+    status: z.literal("available"), chainId: z.literal(TEMPO_MODERATO_CHAIN_ID),
+    token: z.object({
+      standard: z.literal("TIP-20"), address: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
+      name: z.literal(TEMPO_MODERATO_TOKEN.name), symbol: z.literal(TEMPO_MODERATO_TOKEN.symbol),
+      decimals: z.literal(TEMPO_MODERATO_TOKEN.decimals), metadataVerified: z.literal(true),
+      balanceAtomic: z.string().regex(/^(?:0|[1-9]\d*)$/), balance: z.string().regex(/^\d+(?:\.\d+)?$/),
+    }),
+    block: z.object({ number: z.string().regex(/^\d+$/), hash: z.string().regex(/^0x[0-9a-fA-F]{64}$/), timestamp: z.string().regex(/^\d+$/) }),
+  }),
+  tempoContextSchema.extend({
+    status: z.enum(["disabled", "misconfigured", "wrong_network", "unavailable"]), token: z.null(), block: z.null(),
+    error: z.object({ code: tempoErrorCodeSchema }),
+  }),
+]);
+
+/** Bind the reading to the selected owner's registration and publish only verified public fields. */
+async function readOwnTempoWallet(wallet: { address: string }, dependencies: PersonalQueryDependencies, queriedAt: () => string, signal?: AbortSignal): Promise<TempoWalletReading> {
+  const context = { network: "tempo:moderato" as const, caip2: TEMPO_MODERATO_CAIP2, testnet: true as const,
+    address: wallet.address, queriedAt: queriedAt(), explorerUrl: `${TEMPO_MODERATO_EXPLORER_URL}/address/${wallet.address}` };
+  const fail = (code: TempoReadErrorCode, status: "disabled" | "misconfigured" | "wrong_network" | "unavailable" = "unavailable"): TempoWalletReading =>
+    ({ ...context, status, token: null, block: null, error: { code, message: tempoErrors[code] } });
+  try {
+    const parsed = tempoReadingSchema.safeParse(await (dependencies.tempoReading ?? readTempoWallet)(wallet.address, { signal }));
+    if (!parsed.success || parsed.data.address.toLowerCase() !== wallet.address.toLowerCase()) return fail("tempo_rpc_invalid_response");
+    const reading = parsed.data;
+    if (reading.status !== "available") return { ...fail(reading.error.code, reading.status), queriedAt: reading.queriedAt };
+    if (reading.token.address.toLowerCase() !== TEMPO_MODERATO_TOKEN.address.toLowerCase()) return fail("tempo_token_metadata_mismatch");
+    const [whole, fractional = ""] = reading.token.balance.split(".");
+    if (fractional.length > reading.token.decimals
+      || BigInt(whole) * BigInt(10) ** BigInt(reading.token.decimals) + BigInt(fractional.padEnd(reading.token.decimals, "0")) !== BigInt(reading.token.balanceAtomic)) {
+      return fail("tempo_rpc_invalid_response");
+    }
+    return { ...context, status: "available", chainId: reading.chainId, queriedAt: reading.queriedAt,
+      token: { ...reading.token, address: TEMPO_MODERATO_TOKEN.address },
+      block: { number: reading.block.number, hash: reading.block.hash as `0x${string}`, timestamp: reading.block.timestamp } };
+  } catch {
+    return fail("tempo_rpc_unavailable");
+  }
+}
+
+function tempoTokenRows(reading: TempoWalletReading, sourceUrl: string) {
+  if (reading.status !== "available") return [];
+  const token = reading.token;
+  return [{ asset: token.symbol, name: token.name, standard: token.standard, contract: token.address, issuer: null,
+    decimals: token.decimals, atomic: token.balanceAtomic, balance: token.balance, metadataVerified: token.metadataVerified,
+    status: "ok" as const, source: "Tempo JSON-RPC", sourceUrl, fetchedAt: reading.queriedAt }];
 }
 
 function conversationSummary(conversation: Awaited<ReturnType<typeof readAgentConversation>>) {
@@ -121,7 +189,7 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
   return [
     defineQuery({
       id: "personal.context", toolName: "get_agent_context", title: "Get personal agent context",
-      description: "Read the authenticated user's profile, registered wallets, connections and authority boundary. Present Network | Address | Registration state | Explorer using returned explorerUrl for each enabled Testnet/Devnet registration. Raw wallet status='active' and status='pending' both describe persisted wallets in Carmelita's internal registry. Use registrationState='registered' to present registered (registrada in Spanish), including pending rows. walletReadiness measures internal registration coverage only. Neither raw status proves current on-chain activity, account activation or balance. Legacy pendingActivation is an unverified stored indicator, not pending registration or a live chain reading. The same EVM address may have separate Avalanche Fuji, BNB Testnet and Base Sepolia registrations. Never create a wallet.",
+      description: "Read the authenticated user's profile, registered wallets, connections and authority boundary. Present Network | Address | Registration state | Explorer using returned explorerUrl for each enabled Testnet/Devnet registration. Raw wallet status='active' and status='pending' both describe persisted wallets in Carmelita's internal registry. Use registrationState='registered' to present registered (registrada in Spanish), including pending rows. walletReadiness measures internal registration coverage only. Neither raw status proves current on-chain activity, account activation or balance. Legacy pendingActivation is an unverified stored indicator, not pending registration or a live chain reading. The same EVM address may have separate Avalanche Fuji, BNB Testnet, Base Sepolia and enabled Tempo Moderato registrations. Never create a wallet.",
       inputSchema: z.object({}).strict(), scope: "agent:context", dataScope: "personal_testnet_context",
       execute: (_, { userId }) => dependencies.context(userId),
     }),
@@ -141,11 +209,11 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
       execute: async (_, { userId }) => ({ ...await ownWallets(userId), source: "Carmelita wallet registry", queriedAt: queriedAt() }),
     }),
     defineQuery({
-      id: "personal.wallets.balances", toolName: "read_personal_wallets_balances", title: "Read Testnet native wallet balances",
-      description: "Read native balances from enabled Testnet/Devnet RPCs for the authenticated owner's registered wallets. Optional networks only filter existing registrations, never select another owner's address. registrationState='registered' means registered in the internal registry even when legacy registrationStatus='pending'; the raw status does not prove current network activation. Stellar onChainAccountExists=false with status='not_activated' means the wallet is registered in Carmelita but the account is not active on Stellar Testnet. Null or unavailable is not zero; registration status and on-chain activation are separate. Never value Testnet funds using Mainnet prices.",
-      inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(5).optional() }).strict(),
+      id: "personal.wallets.balances", toolName: "read_personal_wallets_balances", title: "Read Testnet wallet balances",
+      description: "Read native balances from enabled Testnet/Devnet RPCs for the authenticated owner's registered wallets. Tempo Moderato has no native balance: nativeBalanceStatus='not_applicable' and balance=null; its verified TIP-20 token balance, exact atomic amount, chain 42431, block and reading time are returned in tokens and tempo. Optional networks only filter existing registrations, never select another owner's address. registrationState='registered' means registered in the internal registry even when legacy registrationStatus='pending'; the raw status does not prove current network activation. Stellar onChainAccountExists=false with status='not_activated' means the wallet is registered in Carmelita but the account is not active on Stellar Testnet. Null or unavailable is not zero; registration status and on-chain activation are separate. Never value Testnet funds using Mainnet prices.",
+      inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(6).optional() }).strict(),
       scope: "agent:read", dataScope: "personal_testnet_balances",
-      execute: async ({ networks }, { userId }) => {
+      execute: async ({ networks }, { userId, signal }) => {
         const context = await ownWallets(userId);
         const wallets = context.wallets.filter((wallet) => !networks || networks.some((network) => network === wallet.network));
         const balances = await Promise.all(wallets.map(async (wallet) => {
@@ -155,6 +223,14 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
             nativeAsset: network.nativeAsset, explorerUrl: wallet.explorerUrl,
             source: network.family === "stellar" ? "Stellar Horizon" : network.family === "solana" ? "Solana RPC" : "EVM RPC",
             sourceUrl: network.rpcUrl, fetchedAt: queriedAt() };
+          if (network.id === "tempo:moderato") {
+            const tempo = await readOwnTempoWallet(wallet, dependencies, queriedAt, signal);
+            return { ...details, nativeAsset: null, nativeBalanceStatus: "not_applicable" as const,
+              balance: null, status: tempo.status === "available" ? "ok" as const : "unavailable" as const,
+              onChainAccountExists: null, tokens: tempoTokenRows(tempo, network.rpcUrl), tempo,
+              source: "Tempo JSON-RPC", fetchedAt: tempo.queriedAt,
+              ...(tempo.status === "available" ? {} : { error: tempo.error.code }) };
+          }
           try {
             const balance = await dependencies.nativeBalance(wallet.network, wallet.address);
             if (balance === null && network.family !== "stellar") throw new Error("native_balance_unavailable");
@@ -172,8 +248,8 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
     }),
     defineQuery({
       id: "personal.wallets.status", toolName: "read_personal_wallets_status", title: "Read registered Testnet wallet status and assets",
-      description: "Read only the authenticated owner's registered Testnet/Devnet wallets, native balances and existing Stellar assets with exact issuers. registrationState='registered' means registered in the internal registry even when legacy registrationStatus='pending'; the raw status does not prove current network activation. Stellar onChainAccountExists=false with status='not_activated' means the wallet is registered in Carmelita but the account is not active on Stellar Testnet. onChainAccountExists=null means the reading is unavailable, not that the account is absent. Avalanche Fuji also reads the configured Circle USDC contract. Other EVM and Solana networks expose native balances only; no token discovery is inferred. Registration, on-chain account existence and balances are separate. Missing or failed readings are null, never a fabricated zero. No activation, funding, signatures, transaction preparation or distributor access.",
-      inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(5).optional() }).strict(),
+      description: "Read only the authenticated owner's registered Testnet/Devnet wallets, native balances and existing Stellar assets with exact issuers. registrationState='registered' means registered in the internal registry even when legacy registrationStatus='pending'; the raw status does not prove current network activation. Stellar onChainAccountExists=false with status='not_activated' means the wallet is registered in Carmelita but the account is not active on Stellar Testnet. onChainAccountExists=null does not assert that an account is absent. Avalanche Fuji also reads the configured Circle USDC contract. Enabled Tempo Moderato reads its configured TIP-20 token at an explicit verified block with chain 42431, exact atomic amount and reading time in tempo; native.status='not_applicable' and native.balance=null because Tempo has no native gas asset. Other EVM and Solana networks expose native balances only; no token discovery is inferred. Registration, on-chain account existence and balances are separate. Missing or failed readings are null, never a fabricated zero. No activation, funding, signatures, transaction preparation or distributor access.",
+      inputSchema: z.object({ networks: z.array(walletNetworkIdSchema).min(1).max(6).optional() }).strict(),
       scope: "agent:read", dataScope: "personal_testnet_wallet_status",
       execute: async ({ networks }, { userId, signal }) => {
         const registry = await ownWallets(userId);
@@ -188,6 +264,16 @@ export function createPersonalQueries(dependencies: PersonalQueryDependencies = 
             registrationStatusScope: wallet.registrationStatusScope, explorerUrl: wallet.explorerUrl, source, sourceUrl, testnet: true };
           const unavailableNative = () => ({ asset: network.nativeAsset, balance: null, status: "unavailable" as const,
             source, sourceUrl, fetchedAt: queriedAt(), error: "native_balance_unavailable" });
+          if (network.id === "tempo:moderato") {
+            const tempo = await readOwnTempoWallet(wallet, dependencies, queriedAt, signal);
+            const available = tempo.status === "available";
+            return { ...details, source: "Tempo JSON-RPC", status: available ? "ok" : "unavailable",
+              onChainAccountExists: null,
+              native: { asset: null, balance: null, status: "not_applicable" as const, source: "Tempo JSON-RPC", sourceUrl, fetchedAt: tempo.queriedAt },
+              tokens: tempoTokenRows(tempo, sourceUrl), tokensStatus: available ? "ok" : "unavailable",
+              tokenCoverage: "configured_tip20_only", omittedBalances: 0, fetchedAt: tempo.queriedAt, tempo,
+              ...(available ? {} : { error: tempo.error.code }) };
+          }
           if (network.family === "stellar") {
             try {
               const deadline = AbortSignal.timeout(10_000);
