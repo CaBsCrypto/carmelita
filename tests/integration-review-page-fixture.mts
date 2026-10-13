@@ -10,7 +10,13 @@ registerHooks({ load(url, context, nextLoad) {
     source: "export default {panel:'panel',heading:'heading',actions:'actions',jobs:'jobs'}" };
   return nextLoad(url, context);
 } });
+// Discard inherited configuration; only fictional identities enter this fixture.
+for (const key of Object.keys(process.env)) {
+  if (/^(?:ADMIN_|CARMELITA_ADMIN|CARMELITA_PROPOSAL_EMAIL_|DATABASE|NEON|PRIVY|STYTCH|RESEND|VERCEL)/.test(key)) delete process.env[key];
+}
 process.env.CARMELITA_PROPOSAL_EMAIL_ENABLED = "false";
+process.env.CARMELITA_ADMIN_EMAILS = "reviewer@example.test";
+process.env.ADMIN_EMAILS = "reviewer@example.test";
 
 const table = { createdAt: "created_at" };
 const operations: string[] = [];
@@ -19,22 +25,31 @@ let databaseAvailable = true;
 let failure: "schema" | "query" | null = null;
 let fetches = 0;
 let rows: Record<string, unknown>[] = [];
+const sessionCookies = new Map<string, string>([["aa_admin_privy", "synthetic-reviewer-session"]]);
+let chatUser: { email: string; displayName: string } | null = null;
 const errorLogs: unknown[][] = [];
 mock.method(console, "error", (...args: unknown[]) => errorLogs.push(args));
 mock.method(globalThis, "fetch", async () => {
   fetches++;
   throw new Error("Unexpected network access in private inbox fixture");
 });
-mock.module(new URL("../app/admin/auth.ts", import.meta.url).href, {
-  namedExports: {
-    requireAdminPage: async (returnTo: string) => {
-      operations.push("auth");
-      assert.equal(returnTo, "/admin/integrations");
-      if (accessDenied) throw new Error("admin_redirect_required");
-      return { username: "synthetic-reviewer", displayName: "Fixture", method: "password" };
-    },
+mock.module("next/headers", { namedExports: { cookies: async () => ({ get: (name: string) => accessDenied || !sessionCookies.has(name) ? undefined : { value: sessionCookies.get(name) } }) } });
+mock.module("next/navigation", { namedExports: { redirect: (url: string) => { throw new Error(`admin_redirect_required:${url}`); } } });
+mock.module(new URL("../app/chatgpt-auth.ts", import.meta.url).href, { namedExports: { getChatGPTUser: async () => chatUser } });
+mock.module(new URL("../app/privy-stellar.ts", import.meta.url).href, { namedExports: {
+  verifyPrivyAccessToken: async (token: string) => {
+    if (token === "synthetic-reviewer-session") return { user_id: "did:privy:synthetic-reviewer" };
+    if (token === "synthetic-normal-session") return { user_id: "did:privy:synthetic-normal" };
+    throw new Error("Synthetic session not authorized");
   },
-});
+  getPrivyUserIdentity: async (id: string) => ({ id, email: id === "did:privy:synthetic-reviewer" ? "reviewer@example.test" : "normal@example.test" }),
+} });
+const actualAuth = await import("../app/admin/auth");
+mock.module(new URL("../app/admin/auth.ts", import.meta.url).href, { namedExports: {
+  requireAdminPage: async (returnTo: string) => {
+    operations.push("auth"); assert.equal(returnTo, "/admin/integrations"); return actualAuth.requireAdminPage(returnTo);
+  },
+} });
 mock.module(new URL("../db/index.ts", import.meta.url).href, {
   namedExports: {
     hasDatabase: () => {
@@ -106,6 +121,33 @@ test("admin denial exits before checking, initializing or querying proposal stor
   }
   assert.deepEqual(metadata.robots, { index: false, follow: false });
   assert.equal(dynamic, "force-dynamic");
+});
+
+test("a normal authenticated Privy or ChatGPT user cannot read the private proposal inbox", async () => {
+  sessionCookies.set("aa_admin_privy", "synthetic-normal-session");
+  try {
+    await assert.rejects(renderPage(), /admin_redirect_required:\/admin\/login\?returnTo=%2Fadmin%2Fintegrations/);
+    assert.deepEqual(operations, ["auth"]);
+    delete process.env.CARMELITA_ADMIN_EMAILS;
+    chatUser = { email: "normal@example.test", displayName: "Normal user" };
+    await assert.rejects(renderPage(), /admin_redirect_required/); assert.deepEqual(operations, ["auth"]);
+  } finally {
+    chatUser = null; process.env.CARMELITA_ADMIN_EMAILS = "reviewer@example.test"; sessionCookies.set("aa_admin_privy", "synthetic-reviewer-session");
+  }
+});
+
+test("cancelled access and the worker capability never become an administrative inbox session", async () => {
+  const worker = "synthetic-scheduler-capability-1234567890";
+  process.env.CARMELITA_PROPOSAL_EMAIL_WORKER_TOKEN = worker;
+  try {
+    sessionCookies.delete("aa_admin_privy"); // Cancelling the local authorization leaves no administrative session.
+    await assert.rejects(renderPage(), /admin_redirect_required/); assert.deepEqual(operations, ["auth"]);
+    sessionCookies.set("aa_admin_privy", worker); sessionCookies.set("aa_founder_session", worker);
+    await assert.rejects(renderPage(), /admin_redirect_required/); assert.deepEqual(operations, ["auth"]);
+    assert.equal(await actualAuth.getAdminIdentity(), null);
+  } finally {
+    delete process.env.CARMELITA_PROPOSAL_EMAIL_WORKER_TOKEN; sessionCookies.delete("aa_founder_session"); sessionCookies.set("aa_admin_privy", "synthetic-reviewer-session");
+  }
 });
 
 test("authenticated inbox renders proposed service details and safe pending-review labels", async () => {

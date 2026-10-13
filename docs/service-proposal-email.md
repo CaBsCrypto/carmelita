@@ -23,6 +23,20 @@ Transient errors use exponential backoff, starting at 30 seconds, respecting bou
 
 For unattended recovery after a lost process and no further submissions, configure a later scheduler to call `GET /api/admin/integrations/notifications` with `Authorization: Bearer <CARMELITA_PROPOSAL_EMAIL_WORKER_TOKEN>`. Use a random 32–256 character server secret. Keep the token out of query strings. No scheduler or Vercel cron is added by this change. The admin POST requires an authenticated administrator and matching origin. Neither route accepts a recipient, message, credential or job override in its request.
 
+### Prepared dispatcher; scheduling remains disabled
+
+`scripts/proposal-email-dispatch.mjs` provides a single invocation for a future scheduler. It reads only explicitly supplied environment variables; it never loads application `.env` files.
+
+```powershell
+node scripts/proposal-email-dispatch.mjs --check
+# Execution requires an approved environment and scheduling configuration:
+node scripts/proposal-email-dispatch.mjs --execute
+```
+
+The default and `--check` validate configuration without a network request. `--execute` makes one authenticated GET, does not follow redirects or retry internally, and returns only safe status and counters. It accepts the canonical HTTPS production origin or a literal HTTP loopback IP for isolated local QA. Arbitrary Preview domains are deliberately excluded. A request has a 30-second client deadline and a 16 KiB response limit. A timeout does not prove that server execution stopped; the persisted lease and idempotency key still control recovery.
+
+The scheduler is not installed and its server secret has not been provisioned. During publication preparation, choose a scheduler, provide the capability separately to Carmelita and that scheduler, verify `--check`, and agree its frequency and runtime cost before enabling it. Never pass the capability as a command argument or URL. Do not enable production email merely to check configuration.
+
 ## Data sent to the provider
 
 The fixed English notice contains only an opaque proposal ID and the private inbox URL. It excludes developer email, service name, description, credentials and wallet information. Provider errors are reduced to safe codes; raw response bodies are not logged or returned publicly.
@@ -40,6 +54,21 @@ node_modules/.bin/tsx --test tests/proposal-email-store.test.ts
 
 PGlite serializes one connection; it verifies PostgreSQL statements and lease exclusion, not contention between independent PostgreSQL connections. A separate isolated hosted acceptance must verify the real sender, mailbox delivery, database role and multi-connection behavior before announcing availability.
 
+### Disposable native PostgreSQL acceptance
+
+`scripts/proposal-email-postgres-local.mjs` starts a temporary PostgreSQL server on `127.0.0.1`, creates a non-superuser QA role and database, runs the acceptance, stops its owned server and removes only its checked UUID cluster. It installs no Windows service and does not load application environment files. The fixture executes the actual outbox SQL through two independent PostgreSQL connections; the driver adapter is confined to the fixture.
+
+Prerequisites remain outside application dependencies and Git:
+
+- Official portable PostgreSQL binaries under `work/proposal-email-qa/runtime/pgsql`, including `bin`, `lib`, `share` and the server licence. [PostgreSQL's Windows download page](https://www.postgresql.org/download/windows/) links to the [EDB binary archives](https://www.enterprisedb.com/download-postgresql-binaries).
+- The pinned local driver: `npm install --prefix work/proposal-email-postgres-runtime --save-exact --ignore-scripts pg@8.16.3`.
+
+```powershell
+node scripts/proposal-email-postgres-local.mjs
+```
+
+The opt-in fixture refuses external hosts, DNS names, inherited connection overrides, non-QA database names and unowned schemas. It does not use Neon, Privy or Resend. The native acceptance is separate from the ordinary test suite and from production acceptance.
+
 ### Verification on October 12, 2026
 
 - Full application suite: 1,069 passed, two existing opt-in tests skipped; lint, TypeScript, seven Graphify tooling tests and local production build passed.
@@ -49,5 +78,32 @@ PGlite serializes one connection; it verifies PostgreSQL statements and lease ex
 - Graphify was updated using AST extraction only. Existing missing SQL extractor and runtime skill-version warnings remain; no packages or skills were upgraded.
 
 This is local evidence using a fictional administrative identity and synthetic email addresses. No real delivery, production database acceptance, Vercel build, push or deployment occurred.
+
+### Next local acceptance block — October 12, 2026
+
+- Native PostgreSQL 17.11 with driver `pg@8.16.3`: six scenarios passed using independent backends and a non-superuser role. They cover atomic rollback, concurrent duplicate submission, one winner for simultaneous claims, `SKIP LOCKED`, stale-worker fencing and persisted payload recovery in a fresh process.
+- Browser integration used the real form, POST, outbox, worker, transport and review page with PostgreSQL on loopback, a fictional administrator and a simulated email provider. Two proposals remained pending manual review. A duplicate preserved the original record and created no second notice. A simulated 503 preserved the proposal and scheduled a retry.
+- After stopping and restarting both the QA application and PostgreSQL, the prepared dispatcher recovered the saved notice without another form submission. A second dispatcher invocation processed zero jobs. The frozen message and idempotency key were unchanged; no external email or database request occurred.
+- Private-inbox and dispatch fixtures now exercise the actual admin authorization with synthetic identities. Ordinary users, cancelled sessions and worker capabilities do not gain inbox access or administrative POST permission. The worker capability dispatches notices only.
+- Regression suite: 1,083 passed and three opt-in cases skipped; the native PostgreSQL opt-in was executed separately with both outer tests passed and no skips. Lint and TypeScript passed. No application source or application dependency changed in this block; the previous local application build remains the build evidence for that unchanged source.
+- Graphify's AST-only update completed: 4,048 nodes, 10,392 edges and 187 communities. Existing SQL-extractor and skill-version warnings remain. Its parser partially extracted `tests/proposal-email-postgres-fixture.mts`; that fixture passed TypeScript and executed successfully. Community names were regenerated from hubs without an LLM relabel. This limits graph coverage, not the executed acceptance results.
+- Reproducible SQL receipts, browser snapshots and restart comparisons are saved under ignored `work/proposal-email-qa/`. A separate provider-setup test previously confirmed real mailbox delivery; that is distinct from this simulated application acceptance.
+
+Production email remains disabled. Production schema permissions, the Neon HTTP adapter, a real administrator opening the notice link and an installed unattended scheduler still require acceptance in the agreed publication window. No production SQL, additional real email, push, deployment or hosted build was performed in this block.
+
+## Gates for a single grouped publication
+
+| Gate | Current evidence / next action |
+| --- | --- |
+| Saved proposal and safe duplicate | Passed locally through the real form and SQL outbox; preserve manual `new` status. |
+| Private review access | Actual authorization passed with synthetic identities; verify a real reviewer and an ordinary user in the agreed environment. Receiving email does not itself grant admin access. |
+| Database preparation | Non-superuser DDL and contention passed locally; verify the actual deployment role and Neon HTTP adapter before enabling notices. Preserve existing proposals and wallets. |
+| Sender and recipient | Provider setup and one real inbox delivery were verified separately. Confirm environment names and trusted origin without copying credentials into the repository. |
+| Unattended recovery | Dispatcher is prepared and recovered a local pending notice after restart; scheduler choice, capability, cadence and cost remain pending. |
+| Publication control | Review the complete branch and current main/PR state, Billing, final SHA and rollback. Agree one publication before pushing or merging main. Keep the Vercel Preview filter intact. |
+
+Only after those gates are accepted should the mail feature be enabled and a real application proposal be verified from submission through storage, notice and private review. This is separate from approval, catalogue publication or a user's installation of a service.
+
+Rollback starts by disabling proposal notices and pausing the future scheduler, then restoring the previously accepted application version through the agreed procedure. Keep proposal and outbox rows, frozen payloads and keys; do not drop tables, reset accepted jobs or blindly resend uncertain deliveries.
 
 Provider references: [sending email](https://resend.com/docs/api-reference/emails/send-email), [domain verification](https://resend.com/docs/dashboard/domains/introduction), [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys).
