@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeAbiParameters } from "viem";
 import { readTempoWallet } from "../app/wallets/tempo";
+import { readingMatchesWallet, tempoReadingToWalletReading } from "../app/agent/wallet-readings";
 import { TEMPO_MODERATO_TOKEN } from "../app/wallets/networks";
 import type { TempoWalletReading } from "../app/wallets/types";
 
@@ -42,7 +43,7 @@ function rpcFixture(options: {
       else if (selector === "0x95d89b41") result = encodeAbiParameters([{ type: "string" }], [options.symbol ?? "PathUSD"]);
       else {
         assert.equal(call.data, `0x70a08231${address.slice(2).padStart(64, "0")}`);
-        result = "balance" in options ? options.balance : encodeAbiParameters([{ type: "uint256" }], [0n]);
+        result = "balance" in options ? options.balance : encodeAbiParameters([{ type: "uint256" }], [BigInt(0)]);
       }
     } else assert.fail(`unexpected RPC method ${request.method}: a read must never send or sign`);
     return Response.json({ jsonrpc: "2.0", id: request.id, result });
@@ -68,7 +69,7 @@ test("real-zero shaped RPC response remains zero with verified chain, metadata a
   assert.equal(reading.caip2, "eip155:42431");
   assert.equal(reading.chainId, 42431);
   assert.equal(reading.address.toLowerCase(), address);
-  assert.equal(BigInt(reading.block.number), 291n);
+  assert.equal(BigInt(reading.block.number), BigInt(291));
   assert.equal(reading.block.hash, block.hash);
   assert.equal(reading.block.timestamp, "1700000000");
   assert.ok(Number.isFinite(Date.parse(reading.queriedAt)));
@@ -81,7 +82,7 @@ test("real-zero shaped RPC response remains zero with verified chain, metadata a
 }));
 
 test("TIP-20 amounts beyond Number precision survive as exact atomic and decimal strings", async () => withEnabledTempo(async () => {
-  const { fetcher } = rpcFixture({ balance: encodeAbiParameters([{ type: "uint256" }], [90071992547409931234567n]) });
+  const { fetcher } = rpcFixture({ balance: encodeAbiParameters([{ type: "uint256" }], [BigInt("90071992547409931234567")]) });
   const reading = await readTempoWallet(address, { fetch: fetcher });
   assert.equal(reading.status, "available");
   if (reading.status !== "available") assert.fail("expected an available Tempo reading");
@@ -97,7 +98,6 @@ test("another chain, including Tempo mainnet, stops before block and token reads
     const reading = await readTempoWallet(address, { fetch: fetcher });
     failed(reading);
     assert.equal(reading.status, "wrong_network");
-    if (reading.status === "available") assert.fail("wrong chain was accepted");
     assert.equal(reading.error.code, "tempo_wrong_chain");
     assert.deepEqual(calls.map(call => call.method), ["eth_chainId"]);
   }
@@ -158,6 +158,20 @@ test("disabled feature and invalid wallet address do not contact RPC", async () 
   process.env.CARMELITA_TEMPO_TESTNET_ENABLED = "true";
   failed(await readTempoWallet("not-an-EVM-address", { fetch: fetcher }));
   assert.equal(calls, 0);
+}));
+
+test("the UI adapter rejects outer-chain or nested-address disagreement and stale owner snapshots", async () => withEnabledTempo(async () => {
+  const { fetcher } = rpcFixture();
+  const result = await readTempoWallet(address, { fetch: fetcher });
+  const reading = tempoReadingToWalletReading(result);
+  assert.ok(reading);
+  const wallet = { id: "public-fixture", address, chainType: "ethereum", network: "tempo:moderato", status: "active" };
+  assert.equal(readingMatchesWallet(wallet, reading), true);
+  assert.equal(readingMatchesWallet(wallet, { ...reading, chainId: 4217 }), false);
+  const otherAddress = `0x${"d".repeat(40)}`;
+  assert.equal(readingMatchesWallet({ ...wallet, address: otherAddress }, reading), false);
+  assert.equal(readingMatchesWallet({ ...wallet, address: otherAddress }, { ...reading, address: otherAddress }), false,
+    "changing only the outer address must not repurpose another owner's inner Tempo reading");
 }));
 
 async function withEnabledTempo(run: () => Promise<void>) {

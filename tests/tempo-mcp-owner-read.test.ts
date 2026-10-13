@@ -70,9 +70,9 @@ test("MCP keeps existing tool names and accepts Tempo only as a network filter",
 test("missing principal, foreign principal type and insufficient scopes never reach wallets or RPC", async () => withTempo(async () => {
   const { calls, definitions } = fixture();
   for (const name of tools) {
-    await assert.rejects(executeMcpReadQuery(name, {}, undefined, definitions), /mcp_principal_required/);
-    await assert.rejects(executeMcpReadQuery(name, {}, principal(ownerA, ["agent:context"]), definitions), /mcp_scope_required/);
-    await assert.rejects(executeMcpReadQuery(name, {}, { ...principal(ownerA), extra: { subjectType: "provider", userId: ownerA } }, definitions), /mcp_principal_required/);
+    await assert.rejects(async () => executeMcpReadQuery(name, {}, undefined, definitions), /mcp_principal_required/);
+    await assert.rejects(async () => executeMcpReadQuery(name, {}, principal(ownerA, ["agent:context"]), definitions), /mcp_scope_required/);
+    await assert.rejects(async () => executeMcpReadQuery(name, {}, { ...principal(ownerA), extra: { subjectType: "provider", userId: ownerA } }, definitions), /mcp_principal_required/);
   }
   assert.deepEqual(calls, []);
 }));

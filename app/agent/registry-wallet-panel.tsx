@@ -6,6 +6,9 @@ import { registryNetworkRows, type RegistryResult } from "./registry-wallet-mode
 import { readWorkspaceQuery } from "./workspace-queries";
 import { workspaceCopy } from "./workspace-copy";
 import type { TempoWalletReading } from "../wallets/types";
+import { sessionAbortable, withSessionDeadline } from "./session-request";
+
+const tempoLoadingText = { en: "Reading Tempo…", es: "Consultando Tempo…", pt: "Consultando Tempo…" };
 
 const tempoCopy = {
   en: { register: "Connect Tempo Testnet", registering: "Connecting…", note: "Reuse your existing EVM wallet on Moderato. This checks the network and registers the address; no funds move.", required: "Sign in again to prepare your EVM wallet before connecting Tempo.", failed: "Tempo is unavailable. Retry the connection or balance query.", block: "Block", time: "Read at", zero: "A zero balance does not imply previous activity. Test tokens have no real value." },
@@ -20,6 +23,7 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
   const tempoText = tempoCopy[locale];
   const [state, setState] = useState<{ rows: ReturnType<typeof registryNetworkRows>; status: "loading" | "ready" | "error" }>({ rows: [], status: "loading" });
   const [tempo, setTempo] = useState<TempoWalletReading | null>(null);
+  const [tempoLoading, setTempoLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const connectionRequest = useRef<AbortController | null>(null);
@@ -34,13 +38,29 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
         const rows = registryNetworkRows(result);
         setState({ rows, status: "ready" });
         setTempo(null);
-        if (rows.some(row => row.network === "tempo:moderato" && row.address)) {
+        const tempoRow = rows.find(row => row.network === "tempo:moderato" && row.address);
+        if (tempoRow?.address) {
+          setTempoLoading(true);
           try {
-            const status = await readWorkspaceQuery<{ wallets: Array<{ network: string; tempo?: TempoWalletReading }> }>("personal.wallets.status", getAccessToken, locale, controller.signal);
+            const reading = await withSessionDeadline(controller.signal, 12_000, async signal => {
+              const token = await sessionAbortable(getAccessToken, signal);
+              if (!token) throw new Error("authentication_required");
+              const response = await sessionAbortable(() => fetch("/api/agent/wallets/tempo", {
+                cache: "no-store", signal, headers: { Authorization: `Bearer ${token}` },
+              }), signal);
+              const body = await sessionAbortable(() => response.json(), signal) as TempoWalletReading;
+              if (body.network !== "tempo:moderato" || body.address?.toLowerCase() !== tempoRow.address?.toLowerCase()
+                || body.testnet !== true || (body.status === "available" && body.chainId !== 42431)) {
+                throw new Error("wallet_response_mismatch");
+              }
+              return body;
+            });
             controller.signal.throwIfAborted();
-            setTempo(status.wallets.find(row => row.network === "tempo:moderato")?.tempo ?? null);
+            setTempo(reading);
           } catch {
             if (!controller.signal.aborted) setTempo(null);
+          } finally {
+            if (!controller.signal.aborted) setTempoLoading(false);
           }
         }
       } catch {
@@ -58,15 +78,16 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
     setConnecting(true);
     setConnectionError(false);
     try {
-      const token = await getAccessToken();
-      controller.signal.throwIfAborted();
-      if (!token) throw new Error("authentication_required");
-      const response = await fetch("/api/agent/wallets", {
-        method: "POST", cache: "no-store", signal: controller.signal,
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ network: "tempo:moderato", explicitUserConfirmation: true }),
+      await withSessionDeadline(controller.signal, 12_000, async signal => {
+        const token = await sessionAbortable(getAccessToken, signal);
+        if (!token) throw new Error("authentication_required");
+        const response = await sessionAbortable(() => fetch("/api/agent/wallets", {
+          method: "POST", cache: "no-store", signal,
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ network: "tempo:moderato", explicitUserConfirmation: true }),
+        }), signal);
+        if (!response.ok) throw new Error("tempo_connection_failed");
       });
-      if (!response.ok) throw new Error("tempo_connection_failed");
       controller.signal.throwIfAborted();
       setTempo(null);
       setState({ rows: [], status: "loading" });
@@ -88,7 +109,7 @@ export default function RegistryWalletPanel({ locale, getAccessToken, onQueryBal
           <div><dt>{t.address}</dt><dd><code>{row.address ?? "—"}</code></dd></div></dl>
         {row.explorerUrl && <a href={row.explorerUrl} target="_blank" rel="noreferrer">{t.explorer}</a>}
         {row.network === "tempo:moderato" && <>
-          {row.address ? tempo?.status === "available" ? <>
+          {row.address ? tempoLoading ? <p role="status">{tempoLoadingText[locale]}</p> : tempo?.status === "available" ? <>
             <p>{tempo.token.balance} {tempo.token.symbol} · Testnet · {tempo.chainId}</p>
             <p>{tempoText.block}: {tempo.block.number} · {tempoText.time}: <time dateTime={tempo.queriedAt}>{tempo.queriedAt}</time></p>
             <p>{tempoText.zero}</p>
