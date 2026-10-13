@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { provisionUserWallets } from "@/app/wallets/onboarding";
 import { hasDatabase } from "@/db";
+import { existingOAuthWalletsRequired } from "@/app/wallets/existing-wallet-mode";
 import { hasSameRequestOrigin as sameOrigin } from "@/app/stytch/request-security";
 import {
   PRIVY_WALLET_ARCHITECTURE,
@@ -23,6 +24,10 @@ function bearerToken(request: Request) {
 export async function POST(request: Request) {
   if (!sameOrigin(request)) {
     return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
+  }
+
+  if (existingOAuthWalletsRequired()) {
+    return NextResponse.json({ error: "existing_wallets_only", next: "/tempo" }, { status: 409, headers: { "Cache-Control": "no-store" } });
   }
 
   try {

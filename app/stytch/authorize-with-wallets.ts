@@ -2,13 +2,11 @@ import { provisionUserWallets } from "@/app/wallets/onboarding";
 import { persistVerifiedOAuthProfile } from "./oauth-profile";
 import { assertPreviewIsolation, type PreviewIsolationEnvironment } from "@/app/preview-isolation";
 import { assertExistingOAuthWallets } from "./existing-oauth-wallets";
+import { isTempoTestnetEnabled } from "@/app/wallets/networks";
+import { existingOAuthWalletsRequired } from "@/app/wallets/existing-wallet-mode";
+export { existingOAuthWalletsRequired } from "@/app/wallets/existing-wallet-mode";
 
 /** Select by raw intent so invalid isolation never falls back to provisioning. */
-export function existingOAuthWalletsRequired(env: PreviewIsolationEnvironment = process.env): boolean {
-  return env.CARMELITA_TEMPO_TESTNET_ENABLED === "true" &&
-    (env.VERCEL_ENV === "preview" || env.CARMELITA_PREVIEW_ISOLATED === "true");
-}
-
 /** Prepare the authenticated owner's registry before issuing an OAuth grant. */
 export async function prepareOAuthWallets(
   identity: { id: string; email: string },
@@ -18,7 +16,12 @@ export async function prepareOAuthWallets(
 ) {
   const env = options.env ?? process.env;
   if (existingOAuthWalletsRequired(env)) {
-    assertPreviewIsolation(env);
+    if (env.CARMELITA_TEMPO_PRODUCTION_READ_ENABLED === "true" &&
+      (env.VERCEL_ENV === "production" || env.VERCEL_TARGET_ENV === "production")) {
+      if (!isTempoTestnetEnabled(env)) throw new Error("oauth_existing_wallets_unavailable");
+    } else {
+      assertPreviewIsolation(env);
+    }
     await (options.validateExisting ?? assertExistingOAuthWallets)(identity.id);
     return;
   }
