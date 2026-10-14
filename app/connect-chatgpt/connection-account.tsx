@@ -28,7 +28,7 @@ function PrivyConnectionAccount({ locale, onExternalDialog }: { locale: Locale; 
 }
 
 function OwnReadiness({ locale, getAccessToken, onLinkEmail }: { locale: Locale; getAccessToken: () => Promise<string | null>; onLinkEmail: () => void }) {
-  const t = copy[locale];
+  const t = Object.fromEntries(Object.entries(copy[locale]).map(([key, value]) => [key, value.replaceAll("ChatGPT", { es: "tu asistente", en: "your assistant", pt: "seu assistente" }[locale])])) as typeof copy[Locale];
   const [readiness, setReadiness] = useState<{ emailReady: boolean; registeredWallets: number } | null>(null);
   const [failed, setFailed] = useState(false);
   const [revision, setRevision] = useState(0);
