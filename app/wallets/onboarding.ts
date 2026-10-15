@@ -59,6 +59,7 @@ const defaultDependencies: WalletOnboardingDependencies = {
 export async function provisionUserWallets(
   input: { userId: string; email: string | null },
   dependencies: WalletOnboardingDependencies = defaultDependencies,
+  options: { activateStellar?: boolean } = {},
 ) {
   if (!input.userId.startsWith("did:privy:")) {
     throw new Error("invalid_privy_user_id");
@@ -96,7 +97,7 @@ export async function provisionUserWallets(
       try { account = await dependencies.getStellarAccount(wallet.address); }
       catch { readError = "stellar_account_unavailable"; }
       if (account) {
-        if (dependencies.activateStellar) {
+        if (options.activateStellar !== false && dependencies.activateStellar) {
           testnetActivation = await dependencies.activateStellar({ userId: input.userId, wallet, account });
           stellarActivationOutcome.value = testnetActivation;
           if (testnetActivation.error === "wallet_identity_conflict") throw new Error("wallet_identity_conflict");

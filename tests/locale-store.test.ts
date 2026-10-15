@@ -85,3 +85,30 @@ test("server rendering is consistently English and blocked storage still permits
   assert.equal(browser.language(), "es");
   stop();
 });
+
+test("a saved language survives route remounts and reloads while server rendering stays English", () => {
+  for (const choice of ["es", "pt"] as const) {
+    const browser = environment();
+    const session = createLocaleStore(() => browser);
+    const previousRouteUpdates: string[] = [];
+    const leavePreviousRoute = session.subscribe(() => previousRouteUpdates.push(session.getSnapshot()));
+    assert.equal(session.getSnapshot(), "en");
+    session.setLocale(choice);
+    leavePreviousRoute();
+
+    const enterNextRoute = session.subscribe(() => {});
+    assert.equal(session.getSnapshot(), choice);
+    assert.equal(browser.language(), choice === "pt" ? "pt-BR" : "es");
+    enterNextRoute();
+
+    const reloaded = createLocaleStore(() => browser);
+    assert.equal(reloaded.getServerSnapshot(), "en");
+    const leaveReloadedRoute = reloaded.subscribe(() => {});
+    assert.equal(reloaded.getSnapshot(), choice);
+    assert.equal(reloaded.getServerSnapshot(), "en");
+    reloaded.setLocale("en");
+    assert.equal(browser.read(), "en");
+    assert.deepEqual(previousRouteUpdates, [choice]);
+    leaveReloadedRoute();
+  }
+});

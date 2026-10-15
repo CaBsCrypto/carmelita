@@ -5,8 +5,8 @@ import ServicesClient from "./services-client";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Servicios | Carmelita",
-  description: "Explora los servicios y flujos publicados en Bazaar. Consulta su disponibilidad y las funciones que siguen pendientes de validación.",
+  title: "Service catalog | Carmelita",
+  description: "Explore the services and workflows listed in Bazaar, check their reported availability and see which features still need validation. Listing does not enable purchases or service execution.",
   alternates: { canonical: "/services" },
 };
 

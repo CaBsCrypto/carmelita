@@ -5,12 +5,13 @@ import BrandLockup from "@/app/brand-lockup";
 import { getDb, hasDatabase } from "@/db";
 import { ensureIntegrationRecommendationSchema } from "@/app/integrations/storage";
 import { integrationRecommendations } from "@/db/schema";
+import { renderProposalEmailPanel } from "./proposal-email-panel";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Integration demand | Carmelita",
-  description: "Private integration recommendations submitted from the landing.",
+  title: "Service proposals | Carmelita",
+  description: "Private service proposals and integration recommendations for manual review.",
   robots: { index: false, follow: false },
 };
 
@@ -25,16 +26,22 @@ function formatDate(value: Date) {
 export default async function IntegrationDemandPage() {
   await requireAdminPage("/admin/integrations");
 
-  if (hasDatabase()) {
-    await ensureIntegrationRecommendationSchema();
-  }
-
-  const recommendations = hasDatabase()
-    ? await getDb()
+  let storageReady = false;
+  let recommendations: (typeof integrationRecommendations.$inferSelect)[] = [];
+  try {
+    if (hasDatabase()) {
+      await ensureIntegrationRecommendationSchema();
+      recommendations = await getDb()
         .select()
         .from(integrationRecommendations)
-        .orderBy(desc(integrationRecommendations.createdAt))
-    : [];
+        .orderBy(desc(integrationRecommendations.createdAt));
+      storageReady = true;
+    }
+  } catch {
+    // The private inbox must distinguish unavailable storage from an empty queue.
+    storageReady = false;
+  }
+  const emailPanel = await renderProposalEmailPanel(storageReady);
 
   return (
     <main className="admin-page">
@@ -56,17 +63,20 @@ export default async function IntegrationDemandPage() {
         <section className="admin-heading">
           <div>
             <p className="eyebrow">INTEGRATION DEMAND</p>
-            <h1>What people want Carmelita to connect next.</h1>
+            <h1>Service proposals for review.</h1>
             <p>
-              Recommendations submitted from the public landing, including the
-              requested service, use case and contact email.
+              Service proposals and integration recommendations, including the
+              use case and contact email. Review is manual; receiving a proposal
+              does not publish or activate an integration.
             </p>
           </div>
           <div className="admin-heading-actions">
-            <Link href="/">Open public landing</Link>
-            <small>{recommendations.length} recommendations saved</small>
+            <Link href="/developers#proposal">Open proposal form</Link>
+            {storageReady && <small>{recommendations.length} proposals and recommendations saved</small>}
           </div>
         </section>
+
+        {emailPanel}
 
         <section className="integration-demand-list">
           <header>
@@ -76,17 +86,18 @@ export default async function IntegrationDemandPage() {
             <span>Received</span>
           </header>
 
-          {recommendations.length === 0 && (
+          {!storageReady && <div className="integration-demand-empty">Proposal storage is unavailable in this environment. The review queue could not be loaded.</div>}
+          {storageReady && recommendations.length === 0 && (
             <div className="integration-demand-empty">
-              No integration recommendations yet.
+              No proposals or integration recommendations yet.
             </div>
           )}
 
           {recommendations.map((recommendation) => (
-            <article key={recommendation.id}>
+            <article key={recommendation.id} id={`proposal-${recommendation.id}`}>
               <div>
                 <strong>{recommendation.integrationName}</strong>
-                <small>{recommendation.locale.toUpperCase()} ? {recommendation.status}</small>
+                <small>{recommendation.source === "developers" ? "Service proposal" : "Integration recommendation"} · {recommendation.locale.toUpperCase()} · {recommendation.status === "new" ? "Pending review" : recommendation.status}</small>
               </div>
               <p>{recommendation.useCase || "No use case provided."}</p>
               <a href={"mailto:" + recommendation.email}>{recommendation.email}</a>

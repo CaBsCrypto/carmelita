@@ -13,8 +13,10 @@ function result(status: "ready" | "failed" | "conflict" = "ready") {
 }
 test("OAuth preparation passes only the authenticated owner and accepts registered wallets with network activation pending", async () => {
   const identity = { id: "did:privy:owner", email: "owner@example.com" };
-  await prepareOAuthWallets(identity, async input => {
+  await prepareOAuthWallets(identity, async (input, dependencies, options) => {
     assert.deepEqual(input, { userId: identity.id, email: identity.email });
+    assert.equal(dependencies, undefined);
+    assert.deepEqual(options, { activateStellar: false });
     return result();
   }, async saved => { assert.deepEqual(saved, identity); });
 });

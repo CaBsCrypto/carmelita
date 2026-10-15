@@ -48,6 +48,18 @@ test("onboarding activates only the persisted canonical address and reports veri
   assert.equal(result.signingRequired, false);
 });
 
+test("identity-only onboarding persists wallets and reads activation without reaching the faucet", async () => {
+  const { calls, dependencies } = fixture();
+  const result = await provisionUserWallets(input, dependencies, { activateStellar: false });
+  assert.deepEqual(calls, ["canonical", "persist", "read", "status:pending"]);
+  assert.equal(result.stellar, wallet);
+  assert.equal(result.activation, "pending");
+  assert.equal(result.testnetActivation, null);
+  assert.equal(result.fundsMoved, false);
+  assert.equal(result.signingRequired, false);
+  assert.deepEqual(Object.values(result.preparation).map(family => family.status), ["ready", "ready", "ready"]);
+});
+
 test("uncertain faucet outcome preserves all registered wallets and does not report no funds or activation", async () => {
   const { calls, dependencies } = fixture();
   dependencies.activateStellar = async () => ({ account: absent, activation: "pending", faucetRequested: true,

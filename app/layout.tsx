@@ -10,24 +10,24 @@ import { existingOAuthWalletsRequired } from "./stytch/authorize-with-wallets";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://carmelita.browns.studio"),
-  title: "Carmelita | Wallets and market, in one conversation",
+  title: "Carmelita, your personal agent in ChatGPT",
   description:
-    "Ask about your Testnet wallets, token prices and network TVL in English, Spanish or Portuguese.",
+    "Your activity in one conversation. Connect Carmelita with ChatGPT to check your registered multichain test wallets, recent Carmelita activity and market data. Choose your permissions. Further application connections are in development.",
   openGraph: {
-    title: "Carmelita | Wallets and market, in one conversation",
+    title: "Carmelita, your personal agent in ChatGPT",
     description:
-      "Check Testnet wallets and Mainnet market data with Carmelita.",
+      "Your personal agent for multichain account queries, recent Carmelita activity and market data in ChatGPT. Wallets use Testnet / Devnet. Connect manually and choose your permissions. Further application connections are in development.",
     url: "https://carmelita.browns.studio",
     siteName: "Carmelita",
-    images: [{ url: "/og.png", width: 1536, height: 1024, alt: "Carmelita action flow" }],
+    images: [{ url: "/brand/carmelita-landing-social.png", width: 1200, height: 630, alt: "Carmelita, your activity in one conversation. Illustrative multichain wallet query across five test networks. Application connections are in development." }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Carmelita | Wallets and market, in one conversation",
+    title: "Carmelita, your personal agent in ChatGPT",
     description:
-      "Check Testnet wallets and Mainnet market data with Carmelita.",
-    images: ["/og.png"],
+      "Your activity in one conversation. Check your registered multichain test wallets, recent Carmelita activity and market data through ChatGPT. Connect manually and choose your permissions.",
+    images: ["/brand/carmelita-landing-social.png"],
   },
 };
 

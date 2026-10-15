@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Connect Carmelita with ChatGPT | Carmelita",
-  description: "Create or sign in to Carmelita and ChatGPT, add Carmelita's read-only connection and review your permissions.",
+  description: "Connect your multichain personal agent to ChatGPT. Authorize Carmelita and ask about your registered test-network wallets, recent Carmelita activity and market quotes.",
 };
 
 export default function ConnectChatGPTPage() { return <ConnectionGuide />; }

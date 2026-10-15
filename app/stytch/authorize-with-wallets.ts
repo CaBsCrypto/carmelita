@@ -27,7 +27,8 @@ export async function prepareOAuthWallets(
   }
   // Save the verified identity even when a wallet provider fails; retries reuse this owner.
   await persistProfile(identity);
-  const result = await provision({ userId: identity.id, email: identity.email });
+  // Connecting an app prepares identities; it does not request testnet funding.
+  const result = await provision({ userId: identity.id, email: identity.email }, undefined, { activateStellar: false });
   assertWalletPreparationComplete(result);
 }
 

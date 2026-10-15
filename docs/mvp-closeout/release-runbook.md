@@ -1,5 +1,7 @@
 # Publicación y cierre de referencias
 
+**Registro histórico del 5 de octubre.** Para la candidata actual de landing/propuestas y el control de costes vigente, usar [la preparación del 13 de octubre](../releases/landing-proposals-2026-10-13.md). Los SHA, artefactos y pasos de Preview siguientes no autorizan una nueva publicación ni sirven como referencias vigentes de rollback.
+
 Preparado el 5 de octubre de 2026. Este documento es un procedimiento revisable; A9 no hizo push, merge, deploy, cambios de configuración ni eliminación de ramas. El coordinador ejecuta las operaciones y registra sus resultados.
 
 ## Estado comprobado y alcance
