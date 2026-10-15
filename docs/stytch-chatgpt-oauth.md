@@ -12,12 +12,14 @@ This integration keeps each responsibility separate:
 1. ChatGPT, Codex, Claude, or another MCP client discovers Carmelita's protected-resource metadata.
 2. The client uses Stytch authorization-server metadata and starts Authorization Code + PKCE (`S256`).
 3. Stytch redirects the browser to `https://YOUR_DOMAIN/oauth/authorize`.
-4. The user signs into the existing Carmelita account with Privy and reviews the requested scopes.
-5. Carmelita verifies the Privy access token server-side, ensures a Stytch Consumer user with a hashed Privy external ID, and submits the consent decision to Stytch.
+4. The user signs in with Privy and reviews the requested scopes. Normal registration can create or recover the account; the Tempo existing-wallet demo requires the previously registered wallet families.
+5. Carmelita verifies the Privy access token server-side and ensures a Stytch Consumer user with a hashed Privy external ID. On approval in normal registration, it persists the verified profile and prepares the three canonical wallet families before linking the subject and submitting the consent decision. This OAuth preparation does not request Friendbot funding. Denial does not prepare wallets or link the subject.
 6. Stytch returns an authorization code to the registered chat callback. The chat exchanges it for access and refresh tokens.
 7. The MCP gateway verifies the RS256 signature, issuer, expiration, non-empty client audience, scopes, and subject mapping before invoking any tool.
 
 Connecting is not transaction consent. Wallet signing, transfers, swaps, deposits, and x402 payments remain behind Carmelita's separate policy and approval flow.
+
+The existing-wallet Tempo mode remains read-only during authorization: it validates existing ownership without creating wallets or profiles or requesting activation. Accounts with no wallets or only EVM cannot enroll through that mode. `/login` states the limitation and directs an authenticated user to `/tempo`, avoiding the provisioning bootstrap. Normal registration remains available in an environment configured for that flow; no production flags are changed by these source changes. See [the October 15 acceptance](releases/pr57-new-user-acceptance-2026-10-15.md) for local evidence and the remaining hosted checks.
 
 ## Environment variables
 

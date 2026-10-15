@@ -1,4 +1,5 @@
 import LoginPanel from "./login-panel";
+import { existingOAuthWalletsRequired } from "../wallets/existing-wallet-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -13,5 +14,5 @@ export default function LoginPage() {
       process.env.PRIVY_APP_ID?.trim(),
   );
 
-  return <LoginPanel configured={configured} />;
+  return <LoginPanel configured={configured} existingWalletsOnly={existingOAuthWalletsRequired()} />;
 }

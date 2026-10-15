@@ -108,7 +108,7 @@ try {
   stage = "create disposable database";
   await run(join(bin, "createdb" + extension), ["-h", "127.0.0.1", "-p", String(port), "-U", "qa_administrator", "-O", "qa", "carmelita_proposal_qa"]);
   stage = "independent connection acceptance";
-  const result = await run(process.execPath, ["--import", "tsx", "--test", "tests/proposal-email-postgres.test.ts"], {
+  const result = await run(process.execPath, ["--import", "tsx", "--test", "tests/proposal-email-postgres.test.ts", "tests/proposal-review-postgres.test.ts"], {
     env: {
       ...environment,
       CARMELITA_PROPOSAL_PG_ACCEPTANCE: "true",
