@@ -343,3 +343,41 @@ test("detail shares one total deadline across pages, including an uncooperative 
   } });
   assert.equal(result.code, "bazaar_timeout"); assert.ok(calls <= 2);
 });
+
+
+for (const reason of ["BUYER_ADMISSION_RESTRICTED", "PURCHASE_ADMISSION_CONFIGURATION_INCOMPLETE", "PURCHASES_PAUSED",
+  "X402_PAYMENTS_DISABLED", "X402_CONFIGURATION_INCOMPLETE", "PURCHASES_UNAVAILABLE"]) {
+  test("native admission reason " + reason + " permits list and exact lookup without enabling purchases", async () => {
+    const fetcher: typeof fetch = async () => json(catalog(undefined, { purchasesEnabled: false, purchaseAdmissionReason: reason }));
+    const listing = await listBazaarServices({}, { fetcher });
+    const detail = await getBazaarService("ai-video-scriptwriter", { fetcher });
+    assert.equal(listing.status, "ok"); assert.equal(listing.services.length, 1);
+    assert.equal(detail.status, "ok"); assert.equal(detail.service?.id, "ai-video-scriptwriter");
+    for (const result of [listing, detail]) {
+      assert.equal(result.purchase.enabled, false); assert.equal(result.executionEnabled, false);
+      assert.equal(Object.hasOwn(result, "purchaseAdmissionReason"), false);
+      assert.ok(result.services.every(service => !service.consumable && !service.executionEnabled));
+    }
+  });
+}
+
+test("native admission reason accepts null, undefined and omission as optional metadata", async () => {
+  for (const extra of [{ purchaseAdmissionReason: null }, { purchaseAdmissionReason: undefined }, {}]) {
+    const fetcher: typeof fetch = async () => json(catalog(undefined, { purchasesEnabled: false, ...extra }));
+    for (const result of [await listBazaarServices({}, { fetcher }), await getBazaarService("ai-video-scriptwriter", { fetcher })]) {
+      assert.equal(result.status, "ok"); assert.equal(result.purchase.enabled, false);
+      assert.equal(Object.hasOwn(result, "purchaseAdmissionReason"), false);
+    }
+  }
+});
+
+test("native admission reason rejects unknown codes and keeps the envelope strict", async () => {
+  for (const extra of [{ purchaseAdmissionReason: "FUTURE_UNREVIEWED_REASON" }, { purchaseAdmissionReason: 1 },
+    { purchaseAdmissionReason: "PURCHASES_UNAVAILABLE", privateDebug: "must-not-leak" }]) {
+    const fetcher: typeof fetch = async () => json(catalog(undefined, extra));
+    for (const result of [await listBazaarServices({}, { fetcher }), await getBazaarService("ai-video-scriptwriter", { fetcher })]) {
+      assert.equal(result.status, "unavailable"); assert.equal(result.code, "bazaar_schema_invalid");
+      assert.equal(result.purchase.enabled, false); assert.doesNotMatch(JSON.stringify(result), /must-not-leak/);
+    }
+  }
+});
