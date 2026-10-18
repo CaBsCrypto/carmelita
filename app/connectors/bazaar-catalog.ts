@@ -37,6 +37,9 @@ const nativeServiceSchema = z.object({
 const nativeCatalogSchema = z.object({
   services: z.array(z.unknown()).max(20), nextCursor: cursorSchema.nullable(), partialResults: z.boolean(),
   paused: z.boolean(), purchasesEnabled: z.boolean(), purchaseAdmission: z.enum(["public", "restricted"]),
+  // Validate then discard admission metadata; it cannot enable payments or execution.
+  purchaseAdmissionReason: z.enum(["BUYER_ADMISSION_RESTRICTED", "PURCHASE_ADMISSION_CONFIGURATION_INCOMPLETE",
+    "PURCHASES_PAUSED", "X402_PAYMENTS_DISABLED", "X402_CONFIGURATION_INCOMPLETE", "PURCHASES_UNAVAILABLE"]).nullish(),
   query: z.string().max(200).optional(), ranking: z.object({ version: z.literal("lexical-v1"), ai: z.literal(false) }).strict().optional(),
 }).strict().refine(value => value.nextCursor === null || value.partialResults);
 const localized = z.object({ es: z.string().min(1).max(2000), en: z.string().min(1).max(2000) });

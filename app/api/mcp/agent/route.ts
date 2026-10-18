@@ -1,3 +1,4 @@
+import { registerBazaarNativeReadTools } from "@/app/bazaar/native-read-tools";
 import { readQueryDefinitions } from "@/app/queries/registry";
 import { executeMcpReadQuery } from "@/app/queries/adapters";
 import { createMcpHandler } from "mcp-handler";
@@ -40,6 +41,7 @@ let handler: ReturnType<typeof createMcpHandler> | null = null;
 function getHandler() {
   return (handler ??= createMcpHandler(
     (server) => {
+      registerBazaarNativeReadTools(server);
       for (const query of readQueryDefinitions) {
         server.registerTool(query.toolName, {
           title: query.title, description: query.description,
