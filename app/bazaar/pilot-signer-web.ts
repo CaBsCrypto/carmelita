@@ -148,7 +148,7 @@ export function createPilotWebHandler(deps: Deps = defaults) {
         || !maxTime || !/^\d+$/.test(maxTime) || Number(maxTime)*1000 <= deps.now()) throw Error("pilot_unsigned_authorization_expired");
       await owner.assertCurrent();
       claimed = await deps.store.claim(userId,before,body.nonce as string,"dispatch",digest);
-      const expiresAt = new Date(claimed.approval_expires_at).getTime();
+      const expiresAt = Math.min(new Date(claimed.approval_expires_at).getTime(),Number(maxTime)*1000);
       const signal = AbortSignal.any([request.signal,AbortSignal.timeout(Math.max(1,Math.min(120000,expiresAt-deps.now())))]);
       const result = await owner.signAuthEntry(prepared.authEntry,{address:PILOT_TERMS.payer,networkPassphrase:Networks.TESTNET},{expiresAt,signal,
         assertFreshAction() { if (!deps.enabled() || signal.aborted || deps.now() >= expiresAt) throw Error("pilot_dispatch_approval_expired"); }});
