@@ -1,0 +1,14 @@
+import {Address,Keypair,Networks,SorobanDataBuilder,Transaction,hash,xdr} from '@stellar/stellar-sdk';
+import {PILOT_TERMS,PILOT_RESOURCE,preparePilotUnsigned,bindPilotSignature} from '@/app/bazaar/pilot-signer';
+import {PILOT_ID,pilotHash} from '@/app/bazaar/pilot-signer-store';
+export const syntheticKey=Keypair.fromRawEd25519Seed(Buffer.alloc(32,77));
+export const challenge={x402Version:2,resource:{url:PILOT_RESOURCE,mimeType:'application/json'},accepts:[{scheme:'exact',network:'stellar:testnet',asset:PILOT_TERMS.card.payment.identity.sacContract,amount:'100000',payTo:PILOT_TERMS.card.payment.destination,maxTimeoutSeconds:120,extra:{areFeesSponsored:true,resourceUrl:PILOT_RESOURCE,route:new URL(PILOT_RESOURCE).pathname,method:'POST',operationId:PILOT_ID,cardHash:PILOT_TERMS.cardHash,inputHash:PILOT_TERMS.inputHash}}]};
+export function simulation(transaction:string,fee='587152',ledger=1000){
+ const op=new Transaction(transaction,Networks.TESTNET).operations[0];if(op.type!=='invokeHostFunction')throw Error('SYNTHETIC_OP_INVALID');
+ const entry=new xdr.SorobanAuthorizationEntry({credentials:xdr.SorobanCredentials.sorobanCredentialsAddress(new xdr.SorobanAddressCredentials({address:new Address(PILOT_TERMS.payer).toScAddress(),nonce:xdr.Int64.fromString('42'),signatureExpirationLedger:0,signature:xdr.ScVal.scvVoid()})),rootInvocation:new xdr.SorobanAuthorizedInvocation({function:xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(op.func.invokeContract()),subInvocations:[]})});
+ return {latestLedger:ledger,minResourceFee:fee,transactionData:new SorobanDataBuilder().setResourceFee(fee).build().toXDR('base64'),results:[{auth:[entry.toXDR('base64')],xdr:xdr.ScVal.scvVoid().toXDR('base64')}]};
+}
+export async function preparedFixture(){const p=await preparePilotUnsigned(challenge,async(method,params)=>method==='getLatestLedger'?{sequence:1000}:simulation(String(params.transaction)));
+ const syntheticSignature=syntheticKey.sign(hash(Buffer.from(p.authEntry,'base64')));
+ return {...p,signedAuthorizationTransaction:await bindPilotSignature(p,syntheticSignature.toString('base64'))};}
+export function orderFixture(ownerId='ow_'+ 'a'.repeat(32),phase='delivered') {return {operationId:PILOT_ID,buyerOwnerId:ownerId,sellerOwnerId:'ow_'+'b'.repeat(32),serviceId:PILOT_TERMS.card.id,cardHash:PILOT_TERMS.cardHash,inputHash:PILOT_TERMS.inputHash,card:structuredClone(PILOT_TERMS.card),input:structuredClone(PILOT_TERMS.input),payer:PILOT_TERMS.payer,destination:PILOT_TERMS.card.payment.destination,amount:'0.01',settlement:structuredClone(PILOT_TERMS.card.payment.identity),paymentProtocol:'x402-stellar-exact-v2',phase,...(phase==='awaiting-payment'?{}:{transactionHash:'c'.repeat(64),paymentVerifiedAt:new Date().toISOString()}),...(phase==='delivered'?{delivery:{text:'Synthetic delivery',sha256:pilotHash('Synthetic delivery'),reference:'bazaar-order:'+PILOT_ID}}:{})};}
