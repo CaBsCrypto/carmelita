@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-/** Loading an existing workspace never provisions wallets or requests faucet funds. */
+/** Loading an existing workspace reads its registry without creating or activating wallets. */
 export async function GET(request: Request) {
   let userId: string;
   try { userId = (await verifyPrivyAccessToken(bearerToken(request))).user_id; }
