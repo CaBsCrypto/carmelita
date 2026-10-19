@@ -116,6 +116,7 @@ const preparationCopy = {
 };
 
 type BootstrapResult = {
+  readOnly?: boolean;
   preparation: Record<"stellar" | "evm" | "solana", { status: "ready" | "failed" | "conflict"; error: string | null; retryable: boolean }>;
   user: { id: string; email: string | null };
   profile?: { id: string; email: string | null; status: string };
@@ -409,7 +410,8 @@ function PrivyWorkspace({
       {status === "creating" && <p role="status" className="workspace-notice">{w.preparing}</p>}
       {status === "error" && <div role="alert" className="workspace-notice workspace-warning"><span>{w.failed}</span><button onClick={() => void bootstrap(true)}>{w.retry}</button></div>}
       {partial && status !== "creating" && <div role="status" className="workspace-notice workspace-warning"><span>{w.partial}</span>{Object.values(current.preparation).some(item => item.retryable) && <button onClick={() => void bootstrap(true)}>{w.retry}</button>}</div>}
-      {stellarPrepared && status !== "creating" && <div className={`workspace-notice${activationPending ? " workspace-warning" : ""}`}>
+      {current?.readOnly && status !== "creating" && <p role="status" className="workspace-notice">{w.registryNote}</p>}
+      {stellarPrepared && !current?.readOnly && status !== "creating" && <div className={`workspace-notice${activationPending ? " workspace-warning" : ""}`}>
         <span role="status">{activationPending ? t.stellarPending : t.stellarReady}{current?.testnetActivation?.fundsMoved === null && <> {t.stellarUncertain}</>}</span>
         {activationPending && activationRetryable && <button type="button" disabled={activationRetrySeconds > 0} onClick={() => void bootstrap(true)}>
           {activationRetrySeconds > 0 ? t.retryActivationWait.replace("{seconds}", String(activationRetrySeconds)) : t.retryActivation}

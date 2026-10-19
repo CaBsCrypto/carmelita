@@ -38,18 +38,21 @@ function ExistingPilotSession({language}:{language:"en"|"es"}) {
 }
 function PilotControls({language,getAccessToken}:{language:"en"|"es";getAccessToken:()=>Promise<string|null>}) {
   const t = text[language], active = useRef<AbortController|null>(null), inFlight = useRef(false);
-  const [status,setStatus] = useState<Status|null>(null), [busy,setBusy] = useState(false), [error,setError] = useState(false), [confirmed,setConfirmed] = useState(false);
+  const [status,setStatus] = useState<Status|null>(null), [busy,setBusy] = useState(false), [error,setError] = useState(false), [reviewFailure,setReviewFailure] = useState<string|null>(null), [confirmed,setConfirmed] = useState(false);
   useEffect(() => () => { active.current?.abort(); },[]);
   async function action(kind:"status"|"review"|"challenge"|"sign") {
     if (inFlight.current || window.location.origin !== "https://carmelita.browns.studio") return;
-    const controller = new AbortController(); active.current = controller; inFlight.current = true; setBusy(true); setError(false); setConfirmed(false);
+    const controller = new AbortController(); active.current = controller; inFlight.current = true; setBusy(true); setError(false); setReviewFailure(null); setConfirmed(false);
     try {
       const token = await getAccessToken(); if (!token || controller.signal.aborted) throw Error();
       const body = kind === "status" ? undefined : {action:kind,revision:status?.revision ?? -1,
         ...(kind === "challenge" || kind === "sign" ? {nonce:status?.nonce} : {}),...(kind === "sign" ? {confirmation:"SIGN 0.01 USDC ON STELLAR TESTNET"} : {})};
       const res = await fetch("/api/connections/bazaar-native/pilot",{method:body ? "POST":"GET",headers:{Authorization:"Bearer "+token,...(body ? {"Content-Type":"application/json"} : {})},
         ...(body ? {body:JSON.stringify(body)} : {}),redirect:"error",cache:"no-store",signal:AbortSignal.any([controller.signal,AbortSignal.timeout(60000)])});
-      const result = await res.json(); if (!res.ok || typeof result.state !== "string" || !Number.isSafeInteger(result.revision)) throw Error();
+      const result = await res.json();
+      if (kind === "review" && !res.ok && result.reviewFailure && typeof result.reviewFailure.code === "string"
+        && /^[a-z_]{1,80}$/.test(result.reviewFailure.code) && !controller.signal.aborted) setReviewFailure(result.reviewFailure.code);
+      if (!res.ok || typeof result.state !== "string" || !Number.isSafeInteger(result.revision)) throw Error();
       if (!controller.signal.aborted) setStatus(previous => ({...result,signingEnabled:result.signingEnabled ?? previous?.signingEnabled,schemaReady:result.schemaReady ?? previous?.schemaReady}));
     } catch { if (!controller.signal.aborted) { setError(true); setStatus(previous => previous ? {...previous,nonce:undefined} : null); } }
     finally { if (!controller.signal.aborted) { inFlight.current=false; active.current=null; setBusy(false); } }
@@ -67,6 +70,7 @@ function PilotControls({language,getAccessToken}:{language:"en"|"es";getAccessTo
     <label><input type="checkbox" checked={confirmed} disabled={busy || !enabled || status?.state !== "challenge-bound"} onChange={event => setConfirmed(event.target.checked)} /> {t.confirm}</label>
     <button className={styles.primary} type="button" disabled={busy || !enabled || !confirmed || status?.state !== "challenge-bound" || !status.nonce} onClick={() => void action("sign")}>{t.sign}</button>
     <p role="alert">{error ? t.error:""}</p>
+    {reviewFailure ? <details className={styles.hint}><summary>{language === "es" ? "Detalles de la revisión" : "Review details"}</summary><p>{language === "es" ? "La revisión se detuvo antes de preparar una firma." : "Review stopped before preparing a signature."}</p><code>{reviewFailure}</code></details> : null}
     <HandoffControls language={language} getAccessToken={getAccessToken} />
   </div>;
 }

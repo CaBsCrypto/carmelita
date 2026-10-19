@@ -14,6 +14,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/** Loading an existing workspace never provisions wallets or requests faucet funds. */
+export async function GET(request: Request) {
+  let userId: string;
+  try { userId = (await verifyPrivyAccessToken(bearerToken(request))).user_id; }
+  catch { return NextResponse.json({ error: "authentication_required" }, { status: 401, headers: { "Cache-Control": "no-store" } }); }
+  try {
+    if (!hasDatabase()) throw Error("database_not_configured");
+    if (!existingOAuthWalletsRequired()) return NextResponse.json({
+      user: { id: userId }, mode: "provisioning-allowed",
+    }, { headers: { "Cache-Control": "no-store" } });
+    const [{ readExistingWorkspaceWallets }, { listPersistedUserWallets }] = await Promise.all([
+      import("@/app/wallets/existing-workspace"), import("@/app/multichain-account"),
+    ]);
+    const { withPersonalPanelReadDeadline } = await import("@/app/queries/personal-panels");
+    return NextResponse.json(await withPersonalPanelReadDeadline(() => readExistingWorkspaceWallets(userId, listPersistedUserWallets)),
+      { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({ error: "existing_wallets_unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+}
+
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") ?? "";
   return authorization.startsWith("Bearer ")
