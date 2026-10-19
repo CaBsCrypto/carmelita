@@ -1,4 +1,4 @@
-// Test-only entrypoint for npm run test:bazaar:handoff. Production never imports
+// Test-only entrypoint for the direct Node handoff test command. Production never imports
 // this file. The immutable payer and derived intent hash are replaced solely
 // in the two signer modules; no signature-verification bypass is installed.
 import {registerHooks,createRequire} from 'node:module';
