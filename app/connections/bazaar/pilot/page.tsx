@@ -6,17 +6,18 @@ import Link from "next/link";
 import { useLocale } from "@/app/language-toggle";
 import { useConnectionEnvironment } from "@/app/connect-chatgpt/connection-environment";
 import styles from "../link.module.css";
+import { HandoffControls } from "./handoff-controls";
 
 type Status = { state: string; revision: number; nonce?: string; signingEnabled?: boolean; schemaReady?: boolean; approvalExpiresAt?: string };
 const text = {
   en: {title:"Bazaar Testnet signing pilot",intro:"Review an exact 0.01 USDC authorization using your existing Carmelita wallet and connected Bazaar agent.",
     back:"Connections",session:"Return with your existing signed-in Carmelita account and linked Bazaar agent.",check:"Check signer status",review:"Review exact terms",challenge:"Prepare unsigned authorization",sign:"Authorize one signature",busy:"Checking…",
-    disabled:"Signing is disabled. Publishing this page does not authorize spending.",terms:"Stellar Testnet · 0.01 USDC · marketplace fee 0. Network fees must be sponsored, capped at 1,000,000 stroops; this wallet does not authorize an XLM fee. This page cannot create an order or submit a payment. A separately authorized new order must already exist before unsigned preparation.",
-    confirm:"I authorize one signature for this exact Testnet transfer. I understand an uncertain response must not be retried.",error:"The action could not be confirmed. Check status; do not repeat a signature.",status:"Signer state",uncertain:"This operation is locked. Do not retry; inspect the existing operation.",signed:"One verified signature is stored privately. No payment has been submitted.",expires:"Approval expires",existing:"This pilot uses the existing wallet only; it does not create or fund wallets."},
+    disabled:"Signing is disabled. Publishing this page does not authorize spending.",terms:"Stellar Testnet · 0.01 USDC · marketplace fee 0. Network fees must be sponsored, capped at 1,000,000 stroops; this wallet does not authorize an XLM fee. Signing does not submit payment. Submission below requires a separate approval and feature flag; no action creates an order. A separately authorized new order must already exist before unsigned preparation.",
+    confirm:"I authorize one signature for this exact Testnet transfer. I understand an uncertain response must not be retried.",error:"The action could not be confirmed. Check status; do not repeat a signature.",status:"Signer state",uncertain:"This operation is locked. Do not retry; inspect the existing operation.",signed:"One verified signature is stored privately. Payment requires the separate approval below.",expires:"Approval expires",existing:"This pilot uses the existing wallet only; it does not create or fund wallets."},
   es: {title:"Piloto de firma Testnet de Bazaar",intro:"Revisa una autorización exacta de 0,01 USDC con tu wallet existente de Carmelita y tu agente de Bazaar conectado.",
     back:"Conexiones",session:"Vuelve con tu cuenta existente de Carmelita con sesión iniciada y tu agente de Bazaar vinculado.",check:"Comprobar firmante",review:"Revisar términos exactos",challenge:"Preparar autorización sin firma",sign:"Autorizar una firma",busy:"Comprobando…",
-    disabled:"La firma está desactivada. Publicar esta página no autoriza gastos.",terms:"Stellar Testnet · 0,01 USDC · comisión del marketplace 0. La tarifa de red debe estar patrocinada, con techo de 1.000.000 stroops; esta wallet no autoriza una tarifa XLM. Esta página no crea pedidos ni envía pagos. Debe existir previamente un pedido nuevo autorizado por separado.",
-    confirm:"Autorizo una firma para esta transferencia exacta en Testnet. Entiendo que una respuesta incierta no debe repetirse.",error:"No se confirmó la acción. Comprueba el estado; no repitas una firma.",status:"Estado del firmante",uncertain:"La operación está bloqueada. No reintentes; inspecciona la operación existente.",signed:"Una firma verificada quedó guardada en privado. No se envió ningún pago.",expires:"Vence la aprobación",existing:"Este piloto usa sólo la wallet existente; no crea ni fondea wallets."},
+    disabled:"La firma está desactivada. Publicar esta página no autoriza gastos.",terms:"Stellar Testnet · 0,01 USDC · comisión del marketplace 0. La tarifa de red debe estar patrocinada, con techo de 1.000.000 stroops; esta wallet no autoriza una tarifa XLM. La firma no envía pagos. El envío de abajo exige aprobación y activación separadas; ninguna acción crea pedidos. Debe existir previamente un pedido nuevo autorizado por separado.",
+    confirm:"Autorizo una firma para esta transferencia exacta en Testnet. Entiendo que una respuesta incierta no debe repetirse.",error:"No se confirmó la acción. Comprueba el estado; no repitas una firma.",status:"Estado del firmante",uncertain:"La operación está bloqueada. No reintentes; inspecciona la operación existente.",signed:"Una firma verificada quedó guardada en privado. El pago exige la aprobación separada de abajo.",expires:"Vence la aprobación",existing:"Este piloto usa sólo la wallet existente; no crea ni fondea wallets."},
 };
 export default function PilotSignerPage() {
   const { locale, setLocale } = useLocale(), language = locale === "es" ? "es" : "en", t = text[language];
@@ -66,5 +67,6 @@ function PilotControls({language,getAccessToken}:{language:"en"|"es";getAccessTo
     <label><input type="checkbox" checked={confirmed} disabled={busy || !enabled || status?.state !== "challenge-bound"} onChange={event => setConfirmed(event.target.checked)} /> {t.confirm}</label>
     <button className={styles.primary} type="button" disabled={busy || !enabled || !confirmed || status?.state !== "challenge-bound" || !status.nonce} onClick={() => void action("sign")}>{t.sign}</button>
     <p role="alert">{error ? t.error:""}</p>
+    <HandoffControls language={language} getAccessToken={getAccessToken} />
   </div>;
 }
