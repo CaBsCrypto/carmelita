@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import {createPilotWebHandler} from '@/app/bazaar/pilot-signer-web';
 import {PILOT_TERMS,PILOT_RESOURCE,pilotCanonical} from '@/app/bazaar/pilot-signer';
 import {PILOT_ID,PILOT_INTENT_HASH,pilotHash,pilotCipher,type PilotRow} from '@/app/bazaar/pilot-signer-store';
-import {challenge,simulation,orderFixture,preparedFixture} from './bazaar-pilot-handoff-fixture';
+import {challenge,simulation,orderFixture} from './bazaar-pilot-handoff-fixture';
 const identity={role:'agent',network:'stellar:testnet',ownerId:'ow_'+'a'.repeat(32),workspaceId:'11111111-1111-4111-8111-111111111111',agentId:'ag_synthetic',generation:1};
 const userId='did:privy:synthetic-owner',walletId='synthetic-wallet',connectionReferenceHash='b'.repeat(64),nonce='c'.repeat(43);
 const connection=pilotHash(pilotCanonical({userId,walletId,...identity,connectionReferenceHash}));
 async function harness(options:{sign?:boolean;identityFailure?:'401'|'generation';badOwner?:boolean;badChallenge?:boolean;changedLink?:boolean;lostClaim?:boolean}={}) {
  const cipher=pilotCipher(userId,()=>Buffer.alloc(32,11)),calls:string[]=[],claims:string[]=[];
- let row:PilotRow={operation_id:PILOT_ID,user_id:userId,wallet_id:walletId,intent_hash:PILOT_INTENT_HASH,connection_hash:connection,state:options.sign?'challenge-bound':'review',revision:0,nonce_hash:pilotHash(nonce),approval_expires_at:new Date(Date.now()+120000).toISOString(),payload_encrypted:cipher.seal(options.sign?await preparedFixture():{}),dispatch_digest:null,claimed_at:null};
+ let row:PilotRow={operation_id:PILOT_ID,user_id:userId,wallet_id:walletId,intent_hash:PILOT_INTENT_HASH,connection_hash:connection,state:options.sign?'challenge-bound':'review',revision:0,nonce_hash:pilotHash(nonce),approval_expires_at:new Date(Date.now()+120000).toISOString(),payload_encrypted:cipher.seal({}),dispatch_digest:null,claimed_at:null};
  const handler=createPilotWebHandler({verifyUser:async()=>userId,wallet:async()=>walletId,
   owner:async()=>({userId,walletId,identity,connectionReferenceHash,agentToken:'z'.repeat(43),assertCurrent:async()=>{if(options.changedLink)throw Error('pilot_agent_link_changed');},signAuthEntry:async()=>{throw Error('REAL_SIGN_FORBIDDEN');}} as never),
   store:{read:async()=>structuredClone(row),claim:async(_u:string,before:PilotRow,_n:string,kind:string)=>{assert.equal(row.revision,before.revision);assert.equal(row.state,kind==='challenge'?'review':'challenge-bound');row={...row,state:kind==='challenge'?'challenge-claimed':'dispatch-claimed',revision:row.revision+1};claims.push(kind);if(options.lostClaim)throw Error('LOST_CLAIM_ACK');return structuredClone(row);},finish:async(_u:string,_b:PilotRow,state:PilotRow['state'],encrypted:string,hash:string)=>{row={...row,state,payload_encrypted:encrypted,nonce_hash:hash,revision:row.revision+1};return row;}} as never,
