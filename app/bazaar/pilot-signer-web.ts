@@ -141,7 +141,7 @@ export function createPilotWebHandler(deps: Deps = defaults) {
       }
       if (!before) throw Error("pilot_review_required");
       const channel = transport(deps,owner,AbortSignal.any([request.signal,AbortSignal.timeout(45000)]));
-      await channel.identity(); await owner.assertCurrent();
+      await owner.assertCurrent();
       if (!deps.enabled()) throw Error("pilot_signing_disabled");
       if (action === "challenge") {
         claimed = await deps.store.claim(userId,before,body.nonce as string,"challenge");
@@ -150,6 +150,9 @@ export function createPilotWebHandler(deps: Deps = defaults) {
         const row = await deps.store.finish(userId,claimed,"challenge-bound",cipher.seal(prepared),pilotHash(nonce)); claimed = undefined;
         return response({...publicState(row),nonce,authorizationFingerprint:assertPilotPreimage(prepared),ready:false,submitsPayments:false});
       }
+      // Native challenge reads authenticate their own AGENT. Before any signing
+      // RPC or wallet use, independently revalidate the exact current identity.
+      await channel.identity(); await owner.assertCurrent();
       const prepared = cipher.open(before.payload_encrypted) as PreparedPilot, digest = assertPilotPreimage(prepared);
       // Reapproval never extends the exact unsigned authorization's lifetime.
       // One read-only current ledger prevents signing an already expired auth.
