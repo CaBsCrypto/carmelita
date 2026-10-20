@@ -8,6 +8,7 @@ import { useLocale } from "@/app/language-toggle";
 import { useConnectionEnvironment } from "@/app/connect-chatgpt/connection-environment";
 import { requestExistingBazaarLink, type LinkOutcome } from "./link-request";
 import styles from "./link.module.css";
+import { BazaarWorkspace } from "./bazaar-workspace";
 
 const copy = {
   en: { title: "Connect your Bazaar agent", intro: "Connect an existing Bazaar agent to view your own order history in Carmelita.", back: "Connections", language: "Language", waiting: "Checking your Carmelita session…", signIn: "Sign in to Carmelita", signedOut: "Use your existing Carmelita account to continue.", unavailable: "Sign-in is unavailable for this connection. Return with an existing Carmelita session.", token: "Bazaar agent access", hint: "Paste the agent access from Bazaar’s Connect My Agent section.", privacy: "Use your agent access. Keep your recovery file and wallet keys private.", connect: "Connect agent", working: "Checking your agent…", help: "Open Bazaar", permissions: "This connection checks your agent and saves its access privately. Linking does not make a purchase.", connected: "Bazaar agent connected. You can ask Carmelita for your order history.", "invalid-token": "That access could not be verified as a Bazaar agent. Check the agent access in Bazaar and paste it again.", "sign-in": "Your session needs sign-in. Sign in to the same Carmelita account and return here.", "owner-mismatch": "This Carmelita account already has a different Bazaar link, or this access is older. Keep the existing link and check your current agent in Bazaar.", capacity: "Bazaar is temporarily limiting requests. Your access was cleared; try later.", unconfirmed: "The connection could not be confirmed. Your access was cleared. Check the connection from your agent before trying again.", origin: "Open this page on carmelita.browns.studio before connecting.", cleared: "The access is cleared from this form after every attempt.", session: "Using your signed-in Carmelita account." },
@@ -35,7 +36,7 @@ function PrivyLinkSession({ language, safeSignInAvailable }: { language: Languag
     ? <button className={styles.primary} type="button" onClick={() => login()}>{t.signIn}</button>
     : <p role="status">{t.unavailable}</p>}</div>;
   // A user change remounts the secret field and aborts any prior owner's request.
-  return <SecretLinkForm key={user.id} language={language} getAccessToken={getAccessToken} />;
+  return <div key={user.id}><SecretLinkForm language={language} getAccessToken={getAccessToken} /><BazaarWorkspace language={language} getAccessToken={getAccessToken} /></div>;
 }
 function SecretLinkForm({ language, getAccessToken }: { language: Language; getAccessToken: () => Promise<string | null> }) {
   const t = copy[language], field = useRef<HTMLInputElement>(null), active = useRef<AbortController | null>(null), inFlight = useRef(false);
