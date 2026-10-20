@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {createBazaarNativeReadAdapter, type BazaarBinding} from "../app/bazaar/native-read";
+import {createBazaarWorkspaceReadAdapter as createBazaarNativeReadAdapter, type BazaarBinding} from "../app/bazaar/workspace-read-adapter";
+import {createBazaarNativeReadAdapter as createLegacyReadAdapter} from "../app/bazaar/native-read";
 import {reviewZeroFeeCard} from "../app/bazaar/zero-fee-review";
 import {createWorkspaceReadHandler, WORKSPACE_READ_PATH} from "../app/bazaar/workspace-read-web";
 import {requestWorkspaceRead} from "../app/connections/bazaar/workspace-request";
@@ -112,4 +113,10 @@ test("cancelled web reads stop before opening secrets or making remote calls", a
   const f = fixture(), abort = new AbortController(); abort.abort();
   await assert.rejects(createBazaarNativeReadAdapter({...f.deps, signal: abort.signal}).preflight(), /read_unconfirmed/);
   assert.equal(f.secrets, 0); assert.equal(f.calls.length, 0);
+});
+test("web catalogue, identity and owner history preserve the accepted native read contract", async () => {
+  const legacy = createLegacyReadAdapter(fixture().deps), web = createBazaarNativeReadAdapter(fixture().deps);
+  assert.deepEqual(await web.catalog({limit: 5}), await legacy.catalog({limit: 5}));
+  assert.deepEqual(await web.preflight(), await legacy.preflight());
+  assert.deepEqual(await web.history({limit: 1}), await legacy.history({limit: 1}));
 });

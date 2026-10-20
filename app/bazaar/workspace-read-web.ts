@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createBazaarNativeReadAdapter, type NativeReadDependencies } from "./native-read";
+import { createBazaarWorkspaceReadAdapter, type NativeReadDependencies } from "./workspace-read-adapter";
 import { existingBazaarConnectionStore } from "./native-connection-store";
 
 export const WORKSPACE_READ_PATH = "/api/connections/bazaar-native/read";
@@ -12,7 +12,7 @@ const inputSchema = z.discriminatedUnion("action", [
   z.object({action: z.literal("review"), serviceId: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/), cardHash: z.string().regex(/^[a-f0-9]{64}$/), catalogCursor: z.string().regex(/^[A-Za-z0-9_-]{1,512}$/).optional()}).strict(),
 ]);
 export type WorkspaceReadInput = z.infer<typeof inputSchema>;
-type Adapter = ReturnType<typeof createBazaarNativeReadAdapter>;
+type Adapter = ReturnType<typeof createBazaarWorkspaceReadAdapter>;
 export type WorkspaceCatalog = Awaited<ReturnType<Adapter["catalog"]>>;
 export type WorkspaceHistory = Awaited<ReturnType<Adapter["history"]>>;
 export type WorkspaceReview = Awaited<ReturnType<Adapter["review"]>>;
@@ -48,7 +48,7 @@ export function createWorkspaceReadHandler(deps: Dependencies = defaults) {
       } finally { clearTimeout(timer); await reader.cancel().catch(() => {}); reader.releaseLock(); chunks.forEach(c => c.fill(0)); }
     } catch { return reply({error: "invalid_read_input"}, 400); }
     try {
-      const adapter = createBazaarNativeReadAdapter({...deps.adapter(userId), signal: request.signal});
+      const adapter = createBazaarWorkspaceReadAdapter({...deps.adapter(userId), signal: request.signal});
       const value = input.action === "identity" ? await adapter.preflight()
         : input.action === "catalog" ? await adapter.catalog({limit: 5, ...(input.cursor ? {cursor: input.cursor} : {})})
         : input.action === "history" ? await adapter.history({limit: 1, ...(input.cursor ? {cursor: input.cursor} : {})})
