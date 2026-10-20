@@ -19,9 +19,13 @@ function fixture(options: {fee?: number | null; foreign?: boolean; revoke?: bool
       const url = new URL(String(target)), body = init?.body ? JSON.parse(String(init.body)) : null;
       calls.push({path: url.pathname, query: url.search, tool: body?.params?.name});
       assert.equal(init?.redirect, "error"); assert.equal(init?.cache, "no-store");
-      if (url.pathname !== "/api/mcp") assert.equal(new Headers(init?.headers).has("authorization"), false);
+      if (url.pathname !== "/api/mcp" && url.pathname !== "/api/market/orders") assert.equal(new Headers(init?.headers).has("authorization"), false);
       if (url.pathname === "/api/integration") return Response.json({version: "bazaar.integration/v1", endpoints: {mcp: {path: "/api/mcp"}, catalogue: {path: "/api/market/catalog"}, orders: {path: "/api/market/orders"}}, transport: {testedMcpProtocolVersion: "2024-11-05"}, identity: {ownerAssignedByServer: true, authenticatedRoleField: "role"}});
       if (url.pathname === "/api/market/catalog") return Response.json({services: [{card, cardHash: hash(card), status: "activated"}], partialResults: true, paused: false, nextCursor: "next_catalog"});
+      if (url.pathname === "/api/market/orders") {
+        assert.equal(init?.method,"GET");assert.equal(url.searchParams.get("limit"),"1");assert.equal(new Headers(init?.headers).get("authorization"),"Bearer "+"a".repeat(43));
+        return Response.json({orders:[{operationId:"11111111-1111-4111-8111-111111111111",serviceId:"service-a",buyerOwnerId:options.foreign?"other":binding.ownerId,sellerOwnerId:"seller",perspective:"purchase",phase:"delivered",paymentVerifiedAt:"2026-10-20T00:00:00Z",transactionHash:"a".repeat(64)}],partialResults:true,nextCursor:"next_history"});
+      }
       assert.equal(url.pathname, "/api/mcp");
       if (body.method === "notifications/initialized") return new Response(null, {status: 202});
       let result: unknown;
@@ -49,7 +53,7 @@ test("web session composes native identity, catalogue, zero-fee review and owner
     if (input.action === "review") {assert.equal(body.value.feeBps, 0); assert.equal(body.value.grossAtoms, "100000"); assert.equal(body.value.sellerAtoms, "100000"); assert.equal(body.value.orderCreated, false);}
     if (input.action === "history") {assert.equal(body.value.partialResults, true); assert.equal(body.value.nextCursor.ownerId, binding.ownerId); assert.equal(body.value.independentlyVerifiedChainPayment, false);}
   }
-  assert.ok(f.calls.every(c => ["/api/integration", "/api/market/catalog", "/api/mcp"].includes(c.path)));
+  assert.ok(f.calls.every(c => ["/api/integration", "/api/market/catalog", "/api/mcp", "/api/market/orders"].includes(c.path)));
 });
 test("any nonzero or absent commission profile blocks review before reading the service", async () => {
   for (const fee of [150, null]) {

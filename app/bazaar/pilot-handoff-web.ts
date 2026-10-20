@@ -103,9 +103,12 @@ export function createHandoffHandler(deps:Deps=defaults) {
       const fresh=()=>{ if ((!recovering&&!deps.enabled())||signal.aborted||deps.now()>=expiresAt) throw Error("handoff_approval_expired"); };
       fresh();await owner.assertCurrent();fresh();
       claimed=await deps.store.claim(userId,before,body.nonce as string,recovering);
-      // A duplicate caller can lose this CAS, but cannot spend an additional
-      // native identity read. Unknown identity after the claim stays locked.
-      await transport.identity();await owner.assertCurrent();fresh();
+      // This same-owner destination request authenticates the current AGENT and
+      // generation before reading an order or contacting a financial provider.
+      // A separate identity GET cannot eliminate the intervening revocation race.
+      // Keep the local owner/wallet/link check and one-use claim; a rejected or
+      // uncertain native response stays claimed and never retries automatically.
+      await owner.assertCurrent();fresh();
       if (recovering) {
         const observation=await transport.recover(fresh);
         if (payload.observation) {

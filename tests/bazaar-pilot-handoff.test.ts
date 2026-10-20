@@ -22,8 +22,8 @@ test("handoff route cannot accept another operation or implicit payment authoriz
   assert.equal((await disabled(new Request(origin))).status,401);
 });
 function request(action?:string,revision=-1,nonce?:string) {return new Request(origin,{method:action?"POST":"GET",headers:{Authorization:"Bearer synthetic.session",...(action?{Origin:"https://carmelita.browns.studio","Content-Type":"application/json"}:{})},...(action?{body:JSON.stringify({action,revision,confirmation:action.includes("recover")?RECOVERY_CONFIRMATION:HANDOFF_CONFIRMATION,...(nonce?{nonce}:{})})}:{})});}
-async function harness(options:{lost?:"claim"|"dispatch"|"finish"|"submit";enabled?:boolean;badReceipt?:boolean;advance?:"simulation"|"ownership";recoveryPhase?:string}={}) {
-  const prepared=await preparedFixture();let now=Date.now(),row:HandoffRow|null=null,ownership=0;const calls:string[]=[],statements:Array<{sql:string;params:unknown[]}>=[];
+async function harness(options:{lost?:"claim"|"dispatch"|"finish"|"submit";enabled?:boolean;badReceipt?:boolean;advance?:"simulation"|"ownership";recoveryPhase?:string;nativeStatus?:401|404}={}) {
+  const prepared=await preparedFixture();let now=Date.now(),row:HandoffRow|null=null,ownership=0,linkChanged=false;const calls:string[]=[],statements:Array<{sql:string;params:unknown[]}>=[];
   const store=createHandoffStore(async(sql,params)=>{
     statements.push({sql,params});if (sql.startsWith("SELECT")) return row&&params[1]===row.user_id?[structuredClone(row)]:[];
     if (sql.startsWith("INSERT")) {if (row) return [];row={operation_id:PILOT_ID,user_id:String(params[1]),wallet_id:String(params[2]),intent_hash:PILOT_INTENT_HASH,connection_hash:String(params[4]),state:"approved",revision:0,nonce_hash:String(params[5]),approval_expires_at:new Date(now+120000).toISOString(),payload_encrypted:String(params[6]),payload_hash:null,recovery_count:0};return [structuredClone(row)];}
@@ -35,17 +35,17 @@ async function harness(options:{lost?:"claim"|"dispatch"|"finish"|"submit";enabl
     return [structuredClone(row)];
   });
   const signerRow:PilotRow={operation_id:PILOT_ID,user_id:userId,wallet_id:walletId,intent_hash:PILOT_INTENT_HASH,connection_hash:connection,state:"signed",revision:9,nonce_hash:"d".repeat(64),approval_expires_at:new Date(now+120000).toISOString(),payload_encrypted:signerCipher.seal(prepared),dispatch_digest:pilotHash(prepared.authEntry),claimed_at:new Date(now).toISOString()};
-  const handler=createHandoffHandler({verifyUser:async token=>token==="other.session"?"did:privy:other":userId,wallet:async()=>walletId,owner:async()=>({userId,walletId,identity,agentToken:"z".repeat(43),connectionReferenceHash,assertCurrent:async()=>{ownership++;if(options.advance==="ownership"&&ownership===2)now=authorizationDeadline(prepared)+1;}}),store,
+  const handler=createHandoffHandler({verifyUser:async token=>token==="other.session"?"did:privy:other":userId,wallet:async()=>walletId,owner:async()=>({userId,walletId,identity,agentToken:"z".repeat(43),connectionReferenceHash,assertCurrent:async()=>{if(linkChanged)throw Error("LINK_CHANGED");ownership++;if(options.advance==="ownership"&&ownership===2)now=authorizationDeadline(prepared)+1;}}),store,
     signer:{read:async()=>signerRow} as never,cipher:()=>cipher,signerCipher:()=>signerCipher,now:()=>now,enabled:()=>options.enabled!==false,
     fetcher:async(target,init)=>{const url=String(target);calls.push(url);assert.notEqual(url.includes("31c97193-be74-4b9d-b0a3-f3890b0a41e8"),true);assert.notEqual(url.includes("reconcile"),true);
       if (url.endsWith("/api/account/identity")) return Response.json(identity);
       if (url==="https://soroban-testnet.stellar.org/") {const body=JSON.parse(String(init?.body));assert.equal(body.method,"simulateTransaction");assert.equal(body.params.transaction,prepared.signedAuthorizationTransaction);if(options.advance==="simulation")now=authorizationDeadline(prepared)+1;return Response.json({jsonrpc:"2.0",id:1,result:simulation(body.params.transaction,"600000",1001)});}
       if (url===PILOT_RESOURCE) {assert.equal(init?.method,"POST");assert.equal(init?.body,"{}");const packet=decodePaymentSignatureHeader(new Headers(init?.headers).get("payment-signature")!);assert.equal(Object.keys(packet.payload).join(","),"transaction");assert.equal(pilotCanonical(packet.accepted),pilotCanonical(prepared.challenge.accepts[0]));
-        if(options.lost==="submit")throw Error("LOST_PAYMENT_ACK");const order=orderFixture(identity.ownerId),receipt={success:true,network:"stellar:testnet" as const,payer:PILOT_TERMS.payer,transaction:options.badReceipt?"e".repeat(64):order.transactionHash!};return Response.json({order,statusUrl:PILOT_TERMS.origin+"/api/market/orders/"+PILOT_ID},{headers:{"payment-response":encodePaymentResponseHeader(receipt)}});}
+        if(options.nativeStatus)return Response.json({error:{code:"UNAUTHORIZED"}},{status:options.nativeStatus});if(options.lost==="submit")throw Error("LOST_PAYMENT_ACK");const order=orderFixture(identity.ownerId),receipt={success:true,network:"stellar:testnet" as const,payer:PILOT_TERMS.payer,transaction:options.badReceipt?"e".repeat(64):order.transactionHash!};return Response.json({order,statusUrl:PILOT_TERMS.origin+"/api/market/orders/"+PILOT_ID},{headers:{"payment-response":encodePaymentResponseHeader(receipt)}});}
       if(url===PILOT_TERMS.origin+"/api/market/orders/"+PILOT_ID){assert.equal(init?.method,"GET");return Response.json({order:orderFixture(identity.ownerId,options.recoveryPhase??"delivered")});}throw Error("UNEXPECTED_TRANSPORT");},
   });
   async function call(action?:string,revision=-1,nonce?:string) {const res=await handler(request(action,revision,nonce));return {status:res.status,body:await res.json()};}
-  return {handler,call,calls,statements,store,prepared,get row(){return row;}};
+  return {handler,call,calls,statements,store,prepared,changeLink(){linkChanged=true;},get row(){return row;}};
 }
 fixtureTest("real SDK synthetic payer/preimage/signature, exact x402 packet and fee/sponsorship perimeter",async()=>{
   const p=await preparedFixture();await validateSignedPilot(p);const packet=paymentFromSignedSimulation(p,simulation(p.signedAuthorizationTransaction,"999900",1001),Date.now());
@@ -60,7 +60,7 @@ fixtureTest("owner route signed simulation -> sole signed POST -> receipt/delive
   const [a,b]=await Promise.all([h.call("submit",approval.body.revision,approval.body.nonce),h.call("submit",approval.body.revision,approval.body.nonce)]);
   assert.equal([a,b].filter(r=>r.status===200).length,1);const done=[a,b].find(r=>r.status===200)!;assert.equal(done.body.observation.receiptObserved,true);assert.equal(done.body.observation.deliveryObserved,true);
   assert.equal(h.calls.filter(s=>s===PILOT_RESOURCE).length,1);assert.equal(h.calls.filter(s=>s==="https://soroban-testnet.stellar.org/").length,1);
-  assert.equal(h.calls.filter(s=>s.endsWith("/api/account/identity")).length,1);
+  assert.equal(h.calls.filter(s=>s.endsWith("/api/account/identity")).length,0);
   const snapshot=await h.call();assert.equal(snapshot.body.state,"observed");assert.equal(JSON.stringify(snapshot).includes("signedAuthorizationTransaction"),false);assert.equal(JSON.stringify(snapshot).includes("z".repeat(43)),false);
   assert.equal((await h.call("submit",snapshot.body.revision,approval.body.nonce)).status,409);
 });
@@ -71,7 +71,7 @@ fixtureTest("lost SQL claim/dispatch ACK never dispatches payment; lost finish/s
 fixtureTest("lost payment ACK: explicit new read nonce recovers delivery without signing/resending",async()=>{
   const h=await harness({lost:"submit"}),a=await h.call("approve");assert.equal((await h.call("submit",a.body.revision,a.body.nonce)).status,409);
   assert.equal(h.row?.state,"submit-claimed");const read=await h.call("approve-recovery",h.row!.revision);assert.equal(read.status,200);const before=h.calls.length;
-  const recovered=await h.call("recover",read.body.revision,read.body.nonce);assert.equal(recovered.status,200);assert.equal(h.calls.length-before,2);assert.equal(recovered.body.observation.deliveryObserved,true);assert.equal(recovered.body.observation.receiptObserved,false);
+  const recovered=await h.call("recover",read.body.revision,read.body.nonce);assert.equal(recovered.status,200);assert.equal(h.calls.length-before,1);assert.equal(recovered.body.observation.deliveryObserved,true);assert.equal(recovered.body.observation.receiptObserved,false);
   assert.equal(recovered.body.paymentReadOnly,true);assert.equal(recovered.body.mayResumeDelivery,true);assert.equal(recovered.body.readOnly,undefined);
   assert.equal(h.calls.filter(s=>s===PILOT_RESOURCE).length,1);assert.equal(h.calls.some(s=>s.includes("reconcile")),false); const recoveredCallCount=h.calls.length; assert.equal((await h.call("approve-recovery",h.row!.revision)).status,409); assert.equal(h.calls.length,recoveredCallCount);
 });
@@ -93,4 +93,16 @@ fixtureTest("owner isolation, authenticated cipher, exact SQL scope and protecte
   const privateStatus=await h.handler(new Request(origin,{headers:{Authorization:"Bearer other.session"}})),otherStatus=await privateStatus.json();assert.equal(otherStatus.state,"not-prepared");assert.equal(otherStatus.observation,undefined);
   const badOrigin=new Request(origin+"?token=never",{headers:{Authorization:"Bearer synthetic.session"}});assert.equal((await h.handler(badOrigin)).status,403);
   await h.call("submit",a.body.revision,a.body.nonce);const claims=h.statements.filter(s=>s.sql.includes("SET state=$8"));assert.match(claims[0].sql,/nonce_hash=\$7 AND state=\$9 AND approval_expires_at>clock_timestamp/);assert.equal(claims[0].params[0],PILOT_ID);
+});
+
+fixtureTest("native token rejection stays claimed without a redundant identity GET or retry",async()=>{
+  for(const nativeStatus of [401,404] as const){const h=await harness({nativeStatus}),a=await h.call("approve");
+    const r=await h.call("submit",a.body.revision,a.body.nonce);assert.equal(r.status,409);assert.equal(h.row?.state,"submit-claimed");
+    assert.equal(h.calls.filter(x=>x.endsWith("/api/account/identity")).length,0);assert.equal(h.calls.filter(x=>x===PILOT_RESOURCE).length,1);
+    const n=h.calls.length;assert.equal((await h.call("submit",h.row!.revision,a.body.nonce)).status,409);assert.equal(h.calls.length,n);
+  }
+});
+fixtureTest("changed local owner link blocks all native traffic before financial dispatch",async()=>{
+  const h=await harness(),a=await h.call("approve");h.changeLink();assert.equal((await h.call("submit",a.body.revision,a.body.nonce)).status,409);
+  assert.equal(h.calls.length,0);
 });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createBazaarWorkspaceReadAdapter, type NativeReadDependencies } from "./workspace-read-adapter";
 import { existingBazaarConnectionStore } from "./native-connection-store";
+import { createBazaarWebHistory } from "./workspace-history-web";
 
 export const WORKSPACE_READ_PATH = "/api/connections/bazaar-native/read";
 const origin = "https://carmelita.browns.studio";
@@ -51,7 +52,7 @@ export function createWorkspaceReadHandler(deps: Dependencies = defaults) {
       const adapter = createBazaarWorkspaceReadAdapter({...deps.adapter(userId), signal: request.signal});
       const value = input.action === "identity" ? await adapter.preflight()
         : input.action === "catalog" ? await adapter.catalog({limit: 5, ...(input.cursor ? {cursor: input.cursor} : {})})
-        : input.action === "history" ? await adapter.history({limit: 1, ...(input.cursor ? {cursor: input.cursor} : {})})
+        : input.action === "history" ? await createBazaarWebHistory({...deps.adapter(userId), signal: request.signal})({...(input.cursor ? {cursor:input.cursor} : {})})
         : await adapter.review({serviceId: input.serviceId, cardHash: input.cardHash, ...(input.catalogCursor ? {catalogCursor: input.catalogCursor} : {})});
       return reply({action: input.action, value});
     } catch (error) {
