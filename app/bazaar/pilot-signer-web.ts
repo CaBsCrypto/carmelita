@@ -29,6 +29,9 @@ const defaults: Deps = {
   enabled: () => process.env.CARMELITA_BAZAAR_PILOT_SIGNING_ENABLED === "true", now: Date.now,
 };
 type Json = Record<string, unknown>;
+const reviewErrors = new Set(["pilot_existing_wallet_required","pilot_wallet_not_owned","pilot_existing_agent_link_required",
+  "pilot_agent_link_changed","pilot_owner_changed","pilot_encryption_unavailable","pilot_state_changed","pilot_journal_invalid",
+  "pilot_review_conflict_no_retry","bazaar_native_link_required","bazaar_native_secret_unavailable","bazaar_native_secret_invalid"]);
 function object(value: unknown): Json { if (!value || typeof value !== "object" || Array.isArray(value)) throw Error("pilot_input_invalid"); return value as Json; }
 function exact(value: Json, keys: string[]) { if (Object.keys(value).sort().join(",") !== keys.sort().join(",")) throw Error("pilot_input_invalid"); }
 function publicState(row: PilotRow | null) { return row ? { state:row.state,revision:row.revision,approvalExpiresAt:new Date(row.approval_expires_at).toISOString(),signatureStored:row.state === "signed" } : {state:"not-prepared",revision:-1,signatureStored:false}; }
@@ -97,6 +100,8 @@ export function createPilotWebHandler(deps: Deps = defaults) {
     try { userId = await deps.verifyUser(bearer.slice(7)); if (!/^did:privy:.+/.test(userId)) throw Error(); }
     catch { return response({error:"pilot_session_required"},401); }
     let claimed: PilotRow | undefined;
+    let review = false;
+    let stage = "input";
     try {
       assertPilotTerms();
       if (request.method === "GET") {
@@ -109,6 +114,7 @@ export function createPilotWebHandler(deps: Deps = defaults) {
       if (request.headers.has("content-encoding") || !/^application\/json(?:;|$)/i.test(request.headers.get("content-type") ?? "")) throw Error("pilot_input_invalid");
       const body = object(await json(new Response(request.body,{headers:{"content-type":"application/json"}}),4096,AbortSignal.any([request.signal,AbortSignal.timeout(10000)])));
       const action = body.action;
+      review = action === "review";
       if (!["review","challenge","sign"].includes(String(action))) throw Error("pilot_input_invalid");
       if (action === "review") exact(body,["action","revision"]);
       else exact(body,action === "sign" ? ["action","revision","nonce","confirmation"] : ["action","revision","nonce"]);
@@ -116,13 +122,18 @@ export function createPilotWebHandler(deps: Deps = defaults) {
       if (action !== "review" && (!deps.enabled() || body.revision === -1)) throw Error("pilot_signing_disabled");
       if (action !== "review" && (typeof body.nonce !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(body.nonce))) throw Error("pilot_input_invalid");
       if (action === "sign" && body.confirmation !== confirmation) throw Error("pilot_explicit_confirmation_required");
-      const walletId = await deps.wallet(userId), owner = await deps.owner(bearer.slice(7),walletId);
+      stage = "wallet-registration";
+      const walletId = await deps.wallet(userId);
+      stage = "owner-link";
+      const owner = await deps.owner(bearer.slice(7),walletId);
       if (owner.userId !== userId || owner.walletId !== walletId) throw Error("pilot_owner_changed");
       const connection = pilotHash(pilotCanonical({userId,walletId,...owner.identity,connectionReferenceHash:owner.connectionReferenceHash})), cipher = deps.cipher(userId);
+      stage = "journal-read";
       const before = await deps.store.read(userId);
       if (before && (before.wallet_id !== walletId || before.connection_hash !== connection || before.revision !== body.revision)
         || !before && body.revision !== -1) throw Error("pilot_state_changed");
       if (action === "review") {
+        stage = "review-write";
         const nonce = randomBytes(32).toString("base64url");
         const row = before?.state === "challenge-bound" ? await deps.store.approve(userId,before,pilotHash(nonce))
           : await deps.store.review(userId,walletId,connection,pilotHash(nonce),cipher.seal({intentHash:PILOT_INTENT_HASH,identity:owner.identity}),Number(body.revision));
@@ -155,10 +166,12 @@ export function createPilotWebHandler(deps: Deps = defaults) {
       const signedAuthorizationTransaction = await bindPilotSignature(prepared,result.signedAuthEntry);
       const row = await deps.store.finish(userId,claimed,"signed",cipher.seal({...prepared,signedAuthorizationTransaction}),claimed.nonce_hash); claimed = undefined;
       return response({...publicState(row),ready:false,submitsPayments:false,requiresSeparatePaymentIntegration:true});
-    } catch {
+    } catch (cause) {
       // A lost claim/finish ACK can already have committed: never replay or reset.
       // Even a pre-dispatch failure after the durable claim permanently stops signing.
-      return response({error:claimed ? "pilot_action_uncertain_no_retry" : "pilot_action_not_confirmed",readStatusBeforeAnyNextAction:true,automaticRetry:false},409);
+      const code = cause instanceof Error && reviewErrors.has(cause.message) ? cause.message : "pilot_review_unavailable";
+      return response({error:claimed ? "pilot_action_uncertain_no_retry" : "pilot_action_not_confirmed",
+        ...(review && !claimed ? {reviewFailure:{stage,code}} : {}),readStatusBeforeAnyNextAction:true,automaticRetry:false},409);
     }
   };
 }

@@ -80,15 +80,22 @@ export async function requestWalletBootstrap<Result extends { user?: { id?: stri
   return withSessionDeadline(owner, timeoutMs, async signal => {
     const token = await sessionAbortable(getAccessToken, signal);
     if (!token) throw new Error("authentication_required");
-    const response = await sessionAbortable(() => fetcher("/api/agent/bootstrap", {
-      method: "POST", signal,
-      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    const headers = { Authorization: "Bearer " + token, "Content-Type": "application/json" };
+    let response = await sessionAbortable(() => fetcher("/api/agent/bootstrap", {
+      method: "GET", signal, cache: "no-store", headers,
     }), signal);
-    const body = await sessionAbortable(() => response.json(), signal);
+    let body = await sessionAbortable(() => response.json(), signal);
+    if (!response.ok) throw new Error(body.error ?? "wallet_bootstrap_failed");
+    if (body.user?.id !== expectedOwner) throw new Error("wallet_response_mismatch");
+    // Only the authenticated server can select legacy provisioning. Read failures never fall back to it.
+    if (body.mode === "provisioning-allowed") {
+      response = await sessionAbortable(() => fetcher("/api/agent/bootstrap", { method: "POST", signal, headers }), signal);
+      body = await sessionAbortable(() => response.json(), signal);
+    }
     if (!response.ok) throw new Error(body.error ?? "wallet_bootstrap_failed");
     if (body.user?.id !== expectedOwner) throw new Error("wallet_response_mismatch");
     // Refresh the SDK identity under the same budget before publishing prepared-wallet state.
-    await sessionAbortable(refreshUser, signal);
+    if (body.readOnly !== true) await sessionAbortable(refreshUser, signal);
     signal.throwIfAborted();
     return body as Result;
   });

@@ -10,13 +10,18 @@ export type PilotRow = { operation_id: string; user_id: string; wallet_id: strin
 export type PilotQuery = (query: string, params: unknown[]) => Promise<unknown[]>;
 const columns = "operation_id,user_id,wallet_id,intent_hash,connection_hash,state,revision,nonce_hash,approval_expires_at,payload_encrypted,dispatch_digest,claimed_at";
 const table = "public.agent_bazaar_pilot_signer";
-function requiredKey() {
-  const encoded = process.env.CONNECTOR_ENCRYPTION_KEY ?? "";
-  if (!/^[A-Za-z0-9+/]{43}=$/.test(encoded)) throw Error("pilot_encryption_unavailable");
+export function decodePilotRootKey(value: string | undefined) {
+  const encoded = value?.trim() ?? "";
+  // The existing connector accepts Node's base64/base64url forms. Keep the same
+  // 32 root bytes, while rejecting noncanonical or silently truncated input.
+  if (!/^(?:[A-Za-z0-9+/]{43}=?|[A-Za-z0-9_-]{43})$/.test(encoded)) throw Error("pilot_encryption_unavailable");
   const key = Buffer.from(encoded, "base64");
-  if (key.length !== 32 || key.toString("base64") !== encoded) throw Error("pilot_encryption_unavailable");
+  if (key.length !== 32 || ![key.toString("base64"), key.toString("base64").replace(/=$/, ""), key.toString("base64url")].includes(encoded)) {
+    key.fill(0); throw Error("pilot_encryption_unavailable");
+  }
   return key;
 }
+function requiredKey() { return decodePilotRootKey(process.env.CONNECTOR_ENCRYPTION_KEY); }
 /** Own HKDF namespace + owner/operation AAD; never encrypt a JWT/agent token. */
 export function pilotCipher(userId: string, existingKey: () => Buffer = requiredKey) {
   const context = Buffer.from(JSON.stringify(["carmelita.bazaar-pilot/v1", userId, PILOT_ID, PILOT_INTENT_HASH]));

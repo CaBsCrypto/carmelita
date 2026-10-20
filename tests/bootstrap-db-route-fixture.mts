@@ -3,6 +3,15 @@ import { mock } from "node:test";
 
 let provisions = 0;
 let providerId = "did:privy:fixture";
+mock.module(new URL("../app/multichain-account.ts", import.meta.url).href, {
+  namedExports: { listPersistedUserWallets: async () => [
+    { id: "fixture-wallet", userId: "did:privy:fixture", address: "fixture-address", chainType: "stellar", network: "stellar:testnet", status: "active" },
+    { id: "another-wallet", userId: "did:privy:other", address: "another-address", chainType: "stellar", network: "stellar:testnet", status: "active" },
+  ] },
+});
+mock.module(new URL("../app/queries/personal-panels.ts", import.meta.url).href, {
+  namedExports: { withPersonalPanelReadDeadline: async (read: () => Promise<unknown>) => read() },
+});
 mock.module(new URL("../app/wallets/onboarding.ts", import.meta.url).href, {
   namedExports: { provisionUserWallets: async () => {
     provisions++;
@@ -20,7 +29,7 @@ mock.module(new URL("../app/privy-stellar.ts", import.meta.url).href, {
     verifyPrivyAccessToken: async () => ({ user_id: "did:privy:fixture" }),
   },
 });
-const { POST } = await import("../app/api/agent/bootstrap/route");
+const { POST, GET } = await import("../app/api/agent/bootstrap/route");
 const response = await POST(new Request("https://preview.test/api/agent/bootstrap", {
   method: "POST", headers: { origin: "https://preview.test", host: "preview.test", authorization: "Bearer fixture" },
 }));
@@ -48,3 +57,10 @@ const existingOnly = await POST(new Request("https://production.test/api/agent/b
 assert.equal(existingOnly.status, 409);
 assert.deepEqual(await existingOnly.json(), { error: "existing_wallets_only", next: "/tempo" });
 assert.equal(provisions, 1, "production Tempo cannot call wallet provisioning or Friendbot through bootstrap");
+const existingRead = await GET(new Request("https://production.test/api/agent/bootstrap", {headers:{authorization:"Bearer fixture"}}));
+assert.equal(existingRead.status,200);
+const existingBody = await existingRead.json();
+assert.equal(existingBody.readOnly,true);assert.equal(existingBody.wallet.id,"fixture-wallet");
+assert.equal(existingBody.fundsMoved,false);assert.equal(existingBody.account,null);
+assert.equal(provisions,1,"GET cannot create or activate wallets");
+assert.equal(existingRead.headers.get("cache-control"),"no-store");
