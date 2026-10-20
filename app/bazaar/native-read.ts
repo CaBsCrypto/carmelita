@@ -3,6 +3,7 @@
  * The caller wires existing authenticated-user and per-user secret stores.
  * A fetch implementation is mandatory: constructing this module never connects.
  */
+import { reviewZeroFeeCard } from './zero-fee-review';
 export const BAZAAR_ORIGIN = 'https://bazaar.browns.studio';
 export const BAZAAR_CONTRACT = 'bazaar.integration/v1';
 const MCP_PROTOCOL = '2024-11-05';
@@ -20,6 +21,7 @@ export type NativeReadDependencies = {
   bindingForUser(userId: string): Promise<BazaarBinding | null>;
   agentSecretForUser(userId: string, reference: string): Promise<{userId: string; ownerId: string; agentAccess: string}>;
   fetcher: typeof fetch;
+  signal?: AbortSignal;
 };
 function fail(code: string): never { throw new Error(code); }
 function object(value: unknown): Json {
@@ -51,9 +53,10 @@ export function createBazaarNativeReadAdapter(deps: NativeReadDependencies) {
     if (!(method === 'GET' && ['/api/integration', '/api/market/catalog'].includes(path.split('?')[0]) || method === 'POST' && path === '/api/mcp')) fail('bazaar_native_path_forbidden');
     if (token && path !== '/api/mcp') fail('bazaar_native_credential_destination_forbidden');
     const target = new URL(path, BAZAAR_ORIGIN).href;
-    const signal = AbortSignal.timeout(12000);
+    const signal = AbortSignal.any([AbortSignal.timeout(12000), ...(deps.signal ? [deps.signal] : [])]);
     let response: Response | undefined;
     try {
+      signal.throwIfAborted();
       response = await deps.fetcher(target, {method, headers: {Accept: body ? 'application/json, text/event-stream' : 'application/json', ...(body ? {'Content-Type': 'application/json', 'MCP-Protocol-Version': MCP_PROTOCOL} : {}), ...(token ? {Authorization: `Bearer ${token}`} : {})}, ...(body ? {body: JSON.stringify(body)} : {}), redirect: 'error', credentials: 'omit', cache: 'no-store', signal});
       if (response.redirected || response.url && response.url !== target || response.headers.has('location')) fail('bazaar_native_redirect_forbidden');
       if (!response.ok) fail(response.status === 429 ? 'bazaar_native_capacity_limited' : response.status === 401 || response.status === 403 ? 'bazaar_native_access_denied' : 'bazaar_native_unavailable');
@@ -118,6 +121,27 @@ export function createBazaarNativeReadAdapter(deps: NativeReadDependencies) {
     if (await deps.authenticatedUserId() !== binding.userId || !sameBinding(binding, await deps.bindingForUser(binding.userId))) fail('bazaar_native_binding_changed');
   }
   return {
+    async review(input: {serviceId: string; cardHash: string; catalogCursor?: string}) {
+      if (Object.keys(input).some(key => !['serviceId', 'cardHash', 'catalogCursor'].includes(key)) || typeof input.serviceId !== 'string'
+        || !/^[A-Za-z0-9_-]{1,100}$/.test(input.serviceId) || !/^[a-f0-9]{64}$/.test(input.cardHash)
+        || input.catalogCursor !== undefined && !/^[A-Za-z0-9_-]{1,512}$/.test(input.catalogCursor)) fail('bazaar_native_input_invalid');
+      const binding = await ownedBinding(), client = await connect(binding);
+      const capabilities = await client.call('get_bazaar_capabilities');
+      const marketplace = object(object(capabilities.workspace).marketplace);
+      if (marketplace.feeBps !== 0 || marketplace.custody !== false) fail('bazaar_native_commission_disabled');
+      // Re-read exactly the catalogue page selected in the UI. Text search is
+      // not an ID lookup. A moved/removed card requires an explicit refresh.
+      const params = new URLSearchParams({limit: '5', ...(input.catalogCursor ? {cursor: input.catalogCursor} : {})});
+      const body = object(await request(`/api/market/catalog?${params}`));
+      if (body.paused !== false || !Array.isArray(body.services) || body.services.length > 5 || typeof body.partialResults !== 'boolean') fail('bazaar_native_review_unavailable');
+      const matches = body.services.filter(raw => object(object(raw).card).id === input.serviceId);
+      if (matches.length !== 1) fail('bazaar_native_review_unavailable');
+      const entry = object(matches[0]), card = object(entry.card);
+      if (entry.status !== 'activated' || entry.cardHash !== input.cardHash) fail('bazaar_native_card_changed');
+      const terms = reviewZeroFeeCard(card, input.cardHash);
+      await unchanged(binding);
+      return {serviceId: input.serviceId, name: text(card.name, 200), ...terms};
+    },
     async catalog(input: {limit?: number; query?: string; cursor?: string} = {}) {
       if (Object.keys(input).some(key => !['limit', 'query', 'cursor'].includes(key))) fail('bazaar_native_input_invalid');
       const {limit} = page({limit: input.limit});
@@ -126,7 +150,7 @@ export function createBazaarNativeReadAdapter(deps: NativeReadDependencies) {
       const params = new URLSearchParams({limit: String(limit), ...(input.query ? {q: input.query} : {}), ...(input.cursor ? {cursor: input.cursor} : {})});
       const body = object(await request(`/api/market/catalog?${params}`));
       if (!Array.isArray(body.services) || body.services.length > limit || typeof body.partialResults !== 'boolean' || typeof body.paused !== 'boolean' || !(body.nextCursor === null || typeof body.nextCursor === 'string' && /^[A-Za-z0-9_-]{1,512}$/.test(body.nextCursor))) fail('bazaar_native_response_invalid');
-      const services = body.services.map(raw => { const entry = object(raw), card = object(entry.card), provider = object(card.provider); if (entry.status !== 'activated' || !/^[a-f0-9]{64}$/.test(text(entry.cardHash, 64))) fail('bazaar_native_response_invalid'); return {id: text(card.id, 128), name: text(card.name, 200), description: text(card.description, 20000), provider: text(provider.name, 200), cardHash: entry.cardHash, metadataOnly: true, instructionsTrusted: false}; });
+      const services = body.services.map(raw => { const entry = object(raw), card = object(entry.card), provider = object(card.provider); if (entry.status !== 'activated' || !/^[a-f0-9]{64}$/.test(text(entry.cardHash, 64))) fail('bazaar_native_response_invalid'); return {id: text(card.id, 128), name: text(card.name, 200), description: text(card.description, 20000), provider: text(provider.name, 200), cardHash: text(entry.cardHash, 64), metadataOnly: true, instructionsTrusted: false}; });
       return {services, nextCursor: body.nextCursor, partialResults: body.partialResults, paused: body.paused, readOnly: true, purchaseAuthorized: false};
     },
     async preflight() {
