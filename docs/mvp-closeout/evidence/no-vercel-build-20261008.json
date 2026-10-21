@@ -1,0 +1,22 @@
+{
+  "checkedAtUtc": "2026-10-08T01:14:40.0427634-03:00",
+  "mainSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "productionDeploymentId": "dpl_GpjPYjyeXDwhrwZMiwRzRRVcAaeH",
+  "productionHealth": {
+    "CheckedAtUtc": "2026-10-08T01:14:40.0427634-03:00",
+    "Status": "ok",
+    "Maintenance": false,
+    "Deployment": {
+      "environment": "production",
+      "gitCommitSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+      "url": "https://agente-asistente-rm2lirlnj-cabscryptocontacto-6028s-projects.vercel.app"
+    }
+  },
+  "previewDeploymentsDisabled": true,
+  "ignoredBuildStep": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] && exit 1 || exit 0",
+  "buildMachineType": "standard",
+  "buildMachineSelection": "fixed",
+  "elasticConcurrencyEnabled": false,
+  "newVercelDeploymentRecordsAfterBranchPushAndPrCreation": 0,
+  "scope": "Current production and latest deployment identity compared with pre-closeout baseline; no billing quota or billed CPU totals inferred."
+}

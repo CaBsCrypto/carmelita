@@ -1,0 +1,101 @@
+{
+  "startedAtUtc": "2026-10-08T04:02:14.455Z",
+  "completedAtUtc": "2026-10-08T04:02:40.846Z",
+  "baseSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "sourceSha": "caa3cd3757dbe6e2473bc78eeedca45ee2bb1542",
+  "nodeVersion": "v24.14.0",
+  "command": "node node_modules/tsx/dist/cli.mjs --test --test-reporter=tap --test-concurrency=4 tests/oauth-direct-registration.test.ts tests/oauth-wallet-preparation.test.ts tests/oauth-wallet-onboarding.test.ts tests/stellar-auto-activation.test.ts tests/stellar-activation-onboarding.test.ts tests/stytch-oauth-resource.test.ts tests/stytch-connected-app-revocation.test.ts tests/session-request.test.ts tests/session-recovery.test.ts tests/session-close.test.ts tests/chat-owner-session.test.ts tests/personal-read-store.test.ts tests/personal-query-parity.test.ts",
+  "exitCode": 0,
+  "counts": {
+    "tests": 114,
+    "suites": 0,
+    "pass": 114,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "testFiles": [
+    "tests/oauth-direct-registration.test.ts",
+    "tests/oauth-wallet-preparation.test.ts",
+    "tests/oauth-wallet-onboarding.test.ts",
+    "tests/stellar-auto-activation.test.ts",
+    "tests/stellar-activation-onboarding.test.ts",
+    "tests/stytch-oauth-resource.test.ts",
+    "tests/stytch-connected-app-revocation.test.ts",
+    "tests/session-request.test.ts",
+    "tests/session-recovery.test.ts",
+    "tests/session-close.test.ts",
+    "tests/chat-owner-session.test.ts",
+    "tests/personal-read-store.test.ts",
+    "tests/personal-query-parity.test.ts"
+  ],
+  "failedTests": [],
+  "scope": "Existing deterministic local tests with fixtures and mocked providers; no production mutation or outage injection.",
+  "limitations": [
+    "Does not prove human ChatGPT mobile acceptance.",
+    "Does not prove live OAuth cancellation, provider revocation, or reconnection from ChatGPT.",
+    "Does not prove two live accounts are isolated end-to-end.",
+    "Does not prove Friendbot or Horizon continuous availability.",
+    "Does not prove restoration of Neon or Privy accounts.",
+    "Does not approve hosted publication or a Vercel build."
+  ],
+  "branchEquivalence": {
+    "PR43": [
+      "- feeb797ded0fa7305d25e2dd46aa4644fef1708a"
+    ],
+    "PR44": [
+      "- feeb797ded0fa7305d25e2dd46aa4644fef1708a",
+      "- 022a41a9abb88e29207d2d7b88991667d1d54d5f",
+      "- 70bf2a8aaecce902e442adb8d50adac303dc416c"
+    ],
+    "PR45": [
+      "- feeb797ded0fa7305d25e2dd46aa4644fef1708a",
+      "- 385f4878d44baff0417cece5d35170b5262fef9e"
+    ]
+  },
+  "recoveryAdaptationSha": "8c5b11f73f15f5d5add3f5f23ddd01fabf2db6c0",
+  "qualityCheck": {
+    "file": ".github/workflows/quality.yml",
+    "context": "local-quality"
+  },
+  "historicalPrCoverage": {
+    "startedAtUtc": "2026-10-08T04:03:28.979Z",
+    "completedAtUtc": "2026-10-08T04:03:36.280Z",
+    "command": "node node_modules/tsx/dist/cli.mjs --test --test-reporter=tap --test-concurrency=4 tests/pilot-market-regressions.test.ts tests/market-source-links.test.ts tests/market-channel-parity.test.ts tests/registry-wallet-model.test.ts tests/market-chain-comparison.test.ts tests/market-data-format.test.ts",
+    "exitCode": 0,
+    "counts": {
+      "tests": 53,
+      "suites": 0,
+      "pass": 53,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "testFiles": [
+      "tests/pilot-market-regressions.test.ts",
+      "tests/market-source-links.test.ts",
+      "tests/market-channel-parity.test.ts",
+      "tests/registry-wallet-model.test.ts",
+      "tests/market-chain-comparison.test.ts",
+      "tests/market-data-format.test.ts"
+    ],
+    "failedTests": [],
+    "note": "Focused tests establish current replacement coverage for PR36/43-45; PR36 itself remains non-patch-equivalent and must not be merged wholesale.",
+    "adaptedMarketCommits": [
+      "7eb9fb443548265b381903f04909a098c13adcbc",
+      "a8e211af4962862d56bc54082a62c5023b8f4ec4",
+      "3608e7c26abad5b8382b59cc560422de3d8313e2"
+    ]
+  },
+  "combinedCounts": {
+    "tests": 167,
+    "suites": 0,
+    "pass": 167,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  }
+}

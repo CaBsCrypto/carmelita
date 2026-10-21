@@ -1,0 +1,36 @@
+{
+  "conclusion": "success",
+  "created_at": "2026-10-08T04:13:26Z",
+  "head_sha": "bbdf8136485794c392a6b8b281730b285234cea7",
+  "html_url": "https://github.com/CaBsCrypto/carmelita/actions/runs/37726445279",
+  "id": 37726445279,
+  "status": "completed",
+  "updated_at": "2026-10-08T04:17:02Z",
+  "check": "local-quality",
+  "command": "npm run qa:local",
+  "node": "24.14.0",
+  "npm": "11.6.1",
+  "graphToolingTests": {
+    "fail": 0,
+    "pass": 7,
+    "skipped": 0
+  },
+  "applicationTests": {
+    "fail": 0,
+    "skipped": 2,
+    "pass": 1048,
+    "total": 1050,
+    "skippedLiveProbes": [
+      "Avalanche MCP",
+      "Dexalot"
+    ]
+  },
+  "checksPassed": [
+    "graph tooling",
+    "lint",
+    "application suite",
+    "Next.js build and type checking"
+  ],
+  "hostedVercelBuild": false,
+  "evidenceScope": "Approved initial documentation revision. Later evidence-only commits must pass the same required check; final SHA and result are recorded in PR56."
+}

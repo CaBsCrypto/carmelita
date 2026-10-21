@@ -1,114 +1,79 @@
-# Privy + Stellar Testnet
+# Privy, cinco redes y activación Stellar Testnet
 
-The public /agent experience uses Privy native Stellar support with @stellar/stellar-sdk. Privy creates the user-owned wallet; the authenticated user drives Testnet setup through the chat.
+Estado documentado el **8 de octubre de 2026**, sobre `main` productivo `caa3cd3757dbe6e2473bc78eeedca45ee2bb1542`. Carmelita prepara wallets de la identidad autenticada tanto desde su web como durante la autorización OAuth iniciada desde ChatGPT. No exige un ingreso web anterior para que una identidad nueva pueda registrarse y preparar sus wallets.
 
-## Current architecture
+## Una identidad, tres familias de wallets
 
-~~~mermaid
-sequenceDiagram
-    participant U as User
-    participant P as Privy
-    participant A as Carmelita
-    participant H as Stellar Horizon
-    U->>P: Sign in with Google or email
-    P-->>U: Access token
-    U->>A: Open authenticated agent
-    A->>P: Verify token and resolve user
-    A->>P: Get or create user-owned Stellar wallet
-    A->>H: Read account and balances
-    A-->>U: Wallet-ready chat
-    U->>A: Recarga mi wallet con XLM de Testnet
-    A->>H: Call Friendbot only if the account is absent
-    H-->>A: Activated account and fake Testnet XLM
-    A-->>U: Updated status and explorer receipt
-~~~
-
-- Privy authenticates the user and verifies the access token server-side.
-- @privy-io/node lists and creates wallets with chain type stellar.
-- The authenticated Privy user owns the wallet.
-- A deterministic external ID and SDK idempotency key prevent duplicate wallets.
-- Login creates the wallet identity but does not request Testnet funds.
-- The chat calls Friendbot only when the user requests Testnet XLM and the account does not already exist.
-- Horizon is the source of truth for account existence, balances and trustlines.
-- @stellar/stellar-sdk constructs transactions and submits only after explicit approval.
-
-There is no application-generated password and no seed phrase shown during signup. The orchestration layer does not need the private key.
-
-## Chat-native onboarding
-
-Use these messages in order, or ask for the next step at any time:
-
-~~~text
-Dame mi wallet
-Recarga mi wallet con XLM de Testnet
-Activa XLM
-Activa USDC
-¿Cuál es el siguiente paso de configuración Testnet?
-Deposita 1 XLM en DeFindex Testnet
-~~~
-
-The state machine is on-chain, not a fragile checklist:
-
-1. **Wallet:** the agent resolves the wallet linked to the current Privy user.
-2. **Testnet XLM:** if the account is absent, the agent asks Friendbot to create and fund it. If it already exists, the agent does not call Friendbot again.
-3. **XLM activation:** XLM is native, so no separate trustline exists. The agent reports the current account state.
-4. **USDC activation:** the agent prepares the trustline for the exact issuer required by the DeFindex vault. The user reviews and signs with Privy.
-5. **USDC funding:** a compatible distributor is still required. The agent never substitutes another asset with the same code.
-6. **DeFindex:** the agent prepares the deposit from text; the user approves the exact transaction before submission.
-
-The same commands are recognized in English, Spanish and Portuguese.
-
-## What is implemented
-
-- Privy Google/email authentication.
-- Server-side access-token verification.
-- Automatic, duplicate-resistant Stellar wallet provisioning.
-- Chat-requested Stellar Testnet account funding.
-- Live wallet, XLM and exact USDC trustline status.
-- Exact DeFindex USDC trustline preparation.
-- DeFindex XLM and USDC deposit preparation.
-- Transaction-specific Privy signing and signature verification.
-- Horizon submission, durable receipt and idempotent retry handling.
-- Mainnet disabled.
-
-## Acceptance proof (DeFindex XLM completed)
-
-The DeFindex XLM path is proven: a user completed a Privy-confirmed 1 XLM deposit, explorer-verifiable (transaction hash), with a replay-safe receipt returned on retry without a second submission. Items 2–4 below are done.
-
-Remaining to round out the onboarding evidence:
-
-1. A recorded text-only onboarding capturing the wallet before and after chat-requested Friendbot funding.
-2. ~~A Privy-confirmed DeFindex XLM transaction.~~ Done.
-3. ~~The explorer-verifiable transaction receipt.~~ Done.
-4. ~~A retry that returns the same stored receipt without a second submission.~~ Done.
-
-A funded exact-issuer USDC distributor is separately required before claiming an end-to-end USDC deposit.
-
-## Environment
-
-~~~dotenv
-NEXT_PUBLIC_PRIVY_APP_ID=your-app-id
-PRIVY_APP_ID=your-app-id
-PRIVY_APP_SECRET=your-app-secret
-NEXT_PUBLIC_PRIVY_CLIENT_ID=optional-client-id
-~~~
-
-NEXT_PUBLIC_PRIVY_APP_ID and PRIVY_APP_ID normally refer to the same application. PRIVY_APP_SECRET must never reach a Client Component, log, screenshot or commit.
-
-## Multichain direction
-
-| Wallet family | Networks | Status |
+| Familia | Redes registradas | Direcciones |
 | --- | --- | --- |
-| Stellar | Stellar Testnet, later Mainnet | Active now |
-| Ethereum/EVM | Base, BNB Chain, Avalanche and other EVM networks | Disabled, future |
-| Solana/SVM | Solana and SVM networks | Disabled, future |
+| EVM | Avalanche Fuji, Base Sepolia y BNB Testnet | Una misma dirección EVM para las tres redes |
+| Solana | Solana Devnet | Dirección propia de Solana |
+| Stellar | Stellar Testnet | Dirección propia de Stellar |
 
-This is one identity with multiple potential wallets, not one universal address or key. The YC MVP intentionally creates only the Stellar wallet.
+Cinco asociaciones de red no significan cinco direcciones distintas. La provisión recupera wallets existentes con claves de idempotencia y valida su propietario; no sustituye direcciones al reconectar. Preparar y registrar EVM o Solana no implica financiar esas redes.
 
-## Safety boundary
+Privy verifica la identidad y custodia las wallets del usuario. Carmelita persiste las asociaciones en Neon y vincula el sujeto OAuth a la identidad verificada. El correo sirve para el registro autenticado; no se usa como sustituto del propietario verificado ni para adjudicar wallets ajenas.
 
-- Chat text can request data, funding and transaction preparation.
-- Friendbot is Testnet-only and provides no real value.
-- Login never authorizes a transaction.
-- Trustlines and deposits require transaction-specific Privy confirmation.
-- Mainnet remains disabled until the Testnet proof has deterministic tests, observable failures and a documented recovery path.
+## Activación automática de Stellar
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant C as Carmelita
+    participant P as Privy
+    participant D as Registro y reserva
+    participant H as Horizon Testnet
+    participant F as Friendbot Testnet
+    U->>C: Ingresar o autorizar OAuth
+    C->>P: Verificar identidad y resolver wallets
+    P-->>C: Wallets propias existentes o nuevas
+    C->>D: Persistir la dirección Stellar canónica
+    C->>H: Consultar esa misma cuenta
+    alt Cuenta existente
+        H-->>C: Cuenta activa
+    else Ausencia confirmada
+        C->>D: Reservar el intento por propietario y dirección
+        C->>H: Reconciliar antes de financiar
+        C->>F: Activar la misma dirección con XLM Testnet si sigue ausente
+        C->>H: Confirmar existencia de la cuenta
+    else Lectura indisponible
+        C-->>U: Registro conservado; activación no comprobada
+    end
+    C-->>U: Redes registradas y estado comprobado o pendiente
+```
+
+La preparación autorizada sigue este orden:
+
+1. Recupera o crea las wallets propias y persiste la identidad canónica antes de solicitar fondos.
+2. Consulta la dirección Stellar en Horizon Testnet. Una cuenta existente no requiere otro Friendbot. Una lectura fallida o desconocida tampoco autoriza financiación.
+3. Sólo una ausencia confirmada permite reservar un intento y solicitar XLM Testnet al Friendbot oficial para **esa misma dirección**. Antes de solicitar, reconcilia otra vez por si un intento anterior ya tuvo éxito.
+4. Consulta Horizon después del intento. Sólo existencia confirmada permite informar `active`; un HTTP exitoso del faucet o una dirección válida no bastan.
+5. Conserva el registro y expresa pendiente o indisponible si falta confirmación. Las reservas persistentes, la actualización condicional y el plazo de reintento evitan un segundo envío inmediato ante solicitudes simultáneas o una respuesta perdida.
+
+La activación depende de Privy, persistencia, Horizon y Friendbot. El flujo tiene plazos acotados; no promete disponibilidad instantánea permanente. Una indisponibilidad debe mostrar el estado real y permitir recuperación posterior con la misma dirección. Las consultas MCP son de lectura: preguntar por una wallet no crea otra ni financia una cuenta por sí solo.
+
+## Registro, activación y saldo son estados distintos
+
+- **Registrada:** Carmelita tiene una asociación persistida y perteneciente a la identidad verificada. La cobertura de cinco redes describe ese registro.
+- **Activa en Stellar:** una lectura actual de Horizon confirma existencia de la cuenta. Un estado legacy almacenado no sustituye esa lectura.
+- **No activada:** Horizon confirma ausencia; la wallet puede seguir correctamente registrada en Carmelita.
+- **Indisponible:** no se pudo comprobar la red. No se presenta como ausencia, activación ni saldo cero.
+- **Saldo:** es la lectura observada en la red, separada del registro y de la solicitud de fondos.
+
+`testnetActivation` conserva si se emitió una solicitud y si su resultado está confirmado o incierto. `fundsMoved` es `false` sin solicitud, `true` sólo con hash válido y existencia confirmada, y `null` cuando la recepción no está comprobada. No se convierte una reserva interna en un recibo de entrega.
+
+La auditoría de esta jornada confirmó activación Testnet para el nuevo tester. También encontró dos excepciones legacy: un estado persistido pendiente aunque Horizon mostraba cuenta activa, y una cuenta aún no activa. Esos casos requieren seguimiento; no permiten afirmar que todas las wallets históricas ya estén activas.
+
+## XLM y trustlines
+
+**XLM es el activo nativo de Stellar y no necesita una trustline.** La activación automática crea y financia la cuenta Testnet con XLM de prueba, sin valor real.
+
+USDC es otro activo. Su trustline requiere el issuer exacto y revisión/firma de la operación correspondiente. Crear una wallet, activar XLM o autorizar `agent:read` no aprueba esa trustline ni financia USDC. La integración USDC, DeFindex, compras y firmas tiene aceptación independiente y queda fuera del cierre ChatGPT. Mainnet necesita su propia entrega y autorización; los fondos Testnet no se convierten en fondos Mainnet.
+
+## Recuperación y comprobación
+
+En una sesión vigente, consultar el estado de las wallets permite distinguir registro y comprobación actual de red. Ante una activación incierta, conservar la identidad y dirección y respetar el plazo de reintento. Para registros existentes incompletos, un operador autorizado dispone de [recuperación administrativa](./mvp-closeout/admin-wallet-recovery.md); esa intervención no concede permisos OAuth ni debe crear otra identidad.
+
+Las pruebas `stellar-auto-activation` y `stellar-activation-onboarding` cubren localmente dirección canónica, persistencia, concurrencia, indisponibilidad, respuesta incierta, confirmación y recuperación. Su corrida se registra en la [matriz de aceptación](./mvp-closeout/evidence-matrix.md). No se inducen fallos en producción para probar esos casos.
+
+Mantener secretos Privy/Stytch y credenciales Neon únicamente en configuración privada de servidor. No incluirlos en guías, logs, capturas o respaldos de código. La copia Git y los snapshots no recuperan por sí solos las cuentas de los proveedores ni los datos de Neon.
