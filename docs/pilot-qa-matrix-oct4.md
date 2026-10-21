@@ -44,7 +44,7 @@ The live script uses a programmatic `createMarketQueries({ fetcher, now })` fact
 Example invocation (use the root-confirmed full current commit):
 
 ```text
-node node_modules/tsx/dist/cli.mjs --tsconfig C:/Users/MGC/Documents/ChatGPT/Carmelita/work/pilot-readiness/tsconfig.json scripts/pilot-market-live-readonly.mts C:/Users/MGC/Documents/ChatGPT/Carmelita/work/pilot-readiness be150773d9f1138b4c865b0820aafafd6176dae1
+node node_modules/tsx/dist/cli.mjs --tsconfig USER_HOME/Documents/ChatGPT/Carmelita/work/pilot-readiness/tsconfig.json scripts/pilot-market-live-readonly.mts USER_HOME/Documents/ChatGPT/Carmelita/work/pilot-readiness be150773d9f1138b4c865b0820aafafd6176dae1
 ```
 
 The script creates a unique ignored receipt with exclusive creation. Its projection contains public market IDs/names and public source evidence, excludes token addresses, and never loads a connection file, session or environment file. Public catalogs and availability may change. An unavailable upstream result remains explicit and cannot be converted to absence, zero holdings or human acceptance.

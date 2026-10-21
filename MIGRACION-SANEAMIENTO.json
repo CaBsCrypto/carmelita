@@ -1,0 +1,131 @@
+{
+  "scope": "isolated copy only; original tree/index/refs/stash untouched",
+  "source_ref": "refs/heads/codex/tempo-backend",
+  "source_sha": "ab7a8407bb2e22b13e8ca39c9a05f65089883f9d",
+  "parent_sha": "ab7a8407bb2e22b13e8ca39c9a05f65089883f9d",
+  "snapshot_sanitized": false,
+  "omitted": [
+    {
+      "path": ".codex/config.toml",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": ".codex/hooks.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-build.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-doctor.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-lint.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-readonly.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-tests.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-travala.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/multichain-onboarding-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/oauth-introspection-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-empty.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-final.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-schema.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/gateway.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/health.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/install.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/public-preview.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/real-users-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/sessions-receipts-preview-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stabilization-2026-09-07/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-payment-acceptance-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-recovery-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/wallet-explorer-links-2026-09-29.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    }
+  ],
+  "modified": [
+    {
+      "path": ".openai/hosting.json",
+      "change": "remote infrastructure bindings changed to placeholders"
+    },
+    {
+      "path": "docs/PRODUCTION-0020-0021-RUNBOOK-2026-09-19.md",
+      "change": "portable home placeholder in documentation only"
+    },
+    {
+      "path": "docs/graphify-local-runtime.md",
+      "change": "portable home placeholder in documentation only"
+    },
+    {
+      "path": "docs/pilot-qa-matrix-oct4.md",
+      "change": "portable home placeholder in documentation only"
+    },
+    {
+      "path": ".env.example",
+      "change": "names and placeholders only; optional requirements vary by flow"
+    }
+  ],
+  "eol_normalized_to_lf": [],
+  "working_files_preserved": [],
+  "history_review": "All newly reachable source commits reviewed; ambiguous histories excluded from sanitized snapshot ancestry",
+  "application_tests_builds_scripts_executed": false
+}
