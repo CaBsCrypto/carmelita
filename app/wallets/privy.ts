@@ -39,13 +39,14 @@ export function findExactPrivyWallet(
 
 async function listUserWallets(userId: string, family: WalletFamily) {
   const chainType = PRIVY_CHAIN_TYPE_BY_FAMILY[family];
-  const page = await getPrivyClient().wallets().list({
+  const page = await getPrivyClient({ timeout: 10_000, maxRetries: 0 }).wallets().list({
     user_id: userId,
     chain_type: chainType,
     limit: 100,
   });
   const wallets: Wallet[] = [];
   for await (const wallet of page) {
+    if (wallets.length >= 100) throw new Error("wallet_candidates_ambiguous");
     if ((!wallet.id || wallet.chain_type !== chainType || !isValidWalletAddress(family, wallet.address))) {
       throw new Error("privy_invalid_wallet_response");
     }
@@ -146,7 +147,7 @@ export async function getOrCreateUserWallet(userId: string, family: WalletFamily
   if (existing?.id && existing.address) return normalizeUserWallet(existing as { id: string; address: string; chain_type: string }, family, false);
 
   try {
-    const wallet = await getPrivyClient().wallets().create({
+    const wallet = await getPrivyClient({ timeout: 10_000, maxRetries: 0 }).wallets().create({
       chain_type: chainType,
       display_name: `Carmelita ${family.toUpperCase()} Wallet`,
       external_id: externalId,

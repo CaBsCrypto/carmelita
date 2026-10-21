@@ -3,6 +3,8 @@ import { buildAdminWalletRegistry, listAdminWalletRegistry } from "@/app/admin/w
 import { hasDatabase } from "@/db";
 import { readOperationalDiagnostics } from "./operational-diagnostics";
 import WalletRegistry from "./wallet-registry";
+import WalletPreparationPanel from "./preparation-panel";
+import { walletPreparationEnabled } from "@/app/wallets/preparation-config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ export default async function AdminWalletsPage() {
   const diagnostics = await readOperationalDiagnostics(identity);
   return <>
     <WalletRegistry initialRegistry={registry} founderName={identity.displayName} />
+    {identity.method === "privy" && walletPreparationEnabled() && <WalletPreparationPanel users={registry.users} />}
     {diagnostics && <details><summary>Verificación operativa de producción</summary><pre>{JSON.stringify(diagnostics, null, 2)}</pre></details>}
   </>;
 }

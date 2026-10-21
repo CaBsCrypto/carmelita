@@ -42,6 +42,7 @@ export type PersistWalletNetworksInput = {
   networks: WalletNetworkId[];
   status?: "active" | "pending";
   preserveExistingStatus?: boolean;
+  preparationClaim?: { jobId: string; family: string; token: string; fence: number };
 };
 
 const defaultDependencies: WalletPersistenceDependencies = {
@@ -121,6 +122,20 @@ export function buildWalletPersistenceStatements(input: PersistWalletNetworksInp
           chainType: input.wallet.chainType, network, provider: "privy" }),
       ],
     });
+  }
+  if (input.preparationClaim) {
+    const claim = input.preparationClaim;
+    if (claim.family !== input.wallet.family) throw new Error("wallet_identity_conflict");
+    statements.unshift({
+      text: `WITH claimed AS (SELECT f.job_id FROM wallet_preparation_families f
+        JOIN wallet_preparation_jobs j ON j.id=f.job_id
+        WHERE f.job_id=$1 AND f.family=$2 AND f.lease_token=$3 AND f.fence=$4
+        AND f.status='running' AND f.lease_expires_at>clock_timestamp() AND j.user_id=$5 FOR UPDATE OF f)
+        SELECT 1 / CASE WHEN count(*)=1 THEN 1 ELSE 0 END AS preparation_lease_valid FROM claimed`,
+      parameters: [claim.jobId, claim.family, claim.token, claim.fence, input.userId],
+    });
+    // Background preparation is not a sign-in and must not change a profile.
+    statements.splice(1, 1);
   }
   return statements;
 }

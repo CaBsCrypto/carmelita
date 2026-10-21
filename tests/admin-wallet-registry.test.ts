@@ -25,6 +25,9 @@ test("wallet registry identifies complete and incomplete Privy users", () => {
     wallets: 4,
     uniqueWallets: 4,
     networkAssociations: 4,
+    registrationCompleteUsers: 1,
+    registrationNeedsAttention: 1,
+    activationPendingUsers: 0,
     completeUsers: 1,
     needsAttention: 1,
     missingStellar: 0,
@@ -150,4 +153,21 @@ test("Solana validation, explorer and readiness agree", () => {
   assert.equal(invalid.users[0].complete, false);
   const missing = buildAdminWalletRegistry([user], []);
   assert.equal(missing.summary.missingSolana, 1);
+});
+
+test("pending Stellar registration does not imply activation or a queried balance", () => {
+  const user = { id: "pending-owner", email: null, status: "active", lastSeenAt: now, createdAt: now };
+  const row = { userId: user.id, address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF", chainType: "stellar", network: "stellar:testnet", status: "pending", createdAt: now, updatedAt: now };
+  const registry = buildAdminWalletRegistry([user], [row], [WALLET_NETWORKS["stellar:testnet"]]);
+  assert.equal(registry.users[0].registrationComplete, true);
+  assert.equal(registry.users[0].preparationStatus, "registered");
+  assert.equal(registry.summary.registrationNeedsAttention, 0);
+  assert.equal(registry.summary.activationPendingUsers, 1);
+  assert.equal(registry.users[0].complete, false);
+  assert.equal(registry.summary.needsAttention, 1, "legacy activation metric retained");
+  assert.equal(registry.users[0].wallets[0].balanceState, "not_queried");
+  assert.equal("balance" in registry.users[0].wallets[0], false);
+  const malformed = buildAdminWalletRegistry([user], [{ ...row, address: "invalid" }], [WALLET_NETWORKS["stellar:testnet"]]);
+  assert.equal(malformed.users[0].registrationComplete, false);
+  assert.equal(malformed.users[0].registeredComplete, true, "legacy coverage metric retained");
 });

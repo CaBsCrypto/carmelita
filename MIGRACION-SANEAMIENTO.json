@@ -1,0 +1,176 @@
+{
+  "scope": "isolated copy only; original tree/index/refs/stash untouched",
+  "source_ref": "refs/heads/codex/wallet-preparation-worker",
+  "source_sha": "bded46951ebf9ae104636d69692247bd9e3c3b15",
+  "parent_sha": "bded46951ebf9ae104636d69692247bd9e3c3b15",
+  "snapshot_sanitized": false,
+  "omitted": [
+    {
+      "path": ".codex/config.toml",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": ".codex/hooks.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-build.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-doctor.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-lint.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-readonly.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-tests.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-travala.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/multichain-onboarding-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/oauth-introspection-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-empty.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-final.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-schema.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/gateway.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/health.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/install.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/public-preview.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/real-users-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/sessions-receipts-preview-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stabilization-2026-09-07/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-payment-acceptance-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-recovery-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    }
+  ],
+  "modified": [
+    {
+      "path": ".openai/hosting.json",
+      "change": "remote infrastructure bindings changed to placeholders"
+    },
+    {
+      "path": "docs/PRODUCTION-0020-0021-RUNBOOK-2026-09-19.md",
+      "change": "portable home placeholder in documentation only"
+    },
+    {
+      "path": "AGENTS.md",
+      "change": "migration reference replaces excluded private operational report link; publishing restrictions retained"
+    },
+    {
+      "path": ".env.example",
+      "change": "names and placeholders only; optional requirements vary by flow"
+    }
+  ],
+  "eol_normalized_to_lf": [
+    "AGENTS.md",
+    "app/admin/wallets/data.ts",
+    "app/admin/wallets/page.tsx",
+    "app/admin/wallets/wallet-registry.tsx",
+    "app/api/agent/bootstrap/route.ts",
+    "app/multichain-account.ts",
+    "app/privy-client.ts",
+    "app/wallets/privy.ts",
+    "db/schema.ts",
+    "drizzle/meta/_journal.json",
+    "tests/admin-wallet-registry.test.ts",
+    "vercel.json",
+    "app/admin/wallets/preparation-api.ts",
+    "app/admin/wallets/preparation-panel.tsx",
+    "app/api/admin/wallet-preparation/route.ts",
+    "app/wallets/preparation-state.ts",
+    "app/wallets/preparation-store.ts",
+    "drizzle/0022_wallet_preparation.sql",
+    "tests/admin-wallet-preparation.test.ts",
+    "tests/wallet-preparation-state.test.ts",
+    "tests/wallet-preparation-store-sql.mts"
+  ],
+  "working_files_preserved": [
+    "AGENTS.md",
+    "app/admin/wallets/data.ts",
+    "app/admin/wallets/page.tsx",
+    "app/admin/wallets/preparation-api.ts",
+    "app/admin/wallets/preparation-panel.tsx",
+    "app/admin/wallets/wallet-registry.tsx",
+    "app/api/admin/wallet-preparation/route.ts",
+    "app/api/agent/bootstrap/route.ts",
+    "app/api/cron/wallet-preparation/route.ts",
+    "app/multichain-account.ts",
+    "app/privy-client.ts",
+    "app/wallets/durable-onboarding.ts",
+    "app/wallets/preparation-config.ts",
+    "app/wallets/preparation-inventory.ts",
+    "app/wallets/preparation-runner.ts",
+    "app/wallets/preparation-state.ts",
+    "app/wallets/preparation-store.ts",
+    "app/wallets/privy.ts",
+    "app/wallets/registered-onboarding.ts",
+    "db/schema.ts",
+    "drizzle/0022_wallet_preparation.sql",
+    "drizzle/meta/_journal.json",
+    "tests/admin-wallet-preparation.test.ts",
+    "tests/admin-wallet-registry.test.ts",
+    "tests/wallet-preparation-auth.test.ts",
+    "tests/wallet-preparation-concurrency-sql.mts",
+    "tests/wallet-preparation-inventory.test.ts",
+    "tests/wallet-preparation-state.test.ts",
+    "tests/wallet-preparation-store-sql.mts",
+    "vercel.json"
+  ],
+  "history_review": "All newly reachable source commits reviewed; ambiguous histories excluded from sanitized snapshot ancestry",
+  "application_tests_builds_scripts_executed": false
+}

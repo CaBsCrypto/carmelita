@@ -11,7 +11,7 @@ export function requiredPrivyCredentials() {
   return { appId, appSecret };
 }
 
-export function getPrivyClient() {
+export function getPrivyClient(options: { timeout?: number; maxRetries?: number } = {}) {
   const { appId, appSecret } = requiredPrivyCredentials();
-  return new PrivyClient({ appId, appSecret });
+  return new PrivyClient({ appId, appSecret, ...options });
 }

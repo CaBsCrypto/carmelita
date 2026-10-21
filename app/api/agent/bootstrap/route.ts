@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { provisionUserWallets } from "@/app/wallets/onboarding";
 import { hasDatabase } from "@/db";
+import { walletPreparationEnabled } from "@/app/wallets/preparation-config";
+import { durableOnboarding } from "@/app/wallets/durable-onboarding";
 import {
   PRIVY_WALLET_ARCHITECTURE,
   getPrivyStellarReadiness,
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
       id: claims.user_id,
       email: null,
     }));
-    const onboarding = await provisionUserWallets({
+    const onboarding = await (walletPreparationEnabled() ? durableOnboarding : provisionUserWallets)({
       userId: claims.user_id,
       email: identity.email,
     });
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
         ...onboarding.agentAccount,
         persistence: onboarding.persistence,
         preparation: onboarding.preparation,
+        recovery: "recovery" in onboarding ? onboarding.recovery : null,
         reads: onboarding.reads,
         readiness: getPrivyStellarReadiness(),
         walletArchitecture: PRIVY_WALLET_ARCHITECTURE,
@@ -79,6 +82,7 @@ export async function POST(request: Request) {
         ? 409
         : code === "privy_access_token_missing" || code === "invalid_privy_user_id"
           ? 401
+          : code === "account_disabled" ? 403
           : 500;
     return NextResponse.json({ error: code }, { status });
   }

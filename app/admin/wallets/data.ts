@@ -20,6 +20,7 @@ export type AdminWalletRecord = {
   networkName: string;
   status: string;
   validAddress: boolean;
+  balanceState: "not_queried";
   explorerUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,9 @@ export type AdminWalletUser = {
   inactiveNetworks: string[];
   invalidAddressNetworks: string[];
   registeredComplete: boolean;
+  registrationComplete: boolean;
+  preparationStatus: "registered" | "needs_attention";
+  activationPendingNetworks: string[];
   complete: boolean;
   uniqueWallets: number;
   networkAssociations: number;
@@ -129,6 +133,7 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[],
             WALLET_NETWORKS[wallet.network as WalletNetworkId]?.name ?? wallet.network,
           status: wallet.status,
           validAddress: validWallet(wallet),
+          balanceState: "not_queried" as const,
           explorerUrl: walletExplorerUrl(wallet.network, wallet.address),
           createdAt: wallet.createdAt.toISOString(),
           updatedAt: wallet.updatedAt.toISOString(),
@@ -139,6 +144,9 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[],
       inactiveNetworks: [...new Set(inactiveNetworks)],
       invalidAddressNetworks: [...new Set(invalidAddressNetworks)],
       registeredComplete,
+      registrationComplete: registeredComplete && invalidAddressNetworks.length === 0,
+      preparationStatus: registeredComplete && invalidAddressNetworks.length === 0 ? "registered" : "needs_attention",
+      activationPendingNetworks: [...new Set(inactiveNetworks)],
       complete: registeredComplete && inactiveNetworks.length === 0 && invalidAddressNetworks.length === 0,
       uniqueWallets: new Set(owned.map(identityKey)).size,
       networkAssociations: owned.length,
@@ -155,6 +163,9 @@ export function buildAdminWalletRegistry(users: UserRow[], wallets: WalletRow[],
       wallets: records.reduce((total, user) => total + user.uniqueWallets, 0),
       uniqueWallets: records.reduce((total, user) => total + user.uniqueWallets, 0),
       networkAssociations: records.reduce((total, user) => total + user.networkAssociations, 0),
+      registrationCompleteUsers: records.filter((user) => user.registrationComplete).length,
+      registrationNeedsAttention: records.filter((user) => !user.registrationComplete).length,
+      activationPendingUsers: records.filter((user) => user.activationPendingNetworks.length > 0).length,
       completeUsers: records.filter((user) => user.complete).length,
       needsAttention: records.filter((user) => !user.complete).length,
       missingStellar: records.filter((user) => user.missingNetworks.includes("stellar:testnet")).length,
