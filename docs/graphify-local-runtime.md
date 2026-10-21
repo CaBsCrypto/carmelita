@@ -7,7 +7,7 @@ The global Windows launchers can point to a removed Python installation. These s
 First setup, using an existing Python 3.12+ interpreter:
 
 ```powershell
-$env:GRAPHIFY_BASE_PYTHON = 'C:/Users/MGC/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
+$env:GRAPHIFY_BASE_PYTHON = 'USER_HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
 npm run graph:setup
 ```
 
