@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import styles from "./consent.module.css";
+import { requestConsentRedirect } from "./consent-request";
 
 type Preflight = {
   client: { clientId: string; clientName: string; clientDescription?: string };
@@ -22,10 +23,13 @@ const scopeLabels: Record<string, string> = {
 };
 
 export default function ConsentClient() {
-  const { ready, authenticated, login, getAccessToken } = usePrivy();
+  const { ready, authenticated, login, getAccessToken, user } = usePrivy();
   const [preflight, setPreflight] = useState<Preflight | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [redirectUri, setRedirectUri] = useState<string | null>(null);
+  const [decisionStarted, setDecisionStarted] = useState(false);
+  const decisionLocked = useRef(false);
   const attempted = useRef(false);
 
   useEffect(() => {
@@ -53,23 +57,17 @@ export default function ConsentClient() {
   }, [authenticated, getAccessToken, preflight, ready]);
 
   async function decide(consentGranted: boolean) {
+    if (decisionLocked.current) return;
+    decisionLocked.current = true;
+    setDecisionStarted(true);
     setBusy(true);
     setError("");
     try {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Privy session is unavailable.");
-      const response = await fetch("/api/oauth/stytch/authorize", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: window.location.search, consentGranted }),
-      });
-      const body = await response.json();
-      if (!response.ok || typeof body.redirectUri !== "string") {
-        throw new Error(body.error || "Authorization could not be completed.");
-      }
-      window.location.assign(body.redirectUri);
+      const redirect = await requestConsentRedirect(window.location.search, consentGranted, getAccessToken);
+      setRedirectUri(redirect);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Authorization failed.");
+    } finally {
       setBusy(false);
     }
   }
@@ -95,6 +93,7 @@ export default function ConsentClient() {
 
         {preflight && (
           <>
+            {user?.email?.address && <p className={styles.description}>Carmelita account: {user.email.address}</p>}
             {preflight.client.clientDescription && <p className={styles.description}>{preflight.client.clientDescription}</p>}
             <div className={styles.permissions}>
               <h2>This chat is requesting</h2>
@@ -107,10 +106,19 @@ export default function ConsentClient() {
             <div className={styles.warning}>
               <strong>No silent transactions.</strong> Connecting allows discovery and planning only. A wallet action still follows your Carmelita spending policy and explicit approval.
             </div>
-            <div className={styles.actions}>
-              <button className={styles.secondary} disabled={busy} onClick={() => decide(false)}>Deny</button>
-              <button className={styles.primary} disabled={busy} onClick={() => decide(true)}>{busy ? "Connecting…" : "Allow connection"}</button>
-            </div>
+            {redirectUri ? (
+              <>
+                <p role="status" className={styles.status}>The authorization response is ready. Continue now to finish the connection in your chat.</p>
+                <div className={styles.actions}>
+                  <a className={styles.primary} href={redirectUri} rel="noreferrer">Continue to {preflight.client.clientName}</a>
+                </div>
+              </>
+            ) : (
+              <div className={styles.actions}>
+                <button className={styles.secondary} disabled={busy || decisionStarted} onClick={() => decide(false)}>Deny</button>
+                <button className={styles.primary} disabled={busy || decisionStarted} onClick={() => decide(true)}>{busy ? "Connecting…" : "Allow connection"}</button>
+              </div>
+            )}
           </>
         )}
 
