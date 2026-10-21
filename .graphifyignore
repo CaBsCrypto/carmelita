@@ -2,3 +2,18 @@
 AGENTS.md
 docs/
 README.md
+# Local evidence and private credentials never belong to the code graph.
+work/
+outputs/
+.env*
+**/*connectionfiles*
+**/DBconnectionfiles*
+**/*.pem
+**/*.key
+**/*.mp3
+**/*.wav
+**/*.mp4
+**/*audio*
+**/*durable*
+**/*0022*
+**/*bazaar*
