@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { ChatQuotaError, enforceChatIpQuota, trustedChatIp } from "@/app/chat-quota";
 import {
   getAgentConversation,
   sendAgentMessage,
@@ -56,11 +57,14 @@ export async function POST(request: Request) {
   try {
     const userId = await authenticatedUser(request);
     const input = messageSchema.parse(await request.json());
+    await enforceChatIpQuota(trustedChatIp(request));
     const result = await sendAgentMessage(userId, input.message);
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
+    if (error instanceof ChatQuotaError) return NextResponse.json({ error: error.message, retryAfterSeconds: error.retryAfterSeconds }, { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds), "Cache-Control": "no-store" } });
+    if (error instanceof Error && error.message.startsWith("chat_quota_")) return NextResponse.json({ error: "chat_quota_unavailable" }, { status: 503 });
     const code =
       error instanceof z.ZodError
         ? "invalid_message"
@@ -78,3 +82,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: code }, { status });
   }
 }
+
+

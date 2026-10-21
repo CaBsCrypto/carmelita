@@ -5,7 +5,7 @@ import {
   randomBytes,
   randomUUID,
 } from "node:crypto";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   agentExternalConnections,
@@ -84,7 +84,7 @@ function pkce() {
 async function discoverOAuth() {
   const resourceMetadataResponse = await fetch(
     "https://mcp.notion.com/.well-known/oauth-protected-resource/mcp",
-    { headers: { Accept: "application/json" }, cache: "no-store" },
+    { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15_000), cache: "no-store" },
   );
   if (!resourceMetadataResponse.ok) {
     throw new Error("notion_oauth_discovery_failed");
@@ -97,7 +97,7 @@ async function discoverOAuth() {
 
   const metadataResponse = await fetch(
     new URL("/.well-known/oauth-authorization-server", issuer),
-    { headers: { Accept: "application/json" }, cache: "no-store" },
+    { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15_000), cache: "no-store" },
   );
   if (!metadataResponse.ok) throw new Error("notion_oauth_metadata_failed");
   const metadata = (await metadataResponse.json()) as OAuthMetadata;
@@ -127,10 +127,10 @@ async function registerClient(
       response_types: ["code"],
       token_endpoint_auth_method: "none",
     }),
-    cache: "no-store",
+    signal: AbortSignal.timeout(15_000), cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error("notion_client_registration_failed:" + (await response.text()));
+    throw new Error("notion_client_registration_failed");
   }
   const client = (await response.json()) as ClientRegistration;
   if (!client.client_id) throw new Error("notion_client_id_missing");
@@ -162,6 +162,16 @@ export async function startNotionOAuth(userId: string, appOrigin: string) {
     expiresAt,
   });
 
+  // A generation marker makes disconnect/new authorization win over a late callback.
+  await db.insert(agentExternalConnections).values({
+    id: randomUUID(), userId, provider: PROVIDER, status: "connecting",
+    accessTokenEncrypted: "", metadata: { oauthAttempt: stateId(state) },
+    updatedAt: new Date(),
+  }).onConflictDoUpdate({
+    target: [agentExternalConnections.userId, agentExternalConnections.provider],
+    set: { status: "connecting", metadata: { oauthAttempt: stateId(state) }, updatedAt: new Date() },
+  });
+
   const authorizationUrl = new URL(metadata.authorization_endpoint);
   authorizationUrl.search = new URLSearchParams({
     response_type: "code",
@@ -177,12 +187,10 @@ export async function startNotionOAuth(userId: string, appOrigin: string) {
   return { authorizationUrl: authorizationUrl.toString(), expiresAt };
 }
 
-export async function completeNotionOAuth(code: string, state: string) {
-  const db = getDb();
+export async function completeNotionOAuth(code: string, state: string, db = getDb()) {
   const stateKey = stateId(state);
   const rows = await db
-    .select()
-    .from(agentOauthStates)
+    .delete(agentOauthStates)
     .where(
       and(
         eq(agentOauthStates.id, stateKey),
@@ -190,11 +198,10 @@ export async function completeNotionOAuth(code: string, state: string) {
         gt(agentOauthStates.expiresAt, new Date()),
       ),
     )
-    .limit(1);
+    .returning();
   const pending = rows[0];
   if (!pending) throw new Error("oauth_state_invalid_or_expired");
 
-  await db.delete(agentOauthStates).where(eq(agentOauthStates.id, stateKey));
 
   const params = new URLSearchParams({
     grant_type: "authorization_code",
@@ -218,10 +225,10 @@ export async function completeNotionOAuth(code: string, state: string) {
       Accept: "application/json",
     },
     body: params.toString(),
-    cache: "no-store",
+    signal: AbortSignal.timeout(15_000), cache: "no-store",
   });
   if (!tokenResponse.ok) {
-    throw new Error("notion_token_exchange_failed:" + (await tokenResponse.text()));
+    throw new Error("notion_token_exchange_failed");
   }
 
   const tokens = (await tokenResponse.json()) as TokenResponse;
@@ -230,53 +237,25 @@ export async function completeNotionOAuth(code: string, state: string) {
     ? new Date(Date.now() + tokens.expires_in * 1000)
     : null;
 
-  await db
-    .insert(agentExternalConnections)
-    .values({
-      id: randomUUID(),
-      userId: pending.userId,
-      provider: PROVIDER,
-      status: "active",
-      accessTokenEncrypted: encryptConnectorSecret(tokens.access_token),
-      refreshTokenEncrypted: tokens.refresh_token
-        ? encryptConnectorSecret(tokens.refresh_token)
-        : null,
-      tokenExpiresAt,
-      scopes: tokens.scope ? tokens.scope.split(" ").filter(Boolean) : [],
-      metadata: {
-        transport: "streamable-http",
-        resource: MCP_RESOURCE,
-        tokenType: tokens.token_type ?? "Bearer",
-        clientId: pending.clientId,
-        clientSecretEncrypted: pending.clientSecretEncrypted,
-        tokenEndpoint: pending.tokenEndpoint,
-      },
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [
-        agentExternalConnections.userId,
-        agentExternalConnections.provider,
-      ],
-      set: {
-        status: "active",
-        accessTokenEncrypted: encryptConnectorSecret(tokens.access_token),
-        refreshTokenEncrypted: tokens.refresh_token
-          ? encryptConnectorSecret(tokens.refresh_token)
-          : null,
-        tokenExpiresAt,
-        scopes: tokens.scope ? tokens.scope.split(" ").filter(Boolean) : [],
-        metadata: {
-          transport: "streamable-http",
-          resource: MCP_RESOURCE,
-          tokenType: tokens.token_type ?? "Bearer",
-          clientId: pending.clientId,
-          clientSecretEncrypted: pending.clientSecretEncrypted,
-          tokenEndpoint: pending.tokenEndpoint,
-        },
-        updatedAt: new Date(),
-      },
-    });
+  const saved = await db.update(agentExternalConnections).set({
+    status: "active",
+    accessTokenEncrypted: encryptConnectorSecret(tokens.access_token),
+    refreshTokenEncrypted: tokens.refresh_token ? encryptConnectorSecret(tokens.refresh_token) : null,
+    tokenExpiresAt,
+    scopes: tokens.scope ? tokens.scope.split(" ").filter(Boolean) : [],
+    metadata: {
+      transport: "streamable-http", resource: MCP_RESOURCE,
+      tokenType: tokens.token_type ?? "Bearer", clientId: pending.clientId,
+      clientSecretEncrypted: pending.clientSecretEncrypted, tokenEndpoint: pending.tokenEndpoint,
+    },
+    updatedAt: new Date(),
+  }).where(and(
+    eq(agentExternalConnections.userId, pending.userId),
+    eq(agentExternalConnections.provider, PROVIDER),
+    eq(agentExternalConnections.status, "connecting"),
+    sql`${agentExternalConnections.metadata}->>'oauthAttempt' = ${stateKey}`,
+  )).returning({ id: agentExternalConnections.id });
+  if (!saved.length) throw new Error("notion_connection_superseded");
 
   return { userId: pending.userId, provider: PROVIDER };
 }
@@ -294,8 +273,7 @@ export async function listUserConnections(userId: string) {
     .from(agentExternalConnections)
     .where(eq(agentExternalConnections.userId, userId));
 }
-export async function getNotionAccessToken(userId: string) {
-  const db = getDb();
+export async function getNotionAccessToken(userId: string, db = getDb()) {
   const rows = await db
     .select()
     .from(agentExternalConnections)
@@ -311,6 +289,13 @@ export async function getNotionAccessToken(userId: string) {
     throw new Error("notion_not_connected");
   }
 
+  const currentGeneration = and(
+    eq(agentExternalConnections.id, connection.id),
+    eq(agentExternalConnections.status, "active"),
+    eq(agentExternalConnections.accessTokenEncrypted, connection.accessTokenEncrypted),
+    eq(agentExternalConnections.updatedAt, connection.updatedAt),
+  );
+
   if (
     !connection.tokenExpiresAt ||
     connection.tokenExpiresAt.getTime() > Date.now() + 60_000
@@ -322,7 +307,7 @@ export async function getNotionAccessToken(userId: string) {
     await db
       .update(agentExternalConnections)
       .set({ status: "reauth_required", updatedAt: new Date() })
-      .where(eq(agentExternalConnections.id, connection.id));
+      .where(currentGeneration);
     throw new Error("notion_reauth_required");
   }
 
@@ -355,13 +340,16 @@ export async function getNotionAccessToken(userId: string) {
       Accept: "application/json",
     },
     body: params.toString(),
-    cache: "no-store",
+    signal: AbortSignal.timeout(15_000), cache: "no-store",
   });
   if (!response.ok) {
+    if (response.status !== 400 && response.status !== 401) {
+      throw new Error("notion_refresh_unavailable");
+    }
     await db
       .update(agentExternalConnections)
       .set({ status: "reauth_required", updatedAt: new Date() })
-      .where(eq(agentExternalConnections.id, connection.id));
+      .where(currentGeneration);
     throw new Error("notion_reauth_required");
   }
 
@@ -371,7 +359,7 @@ export async function getNotionAccessToken(userId: string) {
     ? new Date(Date.now() + refreshed.expires_in * 1000)
     : null;
 
-  await db
+  const refreshedRows = await db
     .update(agentExternalConnections)
     .set({
       status: "active",
@@ -385,7 +373,17 @@ export async function getNotionAccessToken(userId: string) {
         : connection.scopes,
       updatedAt: new Date(),
     })
-    .where(eq(agentExternalConnections.id, connection.id));
+    .where(currentGeneration).returning({ id: agentExternalConnections.id });
+  if (!refreshedRows.length) throw new Error("notion_connection_superseded");
 
   return refreshed.access_token;
+}
+/** Local revocation: does not claim to revoke the grant at the external provider. */
+export async function disconnectNotion(userId: string, db = getDb()) {
+  await db.update(agentExternalConnections).set({
+    status: "disconnected", accessTokenEncrypted: "", refreshTokenEncrypted: null,
+    tokenExpiresAt: null, scopes: [], metadata: {}, updatedAt: new Date(),
+  }).where(and(eq(agentExternalConnections.userId, userId), eq(agentExternalConnections.provider, PROVIDER)));
+  await db.delete(agentOauthStates).where(and(eq(agentOauthStates.userId, userId), eq(agentOauthStates.provider, PROVIDER)));
+  return { provider: PROVIDER, status: "disconnected", providerRevocation: "not_performed" } as const;
 }

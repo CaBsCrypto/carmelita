@@ -549,6 +549,17 @@ export default function AgentChat({
         body: JSON.stringify({ message }),
       });
       const body = await response.json();
+      if (response.status === 429) {
+        const seconds = Number(body.retryAfterSeconds);
+        const reset = Number.isFinite(seconds) && seconds > 0
+          ? new Date(Date.now() + seconds * 1000).toLocaleString(locale)
+          : null;
+        throw new Error(locale === "es"
+          ? `Alcanzaste el límite de consultas.${reset ? ` Puedes continuar a partir de ${reset}.` : " Intenta más tarde."}`
+          : locale === "pt"
+            ? `Você atingiu o limite de consultas.${reset ? ` Continue a partir de ${reset}.` : " Tente mais tarde."}`
+            : `You reached the query limit.${reset ? ` You can continue after ${reset}.` : " Please try later."}`);
+      }
       if (!response.ok) throw new Error(body.error ?? "Message failed");
       const assistantMessage = body.assistantMessage as ChatMessage;
       setMessages((current) => [
@@ -2060,3 +2071,4 @@ export default function AgentChat({
     </section>
   );
 }
+

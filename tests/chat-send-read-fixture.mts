@@ -5,6 +5,15 @@ const dbModule = await import("../db/index");
 const walletModule = await import("../app/multichain-account");
 const stellarModule = await import("../app/privy-stellar");
 const memoryModule = await import("../app/agent-memory-store");
+const quotaModule = await import("../app/chat-quota");
+const quotaUsers: string[] = [];
+let denyQuota = false;
+mock.module(new URL("../app/chat-quota.ts", import.meta.url).href, {
+  namedExports: { ...quotaModule, enforceChatQuota: async (userId: string) => {
+    quotaUsers.push(userId);
+    if (denyQuota) throw new quotaModule.ChatQuotaError(60);
+  } },
+});
 const writes: Array<{ userId?: string; role?: string; content?: string }> = [];
 const query = () => Object.assign(Promise.resolve([]), {
   from: () => query(), where: () => query(), limit: () => query(),
@@ -49,3 +58,8 @@ assert.deepEqual(reads, ["own-stellar", "own-solana"]);
 assert.equal(balances.wallet, null);
 assert.ok(writes.some(row => row.role === "assistant" && row.content === balances.assistantMessage.content));
 assert.ok(writes.every(row => row.userId === "owner"));
+assert.deepEqual(quotaUsers, ["owner", "owner"]);
+const writesBeforeDenial = writes.length;
+denyQuota = true;
+await assert.rejects(sendAgentMessage("owner", "Dame mis wallets"), /chat_quota_exceeded/);
+assert.equal(writes.length, writesBeforeDenial, "quota denial must precede every conversation/message write");

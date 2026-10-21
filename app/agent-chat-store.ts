@@ -1,3 +1,4 @@
+import { enforceChatQuota } from "./chat-quota";
 import { readChatNativeBalance } from "./agent-chat-balances";
 import { requestsRegisteredWallets, registeredWalletsReply, requestsWalletBalances, walletBalancesReply } from "./agent-chat-wallets";
 import { createHash, randomUUID } from "node:crypto";
@@ -415,6 +416,7 @@ export async function chatWalletContext(userId: string, content: string, readCon
 }
 
 export async function sendAgentMessage(userId: string, content: string) {
+  await enforceChatQuota(userId, null);
   const db = getDb();
   const id = await ensureConversation(userId);
   const now = new Date();
@@ -1010,13 +1012,15 @@ export async function sendAgentMessage(userId: string, content: string) {
       const result = {
         tool: String(workflow.execution.tool ?? "notion-search"),
         text: String(workflow.execution.text ?? ""),
+        sources: Array.isArray(workflow.execution.sources) ? workflow.execution.sources as { title: string; url: string }[] : [],
+        empty: workflow.execution.empty === true,
       };
       reply = {
         content: [
           local("I searched your connected Notion workspace using **", "Pesquisei seu workspace conectado do Notion usando **") +
             result.tool +
             "**.",
-          result.text,
+          result.empty ? local("No matching results were returned.", "Nenhum resultado correspondente foi encontrado.") : result.text,
         ].join("\n\n"),
         connection: {
           name: "Notion MCP",
@@ -1028,7 +1032,7 @@ export async function sendAgentMessage(userId: string, content: string) {
             label: local("Search again", "Pesquisar novamente"),
             message: language === "pt" ? "Pesquise no meu Notion as tarefas pendentes" : "Search my Notion workspace for pending project tasks",
           },
-          { label: local("Open Notion", "Abrir Notion"), href: "https://www.notion.so/" },
+          ...result.sources.map(source => ({ label: source.title, href: source.url })),
         ],
         workflow: {
           id: workflow.workflowId,
@@ -1428,5 +1432,6 @@ export async function recentConversationSummary(userId: string) {
     .orderBy(desc(agentConversations.updatedAt))
     .limit(10);
 }
+
 
 

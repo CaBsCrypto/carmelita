@@ -34,3 +34,19 @@ test("Notion workflow verification rejects an empty MCP response", async () => {
   }, { tool: "notion-search", text: "" });
   assert.equal(failed[0]?.verified, false);
 });
+
+test("Notion workflow preserves explicit source links and true empty results", async () => {
+  const source = { title: "Project tasks", url: "https://www.notion.so/tasks" };
+  const context = { workflowId: "wf-sources", userId: "owner", conversationId: "conversation", request: "Search tasks", parameters: {} };
+  for (const empty of [false, true]) {
+    const connector = createNotionWorkflowConnector(async (userId) => {
+      assert.equal(userId, "owner");
+      return { tool: "notion-search", text: empty ? '{"results":[]}' : "Tasks", sources: empty ? [] : [source], empty };
+    });
+    const action = await connector.prepare(context, "workspace.search");
+    const result = await connector.execute(context, action);
+    assert.deepEqual(result.sources, empty ? [] : [source]);
+    assert.equal(result.empty, empty);
+    assert.equal((await connector.verify(context, result))[0].verified, true);
+  }
+});

@@ -4,6 +4,7 @@
 
 import { usePrivy, useUser } from "@privy-io/react-auth";
 import AgentChat from "./agent-chat";
+import { NotionConnectionPanel } from "./notion-connection-panel";
 import AgentMemoryVault from "./agent-memory-vault";
 import WalletCenter from "./wallet-center";
 import WebMcpInspector from "./webmcp-inspector";
@@ -17,7 +18,7 @@ const onboardingUi = {
   en: {
     loading: "Preparing secure sign-in...",
     entryEyebrow: "WORK WITH CARMELITA",
-    entryTitle: "Sign in once. Your test wallets arrive with you.",
+    entryTitle: "Your next conversation starts here.",
     entryText: "Continue with email, Google or a passkey. Your Stellar, EVM and Solana wallets belong to you. Enabled EVM test networks share one address.",
     create: "Work with Carmelita",
     boundary: "No seed phrase or wallet password required during onboarding.",
@@ -37,7 +38,7 @@ const onboardingUi = {
   es: {
     loading: "Preparando ingreso seguro...",
     entryEyebrow: "TRABAJA CON CARMELITA",
-    entryTitle: "Ingresa una vez. Tus wallets de prueba llegan contigo.",
+    entryTitle: "Tu próxima conversación empieza aquí.",
     entryText: "Continúa con email, Google o passkey. Tus wallets Stellar, EVM y Solana te pertenecen. Las redes EVM de prueba habilitadas comparten una dirección.",
     create: "Carmelita trabaja contigo",
     boundary: "No necesitas seed phrase ni contraseña de wallet durante el onboarding.",
@@ -57,7 +58,7 @@ const onboardingUi = {
   pt: {
     loading: "Preparando login seguro...",
     entryEyebrow: "CONHEÇA CARMELITA",
-    entryTitle: "Entre uma vez. Suas wallets de teste acompanham você.",
+    entryTitle: "Sua próxima conversa começa aqui.",
     entryText: "Continue com email, Google ou passkey. Suas wallets Stellar, EVM e Solana pertencem a você. As redes EVM de teste habilitadas compartilham um endereço.",
     create: "Carmelita trabalha com voc\u00ea",
     boundary: "Nenhuma seed phrase ou senha de wallet é necessária durante o onboarding.",
@@ -395,8 +396,10 @@ function PrivyAgent({
           }
           getAccessToken={getAccessToken}
         />
-        <AgentMemoryVault getAccessToken={getAccessToken} />
+        <details className="agent-secondary-panel"><summary>{locale === "es" ? "Mis preferencias y memoria" : locale === "pt" ? "Minhas preferências e memória" : "My preferences and memory"}</summary><AgentMemoryVault getAccessToken={getAccessToken} /></details>
+        <details className="agent-secondary-panel"><summary>{locale === "es" ? "Mi cuenta, conexiones y billeteras" : locale === "pt" ? "Minha conta, conexões e carteiras" : "My account, connections and wallets"}</summary>
 
+        <NotionConnectionPanel key={result.user.id} locale={locale} userId={result.user.id} getAccessToken={getAccessToken} />
         <AgentExternalAccess locale={locale} getAccessToken={getAccessToken} />
         <AgentConnectedApps locale={locale} getAccessToken={getAccessToken} />
 
@@ -570,6 +573,7 @@ function PrivyAgent({
             </aside>
           )}
         </section>
+        </details>
         </>
       )}
     </section>
