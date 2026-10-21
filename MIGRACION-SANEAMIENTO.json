@@ -1,0 +1,182 @@
+{
+  "scope": "isolated copy only; original tree/index/refs/stash untouched",
+  "source_ref": "refs/heads/codex/pilot-script-qa",
+  "source_sha": "71b2f0b24d973aa9c71720a9e9419de76c3b4f1f",
+  "parent_sha": "7edcb1890a76a7dfcf9f3eb4da50615807a951be",
+  "snapshot_sanitized": true,
+  "omitted": [
+    {
+      "path": ".codex/config.toml",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": ".codex/hooks.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-build.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-doctor.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-lint.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-readonly.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-tests.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/2026-09-07/audit-travala.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/multichain-onboarding-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/oauth-introspection-2026-09-27.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-empty.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-final.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/database-schema.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/gateway.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/health.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/install.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/public-preview.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/preview-pr28-2026-09-08/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/real-users-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/sessions-receipts-preview-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stabilization-2026-09-07/quality.txt",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-payment-acceptance-2026-09-09/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/stellar-recovery-preview-2026-09-08/evidence.json",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    },
+    {
+      "path": "docs/audits/wallet-explorer-links-2026-09-29.md",
+      "reason": "private QA evidence, machine agent setup, authentication/data or historical artifact"
+    }
+  ],
+  "modified": [
+    {
+      "path": ".openai/hosting.json",
+      "change": "remote infrastructure bindings changed to placeholders"
+    },
+    {
+      "path": "docs/PRODUCTION-0020-0021-RUNBOOK-2026-09-19.md",
+      "change": "portable home placeholder in documentation only"
+    },
+    {
+      "path": ".env.example",
+      "change": "names and placeholders only; optional requirements vary by flow"
+    },
+    {
+      "path": "docs/pilot-qa-matrix-oct4.md",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "docs/pilot-script-qa-oct4.md",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-acceptance-runtime-proposal.mts",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-market-live-readonly.mts",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-production-reference-readonly.mjs",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-production-reference-window.mjs",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-qa-registry-readonly.mjs",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    },
+    {
+      "path": "scripts/pilot-wallet-chat-acceptance-controlled.mts",
+      "change": "new migration method replaces private operational evidence; no historical acceptance claimed"
+    }
+  ],
+  "eol_normalized_to_lf": [],
+  "working_files_preserved": [],
+  "history_review": "All newly reachable source commits reviewed; ambiguous histories excluded from sanitized snapshot ancestry",
+  "application_tests_builds_scripts_executed": false,
+  "alternative_notes": [
+    "Replace both QA documents completely with method-only text, preserving no historical private results or receipt hash.",
+    "All six script home paths become file-relative roots via fileURLToPath(import.meta.url). Preserve original candidate, clean-source and fixed-SHA guards.",
+    "Production reference: remove historical CLI path, scope, deployment/project IDs, origin/issuer defaults, DB fingerprints, private receipt hash and fixed real counts. Require explicit validated PILOT_* inputs. Derive alias lookup from explicit origin; no identity guard disabled.",
+    "Offline window: require explicit reference SHA-256 and expected counts rather than historical private literals. Preserve receipt mode, phase, success, fingerprint and counter comparisons.",
+    "QA registry: require explicit distinct validated production/QA fingerprints before opening a DB connection; remove historical count hint only. Preserve isolation and read-only query guards.",
+    "No dependencies added. Imports use Node built-ins already available in declared runtime. No scripts run; semantic behavior needs runtime validation.",
+    "Original nine outgoing commits excluded from snapshot ancestry. All original private baseline files and connections remain local."
+  ],
+  "extra_variable_names": [
+    "PILOT_AUTHORIZATION_SERVER",
+    "PILOT_EXPECTED_BINDING_COUNT",
+    "PILOT_EXPECTED_COMMIT",
+    "PILOT_EXPECTED_CURRENT_LINK_COUNT",
+    "PILOT_EXPECTED_DEPLOYMENT",
+    "PILOT_EXPECTED_GLOBAL_OWNER_COUNT",
+    "PILOT_EXPECTED_PROJECT_ID",
+    "PILOT_EXPECTED_REFERENCE_LINK_COUNT",
+    "PILOT_EXPECTED_WALLET_COUNT",
+    "PILOT_PRODUCTION_DATABASE_FINGERPRINT",
+    "PILOT_PUBLIC_ORIGIN",
+    "PILOT_QA_DATABASE_FINGERPRINT",
+    "PILOT_REFERENCE_SHA256",
+    "PILOT_VERCEL_CLI_PATH",
+    "PILOT_VERCEL_SCOPE"
+  ],
+  "modified_script_runtime_validation": "NOT VERIFIED"
+}
